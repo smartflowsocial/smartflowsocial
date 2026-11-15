@@ -1,0 +1,115 @@
+import { StatusIcon } from "~/components/ui/status-icon";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+
+import type { ChildReply } from "../hooks/useNotificationActions";
+interface ChildRepliesPanelProps {
+  isLoading: boolean;
+  replies: ChildReply[];
+  metadata: Record<string, unknown>;
+}
+
+export function ChildRepliesPanel({
+  isLoading,
+  replies,
+  metadata,
+}: ChildRepliesPanelProps) {
+  const { formatDate } = useFormattedDate();
+
+  if (isLoading) {
+    return (
+      <div
+        className="border-border border-l-selection-border/40 mt-3 border-l-2 pl-3"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div className="text-text-secondary cluster text-xs">
+          <StatusIcon tone="pending" />
+          Loading replies...
+        </div>
+      </div>
+    );
+  }
+
+  if (replies.length === 0) {
+    return (
+      <div
+        className="border-border border-l-selection-border/40 mt-3 border-l-2 pl-3"
+        role="status"
+      >
+        <div className="text-text-secondary text-xs">No replies yet</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-l-selection-border/40 mt-3 space-y-2 border-l-2 pl-3">
+      {replies.map((reply) => {
+        const replyMetadata = metadata[reply.pubkey];
+        let replyAuthorName =
+          reply.pubkey.substring(0, 8) + "..." + reply.pubkey.slice(-4);
+        let replyAuthorPicture = null;
+
+        if (replyMetadata) {
+          try {
+            const metadataContent =
+              typeof replyMetadata === "object" &&
+              !Array.isArray(replyMetadata) &&
+              "content" in replyMetadata
+                ? (replyMetadata as { content?: unknown }).content
+                : null;
+            const profile =
+              typeof metadataContent === "string"
+                ? (JSON.parse(metadataContent) as Record<string, unknown>)
+                : metadataContent &&
+                    typeof metadataContent === "object" &&
+                    !Array.isArray(metadataContent)
+                  ? (metadataContent as Record<string, unknown>)
+                  : null;
+            if (profile && typeof profile === "object") {
+              replyAuthorName =
+                (profile as { display_name?: string; name?: string })
+                  .display_name ??
+                (profile as { name?: string }).name ??
+                replyAuthorName;
+              replyAuthorPicture =
+                (profile as { picture?: string | null }).picture ?? null;
+            }
+          } catch (_e) {
+            // Ignore parsing errors
+          }
+        }
+
+        return (
+          <div
+            key={reply.id}
+            className="border-border bg-surface-hover rounded-lg border p-2"
+          >
+            <div className="cluster mb-1">
+              {replyAuthorPicture ? (
+                <img
+                  src={replyAuthorPicture}
+                  alt={replyAuthorName}
+                  className="h-6 w-6 rounded-full"
+                />
+              ) : (
+                <div className="bg-surface-hover h-6 w-6 rounded-full" />
+              )}
+              <span className="text-text text-xs font-semibold">
+                {replyAuthorName}
+              </span>
+              <span className="text-text-secondary text-xs">
+                {formatDate(reply.created_at, {
+                  isUnixTimestamp: true,
+                })}
+              </span>
+            </div>
+            <p className="text-text text-xs break-words whitespace-pre-wrap">
+              {reply.content}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

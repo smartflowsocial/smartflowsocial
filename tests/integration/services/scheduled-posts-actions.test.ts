@@ -1,0 +1,426 @@
+/**
+ * Integration tests for Scheduled Posts Service Action Handlers
+ * Tests app/features/posts/services/scheduled-posts.server.ts action handlers
+ * that use use cases (reschedule, edit)
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock dependencies - use vi.hoisted to allow top-level variables in mocks
+const { mockScheduleExecute } = vi.hoisted(() => {
+  const mockScheduleExecute = vi.fn();
+  return { mockScheduleExecute };
+});
+const {
+  mockCascadeAttachedReschedule,
+  mockResyncAttachedChildrenAfterParentMutation,
+  mockCascadeDeleteAttachedFollowups,
+} = vi.hoisted(() => ({
+  mockCascadeAttachedReschedule: vi.fn(),
+  mockResyncAttachedChildrenAfterParentMutation: vi.fn(),
+  mockCascadeDeleteAttachedFollowups: vi.fn(),
+}));
+
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
+  getPostById: vi.fn(),
+  reschedulePost: vi.fn(),
+  updatePost: vi.fn(),
+  getLongFormPost: vi.fn(),
+  updateLongFormPost: vi.fn(),
+}));
+
+vi.mock("~/features/payments/entitlements/schedule-cap-policy.server", () => ({
+  assertScheduleCapacity: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeAttachedReschedule: mockCascadeAttachedReschedule,
+    resyncAttachedChildrenAfterParentMutation:
+      mockResyncAttachedChildrenAfterParentMutation,
+    cascadeDeleteAttachedFollowups: mockCascadeDeleteAttachedFollowups,
+  })
+);
+
+const mockCancelLongFormExecute = vi.fn();
+const mockScheduleLongFormExecute = vi.fn();
+
+vi.mock(
+  "~/features/posts/scheduling/use-cases/schedule-post.use-case.server",
+  () => ({
+    SchedulePostUseCase: class {
+      execute = mockScheduleExecute;
+    },
+  })
+);
+
+// scheduled-posts.server imports ScheduleLongFormPostUseCase from longform/index.server
+vi.mock("~/features/posts/longform/index.server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
+    ...(actual ?? {}),
+    ScheduleLongFormPostUseCase: class {
+      execute = mockScheduleLongFormExecute;
+    },
+  };
+});
+
+// Use cases are mocked above; import handler from scheduling so it uses mocked use cases
+import {
+  TEST_USER_ID,
+  TEST_POST_ID,
+  TEST_LONGFORM_ID,
+} from "../../utils/test-helpers";
+
+import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
+import { handleScheduledPostAction } from "~/features/posts/scheduling/index.server";
+import { getLongFormPost, updateLongFormPost } from "~/features/posts/server";
+import { reschedulePost, updatePost } from "~/features/posts/server";
+import { getPostById } from "~/features/posts/server";
+
+describe("Scheduled Posts Service Action Handlers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockScheduleExecute.mockResolvedValue(undefined);
+    mockCascadeAttachedReschedule.mockResolvedValue([]);
+    mockResyncAttachedChildrenAfterParentMutation.mockResolvedValue([]);
+    mockCascadeDeleteAttachedFollowups.mockResolvedValue([]);
+    mockCancelLongFormExecute.mockResolvedValue({ cancelled: true });
+    mockScheduleLongFormExecute.mockResolvedValue(undefined);
+  });
+
+  describe("handleReschedule", () => {
+    it("should reschedule a post using CancelScheduleUseCase and SchedulePostUseCase", async () => {
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        isScheduled: true,
+      };
+
+      const mockUpdatedPost = {
+        ...mockPost,
+        scheduledAtUtc: new Date("2024-01-01T12:00:00Z"),
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUpdatedPost
+      );
+
+      const formData = new FormData();
+      formData.append("_action", "reschedule");
+      formData.append("postId", TEST_POST_ID);
+      formData.append("newTime", "1704110400"); // 2024-01-01T12:00:00Z
+      formData.append(
+        "signedEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+      formData.append(
+        "nostrEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      expect(getPostById).toHaveBeenCalledWith({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+      });
+      expect(reschedulePost).toHaveBeenCalled();
+      expect(mockCascadeAttachedReschedule).toHaveBeenCalled();
+      expect(mockScheduleExecute).toHaveBeenCalled();
+      expect(mockResyncAttachedChildrenAfterParentMutation).toHaveBeenCalled();
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.signed).toBe(true);
+    });
+
+    it("should return needsSigning if signedEvent is missing", async () => {
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        isScheduled: true,
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+      (reschedulePost as ReturnType<typeof vi.fn>).mockResolvedValue(mockPost);
+
+      const formData = new FormData();
+      formData.append("_action", "reschedule");
+      formData.append("postId", TEST_POST_ID);
+      formData.append("newTime", "1704110400");
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.needsSigning).toBe(true);
+      expect(mockScheduleExecute).not.toHaveBeenCalled(); // No signed event, so no schedule
+    });
+
+    it("should return error if post not found", async () => {
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const formData = new FormData();
+      formData.append("_action", "reschedule");
+      formData.append("postId", TEST_POST_ID);
+      formData.append("newTime", "1704110400");
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      if (jsonResult.error && typeof jsonResult.error === "string") {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+        expect(jsonResult.error).toContain("not found");
+      }
+    });
+
+    it("should return error if required fields are missing", async () => {
+      const formData = new FormData();
+      formData.append("_action", "reschedule");
+      formData.append("postId", TEST_POST_ID);
+      // Missing newTime
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.error).toContain("Missing required fields");
+    });
+  });
+
+  describe("handleEditPost", () => {
+    it("should edit a post using CancelScheduleUseCase and SchedulePostUseCase when scheduledFor and signedEvent are provided", async () => {
+      const mockUpdatedPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        content: "Updated content",
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        currentState: "SCHEDULED",
+        scheduledAtUtc: new Date(Date.now() + 86_400_000),
+      });
+
+      (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUpdatedPost
+      );
+
+      const formData = new FormData();
+      formData.append("_action", "editPost");
+      formData.append("postId", TEST_POST_ID);
+      formData.append("caption", "Updated content");
+      formData.append("scheduledFor", "1704110400");
+      formData.append(
+        "signedEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+      formData.append(
+        "nostrEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      expect(updatePost).toHaveBeenCalled();
+      expect(mockScheduleExecute).toHaveBeenCalled();
+      expect(assertScheduleCapacity).toHaveBeenCalledWith(TEST_USER_ID, 0);
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.success).toBe(true);
+    });
+
+    it("should edit a post without using use cases if scheduledFor is not provided", async () => {
+      const mockUpdatedPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        content: "Updated content",
+      };
+
+      (getPostById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        currentState: "DRAFT",
+        scheduledAtUtc: null,
+      });
+
+      (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockUpdatedPost
+      );
+
+      const formData = new FormData();
+      formData.append("_action", "editPost");
+      formData.append("postId", TEST_POST_ID);
+      formData.append("caption", "Updated content");
+      // No scheduledFor
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      expect(updatePost).toHaveBeenCalled();
+      expect(mockScheduleExecute).not.toHaveBeenCalled();
+      expect(assertScheduleCapacity).not.toHaveBeenCalled();
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.success).toBe(true);
+    });
+
+    it("should return error if postId is missing", async () => {
+      const formData = new FormData();
+      formData.append("_action", "editPost");
+      // Missing postId
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.error).toContain("Missing postId");
+    });
+  });
+
+  describe("handleRescheduleLongform", () => {
+    it("should reschedule a longform post using ScheduleLongFormPostUseCase", async () => {
+      const mockLongformPost = {
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+        isScheduled: true,
+      };
+
+      (getLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongformPost
+      );
+      (updateLongFormPost as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockLongformPost
+      );
+
+      const formData = new FormData();
+      formData.append("_action", "rescheduleLongform");
+      formData.append("postId", TEST_LONGFORM_ID);
+      formData.append("newTime", "1704110400");
+      formData.append(
+        "signedEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+      formData.append(
+        "nostrEvent",
+        JSON.stringify({
+          id: "event-123",
+          pubkey: "pk-123",
+          created_at: 1704110400,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "sig-123",
+        })
+      );
+
+      const result = await handleScheduledPostAction(formData, TEST_USER_ID);
+
+      expect(getLongFormPost).toHaveBeenCalledWith({
+        id: TEST_LONGFORM_ID,
+        userId: TEST_USER_ID,
+      });
+      // handleRescheduleLongform doesn't cancel first, it just schedules
+      expect(mockScheduleLongFormExecute).toHaveBeenCalled();
+      expect(updateLongFormPost).toHaveBeenCalled();
+
+      const responseObj =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
+      const jsonResult = await responseObj.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.success).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
+      expect(jsonResult.signed).toBe(true);
+    });
+  });
+});

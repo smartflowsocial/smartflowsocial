@@ -1,0 +1,257 @@
+import { FileQuestion, Loader2, Play, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import type React from "react";
+
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+interface MediaPlayerProps {
+  src: string;
+  alt?: string;
+  className?: string;
+  controls?: boolean;
+  autoPlay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  poster?: string; // For video poster image
+}
+
+// Helper function to determine if URL is a video based on file extension or MIME hints
+const isVideoUrl = (url: string): boolean => {
+  const videoExtensions = [
+    ".mp4",
+    ".webm",
+    ".ogg",
+    ".mov",
+    ".avi",
+    ".mkv",
+    ".m4v",
+  ];
+  const lowerUrl = url.toLowerCase();
+
+  // Check for video file extensions
+  return videoExtensions.some((ext) => lowerUrl.includes(ext));
+};
+
+export default function MediaPlayer({
+  src,
+  alt = "Media content",
+  className = "",
+  controls = true,
+  autoPlay = false,
+  muted = true,
+  loop = false,
+  poster,
+}: MediaPlayerProps) {
+  const [isVideo, setIsVideo] = useState<boolean | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Initial guess based on URL
+    setIsVideo(isVideoUrl(src));
+  }, [src]);
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+    setIsVideo(false);
+  };
+
+  const handleMediaLoad = () => {
+    setIsLoading(false);
+    setIsVideo(true);
+    setHasError(false);
+  };
+
+  const handleImageError = () => {
+    // If image fails to load, it might be a video
+    handleMediaLoad();
+  };
+
+  const handleVideoLoad = () => {
+    handleMediaLoad();
+  };
+
+  const handleVideoError = () => {
+    setIsLoading(false);
+    setHasError(true);
+  };
+
+  if (hasError) {
+    return (
+      <div
+        className={`dark:bg-surface-hover bg-surface-hover flex items-center justify-center ${className}`}
+      >
+        <div className="text-center">
+          <div className="text-text-secondary mb-2">
+            <FileQuestion
+              className="mx-auto h-8 w-8"
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
+          </div>
+          <p className="text-text-secondary text-sm">Unable to load media</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        className={`dark:bg-surface-hover bg-surface-hover flex animate-pulse items-center justify-center ${className}`}
+      >
+        <div className="text-text-secondary">
+          <Loader2 className="h-8 w-8 animate-spin" aria-hidden />
+        </div>
+      </div>
+    );
+  }
+
+  // If we determined it's a video or our initial guess was video
+  if (isVideo) {
+    return (
+      <video
+        ref={videoRef}
+        className={className}
+        controls={controls}
+        autoPlay={autoPlay}
+        muted={muted}
+        loop={loop}
+        poster={poster}
+        onLoadedMetadata={handleVideoLoad}
+        onError={handleVideoError}
+        preload="metadata"
+      >
+        <source src={src} type="video/mp4" />
+        <source src={src} type="video/webm" />
+        <source src={src} type="video/ogg" />
+        <track kind="captions" srcLang="en" label="English" />
+        Your browser does not support the video tag.
+      </video>
+    );
+  }
+
+  // Default to image
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onLoad/onError are lifecycle events, not interactive handlers
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onLoad={handleImageLoad}
+      onError={handleImageError}
+      loading="lazy"
+    />
+  );
+}
+
+// Utility component for media thumbnails with play button overlay
+export function MediaThumbnail({
+  src,
+  alt = "Media thumbnail",
+  className = "w-full h-48 object-cover",
+  onClick,
+}: {
+  src: string;
+  alt?: string;
+  className?: string;
+  onClick?: () => void;
+}) {
+  const isVideo = isVideoUrl(src);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- onClick is optional, role and tabIndex are conditionally set
+    <div
+      className="group relative cursor-pointer"
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      {...(onClick && { role: "button", tabIndex: 0 })}
+    >
+      <MediaPlayer
+        src={src}
+        alt={alt}
+        className={className}
+        controls={false}
+        autoPlay={false}
+        muted={true}
+      />
+      {isVideo ? (
+        <div className="bg-scrim/30 group-hover:bg-scrim/50 absolute inset-0 flex items-center justify-center transition-all duration-200">
+          <div className="bg-surface/90 group-hover:bg-surface rounded-full p-3 transition-all duration-200">
+            <Play
+              className="text-text h-8 w-8"
+              strokeWidth={INLINE_ICON_STROKE}
+              aria-hidden
+            />
+          </div>
+        </div>
+      ) : null}
+      {/* Media type indicator */}
+      <div className="bg-scrim/70 text-brand-on absolute top-2 left-2 rounded-xs px-2 py-1 text-xs">
+        {isVideo ? "🎥" : "🖼️"}
+      </div>
+    </div>
+  );
+}
+
+// Utility component for full-screen media modal
+export function MediaModal({
+  src,
+  alt = "Media content",
+  isOpen,
+  onClose,
+}: {
+  src: string;
+  alt?: string;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="bg-scrim/90 fixed inset-0 z-50 flex items-center justify-center">
+      <div className="relative max-h-full max-w-7xl p-4">
+        <button
+          onClick={onClose}
+          className="bg-scrim/50 text-brand-on hover:bg-scrim/70 absolute top-4 right-4 z-10 rounded-full p-2 transition-all"
+          aria-label="Close"
+        >
+          <X className="h-6 w-6" strokeWidth={INLINE_ICON_STROKE} aria-hidden />
+        </button>
+        <MediaPlayer
+          src={src}
+          alt={alt}
+          className="max-h-[90vh] max-w-full object-contain"
+          controls={true}
+          autoPlay={isVideoUrl(src)}
+          muted={false}
+        />
+      </div>
+    </div>
+  );
+}

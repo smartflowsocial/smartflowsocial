@@ -1,0 +1,387 @@
+import type { ComposerPublishMode } from "./publish-mode";
+
+export type ReadinessTone = "ok" | "warn" | "block";
+
+export interface ReadinessPresentation {
+  tone: ReadinessTone;
+  headline: string;
+}
+
+interface BuildCommonSectionsInput {
+  publishMode: ComposerPublishMode;
+  relayCount: number;
+  signerLabel?: string | null;
+  scheduledFor?: string | null;
+  timezone?: string;
+  selectedQueue?: string;
+  nextSlot?: string;
+  randomizationLabel?: string;
+}
+
+/** Controls how validation is surfaced in the publish rail (see Composer IA). */
+export type ComposerIssueDisplayPhase = "pristine" | "soft" | "blocking";
+
+export function resolveComposerIssueDisplayPhase(
+  publishAttempted: boolean,
+  composerTouched: boolean
+): ComposerIssueDisplayPhase {
+  if (publishAttempted) return "blocking";
+  if (composerTouched) return "soft";
+  return "pristine";
+}
+
+export function getReadinessPresentation(
+  publishMode: ComposerPublishMode,
+  issues: string[],
+  signerReady: boolean | null
+): ReadinessPresentation {
+  if (signerReady === false) {
+    return { tone: "block", headline: "Signer not connected" };
+  }
+  if (issues.length > 0) {
+    return {
+      tone: "block",
+      headline: "Can't publish yet",
+    };
+  }
+  if (publishMode === "queue") {
+    return { tone: "ok", headline: "Ready to add to queue" };
+  }
+  if (publishMode === "schedule") {
+    return { tone: "ok", headline: "Ready to schedule" };
+  }
+  return { tone: "ok", headline: "Ready to publish" };
+}
+
+export function getReadinessLabel(
+  publishMode: ComposerPublishMode,
+  issues: string[],
+  signerReady: boolean | null
+): string {
+  return getReadinessPresentation(publishMode, issues, signerReady).headline;
+}
+
+export function buildDeliveryLines({
+  publishMode,
+  relayCount,
+  signerLabel,
+  scheduledFor,
+  timezone,
+  selectedQueue,
+  nextSlot,
+  randomizationLabel,
+}: BuildCommonSectionsInput): string[] {
+  if (publishMode === "now") {
+    return [
+      `${relayCount} relay${relayCount !== 1 ? "s" : ""} selected`,
+      `Signer: ${signerLabel ?? "Not connected"}`,
+    ];
+  }
+
+  if (publishMode === "schedule") {
+    return [
+      `Scheduled for: ${scheduledFor?.trim() ? scheduledFor : "Not set"}`,
+      `Timezone: ${timezone ?? "UTC"}`,
+      `Randomization: ${randomizationLabel ?? "Off"}`,
+    ];
+  }
+
+  const queueName =
+    selectedQueue && selectedQueue !== "unassigned" ? selectedQueue : null;
+  return [
+    queueName ? `Queue: ${queueName}` : "Queue: Not selected",
+    nextSlot ? `Next slot: ${nextSlot}` : "Timing follows your queue rules.",
+  ];
+}
+
+export function buildPostContentLines(
+  charCount: number,
+  attachmentCount: number,
+  tagsSummary?: string | null
+): string[] {
+  return [
+    `${charCount} chars · ${attachmentCount} attachments · ${
+      tagsSummary?.trim() ? tagsSummary.trim() : "no tags"
+    }`,
+  ];
+}
+
+/** Structured bullets for the publishing rail (replaces a single prose summary line). */
+export function buildComposerContentSummaryLines(
+  charCount: number,
+  attachmentCount: number,
+  tagsSummary: string | null | undefined,
+  _isRecyclable?: boolean
+): string[] {
+  void _isRecyclable;
+  return [
+    `${charCount} characters`,
+    `${attachmentCount} media`,
+    tagsSummary?.trim() ? `Tags: ${tagsSummary.trim()}` : "Tags: none",
+  ];
+}
+
+export function buildThreadContentLines(
+  segmentCount: number,
+  totalChars: number,
+  attachmentCount: number,
+  cadenceMinutes: number
+): string[] {
+  const estimatedTotal = Math.max(segmentCount - 1, 0) * cadenceMinutes;
+  return [
+    `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} attachments · cadence ${cadenceMinutes}m · est ${estimatedTotal}m`,
+  ];
+}
+
+export function buildPollContentLines(
+  questionLength: number,
+  optionCount: number,
+  tagsSummary?: string | null
+): string[] {
+  return [
+    `${questionLength} chars · ${optionCount} options · ${
+      tagsSummary?.trim() ? tagsSummary.trim() : "no tags"
+    }`,
+  ];
+}
+
+export function buildArticleContentLines(
+  hasTitle: boolean,
+  wordCount: number,
+  hasCover: boolean,
+  assetCount: number
+): string[] {
+  return [
+    `${hasTitle ? "title set" : "title missing"} · ${wordCount} words · ${
+      hasCover ? "cover set" : "cover missing"
+    } · ${assetCount} assets`,
+  ];
+}
+
+function customArticleTagCount(tags: string | null | undefined): number {
+  if (!tags?.trim()) return 0;
+  return tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean).length;
+}
+
+/** Discrete checklist lines for the article composer publish rail (stacked display). */
+export function buildArticlePublishSummaryLines(input: {
+  hasTitle: boolean;
+  hasSummary: boolean;
+  wordCount: number;
+  hasCover: boolean;
+  customTags: string | null | undefined;
+  relayCount: number;
+  publishMode: ComposerPublishMode;
+  hasScheduleTime: boolean;
+  queueAssigned: boolean;
+}): string[] {
+  const tagN = customArticleTagCount(input.customTags ?? "");
+  const relayN = Math.max(0, input.relayCount);
+  const lines: string[] = [
+    input.hasTitle ? "Title set" : "Title missing",
+    input.hasSummary ? "Summary set" : "Summary optional",
+    input.hasCover ? "Cover set" : "Cover missing",
+    `Body: ${input.wordCount} word${input.wordCount === 1 ? "" : "s"}`,
+    `${tagN} custom tag${tagN === 1 ? "" : "s"}`,
+    `${relayN} relay${relayN === 1 ? "" : "s"} selected`,
+  ];
+  if (input.publishMode === "now") {
+    lines.push("Mode: Publish now");
+  } else if (input.publishMode === "schedule") {
+    lines.push(
+      input.hasScheduleTime
+        ? "Schedule: time set"
+        : "Schedule: pick date and time"
+    );
+  } else {
+    lines.push(input.queueAssigned ? "Queue: selected" : "Queue: choose one");
+  }
+  return lines;
+}
+
+export interface PublishPathSummary {
+  relayCount: number;
+  signerLabel: string | null;
+  /** Display label for queue destination; null if none / unassigned */
+  queueLabel: string | null;
+}
+
+export function buildPublishPathSummary(
+  relayCount: number,
+  signerLabel?: string | null,
+  queueName?: string | null
+): PublishPathSummary {
+  return {
+    relayCount,
+    signerLabel: signerLabel ?? null,
+    queueLabel: queueName && queueName !== "unassigned" ? queueName : null,
+  };
+}
+
+export function buildPublishPathLines(
+  relayCount: number,
+  signerLabel?: string | null,
+  queueName?: string | null
+): string[] {
+  const s = buildPublishPathSummary(relayCount, signerLabel, queueName);
+  return [
+    `${s.relayCount} relay${s.relayCount !== 1 ? "s" : ""} selected`,
+    `Signer: ${s.signerLabel ?? "Not connected"}`,
+    s.queueLabel ? `Queue: ${s.queueLabel}` : "Queue: none",
+  ];
+}
+
+/** Human-readable local datetime for outcome / schedule copy. */
+const SCHEDULE_TIME_REQUIRED = "Set a publish time to continue";
+
+export function formatScheduledForDisplay(isoDatetimeLocal: string): string {
+  const s = isoDatetimeLocal.trim();
+  if (!s) return "";
+  try {
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return s;
+    return d.toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return s;
+  }
+}
+
+function tagTokenCount(tagsSummary: string | null | undefined): number {
+  if (!tagsSummary?.trim()) return 0;
+  return tagsSummary.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function tagsInlineSuffix(tagsSummary: string | null | undefined): string {
+  const n = tagTokenCount(tagsSummary);
+  return `${n} tag${n !== 1 ? "s" : ""}`;
+}
+
+/** Muted recyclable row below tags in Post status (separate from the main summary line). */
+export function formatRecyclableMetaLine(isRecyclable: boolean): string {
+  return isRecyclable ? "Recyclable: on" : "Recyclable: off";
+}
+
+/** Single "Options" row in Ready check (follow-up + optional recyclable). */
+export function formatPublishSummaryOptionsLine(input: {
+  followUpSummaryLine?: string | null;
+  showRecyclable?: boolean;
+  isRecyclable?: boolean;
+}): string {
+  const raw = (input.followUpSummaryLine ?? "None").trim();
+  const follow = raw.toLowerCase() === "none" ? "none" : raw;
+  const parts = [`Follow-up: ${follow}`];
+  if (input.showRecyclable) {
+    parts.push(input.isRecyclable ? "Recyclable: on" : "Recyclable: off");
+  }
+  return parts.join(" · ");
+}
+
+/** Single-line post summary for the Post status rail row (chars · media · tags only). */
+export function formatPostStatusSummaryInline(
+  charCount: number,
+  attachmentCount: number,
+  tagsSummary: string | null | undefined,
+  _isRecyclable?: boolean
+): string {
+  void _isRecyclable;
+  return `${charCount} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
+}
+
+export function formatThreadPostStatusSummaryInline(
+  segmentCount: number,
+  totalChars: number,
+  attachmentCount: number,
+  tagsSummary: string | null | undefined,
+  _isRecyclable?: boolean
+): string {
+  void _isRecyclable;
+  return `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
+}
+
+export function formatPollPostStatusSummaryInline(
+  questionCharCount: number,
+  optionCount: number,
+  tagsSummary: string | null | undefined,
+  _isRecyclable: boolean
+): string {
+  void _isRecyclable;
+  return `${questionCharCount} question chars · ${optionCount} options · ${tagsInlineSuffix(tagsSummary)}`;
+}
+
+export function formatArticlePostStatusSummaryInline(
+  wordCount: number,
+  hasCover: boolean,
+  tagsSummary: string | null | undefined
+): string {
+  return `${wordCount} words · ${hasCover ? "cover set" : "no cover"} · ${tagsInlineSuffix(tagsSummary)}`;
+}
+
+export interface PublishingOutcomeInput {
+  publishMode: ComposerPublishMode;
+  relayCount: number;
+  signerReady: boolean | null;
+  scheduledFor: string;
+  hasScheduleTime: boolean;
+  selectedQueue: string;
+  /** Shown for slot-based queues when client has a hint */
+  queueNextSlotLabel?: string | null;
+  scheduleTimeError?: string | null;
+  /** Long-form (etc.) when relay count is not surfaced in the rail */
+  omitRelayRequirement?: boolean;
+}
+
+export function buildPublishingOutcomeSentence(
+  input: PublishingOutcomeInput
+): string {
+  const {
+    publishMode,
+    relayCount,
+    signerReady,
+    scheduledFor,
+    hasScheduleTime,
+    selectedQueue,
+    queueNextSlotLabel,
+    scheduleTimeError,
+    omitRelayRequirement,
+  } = input;
+
+  if (publishMode === "now") {
+    if (signerReady === false) return "Connect a signer to publish.";
+    if (!omitRelayRequirement && relayCount <= 0) {
+      return "Select at least one relay to publish.";
+    }
+    if (omitRelayRequirement || relayCount <= 0) {
+      return "Will publish immediately after signing.";
+    }
+    return `Will publish immediately to ${relayCount} relay${relayCount !== 1 ? "s" : ""}`;
+  }
+
+  if (publishMode === "schedule") {
+    if (!hasScheduleTime || !scheduledFor.trim()) {
+      return SCHEDULE_TIME_REQUIRED;
+    }
+    if (scheduleTimeError) return scheduleTimeError;
+    const when = formatScheduledForDisplay(scheduledFor);
+    if (!when) return SCHEDULE_TIME_REQUIRED;
+    const relayPart =
+      relayCount > 0
+        ? ` · ${relayCount} relay${relayCount !== 1 ? "s" : ""}`
+        : "";
+    return `Will schedule for ${when}${relayPart}`;
+  }
+
+  if (selectedQueue === "unassigned") {
+    return "Choose a queue to continue";
+  }
+  const q = selectedQueue;
+  if (queueNextSlotLabel) {
+    return `Will add to queue: ${q} · next slot ~${queueNextSlotLabel}`;
+  }
+  return `Will add to queue: ${q}`;
+}

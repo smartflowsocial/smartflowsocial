@@ -1,0 +1,117 @@
+name: Load Tests (k6)
+
+# Vitest performance tests run in ci.yml. This workflow is k6.
+# Without a staging URL it boots scripts/load-test-fixture.mjs. That result is the harness, not the app.
+# A staging URL gets a 15-second /healthcheck probe. The authenticated suite is opt-in and never targets production.
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Staging origin. Leave empty to use the local fixture.
+        required: false
+        type: string
+      run_full:
+        description: Run the full k6 suite. Requires a staging URL and a session cookie.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  load-tests:
+    name: k6 load tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      REQUESTED_BASE_URL: ${{ github.event.inputs.base_url || secrets.STAGING_URL }}
+      RUN_FULL: ${{ github.event.inputs.run_full }}
+      K6_SESSION_COOKIE_VALUE: ${{ secrets.K6_SESSION_COOKIE_VALUE }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install k6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates gnupg curl
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Choose target
+        id: target
+        run: |
+          set -euo pipefail
+          if [ -n "${REQUESTED_BASE_URL}" ]; then
+            echo "BASE_URL=${REQUESTED_BASE_URL}" >> "$GITHUB_ENV"
+            echo "K6_TARGET_KIND=application-health" >> "$GITHUB_ENV"
+            echo "mode=remote" >> "$GITHUB_OUTPUT"
+          else
+            node scripts/load-test-fixture.mjs &
+            echo $! > /tmp/load-fixture.pid
+            echo "BASE_URL=http://127.0.0.1:3999" >> "$GITHUB_ENV"
+            echo "K6_TARGET_KIND=fixture" >> "$GITHUB_ENV"
+            echo "mode=fixture" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refuse production targets
+        run: node scripts/assert-load-test-target.mjs
+
+      - name: Smoke load
+        run: k6 run tests/performance/smoke-load.js
+
+      - name: Full suite
+        if: ${{ steps.target.outputs.mode == 'remote' && (env.RUN_FULL == 'true' || github.event_name == 'schedule') }}
+        run: |
+          set -euo pipefail
+          if [ -z "${K6_SESSION_COOKIE_VALUE}" ]; then
+            echo "Full k6 suite needs K6_SESSION_COOKIE_VALUE. The auth probe fails closed without a session."
+            echo "Refusing to treat a missing cookie as a successful load test."
+            exit 1
+          fi
+          mkdir -p tests/performance/results
+          k6 run --summary-export tests/performance/results/api-endpoints-summary.json tests/performance/api-endpoints.js
+          k6 run --summary-export tests/performance/results/bulk-operations-summary.json tests/performance/bulk-operations.js
+          k6 run --summary-export tests/performance/results/loader-performance-summary.json tests/performance/loader-performance.js
+          k6 run --summary-export tests/performance/results/spike-load-summary.json tests/performance/spike-load.js
+          k6 run --summary-export tests/performance/results/soak-load-summary.json tests/performance/soak-load.js
+          node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
+          echo "Authenticated staging suite finished. Those summaries are the capacity check. They are not a production test." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record what this run measured
+        if: always()
+        run: |
+          {
+            echo "## k6 result"
+            echo "Mode: ${{ steps.target.outputs.mode }}"
+            if [ "${{ steps.target.outputs.mode }}" = "fixture" ]; then
+              echo "This run hit scripts/load-test-fixture.mjs. It checked that k6 can complete a 15 second probe. It did not measure SmartFlowSocial."
+            elif [ "${{ steps.target.outputs.mode }}" = "remote" ]; then
+              echo "This run sent a 15 second /healthcheck probe to the configured origin. That is application health, not a capacity benchmark."
+              echo "The authenticated api, bulk, loader, spike, and soak scripts run only when run_full is true or this workflow's nightly schedule has K6_SESSION_COOKIE_VALUE. A missing cookie fails the job."
+            else
+              echo "No target was selected."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Stop fixture
+        if: always()
+        run: |
+          if [ -f /tmp/load-fixture.pid ]; then
+            kill "$(cat /tmp/load-fixture.pid)" || true
+          fi

@@ -1,0 +1,51 @@
+import { useState } from "react";
+
+/** Type filter: all, replies only, or mentions (quotes + mention-type) */
+export type EngagementTypeTab =
+  | "all"
+  | "replies"
+  | "mentions"
+  | "needs-response";
+
+import type { EngagementSortBy as EngagementSortByFilter } from "../engagement-filter";
+
+/** Sort order for engagement list */
+export type EngagementSortBy = EngagementSortByFilter;
+
+/**
+ * Custom hook for managing engagement feed state
+ */
+export function useEngagementState() {
+  const [selectedPost, setSelectedPost] = useState<unknown>(null);
+  const [activeTab, setActiveTab] = useState<EngagementTypeTab>("all");
+  const [filterHighReputation, setFilterHighReputation] = useState(false);
+  const [filterFollowingOnly, setFilterFollowingOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<EngagementSortBy>("newest");
+  const [filterUnhandledOnly, setFilterUnhandledOnly] = useState(false);
+  const [filterHasDraft, setFilterHasDraft] = useState(false);
+  const [filterHasScheduledAction, setFilterHasScheduledAction] =
+    useState(false);
+  const [includeScheduledInNeedsResponse, setIncludeScheduledInNeedsResponse] =
+    useState(false);
+
+  return {
+    selectedPost,
+    setSelectedPost,
+    activeTab,
+    setActiveTab,
+    filterHighReputation,
+    setFilterHighReputation,
+    filterFollowingOnly,
+    setFilterFollowingOnly,
+    sortBy,
+    setSortBy,
+    filterUnhandledOnly,
+    setFilterUnhandledOnly,
+    filterHasDraft,
+    setFilterHasDraft,
+    filterHasScheduledAction,
+    setFilterHasScheduledAction,
+    includeScheduledInNeedsResponse,
+    setIncludeScheduledInNeedsResponse,
+  };
+}

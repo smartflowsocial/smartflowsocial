@@ -1,0 +1,486 @@
+import { useFetcher, useNavigate } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+
+import { getSelectableRootIdsForMixedListing } from "~/features/posts/components/all-content-listing-selectable";
+import { buildComposeEditUrl } from "~/features/posts/composer";
+import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
+import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
+import {
+  invalidateDependentCaches,
+  useRefreshPostViews,
+} from "~/features/posts/hooks/useRefreshPostViews";
+import type {
+  CombinedContent,
+  LongFormPostData,
+  PostData,
+} from "~/features/posts/types";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
+import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import {
+  buildPostThreadRows,
+  filterPostsBySearchWithThreads,
+  selectableRootIdsFromPostRows,
+} from "~/features/posts/utils/thread-list-grouping";
+import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
+
+import { pruneScheduledQueryData } from "./useScheduledPostsCache";
+import { scheduledPostsKeys } from "./useScheduledPostsQuery";
+// Union type for posts that can be edited/rescheduled
+type EditablePost = PostData | LongFormPostData;
+
+interface UseScheduledStateProps {
+  scheduledPosts: PostData[];
+  userTimezone?: string | null;
+  allContent?: CombinedContent[];
+  currentTab: string;
+}
+
+/**
+ * Custom hook for managing scheduled posts state and operations
+ * Extends useDashboardState with mixed bulk delete support
+ */
+export function useScheduledState({
+  scheduledPosts,
+  userTimezone,
+  allContent,
+  currentTab,
+}: UseScheduledStateProps) {
+  const navigate = useNavigate();
+  const [sortConfig, setSortConfig] = useState({
+    key: "scheduledAtUtc",
+    direction: "asc" as "asc" | "desc",
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [countdowns, setCountdowns] = useState<Record<string, string>>({});
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+
+  const [selectedLongFormPost, setSelectedLongFormPost] =
+    useState<LongFormPostData | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<EditablePost | null>(null);
+  const [postToReschedule, setPostToReschedule] = useState<EditablePost | null>(
+    null
+  );
+  interface FetcherData {
+    success?: boolean;
+    error?: string;
+    moved?: boolean;
+    cascadeDeletedIds?: string[];
+  }
+  const bulkDeleteFetcher = useFetcher<FetcherData>();
+  const deleteFetcher = useFetcher<FetcherData>();
+  const previousBulkDeleteStateRef = useRef(bulkDeleteFetcher.state);
+  const previousBulkDeleteDataRef = useRef(bulkDeleteFetcher.data);
+  const previousDeleteStateRef = useRef(deleteFetcher.state);
+  const previousDeleteDataRef = useRef(deleteFetcher.data);
+  const lastBulkDeleteSubmissionRef = useRef<{
+    action: "bulkDelete" | "bulkDeleteLongForm" | "bulkDeleteMixed";
+  } | null>(null);
+  const lastDeleteSubmissionRef = useRef<{
+    action: "delete" | "moveToDraft";
+    postId: string;
+  } | null>(null);
+
+  // Memoize post IDs to avoid infinite loops when scheduledPosts array reference changes
+  const postIds = useMemo(
+    () => scheduledPosts.map((post) => post.id).join(","),
+    [scheduledPosts]
+  );
+
+  // Update countdowns
+  useEffect(() => {
+    const updateCountdowns = () => {
+      const tz = userTimezone ?? "UTC";
+      const now = nowInTimezone(tz);
+      const newCountdowns: Record<string, string> = {};
+
+      scheduledPosts.forEach((post) => {
+        if (!post.scheduledAtUtc) {
+          return;
+        }
+
+        try {
+          const scheduledAtUtc = post.scheduledAtUtc;
+          const scheduledDate =
+            scheduledAtUtc instanceof Date
+              ? scheduledAtUtc
+              : new Date(String(scheduledAtUtc));
+          if (isNaN(scheduledDate.getTime())) return;
+
+          const scheduledZoned = fromDate(scheduledDate, "UTC");
+
+          // Convert to user's timezone for comparison
+          const scheduledInUserTz = scheduledZoned.withTimeZone(tz);
+
+          // Calculate difference
+          const duration = difference(scheduledInUserTz, now);
+
+          if (duration.sign === 1) {
+            // Future time
+            const days = Math.floor(duration.total({ unit: "days" }));
+            const hours = Math.floor(duration.total({ unit: "hours" }) % 24);
+            const minutes = Math.floor(
+              duration.total({ unit: "minutes" }) % 60
+            );
+            newCountdowns[post.id] = `${days}d ${hours}h ${minutes}m`;
+          } else {
+            newCountdowns[post.id] = "Due now";
+          }
+        } catch {
+          // If conversion fails, skip this post
+          newCountdowns[post.id] = "Due now";
+        }
+      });
+
+      setCountdowns((prev) => {
+        // Only update if countdowns actually changed to prevent unnecessary re-renders
+        const hasChanged =
+          Object.keys(newCountdowns).some(
+            (id) => prev[id] !== newCountdowns[id]
+          ) || Object.keys(prev).length !== Object.keys(newCountdowns).length;
+
+        return hasChanged ? newCountdowns : prev;
+      });
+    };
+
+    updateCountdowns();
+    const timer = setInterval(updateCountdowns, 60000);
+    return () => clearInterval(timer);
+    // Use postIds instead of scheduledPosts to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid infinite loops
+  }, [postIds, userTimezone]);
+
+  // Clear selected posts after bulk delete
+  useEffect(() => {
+    const dataRaw = bulkDeleteFetcher.data;
+    const data =
+      dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+        ? (dataRaw as { success?: unknown })
+        : null;
+    if (data && typeof data.success === "boolean" && data.success) {
+      setSelectedPosts(new Set());
+    }
+  }, [bulkDeleteFetcher.data]);
+
+  // Sort posts - memoized to prevent unnecessary re-sorting on every render
+  const sortedPosts = useMemo(() => {
+    return [...scheduledPosts].sort((a, b) => {
+      if (
+        sortConfig.key === "scheduledAtUtc" ||
+        sortConfig.key === "scheduledFor"
+      ) {
+        const dateA = a.scheduledAtUtc ? a.scheduledAtUtc.getTime() : 0;
+        const dateB = b.scheduledAtUtc ? b.scheduledAtUtc.getTime() : 0;
+        return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
+      }
+      const aValue = (a as unknown as Record<string, unknown>)[
+        sortConfig.key
+      ] as string | number | undefined;
+      const bValue = (b as unknown as Record<string, unknown>)[
+        sortConfig.key
+      ] as string | number | undefined;
+      if (aValue === undefined || bValue === undefined) return 0;
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [scheduledPosts, sortConfig.key, sortConfig.direction]);
+
+  // Filter posts by tab (Posts = original only, Reposts = repost only) and search
+  const filteredPosts = useMemo(() => {
+    const byTab =
+      currentTab === "posts"
+        ? sortedPosts.filter(
+            (p) => !isRepostPost(p) && !isAttachedFollowUpPost(p)
+          )
+        : currentTab === "reposts"
+          ? sortedPosts.filter((p) => isStandaloneRepostPost(p))
+          : currentTab === "followups"
+            ? sortedPosts.filter((p) => isAttachedFollowUpPost(p))
+            : sortedPosts;
+    return filterPostsBySearchWithThreads(byTab, searchTerm);
+  }, [sortedPosts, searchTerm, currentTab]);
+
+  /** One selectable id per visible row (thread roots only). */
+  const selectablePostIds = useMemo(
+    () =>
+      currentTab === "followups"
+        ? filteredPosts.map((post) => post.id)
+        : selectableRootIdsFromPostRows(
+            buildPostThreadRows(filteredPosts, "scheduled")
+          ),
+    [filteredPosts, currentTab]
+  );
+
+  /** Mixed All tab: posts + longform, same grouping/search as AllContentListing. */
+  const selectAllTargetIds = useMemo(() => {
+    if (currentTab === "all") {
+      return getSelectableRootIdsForMixedListing(
+        allContent ?? [],
+        "scheduled",
+        searchTerm
+      );
+    }
+    return selectablePostIds;
+  }, [currentTab, allContent, searchTerm, selectablePostIds]);
+
+  const requestSort = (key: string) => {
+    setSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const togglePostSelection = (postId: string) => {
+    setSelectedPosts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (
+      selectAllTargetIds.length > 0 &&
+      selectAllTargetIds.every((id) => selectedPosts.has(id)) &&
+      selectedPosts.size === selectAllTargetIds.length
+    ) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(selectAllTargetIds));
+    }
+  };
+
+  const queryClient = useQueryClient();
+  const refreshAllPostViews = useRefreshPostViews();
+
+  const didFetcherMutationSucceed = useCallback(
+    (data: FetcherData | undefined): boolean => {
+      if (!data) return true;
+      if (typeof data.success === "boolean") return data.success;
+      return !data.error;
+    },
+    []
+  );
+
+  const handleBulkDelete = () => {
+    if (selectedPosts.size === 0) return;
+
+    const postIds = Array.from(selectedPosts);
+    queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+      pruneScheduledQueryData(old, new Set(postIds))
+    );
+
+    if (currentTab === "all" && allContent) {
+      const selectedItems = allContent
+        .filter((item) => selectedPosts.has(item.id))
+        .map((item) => ({ id: item.id, type: item.type }));
+
+      lastBulkDeleteSubmissionRef.current = { action: "bulkDeleteMixed" };
+      const formData = new FormData();
+      formData.append("_action", "bulkDeleteMixed");
+      formData.append("itemData", JSON.stringify(selectedItems));
+
+      bulkDeleteFetcher.submit(formData, { method: "post" });
+    } else {
+      const action =
+        currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete";
+      lastBulkDeleteSubmissionRef.current = { action };
+      const formData = new FormData();
+      formData.append("_action", action);
+      formData.append("postIds", JSON.stringify(postIds));
+
+      bulkDeleteFetcher.submit(formData, { method: "post" });
+    }
+  };
+
+  useEffect(() => {
+    const previousState = previousBulkDeleteStateRef.current;
+    const currentState = bulkDeleteFetcher.state;
+    const dataChanged =
+      bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
+    const submission = lastBulkDeleteSubmissionRef.current;
+    if (
+      currentState === "idle" &&
+      submission &&
+      (previousState !== "idle" || dataChanged) &&
+      didFetcherMutationSucceed(bulkDeleteFetcher.data)
+    ) {
+      const cascadeIds: string[] =
+        bulkDeleteFetcher.data?.cascadeDeletedIds ?? [];
+      if (cascadeIds.length > 0) {
+        queryClient.setQueriesData(
+          { queryKey: scheduledPostsKeys.all },
+          (old) => pruneScheduledQueryData(old, new Set(cascadeIds))
+        );
+      }
+      invalidateDependentCaches(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      setSelectedPosts(new Set());
+      lastBulkDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastBulkDeleteSubmissionRef.current = null;
+    }
+    previousBulkDeleteStateRef.current = currentState;
+    previousBulkDeleteDataRef.current = bulkDeleteFetcher.data;
+  }, [
+    bulkDeleteFetcher.state,
+    bulkDeleteFetcher.data,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
+
+  useEffect(() => {
+    const previousState = previousDeleteStateRef.current;
+    const currentState = deleteFetcher.state;
+    const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
+    const submission = lastDeleteSubmissionRef.current;
+    if (
+      currentState === "idle" &&
+      submission &&
+      (previousState !== "idle" || dataChanged) &&
+      didFetcherMutationSucceed(deleteFetcher.data)
+    ) {
+      const cascadeIds: string[] = deleteFetcher.data?.cascadeDeletedIds ?? [];
+      queryClient.setQueriesData({ queryKey: scheduledPostsKeys.all }, (old) =>
+        pruneScheduledQueryData(
+          old,
+          new Set([submission.postId, ...cascadeIds])
+        )
+      );
+      invalidateDependentCaches(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+        predicate: skipInfiniteQueries,
+      });
+      if (
+        deleteFetcher.data &&
+        typeof deleteFetcher.data === "object" &&
+        "moved" in deleteFetcher.data &&
+        deleteFetcher.data.moved
+      ) {
+        void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
+      }
+      lastDeleteSubmissionRef.current = null;
+    } else if (previousState !== "idle" && currentState === "idle") {
+      lastDeleteSubmissionRef.current = null;
+    }
+    previousDeleteStateRef.current = currentState;
+    previousDeleteDataRef.current = deleteFetcher.data;
+  }, [
+    deleteFetcher.state,
+    deleteFetcher.data,
+    didFetcherMutationSucceed,
+    queryClient,
+  ]);
+
+  const handleMediaClick = (mediaSrc: string) => {
+    setSelectedMedia(mediaSrc);
+    setIsMediaModalOpen(true);
+  };
+
+  const handleCloseMediaModal = () => {
+    setIsMediaModalOpen(false);
+    setSelectedMedia(null);
+  };
+
+  const handleEditPost = (post: EditablePost) => {
+    if ("title" in post) {
+      setPostToEdit(post);
+      setShowEditModal(true);
+      return;
+    }
+    const editUrl =
+      post.dependencyMode === "attached"
+        ? buildComposeEditUrl({
+            mode: "edit_follow_up",
+            followUpActionId: post.id,
+            ...(post.parentScheduledActionId
+              ? { parentActionId: post.parentScheduledActionId }
+              : {}),
+          })
+        : buildComposeEditUrl({
+            mode: "edit_scheduled",
+            scheduledActionId: post.id,
+          });
+    navigate(editUrl);
+    return;
+  };
+
+  const handleEditLongForm = (post: EditablePost) => {
+    setPostToEdit(post);
+    setShowEditModal(true);
+  };
+
+  const handleReschedulePost = (post: EditablePost) => {
+    setPostToReschedule(post);
+    setShowRescheduleModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setPostToEdit(null);
+  };
+
+  const handleCloseRescheduleModal = () => {
+    setShowRescheduleModal(false);
+    setPostToReschedule(null);
+  };
+
+  const handleModalSuccess = () => {
+    refreshAllPostViews();
+  };
+
+  return {
+    sortConfig,
+    setSortConfig,
+    searchTerm,
+    countdowns,
+    selectedPost,
+    selectedPosts,
+    selectedMedia,
+    isMediaModalOpen,
+    selectedLongFormPost,
+    showEditModal,
+    showRescheduleModal,
+    postToEdit,
+    postToReschedule,
+    filteredPosts,
+    selectablePostIds,
+    bulkDeleteFetcher,
+    deleteFetcher,
+    requestSort,
+    setSearchTerm,
+    setSelectedPost,
+    setSelectedPosts,
+    setSelectedLongFormPost,
+    togglePostSelection,
+    toggleSelectAll,
+    handleBulkDelete,
+    handleMediaClick,
+    handleCloseMediaModal,
+    handleEditPost: handleEditPost,
+    handleEditLongForm,
+    handleReschedulePost,
+    handleCloseEditModal,
+    handleCloseRescheduleModal,
+    handleModalSuccess,
+  };
+}

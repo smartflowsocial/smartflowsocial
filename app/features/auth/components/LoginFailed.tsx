@@ -1,0 +1,202 @@
+import { forwardRef, useEffect, useState } from "react";
+
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import {
+  classifyErrorForRetry,
+  getErrorSuggestions,
+  getErrorTitle,
+  type LoginError,
+  type RelayStatus,
+} from "~/features/auth/login-flow.client";
+
+import { AuthInlineTipList } from "./auth-ui";
+
+export interface LoginFailedProps {
+  error: { code: LoginError; message: string; details?: string };
+  relayStatuses: Record<string, RelayStatus>;
+  relayUrls: string[];
+  lastFailureOrigin: "nip07_init" | "nip46_init" | "verify" | null;
+  nip46AttemptCount: number;
+  onTryAgain: () => void;
+  onBack: () => void;
+  /** Offer remote signer when browser extension path is unlikely to succeed */
+  showRemoteSignerFallback?: boolean;
+  onUseRemoteSigner?: () => void;
+}
+
+export const LoginFailed = forwardRef<HTMLDivElement, LoginFailedProps>(
+  function LoginFailed(
+    {
+      error,
+      relayStatuses,
+      relayUrls,
+      lastFailureOrigin,
+      nip46AttemptCount,
+      onTryAgain,
+      onBack,
+      showRemoteSignerFallback = false,
+      onUseRemoteSigner,
+    },
+    ref
+  ) {
+    const [copiedForSupport, setCopiedForSupport] = useState(false);
+    const suggestions = getErrorSuggestions(error.code, {
+      relayStatuses,
+      retryCount:
+        lastFailureOrigin === "nip46_init"
+          ? Math.max(0, nip46AttemptCount - 1)
+          : 0,
+      lastFailureOrigin,
+    });
+
+    const classification = classifyErrorForRetry(error);
+    const cappedTips = suggestions.slice(0, 5);
+
+    useEffect(() => {
+      if (!copiedForSupport) return;
+      const timer = window.setTimeout(() => setCopiedForSupport(false), 2000);
+      return () => window.clearTimeout(timer);
+    }, [copiedForSupport]);
+
+    return (
+      <Alert
+        ref={ref}
+        tabIndex={-1}
+        aria-live="assertive"
+        variant="default"
+        className="animate-in fade-in slide-in-from-bottom-1 border-danger/45 bg-danger/5 dark:bg-danger/10 shadow-2 space-y-4 p-5 text-sm duration-200"
+      >
+        <AlertTitle className="text-danger text-base">
+          {getErrorTitle(error.code)}
+        </AlertTitle>
+        <AlertDescription className="space-y-4">
+          <p className="text-text/95 leading-relaxed">{error.message}</p>
+
+          {cappedTips.length > 0 ? (
+            <AuthInlineTipList intro="What to try" items={cappedTips} />
+          ) : null}
+
+          <details className="text-xs">
+            <summary className="hover:text-text cursor-pointer font-medium select-none">
+              Technical details
+            </summary>
+            <div className="mt-3 space-y-3">
+              {error.details ? (
+                <pre className="border-border bg-canvas dark:bg-surface max-h-40 overflow-x-auto overflow-y-auto rounded-md border p-3 text-[11px] whitespace-pre-wrap">
+                  {error.details}
+                </pre>
+              ) : (
+                <p className="text-text-secondary">No extra details.</p>
+              )}
+
+              {relayUrls.length > 0 ? (
+                <div>
+                  <div className="mb-1.5 font-medium">Relays last checked</div>
+                  <div className="border-border bg-surface-hover/40 space-y-1 rounded-md border p-2 text-[11px]">
+                    {relayUrls.map((url) => {
+                      const status = relayStatuses[url];
+                      return (
+                        <div key={url} className="flex justify-between gap-2">
+                          <span className="truncate font-mono">{url}</span>
+                          <span className="shrink-0">
+                            {status?.status === "connected"
+                              ? "OK"
+                              : status?.status === "failed"
+                                ? "Unreachable"
+                                : "…"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="text-text-secondary border-border/60 border-t pt-2 text-[11px]">
+                Retry:{" "}
+                {classification.shouldRetry ? "recommended" : "may not help"} ·
+                Strategy: {classification.retryStrategy.replace(/_/g, " ")}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => {
+                  void (async () => {
+                    const errorText = `Error Code: ${error.code}\nMessage: ${error.message}\nDetails: ${error.details ?? "N/A"}\nTimestamp: ${new Date().toISOString()}`;
+                    try {
+                      await navigator.clipboard.writeText(errorText);
+                    } catch {
+                      const textarea = document.createElement("textarea");
+                      textarea.value = errorText;
+                      document.body.appendChild(textarea);
+                      textarea.select();
+                      document.execCommand("copy");
+                      document.body.removeChild(textarea);
+                    }
+                    setCopiedForSupport(true);
+                  })();
+                }}
+              >
+                {copiedForSupport ? "Copied for support" : "Copy for support"}
+              </Button>
+              <p
+                className="text-text-secondary text-[11px]"
+                role="status"
+                aria-live="polite"
+              >
+                {copiedForSupport
+                  ? "Error details copied to clipboard."
+                  : "\u00A0"}
+              </p>
+            </div>
+          </details>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {error.code === "SIGNER_NOT_FOUND" ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="border-border"
+                onClick={() => onBack()}
+              >
+                Back
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2"
+                  onClick={onTryAgain}
+                >
+                  Try again
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-border"
+                  onClick={() => onBack()}
+                >
+                  Back
+                </Button>
+              </>
+            )}
+            {showRemoteSignerFallback && onUseRemoteSigner ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="font-medium"
+                onClick={() => onUseRemoteSigner()}
+              >
+                Use remote signer instead
+              </Button>
+            ) : null}
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+);

@@ -1,0 +1,174 @@
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+const pay = vi.hoisted(() =>
+  vi.fn(
+    async (_referrerNpub: string, _bolt11: string, _amountSats: number) => ({
+      success: true,
+    })
+  )
+);
+const envState = vi.hoisted(() => ({
+  REFERRAL_MANUAL_PAYOUT_SECRET: undefined as string | undefined,
+  REFERRAL_PAYOUTS_ENABLED: undefined as string | undefined,
+}));
+
+vi.mock("~/lib/env.server", () => ({
+  get env() {
+    return envState;
+  },
+}));
+
+vi.mock("~/features/referral/referral-payout.server", async () => {
+  const { decideReferralPayouts } =
+    await import("~/features/referral/referral-payout-flag");
+  return {
+    payReferrerWithInvoice: (
+      referrerNpub: string,
+      bolt11: string,
+      amountSats: number
+    ) => pay(referrerNpub, bolt11, amountSats),
+    referralPayoutsEnabled: (flag?: string) =>
+      decideReferralPayouts(flag ?? envState.REFERRAL_PAYOUTS_ENABLED, {
+        nodeEnv: "test",
+      }).enabled,
+  };
+});
+
+const SECRET = "referral-payout-secret";
+
+function post(body: unknown, secret?: string): Request {
+  const headers = new Headers({ "content-type": "application/json" });
+  if (secret) headers.set("x-referral-payout-secret", secret);
+  return new Request("http://localhost/api/referral/manual-payout", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
+describe("manual referral payout route", () => {
+  beforeAll(async () => {
+    await import("~/routes/api.referral.manual-payout");
+  }, 30_000);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = undefined;
+    envState.REFERRAL_PAYOUTS_ENABLED = undefined;
+  });
+
+  it("stays closed when payouts are disabled, even with the secret", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "false";
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = SECRET;
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post(
+        {
+          referrer_npub: "npub1example",
+          bolt11: "lnbc1",
+          amount_sats: 10,
+        },
+        SECRET
+      ),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(404);
+    expect(pay).not.toHaveBeenCalled();
+  });
+
+  it("stays closed when the flag is unset", async () => {
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = SECRET;
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post(
+        {
+          referrer_npub: "npub1example",
+          bolt11: "lnbc1",
+          amount_sats: 10,
+        },
+        SECRET
+      ),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(404);
+    expect(pay).not.toHaveBeenCalled();
+  });
+
+  it("rejects the request when the secret is not configured", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "true";
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post({
+        referrer_npub: "npub1example",
+        bolt11: "lnbc1",
+        amount_sats: 10,
+      }),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(401);
+    expect(pay).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid secret", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "true";
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = SECRET;
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post(
+        {
+          referrer_npub: "npub1example",
+          bolt11: "lnbc1",
+          amount_sats: 10,
+        },
+        "nope"
+      ),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(401);
+    expect(pay).not.toHaveBeenCalled();
+  });
+
+  it("pays only after a valid secret and a numeric amount", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "true";
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = SECRET;
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post(
+        {
+          referrer_npub: "npub1example",
+          bolt11: "lnbc1",
+          amount_sats: 10,
+        },
+        SECRET
+      ),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(200);
+    expect(pay).toHaveBeenCalledWith("npub1example", "lnbc1", 10);
+  });
+
+  it("does not pay when the amount is not a number", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "true";
+    envState.REFERRAL_MANUAL_PAYOUT_SECRET = SECRET;
+    const { action } = await import("~/routes/api.referral.manual-payout");
+    const response = await action({
+      request: post(
+        {
+          referrer_npub: "npub1example",
+          bolt11: "lnbc1",
+          amount_sats: "10",
+        },
+        SECRET
+      ),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(400);
+    expect(pay).not.toHaveBeenCalled();
+  });
+});

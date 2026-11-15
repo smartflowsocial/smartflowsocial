@@ -1,0 +1,340 @@
+/**
+ * Integration tests for drafts loader
+ *
+ * Tests the loader function logic directly, without requiring a browser.
+ * For UI rendering tests, see tests/e2e/posts/drafts.cy.ts
+ *
+ * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
+ */
+
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+// Mock Prisma to prevent $use errors
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: {
+    $use: vi.fn(),
+  },
+}));
+
+// Mock dependencies
+vi.mock("~/features/auth/session.server", () => ({
+  requireUserId: vi.fn(),
+}));
+
+vi.mock("~/features/payments/subscriptions.server", () => ({
+  requireAnySubscription: vi.fn(),
+}));
+
+const { mockLoadDraftsData } = vi.hoisted(() => ({
+  mockLoadDraftsData: vi.fn(),
+}));
+// Route imports from ~/features/posts/server/drafts, so mock that path
+vi.mock("~/features/posts/server/drafts", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return { ...actual, loadDraftsData: mockLoadDraftsData };
+});
+
+vi.mock("~/features/posts/ui", () => ({
+  DraftsPage: () => null,
+}));
+
+import { userFactory } from "../factories";
+import { createValidPostDTOMock } from "../utils/test-helpers";
+
+import { requireUserId } from "~/features/auth/session.server";
+import { requireAnySubscription } from "~/features/payments/subscriptions.server";
+import { loader } from "~/routes/dashboard.drafts";
+
+const DRAFTS_DATA_URL =
+  "http://localhost:3000/dashboard/drafts?_data=routes/dashboard.drafts&_loader=json";
+const DRAFTS_QUEUE_DATA_URL =
+  "http://localhost:3000/dashboard/drafts/posts?_data=routes/dashboard.drafts.$queueType&_loader=json";
+
+describe("Drafts Loader Integration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Default mocks
+    (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue("user-123");
+    (requireAnySubscription as ReturnType<typeof vi.fn>).mockResolvedValue(
+      undefined
+    );
+    mockLoadDraftsData.mockResolvedValue({
+      posts: [],
+      longformPosts: [],
+      user: userFactory.basic({ id: "user-123" }),
+      queueTypes: [],
+      selectedQueueType: "all",
+      pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+    });
+  });
+
+  describe("Drafts Loader", () => {
+    it("should load drafts data for authenticated user", async () => {
+      const request = new Request(DRAFTS_DATA_URL);
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
+      expect(responseObj.status).toBe(200);
+      expect(requireUserId).toHaveBeenCalledWith(request);
+      expect(requireAnySubscription).toHaveBeenCalledWith("user-123");
+      expect(mockLoadDraftsData).toHaveBeenCalledWith("user-123", "all", 1, 20);
+      expect(data).toHaveProperty("posts");
+      expect(data).toHaveProperty("longformPosts");
+      expect(data).toHaveProperty("user");
+      expect(data).toHaveProperty("queueTypes");
+    });
+
+    it("should handle queue type parameter", async () => {
+      const mockData = {
+        posts: [
+          createValidPostDTOMock({
+            id: "1",
+            caption: "Draft post",
+            status: "DRAFT",
+          }),
+        ],
+        longformPosts: [],
+        user: userFactory.basic({ id: "user-123" }),
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "posts",
+        pagination: { total: 1, pages: 1, currentPage: 1, limit: 20 },
+      };
+
+      mockLoadDraftsData.mockResolvedValue(mockData);
+
+      const request = new Request(DRAFTS_QUEUE_DATA_URL);
+      const response = await loader({
+        request,
+        params: { queueType: "posts" },
+        context: {},
+      });
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
+      expect(mockLoadDraftsData).toHaveBeenCalledWith(
+        "user-123",
+        "posts",
+        1,
+        20
+      );
+      const selectedQueueType =
+        typeof data.selectedQueueType === "string"
+          ? data.selectedQueueType
+          : "";
+      const posts = Array.isArray(data.posts) ? data.posts : [];
+      expect(selectedQueueType).toBe("posts");
+      expect(posts).toHaveLength(1);
+    });
+
+    it("should return proper data structure with drafts", async () => {
+      mockLoadDraftsData.mockResolvedValue({
+        posts: [],
+        longformPosts: [],
+        user: userFactory.basic({ id: "user-123" }),
+        queueTypes: [{ id: "1", name: "Default", isEnabled: true }],
+        selectedQueueType: "all",
+        pagination: { total: 0, pages: 0, currentPage: 1, limit: 20 },
+      });
+
+      const request = new Request(DRAFTS_DATA_URL);
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
+
+      expect(responseObj.status).toBe(200);
+      expect(data).toHaveProperty("posts");
+      expect(data).toHaveProperty("longformPosts");
+      expect(Array.isArray(data["posts"])).toBe(true);
+      expect(Array.isArray(data["longformPosts"])).toBe(true);
+      expect(data["user"]).toBeDefined();
+      expect(data["queueTypes"]).toBeDefined();
+      expect(data["selectedQueueType"]).toBe("all");
+      expect(data["pagination"]).toEqual({
+        total: 0,
+        pages: 0,
+        currentPage: 1,
+        limit: 20,
+      });
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should handle authentication errors", async () => {
+      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Authentication required")
+      );
+
+      const request = new Request(DRAFTS_DATA_URL);
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
+      expect(responseObj.status).toBe(401);
+      expect(data.error).toBeDefined();
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? data.error
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Authentication required");
+    });
+
+    it("should handle subscription requirement errors", async () => {
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Subscription required")
+      );
+
+      const request = new Request(DRAFTS_DATA_URL);
+      const loaderArgs: LoaderFunctionArgs = {
+        request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
+      expect(responseObj.status).toBe(403);
+      expect(data.error).toBeDefined();
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? data.error
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Subscription required");
+    });
+
+    it("should handle subscription errors", async () => {
+      (requireAnySubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Subscription required")
+      );
+
+      const _request = new Request(DRAFTS_DATA_URL);
+      const loaderArgs: LoaderFunctionArgs = {
+        request: _request,
+        params: {},
+        context: {},
+      };
+      const response = await loader(loaderArgs);
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as {
+              posts?: unknown;
+              longformPosts?: unknown;
+              allContent?: unknown;
+              user?: unknown;
+              queueTypes?: unknown;
+              selectedQueueType?: unknown;
+              error?: { message?: string };
+            })
+          : {};
+
+      expect(responseObj.status).toBe(403);
+      expect(data.error).toBeDefined();
+      const error =
+        data.error &&
+        typeof data.error === "object" &&
+        !Array.isArray(data.error)
+          ? data.error
+          : {};
+      const errorMessage =
+        typeof error.message === "string" ? error.message : "";
+      expect(errorMessage).toContain("Subscription required");
+    });
+  });
+});

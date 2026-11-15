@@ -1,0 +1,457 @@
+/**
+ * Centralized environment variable validation and typed exports
+ *
+ * This module validates all environment variables at boot time and exports
+ * a typed object that can be safely used throughout the application.
+ *
+ * Usage:
+ *   import { env } from "~/lib/env.server";
+ *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
+ */
+
+import { productionSecretErrors } from "~/lib/production-secrets.server";
+import {
+  safeConsoleError,
+  safeConsoleLog,
+} from "~/lib/secrets-sanitizer.server";
+
+interface EnvConfig {
+  // Required
+  DATABASE_URL: string;
+  SESSION_SECRET: string;
+  NOSTR_PUBLISHER_URL: string;
+  NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production unless the publisher is explicitly public
+  /** Set to "true" only when the publisher is intentionally unauthenticated. */
+  NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED?: string;
+  REDIS_URL: string;
+
+  // Storage (required if any storage var is set)
+  STORAGE_ACCESS_KEY?: string;
+  STORAGE_SECRET?: string;
+  STORAGE_REGION?: string;
+  STORAGE_BUCKET?: string;
+  STORAGE_CDN_URL?: string;
+
+  // Optional
+  PRIMAL_CACHING_URL?: string;
+  /** NostrMash HTTP origin. Defaults to https://api.nostrmash.com when unset. */
+  NOSTRMASH_BASE_URL?: string;
+  /** Sent as Bearer token only when the deployment requires one. */
+  NOSTRMASH_API_TOKEN?: string;
+  /**
+   * How often (minutes) the worker snapshots paid-profile post analytics.
+   * Defaults to 60. Set to "0" to disable. GET/POST `/cron/post-analytics`
+   * runs the same sweep on demand.
+   */
+  POST_ANALYTICS_INTERVAL_MINUTES?: string;
+  /** Notes discovered or snapshotted per sweep. Defaults to 40. */
+  POST_ANALYTICS_BATCH_SIZE?: string;
+  /** Concurrent NostrMash calls inside one sweep. Defaults to 4. */
+  POST_ANALYTICS_CONCURRENCY?: string;
+  /** HTTP Primal proxy: per-attempt timeout ms (default 8000). */
+  PRIMAL_HTTP_TIMEOUT_MS?: string;
+  /** HTTP Primal proxy: extra retries after first attempt (default 0). */
+  PRIMAL_HTTP_MAX_RETRIES?: string;
+  OWNER_NWC?: string;
+  OWNER_NWC_RELAY?: string;
+  OWNER_NWC_RELAYS?: string;
+  NOSTR_NSEC?: string;
+  /** npub (or hex) of the inbox that receives in-app bug/feature feedback via server-signed DMs */
+  FEEDBACK_INBOX_NPUB?: string;
+  SENTRY_DSN?: string;
+  SENTRY_TRACES_SAMPLE_RATE?: string;
+  SENTRY_PROFILES_SAMPLE_RATE?: string;
+  RELAY_HEALTH_STORE?: string; // "memory" | "redis" (optional)
+  NODE_ENV?: string;
+  PORT?: string;
+  HOST?: string; // Listen host (e.g. 0.0.0.0 for Docker)
+  DISABLE_RATE_LIMIT?: string; // "true" to disable (e.g. E2E)
+  METRICS_PORT?: string;
+  WORKER_METRICS_PORT?: string;
+  /**
+   * How often (minutes) the worker runs the runway-low notification sweep.
+   * Defaults to 60. Set to "0" to disable the worker's internal scheduler
+   * (e.g. when triggering `/cron/runway-low` from an external scheduler).
+   */
+  RUNWAY_LOW_CRON_INTERVAL_MINUTES?: string;
+  /**
+   * How often (minutes) the worker runs NWC subscription renewals.
+   * Defaults to 60. Set to "0" to disable. GET/POST `/cron/checksubscription`
+   * runs the same sweep on demand.
+   */
+  SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES?: string;
+  /**
+   * Shared secret for cron routes. Required in production. Routes reject
+   * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
+   */
+  CRON_SECRET?: string;
+  FLY_REGION?: string;
+  PRIMARY_REGION?: string;
+  TEST_DATABASE_URL?: string;
+  ENABLE_SOURCE_MAPS?: string;
+  E2E_TEST?: string;
+
+  // Security (CSRF protection)
+  APP_URL?: string; // Canonical app URL (e.g., https://yourdomain.com)
+  ALLOWED_ORIGINS?: string; // Comma-separated list of allowed origins for CSRF protection
+
+  // Metrics endpoint security
+  METRICS_TOKEN?: string; // Token required to access /metrics endpoint
+  METRICS_ALLOWED_IPS?: string; // Comma-separated list of allowed IPs for metrics endpoint
+
+  // Feature flags
+  // NOTE: These are optional and are parsed as booleans by feature-flags.server.ts
+  NOSTR_AUTH_V2_ENABLED?: string; // Enable /auth/nostr/challenge + /auth/nostr/verify
+  ENFORCE_NOSTR_SESSION_PUBKEY?: string; // Enforce session pubkey === signed event pubkey
+  MEDIA_PIPELINE_V2_ENABLED?: string; // Enable unified media intents/commit pipeline
+  ENABLE_NOSTR_DELETE_EVENTS?: string; // Enable async kind:5 relay deletion events
+  NOSTR_DM_NIP17_ENABLED?: string; // When true (default), send NIP-17 gift-wrapped DMs when recipient has kind:10050 inbox relays
+  /** When true, NIP-88 poll composer, voting, and tallies are enabled (default off). */
+  NIP88_POLLS_ENABLED?: string;
+  /** When true, Contests v1 UI and server routes are enabled. */
+  CONTESTS_V1_ENABLED?: string;
+  /** When true, use dual-lane subscription checkout (auto-renew + one-time). */
+  SUBSCRIPTION_CHECKOUT_V2_ENABLED?: string;
+  /**
+   * When true, the client-side signing-attempts store keeps multiple
+   * in-flight attempts coexisting (PR 2 of the unified-signing-recovery
+   * plan). Default off; surfaced to the browser via `window.ENV` from the
+   * root loader so the bundle never reads `process.env` at runtime.
+   */
+  SIGNING_MULTI_SLOT?: string;
+
+  /** BTCPay Greenfield (Founder on-chain); all three required to enable checkout. */
+  BTCPAY_URL?: string;
+  BTCPAY_API_KEY?: string;
+  BTCPAY_STORE_ID?: string;
+  /** Webhook HMAC secret from BTCPay (Settings → Webhooks). */
+  BTCPAY_WEBHOOK_SECRET?: string;
+
+  // Blossom gateway: secret for subscription-status gating
+  BLOSSOM_INTERNAL_SECRET?: string;
+  BLOSSOM_SFS_API_URL?: string;
+  BLOSSOM_UPLOAD_TOKEN_SECRET?: string;
+
+  // SFS Blastr: admin API for entitlement and policy sync (optional; no-op when unset)
+  BLASTR_ADMIN_URL?: string;
+  BLASTR_ADMIN_API_TOKEN?: string;
+
+  // Referral
+  REFERRAL_LANDING_URL?: string;
+  /**
+   * `true` requires REFERRAL_MANUAL_PAYOUT_SECRET at production boot.
+   * `false` disables wallet payouts. Unset keeps payout execution available
+   * for an existing hosted install and does not require the secret to boot.
+   */
+  REFERRAL_PAYOUTS_ENABLED?: string;
+  /** POST /api/referral/manual-payout rejects when unset. Not required to boot unless payouts are enabled. */
+  REFERRAL_MANUAL_PAYOUT_SECRET?: string;
+  /** Hard cap for one referral invoice. Defaults to 1000000 sats. */
+  REFERRAL_PAYOUT_MAX_SATS?: string;
+  /** UTC-day cap for successful referral payouts. Defaults to 5000000 sats. */
+  REFERRAL_PAYOUT_DAILY_CAP_SATS?: string;
+
+  // Operator admin (/dashboard/admin*)
+  ADMIN_NPUBS?: string;
+
+  // Web Push (VAPID)
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
+
+  // Ops / tooling
+  COOLIFY_URL?: string;
+  CYPRESS?: string; // Set by Cypress when running E2E (rate-limit bypass)
+
+  /** Set to "false" to disable GET /api/public/stats and the avatar proxy. */
+  PUBLIC_STATS_ENABLED?: string;
+  /** Extra CORS origins for the public stats route, comma-separated. */
+  LANDING_STATS_ORIGINS?: string;
+}
+
+interface ValidationError {
+  key: string;
+  reason: string;
+}
+
+// ============================================================================
+// Validation Helper Functions
+// ============================================================================
+
+function validateRequiredVariable(
+  key: string,
+  value: string | undefined
+): ValidationError | null {
+  if (!value || value.trim() === "") {
+    return null; // Missing, handled separately
+  }
+
+  if (key === "SESSION_SECRET" && value.length < 32) {
+    return {
+      key,
+      reason: "must be at least 32 characters long",
+    };
+  }
+  if (
+    key === "DATABASE_URL" &&
+    !value.startsWith("postgresql://") &&
+    !value.startsWith("postgres://")
+  ) {
+    return {
+      key,
+      reason:
+        "must be a valid PostgreSQL connection string (postgresql://... or postgres://...)",
+    };
+  }
+  if (key === "REDIS_URL" && !value.startsWith("redis://")) {
+    return {
+      key,
+      reason: "must be a valid Redis connection string (redis://...)",
+    };
+  }
+
+  return null;
+}
+
+function validateStorageVariables(
+  storageVariables: readonly string[]
+): string[] {
+  const storageValues = storageVariables.map((key) => process.env[key]);
+  const hasSomeStorage = storageValues.some((v) => v && v.trim() !== "");
+  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
+
+  if (hasSomeStorage && !hasAllStorage) {
+    return storageVariables.filter((key) => {
+      const value = process.env[key];
+      return !value || value.trim() === "";
+    });
+  }
+
+  return [];
+}
+
+function buildBaseConfig(): EnvConfig {
+  return {
+    DATABASE_URL: process.env["DATABASE_URL"]!,
+    SESSION_SECRET: process.env["SESSION_SECRET"]!,
+    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"]!,
+    REDIS_URL: process.env["REDIS_URL"]!,
+  };
+}
+
+function addOptionalStorageConfig(
+  config: EnvConfig,
+  hasAllStorage: boolean
+): void {
+  if (hasAllStorage) {
+    config.STORAGE_ACCESS_KEY = process.env["STORAGE_ACCESS_KEY"];
+    config.STORAGE_SECRET = process.env["STORAGE_SECRET"];
+    config.STORAGE_REGION = process.env["STORAGE_REGION"];
+    config.STORAGE_BUCKET = process.env["STORAGE_BUCKET"];
+  }
+}
+
+function addOptionalConfig(config: EnvConfig): void {
+  const optionalVars: Array<keyof EnvConfig> = [
+    "PRIMAL_CACHING_URL",
+    "NOSTRMASH_BASE_URL",
+    "NOSTRMASH_API_TOKEN",
+    "POST_ANALYTICS_INTERVAL_MINUTES",
+    "POST_ANALYTICS_BATCH_SIZE",
+    "POST_ANALYTICS_CONCURRENCY",
+    "PRIMAL_HTTP_TIMEOUT_MS",
+    "PRIMAL_HTTP_MAX_RETRIES",
+    "OWNER_NWC",
+    "OWNER_NWC_RELAY",
+    "OWNER_NWC_RELAYS",
+    "NOSTR_NSEC",
+    "FEEDBACK_INBOX_NPUB",
+    "NOSTR_PUBLISHER_API_TOKEN",
+    "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+    "SENTRY_DSN",
+    "SENTRY_TRACES_SAMPLE_RATE",
+    "SENTRY_PROFILES_SAMPLE_RATE",
+    "RELAY_HEALTH_STORE",
+    "PORT",
+    "METRICS_PORT",
+    "WORKER_METRICS_PORT",
+    "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
+    "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
+    "CRON_SECRET",
+    "FLY_REGION",
+    "PRIMARY_REGION",
+    "TEST_DATABASE_URL",
+    "ENABLE_SOURCE_MAPS",
+    "E2E_TEST",
+    "APP_URL",
+    "ALLOWED_ORIGINS",
+    "METRICS_TOKEN",
+    "METRICS_ALLOWED_IPS",
+    "HOST",
+    "DISABLE_RATE_LIMIT",
+    "NOSTR_AUTH_V2_ENABLED",
+    "ENFORCE_NOSTR_SESSION_PUBKEY",
+    "MEDIA_PIPELINE_V2_ENABLED",
+    "ENABLE_NOSTR_DELETE_EVENTS",
+    "NOSTR_DM_NIP17_ENABLED",
+    "NIP88_POLLS_ENABLED",
+    "CONTESTS_V1_ENABLED",
+    "SUBSCRIPTION_CHECKOUT_V2_ENABLED",
+    "SIGNING_MULTI_SLOT",
+    "BTCPAY_URL",
+    "BTCPAY_API_KEY",
+    "BTCPAY_STORE_ID",
+    "BTCPAY_WEBHOOK_SECRET",
+    "BLOSSOM_INTERNAL_SECRET",
+    "BLOSSOM_SFS_API_URL",
+    "BLOSSOM_UPLOAD_TOKEN_SECRET",
+    "BLASTR_ADMIN_URL",
+    "BLASTR_ADMIN_API_TOKEN",
+    "STORAGE_CDN_URL",
+    "REFERRAL_LANDING_URL",
+    "REFERRAL_PAYOUTS_ENABLED",
+    "REFERRAL_MANUAL_PAYOUT_SECRET",
+    "REFERRAL_PAYOUT_MAX_SATS",
+    "REFERRAL_PAYOUT_DAILY_CAP_SATS",
+    "ADMIN_NPUBS",
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+    "COOLIFY_URL",
+    "CYPRESS",
+    "PUBLIC_STATS_ENABLED",
+    "LANDING_STATS_ORIGINS",
+  ];
+
+  optionalVars.forEach((key) => {
+    const value = process.env[key];
+    if (value) {
+      config[key] = value;
+    }
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
+  config.NODE_ENV = process.env["NODE_ENV"] ?? "development";
+}
+
+function reportValidationErrors(
+  missing: string[],
+  invalid: ValidationError[]
+): void {
+  safeConsoleError("❌ Environment validation failed:");
+
+  if (missing.length > 0) {
+    safeConsoleError("\nMissing required environment variables:");
+    missing.forEach((key) => safeConsoleError(`  - ${key}`));
+  }
+
+  if (invalid.length > 0) {
+    safeConsoleError("\nInvalid environment variables:");
+    invalid.forEach(({ key, reason }) =>
+      safeConsoleError(`  - ${key}: ${reason}`)
+    );
+  }
+
+  safeConsoleError(
+    "\nPlease check your .env file or environment configuration."
+  );
+  safeConsoleError(
+    "See docs/reference/configuration.md for detailed configuration instructions."
+  );
+
+  process.exit(1);
+}
+
+/**
+ * Validates environment variables and returns typed config
+ * Throws error if validation fails (prevents app from starting)
+ */
+function validateAndGetEnv(): EnvConfig {
+  // Provide default values for E2E tests if variables are not set
+  if (process.env["E2E_TEST"] === "true") {
+    process.env["DATABASE_URL"] ??=
+      process.env["TEST_DATABASE_URL"] ??
+      "postgresql://postgres:postgres@localhost:5432/smartflow_test";
+    process.env["SESSION_SECRET"] ??=
+      "test-session-secret-very-long-and-secure-32-chars-minimum";
+    process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
+    process.env["REDIS_URL"] ??= "redis://localhost:6379";
+  }
+
+  const required = [
+    "DATABASE_URL",
+    "SESSION_SECRET",
+    "NOSTR_PUBLISHER_URL",
+    "REDIS_URL",
+  ] as const;
+
+  // Storage variables are optional - only required if using image uploads
+  // If any storage variable is set, all must be set
+  const storageVariables = [
+    "STORAGE_ACCESS_KEY",
+    "STORAGE_SECRET",
+    "STORAGE_REGION",
+    "STORAGE_BUCKET",
+  ] as const;
+
+  const missing: string[] = [];
+  const invalid: ValidationError[] = [];
+
+  // Validate required variables
+  for (const key of required) {
+    const value = process.env[key];
+    if (!value || value.trim() === "") {
+      missing.push(key);
+    } else {
+      const error = validateRequiredVariable(key, value);
+      if (error) {
+        invalid.push(error);
+      }
+    }
+  }
+
+  // Validate storage variables: if any is set, all must be set
+  const storageMissing = validateStorageVariables(storageVariables);
+  missing.push(...storageMissing);
+
+  invalid.push(
+    ...productionSecretErrors({
+      nodeEnv: process.env["NODE_ENV"],
+      e2eTest: process.env["E2E_TEST"],
+      cronSecret: process.env["CRON_SECRET"],
+      referralManualPayoutSecret: process.env["REFERRAL_MANUAL_PAYOUT_SECRET"],
+      referralPayoutsEnabled: process.env["REFERRAL_PAYOUTS_ENABLED"],
+      nostrPublisherApiToken: process.env["NOSTR_PUBLISHER_API_TOKEN"],
+      nostrPublisherAllowUnauthenticated:
+        process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"],
+    })
+  );
+
+  // Report errors
+  if (missing.length > 0 || invalid.length > 0) {
+    reportValidationErrors(missing, invalid);
+  }
+
+  // Build typed config object
+  const config = buildBaseConfig();
+
+  // Check if all storage variables are set
+  const storageValues = storageVariables.map((key) => process.env[key]);
+  const hasAllStorage = storageValues.every((v) => v && v.trim() !== "");
+
+  // Add optional storage config if all are set
+  addOptionalStorageConfig(config, hasAllStorage);
+
+  // Add other optional variables
+  addOptionalConfig(config);
+
+  safeConsoleLog("✅ Environment variables validated");
+  return config;
+}
+
+// Validate and export typed environment config
+// This runs at module load time, so validation happens before app starts
+export const env = validateAndGetEnv();
+
+// Export type for use in other modules
+export type { EnvConfig };

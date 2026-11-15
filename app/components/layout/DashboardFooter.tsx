@@ -1,0 +1,167 @@
+import { Clock, TriangleAlert } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+import { SignerStatusIndicator } from "~/components/signer/SignerStatusIndicator";
+import { BRAND_NAME } from "~/lib/brand";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import { useOptionalUser } from "~/lib/remix-utils";
+import { getSyncState, subscribeToSyncState } from "~/lib/sync-manager.client";
+
+// Helper to extract city name from timezone (e.g., "Africa/Cairo" -> "Cairo")
+function getTimezoneShortName(timezone: string | undefined): string {
+  if (!timezone) return "";
+  const parts = timezone.split("/");
+  return parts[parts.length - 1] ?? timezone;
+}
+
+/** Placeholder for clock while hydrating to avoid server/client date mismatch (React hydration errors #418/#425). */
+const CLOCK_PLACEHOLDER = "–";
+
+const footerWallClockListeners = new Set<() => void>();
+let footerWallClockTickMs = 0;
+let footerWallClockIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function subscribeFooterWallClock(onStoreChange: () => void) {
+  footerWallClockListeners.add(onStoreChange);
+  if (typeof window !== "undefined") {
+    queueMicrotask(() => {
+      if (footerWallClockListeners.size === 0) return;
+      if (footerWallClockTickMs === 0) {
+        footerWallClockTickMs = Date.now();
+        for (const l of footerWallClockListeners) l();
+      }
+      footerWallClockIntervalId ??= setInterval(() => {
+        footerWallClockTickMs = Date.now();
+        for (const l of footerWallClockListeners) l();
+      }, 1000);
+    });
+  }
+  return () => {
+    footerWallClockListeners.delete(onStoreChange);
+    if (
+      footerWallClockListeners.size === 0 &&
+      footerWallClockIntervalId != null
+    ) {
+      clearInterval(footerWallClockIntervalId);
+      footerWallClockIntervalId = null;
+      footerWallClockTickMs = 0;
+    }
+  };
+}
+
+function getFooterWallClockSnapshot() {
+  return footerWallClockTickMs;
+}
+
+function getFooterWallClockServerSnapshot() {
+  return 0;
+}
+
+export default function Footer() {
+  const user = useOptionalUser() ?? null;
+  const { dateLocale } = useFormattedDate();
+  const tickMs = useSyncExternalStore(
+    subscribeFooterWallClock,
+    getFooterWallClockSnapshot,
+    getFooterWallClockServerSnapshot
+  );
+  const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
+
+  const clockReady = tickMs > 0;
+  const time = clockReady ? new Date(tickMs) : null;
+
+  useEffect(() => {
+    if (!clockReady) return;
+    const id = setTimeout(
+      () => setSyncNeedsAttention(getSyncState() === "needs_attention"),
+      0
+    );
+    const unsubscribe = subscribeToSyncState((state) => {
+      setSyncNeedsAttention(state === "needs_attention");
+    });
+    return () => {
+      clearTimeout(id);
+      unsubscribe();
+    };
+  }, [clockReady]);
+
+  const userTimezone =
+    user && typeof user === "object" && "timezone" in user
+      ? (user.timezone ?? undefined)
+      : undefined;
+
+  const userTimeFormat =
+    user && typeof user === "object" && "timeFormat" in user
+      ? user.timeFormat === "24h"
+        ? "24h"
+        : "12h"
+      : "12h";
+
+  const dateString =
+    clockReady && time
+      ? time.toLocaleDateString(dateLocale, {
+          timeZone: userTimezone,
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : CLOCK_PLACEHOLDER;
+
+  const timeString =
+    clockReady && time
+      ? time.toLocaleTimeString("en-US", {
+          timeZone: userTimezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: userTimeFormat === "12h",
+        })
+      : CLOCK_PLACEHOLDER;
+
+  const timezoneShort = getTimezoneShortName(userTimezone);
+
+  return (
+    <footer
+      id="page-footer"
+      className="dashboard-shell-chrome safe-pb-2 safe-x-4 sticky bottom-0 z-10 flex flex-none items-center"
+    >
+      <div className="flex w-full min-w-0 flex-col gap-2 px-4 pt-2 text-center text-xs sm:flex-row sm:items-center sm:gap-4 sm:px-6 sm:pt-2.5 sm:text-left sm:text-sm lg:px-8">
+        <div className="text-text-secondary shrink-0">
+          {BRAND_NAME} © {new Date().getFullYear()}
+        </div>
+        <div className="text-text-secondary flex min-w-0 items-center justify-center gap-1.5 tabular-nums sm:flex-1 sm:justify-end sm:gap-2">
+          <SignerStatusIndicator />
+          {syncNeedsAttention ? (
+            <>
+              <span className="hidden lg:inline">·</span>
+              <div className="cluster-tight text-xs">
+                <TriangleAlert className="text-warning h-3 w-3" />
+                <span className="hidden sm:inline">Needs attention</span>
+              </div>
+            </>
+          ) : null}
+          <span className="hidden lg:inline">·</span>
+          <Clock className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
+          <span className="hidden sm:inline">{dateString}</span>
+          <span className="sm:hidden">
+            {dateString === CLOCK_PLACEHOLDER
+              ? CLOCK_PLACEHOLDER
+              : dateString.split(",")[0]}
+          </span>
+          <span className="hidden lg:inline">·</span>
+          <span className="whitespace-nowrap">{timeString}</span>
+          {userTimezone ? (
+            <>
+              <span className="hidden lg:inline">·</span>
+              <span className="hidden sm:inline lg:hidden">
+                {timezoneShort}
+              </span>
+              <span className="hidden lg:inline">{userTimezone}</span>
+              <span className="sm:hidden">{timezoneShort}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </footer>
+  );
+}

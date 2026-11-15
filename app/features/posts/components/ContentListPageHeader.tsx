@@ -1,0 +1,71 @@
+/**
+ * Shared header for list pages (Scheduled, Published, Calendar, Drafts) and Dashboard flow.
+ * Shows section title that updates with content-type tab (or fixed "Your flow" for Dashboard).
+ */
+
+import { cn } from "~/lib/utils";
+
+interface ContentListPageHeaderProps {
+  /** Which page: flow (Dashboard), or list page type */
+  pageType: "flow" | "scheduled" | "published" | "calendar" | "drafts";
+  /** Current content-type tab (all, posts, reposts, longform, bulk). Optional when pageType === "flow". */
+  currentTab?: string;
+  /** Optional class for layout */
+  className?: string;
+  /** Supporting line under the title (e.g. Drafts page). */
+  subtitle?: string;
+  /** When set, replaces the computed title (e.g. always "Drafts"). */
+  titleOverride?: string;
+  /** Merged into the title element (e.g. dashboard Flow section scale). */
+  titleClassName?: string;
+}
+
+function getTitle(
+  pageType: "flow" | "scheduled" | "published" | "calendar" | "drafts",
+  currentTab: string
+): string {
+  if (pageType === "flow") return "Your flow";
+  if (pageType === "calendar") return "Calendar";
+  if (currentTab === "bulk") return "Bulk drafts";
+
+  const prefix =
+    pageType === "scheduled"
+      ? "Scheduled"
+      : pageType === "published"
+        ? "Published"
+        : "Drafts";
+  if (currentTab === "all") return prefix;
+  if (currentTab === "posts") return `${prefix} Posts`;
+  if (currentTab === "reposts") return `${prefix} Reposts`;
+  if (currentTab === "polls") return `${prefix} Polls`;
+  if (currentTab === "threads") return `${prefix} Threads`;
+  return `${prefix} Articles`;
+}
+
+export function ContentListPageHeader({
+  pageType,
+  currentTab = "all",
+  className,
+  subtitle,
+  titleOverride,
+  titleClassName,
+}: ContentListPageHeaderProps) {
+  const title =
+    titleOverride ??
+    (pageType === "flow" ? "Your flow" : getTitle(pageType, currentTab));
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-shrink-0 text-left",
+        subtitle ? "flex-col gap-1" : "items-center",
+        className
+      )}
+    >
+      <h3 className={cn("font-semibold", titleClassName)}>{title}</h3>
+      {subtitle ? (
+        <p className="text-text-secondary max-w-2xl text-sm">{subtitle}</p>
+      ) : null}
+    </div>
+  );
+}

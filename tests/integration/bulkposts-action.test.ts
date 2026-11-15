@@ -1,0 +1,625 @@
+/**
+ * Integration tests for bulk posts action handler
+ *
+ * Tests app/routes/dashboard.bulkposts.tsx action
+ * Tests bulkPostsAction function
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+// Mock dependencies
+vi.mock("~/features/auth/session.server", () => ({
+  requireUserId: vi.fn(),
+}));
+
+const { mockExecute } = vi.hoisted(() => {
+  const mockExecute = vi.fn();
+  return { mockExecute };
+});
+
+vi.mock(
+  "~/features/posts/composer/use-cases/create-post.use-case.server",
+  () => ({
+    CreatePostUseCase: class {
+      execute = mockExecute;
+    },
+  })
+);
+
+vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
+  resolveQueueTypeId: vi.fn(),
+}));
+
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    createPost: vi.fn(),
+    createPostWithOutbox: vi.fn(),
+    updatePost: vi.fn(),
+    getPostsByIds: vi.fn(),
+    getOrCreateDraftGroup: vi
+      .fn()
+      .mockResolvedValue({ groupId: "draft-group-1" }),
+    deleteDraftGroupPosts: vi.fn().mockResolvedValue(undefined),
+    createDraftGroupVersion: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+vi.mock("~/lib/rate-limit.server", () => ({
+  checkUserPostCreationLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 100,
+    resetTime: new Date(),
+  }),
+}));
+
+vi.mock("~/features/posts/repositories/draft-data.server", () => ({
+  updateDraftGroup: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("~/features/posts/repositories/post-queries-data.server", () => ({
+  updatePost: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("~/features/posts/server/drafts", () => ({
+  getOrCreateDraftGroup: vi
+    .fn()
+    .mockResolvedValue({ groupId: "draft-group-1" }),
+  deleteDraftGroupPosts: vi.fn().mockResolvedValue(undefined),
+  createDraftGroupVersion: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Prisma for PostStateMachine
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    post: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(), // For idempotency check in CreatePostUseCase
+      create: vi.fn(), // For post creation
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    longFormPost: {
+      count: vi.fn(), // For entitlement schedule-cap checks
+    },
+    template: {
+      count: vi.fn(),
+    },
+    subscription: {
+      findUnique: vi.fn().mockResolvedValue({
+        planId: "creator",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date(Date.now() + 86400000),
+        Plan: { id: "creator", name: "Creator" },
+      }),
+    },
+    postStateTransition: {
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(async (callback) => {
+      const tx = {
+        post: {
+          update: vi.fn().mockResolvedValue({}),
+          create: vi.fn().mockResolvedValue({}),
+        },
+        postStateTransition: {
+          create: vi.fn().mockResolvedValue({}),
+        },
+      };
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Test mock callback has complex types
+      return await callback(tx);
+    }),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
+import {
+  TEST_USER_ID,
+  createActionFormData,
+  createMockPost,
+} from "../utils/test-helpers";
+
+import { requireUserId } from "~/features/auth/session.server";
+import { bulkPostsAction } from "~/features/posts/bulkposts.action.server";
+import { createPostWithOutbox } from "~/features/posts/server";
+import { updatePost } from "~/features/posts/server";
+import { getPostsByIds } from "~/features/posts/server";
+import { resolveQueueTypeId } from "~/features/posts/services/queue-type-resolver.server";
+
+describe("Bulk Posts Action Handler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExecute.mockClear();
+    (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
+    // Setup default Prisma mocks for PostStateMachine
+    (mockPrisma.post.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "test-post-id",
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
+    // Mock findFirst for idempotency check in CreatePostUseCase
+    (mockPrisma.post.findFirst as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
+      async (_args: { where: { creationIdempotencyKey?: string } }) => {
+        // Return null to indicate no existing post with this idempotency key
+        return null;
+      }
+    );
+    (mockPrisma.post.update as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (mockPrisma.post.count as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      mockPrisma.longFormPost.count as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(0);
+    (mockPrisma.template.count as ReturnType<typeof vi.fn>).mockResolvedValue(
+      0
+    );
+    (
+      mockPrisma.postStateTransition.create as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({});
+  });
+
+  describe("Upload Images Preview Action", () => {
+    it("should handle upload images preview", async () => {
+      // Handler expects fileUrls = JSON array of URL arrays per post, plus scheduledDates and queueTypes
+      const fileUrlsPerPost = [
+        ["https://example.com/image1.jpg"],
+        ["https://example.com/image2.jpg"],
+      ];
+      const scheduledDates = ["2024-01-15T10:00:00", "2024-01-15T14:00:00"];
+      const queueTypes = ["posts", "all"];
+
+      const formData = createActionFormData("_upload_images_preview", {
+        fileUrls: JSON.stringify(fileUrlsPerPost),
+        scheduledDates,
+        queueTypes,
+      });
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+      const dataRaw: unknown = await result.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as Record<string, unknown>)
+          : {};
+
+      expect(data["success"]).toBe(true);
+      const fileUrls = Array.isArray(data["fileUrls"]) ? data["fileUrls"] : [];
+      expect(fileUrls).toHaveLength(2);
+      expect(fileUrls[0]).toMatchObject({
+        fileUrl: ["https://example.com/image1.jpg"],
+        scheduledFor: "2024-01-15T10:00:00",
+      });
+    });
+
+    it("should handle missing uploadResults", async () => {
+      const formData = createActionFormData("_upload_images_preview", {});
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+
+    it("should handle invalid uploadResults JSON", async () => {
+      const formData = createActionFormData("_upload_images_preview", {
+        uploadResults: "invalid-json",
+      });
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+  });
+
+  describe("Sign and Schedule Action", () => {
+    it("should sign and schedule multiple posts", async () => {
+      // SignedEvent schema requires: id, pubkey, created_at, kind, content, tags, sig
+      const signedEvents = [
+        {
+          id: "event-1",
+          pubkey: "pk1",
+          kind: 1,
+          content: "Post 1",
+          tags: [["t", "tag1"]],
+          created_at: Math.floor(Date.now() / 1000),
+          sig: "sig1",
+        },
+        {
+          id: "event-2",
+          pubkey: "pk2",
+          kind: 1,
+          content: "Post 2",
+          tags: [["t", "tag2"]],
+          created_at: Math.floor(Date.now() / 1000),
+          sig: "sig2",
+        },
+      ];
+
+      // NostrEvent schema requires: id, pubkey, created_at, kind, content, tags (no sig)
+      const nostrEvents = signedEvents.map((e) => ({
+        id: e.id,
+        pubkey: e.pubkey,
+        created_at: e.created_at,
+        kind: e.kind,
+        content: e.content,
+        tags: e.tags,
+      }));
+
+      const mockPosts = signedEvents.map((event, index) =>
+        createMockPost({
+          id: `post-${index + 1}`,
+          signedEvent: event,
+        })
+      );
+
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1"
+      );
+      mockExecute
+        .mockResolvedValueOnce({ post: mockPosts[0], needsScheduling: true })
+        .mockResolvedValueOnce({ post: mockPosts[1], needsScheduling: true });
+
+      const formData = new FormData();
+      formData.append("_action", "sign_and_schedule");
+      signedEvents.forEach((event) => {
+        formData.append("signedEvents", JSON.stringify(event));
+      });
+      nostrEvents.forEach((event) => {
+        formData.append("nostrEvent", JSON.stringify(event));
+      });
+      formData.append("caption", JSON.stringify("Caption 1"));
+      formData.append("caption", JSON.stringify("Caption 2"));
+      // fileUrl schema expects array of strings that get parsed and flattened
+      // Each entry should be a JSON stringified array
+      formData.append(
+        "fileUrl",
+        JSON.stringify(["https://example.com/image1.jpg"])
+      );
+      formData.append(
+        "fileUrl",
+        JSON.stringify(["https://example.com/image2.jpg"])
+      );
+      formData.append("queueType", "posts");
+      formData.append("queueType", "all");
+      formData.append("isRecyclable", "false");
+      formData.append("isRecyclable", "false");
+      if (signedEvents[0] && signedEvents[1]) {
+        formData.append("scheduledFor", String(signedEvents[0].created_at));
+        formData.append("scheduledFor", String(signedEvents[1].created_at));
+      }
+      formData.append("originalPostId", ""); // Required field
+      formData.append("originalPostId", ""); // Required field
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result).toBeInstanceOf(Response);
+      if (result.status !== 302) {
+        // Log the error for debugging
+        try {
+          const errorData = (await result.json()) as unknown;
+          console.error("Error response:", JSON.stringify(errorData, null, 2));
+        } catch {
+          const errorText = await result.text();
+          console.error("Error response text:", errorText);
+        }
+      }
+      expect(result.status).toBe(302); // Redirect
+      expect(mockExecute).toHaveBeenCalledTimes(2);
+    });
+
+    it("should handle recycle mode and mark original posts as non-recyclable", async () => {
+      // SignedEvent schema requires: id, pubkey, created_at, kind, content, tags, sig
+      const signedEvent = {
+        id: "event-1",
+        pubkey: "pk1",
+        kind: 1,
+        content: "Recycled post",
+        tags: [["t", "tag1"]],
+        created_at: Math.floor(Date.now() / 1000),
+        sig: "sig1",
+      };
+
+      const originalPostId = "original-post-123";
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1"
+      );
+      mockExecute.mockResolvedValue({
+        post: createMockPost({ id: "new-post-1" }),
+        needsScheduling: false,
+      });
+      (getPostsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([
+        createMockPost({ id: originalPostId, isRecyclable: true }),
+      ]);
+      (updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+      // NostrEvent schema requires: id, pubkey, created_at, kind, content, tags (no sig)
+      const nostrEvent = {
+        id: signedEvent.id,
+        pubkey: signedEvent.pubkey,
+        created_at: signedEvent.created_at,
+        kind: signedEvent.kind,
+        content: signedEvent.content,
+        tags: signedEvent.tags,
+      };
+
+      const formData = new FormData();
+      formData.append("_action", "sign_and_schedule");
+      // Schema expects arrays from FormData.getAll(), so append each item
+      [JSON.stringify(signedEvent)].forEach((event) =>
+        formData.append("signedEvents", event)
+      );
+      [JSON.stringify(nostrEvent)].forEach((event) =>
+        formData.append("nostrEvent", event)
+      );
+      [JSON.stringify("Caption")].forEach((caption) =>
+        formData.append("caption", caption)
+      );
+      [JSON.stringify(["https://example.com/image.jpg"])].forEach((url) =>
+        formData.append("fileUrl", url)
+      );
+      ["posts"].forEach((queue) => formData.append("queueType", queue));
+      ["false"].forEach((recyclable) =>
+        formData.append("isRecyclable", recyclable)
+      );
+      [originalPostId].forEach((id) => formData.append("originalPostId", id));
+
+      const request = new Request(
+        "http://localhost/dashboard/bulkposts?mode=recycle",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBe(302);
+      expect(updatePost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: originalPostId,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          userId: expect.any(String),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          data: expect.objectContaining({
+            isRecyclable: false,
+          }),
+        })
+      );
+    });
+
+    it("should handle invalid signedEvents JSON", async () => {
+      const formData = new FormData();
+      formData.append("_action", "sign_and_schedule");
+      formData.append("signedEvents", "invalid-json");
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+
+    it("should create follow-up reposts as attached to parent post", async () => {
+      const parentScheduledFor = Math.floor(Date.now() / 1000) + 3600;
+      const repostScheduledFor = parentScheduledFor + 900;
+      const signedEvent = {
+        id: "event-parent-1",
+        pubkey: "pk-parent",
+        kind: 1,
+        content: "Main post",
+        tags: [],
+        created_at: parentScheduledFor,
+        sig: "sig-parent",
+      };
+      const repostSignedEvent = {
+        id: "event-repost-1",
+        pubkey: "pk-repost",
+        kind: 6,
+        content: "",
+        tags: [],
+        created_at: repostScheduledFor,
+        sig: "sig-repost",
+      };
+      const nostrEvent = {
+        id: signedEvent.id,
+        pubkey: signedEvent.pubkey,
+        created_at: signedEvent.created_at,
+        kind: signedEvent.kind,
+        content: signedEvent.content,
+        tags: signedEvent.tags,
+      };
+
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1"
+      );
+      mockExecute.mockResolvedValue({
+        post: createMockPost({
+          id: "main-post-1",
+          postType: "TEXT",
+          currentState: "SCHEDULED",
+          signedEvent: { id: "parent-signed-event-id" },
+          scheduledAtUtc: new Date(parentScheduledFor * 1000),
+          rootScheduledActionId: null,
+        }),
+        needsScheduling: true,
+      });
+      (createPostWithOutbox as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: "follow-up-1",
+      });
+
+      const formData = new FormData();
+      formData.append("_action", "sign_and_schedule");
+      formData.append("signedEvents", JSON.stringify(signedEvent));
+      formData.append("nostrEvent", JSON.stringify(nostrEvent));
+      formData.append("caption", JSON.stringify("Main caption"));
+      formData.append("fileUrl", JSON.stringify([]));
+      formData.append("queueType", "posts");
+      formData.append("isRecyclable", "false");
+      formData.append("originalPostId", "");
+      formData.append(
+        "repostSchedules",
+        JSON.stringify([
+          {
+            scheduledFor: repostScheduledFor,
+            signedEvent: repostSignedEvent,
+          },
+        ])
+      );
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const response = await bulkPostsAction({ request });
+
+      expect(response.status).toBe(302);
+      expect(createPostWithOutbox).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dependencyMode: "attached",
+          targetMode: "scheduled_parent",
+          parentScheduledActionId: "main-post-1",
+          rootScheduledActionId: "main-post-1",
+          targetScheduledActionId: "main-post-1",
+          expectedParentEventId: "parent-signed-event-id",
+          followUpTimingMode: "offset_from_parent",
+          followUpOffsetSeconds: 900,
+          signingState: "signed",
+          signedChildEventId: "event-repost-1",
+        }),
+        repostScheduledFor,
+        expect.any(String)
+      );
+    });
+  });
+
+  describe("Save as Draft Action", () => {
+    it("should save multiple posts as drafts", async () => {
+      const fileUrls = [
+        "https://example.com/image1.jpg",
+        "https://example.com/image2.jpg",
+      ];
+      const captions = ["Caption 1", "Caption 2"];
+      const queueTypes = ["posts", "all"];
+
+      (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        TEST_USER_ID
+      );
+      (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "queue-1"
+      );
+      mockExecute
+        .mockResolvedValueOnce({
+          post: createMockPost({ id: "draft-1" }),
+          needsScheduling: false,
+        })
+        .mockResolvedValueOnce({
+          post: createMockPost({ id: "draft-2" }),
+          needsScheduling: false,
+        });
+
+      const formData = new FormData();
+      formData.append("_action", "save_as_draft");
+      fileUrls.forEach((url) => {
+        formData.append("fileUrl", JSON.stringify([url]));
+      });
+      captions.forEach((caption) => {
+        formData.append("caption", JSON.stringify(caption));
+      });
+      queueTypes.forEach((queueType) => {
+        formData.append("queueType", queueType);
+      });
+      // scheduledFor is required as an array in saveAsDraftSchema
+      fileUrls.forEach(() => {
+        formData.append("scheduledFor", "");
+      });
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result).toBeInstanceOf(Response);
+      expect(result.status).toBe(302); // Redirect
+      expect(mockExecute).toHaveBeenCalledTimes(2);
+      // Verify execute was called with draft parameters (no scheduledFor = DRAFT state)
+      // Note: state is determined by scheduledFor - null/undefined = DRAFT
+      // The caption comes from FormData which may have JSON stringified values
+      expect(mockExecute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Jest expect matchers have complex types
+          fileUrl: expect.any(Array),
+          // scheduledFor should be undefined/null/empty for drafts
+        })
+      );
+      // Verify scheduledFor is not set (empty string from FormData becomes undefined)
+      const calls = mockExecute.mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      calls.forEach((call) => {
+        const args = call[0] as { scheduledFor?: number | string | undefined };
+        expect(args.scheduledFor).toBeUndefined();
+      });
+    });
+  });
+
+  describe("Authentication", () => {
+    it("should require authentication", async () => {
+      (requireUserId as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error("Not authenticated")
+      );
+
+      const formData = createActionFormData("_upload_images_preview", {});
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+  });
+
+  describe("Invalid Action", () => {
+    it("should return error for invalid action", async () => {
+      const formData = createActionFormData("invalid_action", {});
+
+      const request = new Request("http://localhost/dashboard/bulkposts", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await bulkPostsAction({ request });
+
+      expect(result.status).toBeGreaterThanOrEqual(400);
+    });
+  });
+});

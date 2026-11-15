@@ -1,0 +1,455 @@
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+  useNavigate,
+} from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { Button } from "~/components/ui/button";
+import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
+import PublishResultModal from "~/features/posts/components/PublishResultModal";
+import {
+  ComposerEditingModeCallout,
+  CreateComposerShell,
+} from "~/features/posts/composer";
+import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
+import { DraftPickerModal } from "~/features/posts/drafts";
+import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
+import { scheduleRefreshPostViews } from "~/features/posts/hooks/useRefreshPostViews";
+import { RelaySelectorModal } from "~/features/posts/ui";
+import {
+  getPostTypeFromPost,
+  getNewPostUrl,
+  determineModalAction,
+} from "~/features/posts/utils/publish-result.utils";
+import { getActionErrorMessage } from "~/lib/errors";
+
+import LongFormPost from "./LongFormPost";
+import LongFormPreviewModal from "./LongFormPreviewModal";
+import { parseNewLongFormPostLoader } from "./parse-new-longform-post-loader";
+
+export default function NewLongFormPostPage() {
+  const loaderData = useLoaderData<unknown>();
+  const actionData = useActionData<unknown>();
+  const queryClient = useQueryClient();
+
+  const parsedLoader = useMemo(
+    () => parseNewLongFormPostLoader(loaderData),
+    [loaderData]
+  );
+
+  const {
+    userTags,
+    scheduleIntervals,
+    queueTypes,
+    hashTagPresets,
+    userTimezone,
+    uploadProvider,
+    defaultRelays,
+    relaysApp,
+    relaysNip65Profile,
+    accountPublishRelaySource,
+    initialTemplateData,
+    templatesRaw,
+    composerContext,
+    editingMeta,
+    hydrationStatus,
+    hydrationError,
+  } = parsedLoader;
+
+  const safeUserTags = typeof userTags === "string" ? userTags : "";
+
+  const {
+    displayedHashtags,
+    showPreviewModal,
+    setShowPreviewModal,
+    previewData,
+    useHashtagPresets,
+    selectedHashtagPresetId,
+    selectedHashtags,
+    handleHashtagPresetSelect,
+    updateDisplayedHashtags,
+    handleUseHashtagPresetsChange,
+    handlePreview,
+  } = useNewLongFormState({ userTags: safeUserTags });
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
+  const scheduledAt = searchParams.get("scheduledAt");
+  const publishResultToken =
+    searchParams.get("published") ?? searchParams.get("scheduled");
+  const navigate = useNavigate();
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishIntentActive, setPublishIntentActive] = useState(false);
+  const [publishIntentStartedAt, setPublishIntentStartedAt] = useState<
+    number | null
+  >(null);
+  const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [modalPost, setModalPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
+  } | null>(null);
+  const [modalLongFormPost, setModalLongFormPost] = useState<{
+    id: string;
+    publishAttemptId: string | null;
+    currentState?: string | null;
+    scheduledAtUtc?: string | Date | null;
+  } | null>(null);
+  const [publishMode, setPublishMode] = useState<ComposerPublishMode>("now");
+  const [longformDraftPicker, setLongformDraftPicker] = useState<{
+    open: boolean;
+    mode: "drafts" | "templates";
+  }>({ open: false, mode: "drafts" });
+  const [saveStateLabel, setSaveStateLabel] = useState<string | null>(null);
+  const [relaySelectorOpen, setRelaySelectorOpen] = useState(false);
+  const [selectedRelayUrls, setSelectedRelayUrls] = useState<string[] | null>(
+    null
+  );
+
+  const openRelaySelector = useCallback(() => {
+    setRelaySelectorOpen(true);
+  }, []);
+
+  const handlePublishIntent = useCallback(() => {
+    setPublishIntentActive(true);
+    setPublishIntentStartedAt(Date.now());
+    setShowPublishModal(true);
+  }, []);
+
+  const resetPublishModalState = useCallback(() => {
+    setShowPublishModal(false);
+    setModalPostId(null);
+    setModalPost(null);
+    setModalLongFormPost(null);
+    setPublishIntentActive(false);
+    setPublishIntentStartedAt(null);
+  }, []);
+
+  // Check for published/scheduled URL param. Note: do NOT skip when
+  // showPublishModal is already true  -  the modal may be open from an
+  // immediate publish intent and still needs to be hydrated with the real
+  // postId once the server redirect arrives.
+  useEffect(() => {
+    if (searchParams.get("mode") === "edit_scheduled") {
+      return;
+    }
+    const publishedPostId = searchParams.get("published");
+    const scheduledPostId = searchParams.get("scheduled");
+    const postId = publishedPostId ?? scheduledPostId;
+
+    if (postId && !modalPostId) {
+      // Use setTimeout to avoid setState in effect warning
+      setTimeout(() => {
+        setModalPostId(postId);
+      }, 0);
+
+      // Fetch post data using fetch directly for API routes
+      void (async () => {
+        try {
+          const res = await fetch(`/api/posts/${postId}`);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+          }
+          const data = (await res.json()) as {
+            post?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+              scheduledAtUtc?: string | null;
+            };
+            longFormPost?: {
+              id: string;
+              publishAttemptId: string | null;
+              currentState?: string | null;
+              scheduledAtUtc?: string | null;
+            };
+            error?: string;
+          };
+
+          if (data.post || data.longFormPost) {
+            if (publishedPostId || scheduledPostId) {
+              scheduleRefreshPostViews(queryClient);
+            }
+            setTimeout(() => {
+              setModalPost(data.post ?? null);
+              setModalLongFormPost(data.longFormPost ?? null);
+              setShowPublishModal(true);
+            }, 0);
+            // Clear URL param to prevent re-showing on refresh
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("published");
+            newSearchParams.delete("scheduled");
+            setSearchParams(newSearchParams, { replace: true });
+          } else {
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete("published");
+            newSearchParams.delete("scheduled");
+            setSearchParams(newSearchParams, { replace: true });
+            setTimeout(() => {
+              setModalPostId(null);
+            }, 0);
+          }
+        } catch (error) {
+          console.error("Failed to fetch post data:", error);
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete("published");
+          newSearchParams.delete("scheduled");
+          setSearchParams(newSearchParams, { replace: true });
+          setTimeout(() => {
+            setModalPostId(null);
+          }, 0);
+        }
+      })();
+    }
+  }, [searchParams, modalPostId, setSearchParams, queryClient]);
+
+  useEffect(() => {
+    if (!publishResultToken) return;
+    try {
+      localStorage.removeItem("longform-draft-new");
+    } catch {
+      // ignore
+    }
+  }, [publishResultToken]);
+
+  const isEditMode = composerContext.mode !== "create";
+  const showHydrationHardError = isEditMode && hydrationStatus === "error";
+  const shellTitle =
+    composerContext.mode === "edit_scheduled"
+      ? "Edit scheduled article"
+      : composerContext.mode === "edit_follow_up"
+        ? "Edit follow-up article"
+        : initialTemplateData
+          ? "Edit article draft"
+          : "Create article";
+
+  return (
+    <CreateComposerShell
+      contentType="article"
+      onContentTypeChange={(next) => {
+        if (navigation.state !== "idle") return;
+        if (next === "article") return;
+        navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
+      }}
+      title={shellTitle}
+      composerHeaderActions={
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setLongformDraftPicker({ open: true, mode: "drafts" })
+            }
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
+            aria-label="Open drafts"
+          >
+            Drafts
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setLongformDraftPicker({ open: true, mode: "templates" })
+            }
+            className="text-text-secondary hover:text-text h-8 px-2 text-xs"
+            aria-label="Open templates"
+          >
+            Templates
+          </Button>
+        </div>
+      }
+      saveStateLabel={saveStateLabel}
+    >
+      <ErrorMessage
+        error={getActionErrorMessage(actionData)}
+        success={
+          actionData &&
+          typeof actionData === "object" &&
+          "success" in actionData
+            ? ((actionData as { success?: unknown }).success as
+                | boolean
+                | undefined)
+            : undefined
+        }
+      />
+
+      {isEditMode && editingMeta ? (
+        <ComposerEditingModeCallout
+          editingMeta={editingMeta}
+          detailLine="Changes update this article. A new article will not be created."
+        />
+      ) : null}
+      {showHydrationHardError ? (
+        <div className="bg-danger/10 border-danger/40 text-danger-text mb-4 rounded-md border px-3 py-2 text-sm">
+          {hydrationError ??
+            "This item is no longer editable. Return to scheduled posts or the dashboard."}
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard/scheduled?tab=longform")}
+            >
+              Go back
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {showHydrationHardError ? null : (
+        <Form method="post" encType="multipart/form-data">
+          <input type="hidden" name="contentType" value="article" />
+          <LongFormPost
+            key={`newlongform-composer-${publishResultToken ?? "default"}`}
+            publishMode={publishMode}
+            onPublishModeChange={setPublishMode}
+            composerContext={composerContext}
+            initialData={initialTemplateData}
+            initialScheduledFor={scheduledAt ?? undefined}
+            queueTypes={queueTypes}
+            scheduleIntervals={scheduleIntervals}
+            userTags={safeUserTags}
+            hashTagPresets={hashTagPresets}
+            uploadProvider={
+              typeof uploadProvider === "string" || uploadProvider === null
+                ? uploadProvider
+                : null
+            }
+            userTimezone={
+              typeof userTimezone === "string" ? userTimezone : undefined
+            }
+            onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
+            onPreview={handlePreview}
+            useHashtagPresets={useHashtagPresets}
+            onUseHashtagPresetsChange={handleUseHashtagPresetsChange}
+            selectedHashtagPresetId={selectedHashtagPresetId}
+            selectedHashtags={selectedHashtags}
+            onHashtagPresetChange={handleHashtagPresetSelect}
+            skipLocalDraftRestore={Boolean(publishResultToken)}
+            onDraftStateLabelChange={setSaveStateLabel}
+            defaultRelays={defaultRelays}
+            relayOverride={selectedRelayUrls ?? undefined}
+            onRelayClick={openRelaySelector}
+            onPublishIntent={handlePublishIntent}
+          />
+        </Form>
+      )}
+
+      {relaySelectorOpen ? (
+        <RelaySelectorModal
+          relayLists={{
+            default: defaultRelays,
+            app: relaysApp,
+            nip65Profile: relaysNip65Profile,
+          }}
+          accountPublishRelaySource={accountPublishRelaySource}
+          inheritRelays={selectedRelayUrls === null}
+          selectedRelays={selectedRelayUrls ?? defaultRelays}
+          onClose={() => setRelaySelectorOpen(false)}
+          onSave={(urls) => {
+            setSelectedRelayUrls(urls);
+            setRelaySelectorOpen(false);
+          }}
+        />
+      ) : null}
+
+      <DraftPickerModal
+        key={longformDraftPicker.mode}
+        open={longformDraftPicker.open}
+        onClose={() => setLongformDraftPicker((s) => ({ ...s, open: false }))}
+        type="longform"
+        onSelect={
+          longformDraftPicker.mode === "drafts"
+            ? (id) => navigate(`/dashboard/drafts/longform/edit/${id}`)
+            : undefined
+        }
+        draftsAndTemplates={
+          longformDraftPicker.mode === "templates"
+            ? {
+                templates: templatesRaw,
+                templatesOnly: true,
+                onSelectTemplate: (templateId) =>
+                  navigate(
+                    `/dashboard/compose?type=article&templateId=${encodeURIComponent(templateId)}`
+                  ),
+              }
+            : undefined
+        }
+      />
+
+      <LongFormPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        title={previewData.title}
+        summary={previewData.summary}
+        content={previewData.content}
+        image={previewData.image}
+        displayedHashtags={displayedHashtags}
+      />
+
+      {showPublishModal ? (
+        <PublishResultModal
+          isOpen={showPublishModal}
+          postId={modalPostId ?? ""}
+          publishAttemptId={
+            modalPost?.publishAttemptId ??
+            modalLongFormPost?.publishAttemptId ??
+            null
+          }
+          action={
+            publishIntentActive && !modalPost && !modalLongFormPost
+              ? "publish"
+              : determineModalAction(modalPost, modalLongFormPost)
+          }
+          postType={getPostTypeFromPost(modalPost, modalLongFormPost)}
+          scheduledFor={
+            modalPost?.scheduledAtUtc ??
+            modalLongFormPost?.scheduledAtUtc ??
+            null
+          }
+          immediateProgress={Boolean(publishIntentActive && !modalPostId)}
+          intentStartedAt={publishIntentStartedAt}
+          onCreateNew={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            resetPublishModalState();
+            try {
+              localStorage.removeItem("longform-draft-new");
+            } catch {
+              // ignore
+            }
+            navigate(getNewPostUrl(postType));
+          }}
+          onGoToDashboard={() => {
+            resetPublishModalState();
+            navigate("/dashboard");
+          }}
+          onViewPage={() => {
+            const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
+            const action = determineModalAction(modalPost, modalLongFormPost);
+
+            resetPublishModalState();
+
+            if (action === "schedule") {
+              if (postType === "longform") {
+                navigate("/dashboard/scheduled?tab=longform");
+              } else {
+                navigate("/dashboard/scheduled");
+              }
+            } else if (postType === "longform") {
+              navigate("/dashboard/published?tab=longform");
+            } else {
+              navigate("/dashboard/published");
+            }
+          }}
+        />
+      ) : null}
+    </CreateComposerShell>
+  );
+}

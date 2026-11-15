@@ -1,0 +1,248 @@
+/**
+ * Queue client implementation using BullMQ
+ * This is the concrete implementation of the QueueClient interface
+ */
+
+import { Queue } from "bullmq";
+import Redis from "ioredis";
+
+import {
+  redisConnectionOptions,
+  redisErrorsAreIgnored,
+} from "~/infra/queue/redis-options";
+import { env } from "~/lib/env.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
+
+import type {
+  QueueClient,
+  QueueType,
+  ScheduleOptions,
+  QueueOperationResult,
+  JobStatus,
+  PostJobData,
+  LongFormPostJobData,
+} from "./queue-types";
+import { getBullMQRetryConfig } from "./retry-policy.server";
+
+/** Matches BullMQ's error when removing a job that a worker currently holds a lock on. */
+function isLockedJobError(error: Error): boolean {
+  return /could not be removed because it is locked/i.test(error.message);
+}
+
+// Redis connection with BullMQ required config.
+// Unit tests fail fast when Redis is absent. E2E keeps a normal timeout.
+const redisEnv = {
+  nodeEnv: env.NODE_ENV,
+  e2eTest: process.env["E2E_TEST"],
+};
+const redis = new Redis(env.REDIS_URL, redisConnectionOptions(redisEnv));
+
+if ("on" in redis && typeof redis.on === "function") {
+  redis.on("error", (error: unknown) => {
+    if (redisErrorsAreIgnored(redisEnv)) return;
+    const err = error instanceof Error ? error : new Error(String(error));
+    logError(err, { message: "Redis connection error" });
+  });
+}
+
+// Queue instances - lazy loaded
+const queues = new Map<QueueType, Queue>();
+
+/**
+ * Get or create a queue instance
+ */
+function getQueue(queueName: QueueType): Queue {
+  if (!queues.has(queueName)) {
+    // Get retry configuration for this queue type
+    const retryConfig = getBullMQRetryConfig(queueName);
+
+    const queue = new Queue(queueName, {
+      // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
+
+      connection: redis,
+      defaultJobOptions: {
+        removeOnComplete: queueName === "post-checker" ? 10 : 100,
+        removeOnFail: false, // Keep failed jobs for dead letter queue
+        attempts: retryConfig.attempts,
+        backoff: retryConfig.backoff,
+      },
+    });
+    queues.set(queueName, queue);
+  }
+  const existingQueue = queues.get(queueName);
+  if (!existingQueue) {
+    throw new Error(`Queue ${queueName} not found`);
+  }
+  return existingQueue;
+}
+
+/**
+ * BullMQ implementation of QueueClient
+ */
+class BullMQClient implements QueueClient {
+  async enqueue<T = unknown>(
+    queueName: QueueType,
+    jobName: string,
+    data: T,
+    options?: ScheduleOptions
+  ): Promise<QueueOperationResult> {
+    try {
+      const queue = getQueue(queueName);
+
+      let delay: number | undefined;
+
+      if (options?.scheduledFor !== undefined) {
+        // Calculate delay from scheduled timestamp (in seconds) to now
+        delay = options.scheduledFor * 1000 - Date.now();
+        // If scheduled time is in the past, process immediately (delay = 0)
+        if (delay < 0) {
+          delay = 0;
+        }
+      } else if (options?.delay !== undefined) {
+        delay = options.delay;
+      }
+
+      // Use deterministic jobId if provided, otherwise let BullMQ generate one
+      const jobOptions: { delay?: number; jobId?: string } = { delay };
+      if (options?.jobId) {
+        jobOptions.jobId = options.jobId;
+      }
+
+      const job = await queue.add(jobName, data, jobOptions);
+
+      return {
+        success: true,
+        jobId: job.id,
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to enqueue job";
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
+  async cancelByJobId(queueName: QueueType, jobId: string): Promise<boolean> {
+    try {
+      const queue = getQueue(queueName);
+      const job = await queue.getJob(jobId);
+
+      if (!job) {
+        return false;
+      }
+
+      // A job that is currently being processed holds a BullMQ lock and cannot
+      // be removed; `job.remove()` would throw "could not be removed because it
+      // is locked by another worker". The processor owns its lifecycle (it will
+      // complete or fail on its own), so skip removal instead of erroring.
+      if (await job.isActive()) {
+        logInfo("Skipping queue cancellation: job is actively processing", {
+          queueName,
+          jobId,
+        });
+        return false;
+      }
+
+      await job.remove();
+      return true;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      // Race between the isActive() check and remove(): the job became active
+      // in between. Same outcome as above; not an error condition.
+      if (isLockedJobError(err)) {
+        logInfo(
+          "Skipping queue cancellation: job became active during cancel",
+          {
+            queueName,
+            jobId,
+          }
+        );
+        return false;
+      }
+      logError(err, {
+        queueName,
+        jobId,
+        message: "Error canceling job by ID",
+      });
+      return false;
+    }
+  }
+
+  async getJobs(
+    queueName: QueueType,
+    statuses: JobStatus[]
+  ): Promise<
+    Array<{
+      id: string;
+      data: PostJobData | LongFormPostJobData;
+      status: JobStatus;
+    }>
+  > {
+    try {
+      const queue = getQueue(queueName);
+      // BullMQ's getJobs accepts an array of status strings
+      const jobs = await queue.getJobs(statuses);
+
+      return jobs.map((job) => {
+        const jobId: unknown = job.id;
+        const jobData: unknown = job.data;
+        const id = typeof jobId === "string" ? jobId : String(jobId ?? "");
+        const data: PostJobData | LongFormPostJobData = jobData as
+          | PostJobData
+          | LongFormPostJobData;
+        const status: JobStatus =
+          job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting";
+        return { id, data, status };
+      });
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        statuses,
+        message: "Error getting jobs",
+      });
+      return [];
+    }
+  }
+
+  async removeJob(queueName: QueueType, jobId: string): Promise<boolean> {
+    try {
+      const queue = getQueue(queueName);
+      const job = await queue.getJob(jobId);
+
+      if (job) {
+        await job.remove();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        queueName,
+        jobId,
+        message: "Error removing job",
+      });
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const queueClient: QueueClient = new BullMQClient();
+
+// Export queue getter for workers (they still need direct access)
+export function getQueueInstance(queueName: QueueType): Queue {
+  return getQueue(queueName);
+}
+
+// Export redis connection for workers
+export { redis };
+
+// Graceful shutdown helper
+export async function closeAllQueues(): Promise<void> {
+  for (const queue of queues.values()) {
+    await queue.close();
+  }
+  await redis.quit();
+}

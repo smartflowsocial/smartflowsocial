@@ -1,0 +1,44 @@
+# Lockfiles - we use pnpm
+bun.lockb
+package-lock.json
+yarn.lock
+# pnpm-lock.yaml is committed (required for pnpm)
+
+node_modules
+
+/build
+/public/build
+.env
+
+/tests/e2e/screenshots
+/tests/e2e/videos
+/postgres-data
+/redis-data
+.DS_Store
+
+# Repo hygiene: backup dirs and junk (do not commit)
+.git-backup-*
+.git.backup.*
+__MACOSX
+.pnpm-store
+
+# Coverage reports
+/coverage
+/.nyc_output
+
+# Performance test results
+tests/performance/results/
+
+# Test results
+test-results/
+
+# Local agent diagnostics
+.cursor/*.log
+.cursor/debug-*.log
+
+# Build artifacts
+eslint-report.json
+*.tsbuildinfo
+.tsbuildinfo
+.cache/node-compile-cache
+.cache/tsconfig.e2e.tsbuildinfo

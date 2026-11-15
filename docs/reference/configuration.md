@@ -1,0 +1,1154 @@
+# Configuration Reference
+
+**Last updated:** 2026-11-09
+
+Complete reference for all environment variables and configuration options in SmartFlowSocial.
+
+---
+
+## Table of Contents
+
+- [Required Variables](#required-variables)
+- [Optional Variables](#optional-variables)
+- [Storage Configuration](#storage-configuration)
+- [Companion services](#companion-services)
+- [Additional runtime variables](#additional-runtime-variables)
+- [External Services](#external-services)
+- [Development Settings](#development-settings)
+- [Production Settings](#production-settings)
+- [Validation](#validation)
+
+---
+
+## Required Variables
+
+These variables must be set for SmartFlowSocial to run.
+
+### DATABASE_URL
+
+PostgreSQL connection string.
+
+**Format:**
+
+```
+postgresql://[user]:[password]@[host]:[port]/[database]?schema=[schema]
+```
+
+**Examples:**
+
+```env
+# Native PostgreSQL (default port)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow?schema=public
+
+# pnpm docker: host port 5433, database name postgres (see docker-compose.yml)
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres
+
+# Managed service (Supabase)
+DATABASE_URL=postgresql://user:password@db.xxx.supabase.co:5432/postgres
+
+# With SSL
+DATABASE_URL=postgresql://user:password@host:5432/db?sslmode=require
+```
+
+**Validation:**
+
+- Must be a valid PostgreSQL connection string
+- Database must exist
+- User must have CREATE, SELECT, INSERT, UPDATE, DELETE permissions
+
+---
+
+### SESSION_SECRET
+
+Random secret for encrypting session cookies.
+
+**Generate:**
+
+```bash
+openssl rand -base64 32
+```
+
+**Example:**
+
+```env
+SESSION_SECRET=your-random-32-character-secret-string-here
+```
+
+**Security:**
+
+- Must be at least 32 characters
+- Use a cryptographically secure random generator
+- Never commit to version control
+- Rotate every 90 days in production
+
+---
+
+### NOSTR_PUBLISHER_URL
+
+URL to your HTTP Nostr Publisher service.
+
+**Format:**
+
+```
+https://your-publisher.example.com
+```
+
+**Example:**
+
+```env
+NOSTR_PUBLISHER_URL=https://publisher.example.com
+```
+
+**Required for:**
+
+- Publishing posts to Nostr relays
+- Signing events server-side (when needed)
+
+**Setup:**
+
+1. Deploy [SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
+2. Set this variable to the worker URL
+3. If that worker has `API_TOKEN` set, set the same value as `NOSTR_PUBLISHER_API_TOKEN` here. The
+   app sends it as the `API-TOKEN` header.
+
+---
+
+### REDIS_URL
+
+Redis connection string for BullMQ job queues.
+
+**Format:**
+
+```
+redis://[password@][host]:[port]/[database]
+```
+
+**Examples:**
+
+```env
+# Local development
+REDIS_URL=redis://localhost:6379
+
+# With password
+REDIS_URL=redis://:password@localhost:6379
+
+# With database number
+REDIS_URL=redis://localhost:6379/0
+
+# Managed service (Upstash)
+REDIS_URL=rediss://default:password@xxx.upstash.io:6379
+```
+
+**Required for:**
+
+- Scheduled post processing
+- Background job queue
+- Worker process functionality
+
+---
+
+### Storage Variables
+
+S3-compatible storage configuration for image uploads.
+
+#### STORAGE_ACCESS_KEY
+
+Storage service access key.
+
+```env
+STORAGE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+```
+
+#### STORAGE_SECRET
+
+Storage service secret key.
+
+```env
+STORAGE_SECRET=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+```
+
+#### STORAGE_REGION
+
+Storage service region.
+
+```env
+# AWS S3
+STORAGE_REGION=us-east-1
+
+# Cloudflare R2
+STORAGE_REGION=auto
+
+# MinIO
+STORAGE_REGION=us-east-1
+```
+
+#### STORAGE_BUCKET
+
+Storage bucket name.
+
+```env
+STORAGE_BUCKET=my-smartflow-bucket
+```
+
+#### STORAGE_CDN_URL
+
+Optional public CDN/domain base used for generated S3 media URLs. When set, uploaded file URLs are
+returned as `${STORAGE_CDN_URL}/{object-key}` instead of the raw `*.s3.*.amazonaws.com` host.
+
+```env
+STORAGE_CDN_URL=https://cdn.smartflow.social
+```
+
+Notes:
+
+- Do not include a trailing slash (it is tolerated, but normalized).
+- This domain must publicly serve the same bucket/object keys.
+- Use HTTPS for Nostr/media client compatibility.
+
+**See [Storage Configuration](#storage-configuration) for provider-specific setup.**
+
+---
+
+## Optional Variables
+
+### NODE_ENV
+
+Application environment mode.
+
+**Values:**
+
+- `development` - Development mode (default)
+- `production` - Production mode
+- `test` - Test mode
+
+**Example:**
+
+```env
+NODE_ENV=production
+```
+
+**Effects:**
+
+- Development: Debug logging, hot reload
+- Production: Optimized builds, error tracking
+- Test: Test database, mock services
+
+---
+
+### PRIMAL_CACHING_URL
+
+Primal caching service URL for profile and event lookups. Two formats are supported.
+
+**1. HTTP(S) proxy (e.g. Cloudflare Worker)**  
+Use when you run a proxy that accepts POST with `{ requestType, params }` and returns the same array
+format as the WebSocket API:
+
+```env
+PRIMAL_CACHING_URL=https://primal-caching-websocket-worker.your-domain.workers.dev
+```
+
+**2. WebSocket (direct cache)**  
+Single endpoint or comma-separated list:
+
+```env
+PRIMAL_CACHING_URL=wss://cache.example.com/v1
+PRIMAL_CACHING_URL=wss://cache1.example.com/v1,wss://cache2.example.com/v1
+```
+
+**Default:** If not set, uses public Primal cache endpoints:
+
+- `wss://cache1.primal.net/v1`
+- `wss://cache2.primal.net/v1`
+
+**Used for:**
+
+- Profile lookups (pfp, display names)
+- Event fetching
+- Thread views
+- Engagement feed
+
+---
+
+### NOSTR_NSEC
+
+Nostr secret key for server-side event signing and DMs.
+
+**Format:**
+
+```
+nsec1...
+```
+
+**Example:**
+
+```env
+NOSTR_NSEC=nsec1abc123...
+```
+
+**Security Warning:**
+
+- ⚠️ Keep this secret! Never commit to version control
+- Store in secure secret management service
+- Rotate if compromised
+
+**Required for:**
+
+- Sending subscription-related DMs
+- Server-side event signing (when user extension unavailable)
+
+---
+
+### NOSTR_DM_NIP17_ENABLED
+
+When **true** (default), the server attempts **NIP-17** private DMs (gift-wrapped kind `1059`) for
+recipients who publish **kind `10050`** inbox relay lists. **NIP-04** (kind `4`) is always published
+afterward for legacy clients.
+
+Set to `false` to disable only the NIP-17 leg (NIP-04 remains).
+
+**Example:**
+
+```env
+NOSTR_DM_NIP17_ENABLED=true
+```
+
+---
+
+### FEEDBACK_INBOX_NPUB
+
+**npub** (or hex pubkey) of the Nostr inbox that receives **Report a bug / Suggest a feature**
+submissions from the dashboard sidebar. The user’s client **encrypts (NIP-04) and signs (kind 4)**
+with their active identity - **NIP-07** (`window.nostr.nip04`) or **NIP-46** (`nip04_encrypt` on the
+remote signer). The server only validates and **publishes** (`/api/feedback-dm`); no `NOSTR_NSEC` is
+used for feedback. If **`NOSTR_DM_NIP17_ENABLED`** is on and this inbox has **kind `10050`** inbox
+relays, clients may also submit two **NIP-17 gift wraps** using **NIP-44** via **`nip44_encrypt`**
+(remote) or `window.nostr.nip44.encrypt` (extension).
+
+When unset or invalid, the sidebar feedback control is hidden.
+
+**Example:**
+
+```env
+FEEDBACK_INBOX_NPUB=npub1...
+```
+
+---
+
+### OWNER_NWC
+
+Nostr Wallet Connect string for receiving subscription payments.
+
+**Format:**
+
+```
+nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
+```
+
+**Example:**
+
+```env
+OWNER_NWC=nostr+walletconnect://npub1...?relay=wss://relay.example.com&secret=...
+```
+
+**How to get:**
+
+1. Use a Lightning wallet supporting NWC (Alby, Mutiny, etc.)
+2. Generate connection string from wallet
+3. Set as this environment variable
+
+**Required for:**
+
+- Accepting Lightning payments
+- Subscription management
+- **Referral payouts** (operator UI at `/dashboard/admin` and `cron.referral-payout`)
+
+---
+
+### ADMIN_NPUBS
+
+Comma-separated list of operator **npubs** allowed to access the admin area under `/dashboard/admin`
+(Overview, Analytics, Users, Operations, Referrals). Legacy URL `/dashboard/admin/earnings`
+redirects to Referrals.
+
+**Example:**
+
+```env
+ADMIN_NPUBS=npub1abc...,npub1def...
+```
+
+If unset or empty, no accounts have admin access.
+
+Comparison accepts **either** bech32 `npub1…` **or** 64-character **hex** pubkeys, and normalizes
+them to the same form. That matches how login works: Nostr auth v2 stores **`User.npub` as hex**,
+while wallets usually show **`npub1…`** - you can paste either into `ADMIN_NPUBS`. Stray zero-width
+characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bech32.
+
+---
+
+### SELF_HOSTED
+
+Leave unset on SmartFlowSocial managed hosting. The process then keeps Free, Starter, Creator, Pro,
+and Founder limits. Set `SELF_HOSTED=true` (also `1`, `yes`, `self-hosted`, or `self_hosted`) on an
+install you operate. That unlocks scheduling, queues, drafts, templates, bulk actions, broadcast
+sending, and giveaway presets without a hosted plan. Any other value, including `on` or `false`,
+stays hosted.
+
+The flag is read from the server process. A cookie, request, or account row cannot change it.
+Switching it does not rewrite subscription rows. Hosted Blossom storage and SmartFlowSocial hosted
+Blastr stay on the commercial plan. A self-hosted install can use Blastr only when
+`BLASTR_ADMIN_URL` and `BLASTR_ADMIN_API_TOKEN` are both set to infrastructure the operator runs.
+
+Optional caps, blank for no software cap and `0` or non-numeric for a closed cap:
+
+- `SELF_HOSTED_MAX_FUTURE_SCHEDULED`
+- `SELF_HOSTED_MAX_QUEUES`
+- `SELF_HOSTED_MAX_DRAFTS`
+- `SELF_HOSTED_MAX_TEMPLATES`
+- `SELF_HOSTED_MAX_ACCOUNTS`
+- `SELF_HOSTED_MAX_BROADCAST_RECIPIENTS`
+- `SELF_HOSTED_MAX_CONCURRENT_BROADCASTS`
+- `SELF_HOSTED_MAX_DAILY_BROADCAST_RECIPIENTS`
+- `SELF_HOSTED_MAX_GIVEAWAY_WINNERS`
+
+---
+
+### REFERRAL_PAYOUTS_ENABLED
+
+`true`, `1`, or `yes` allow cron, admin, and manual referral payouts to call the wallet. Any other
+value, including `false` or an empty string, keeps those routes from paying. `example.env` sets
+`false` so a new self-host does not pay anyone. A missing `OWNER_NWC` never enables payouts.
+
+An existing production process that already has `OWNER_NWC` and leaves the flag unset still pays,
+and logs a one-time warning. That path exists so a hosted deploy is not interrupted. Set `false` on
+that process to turn payouts off. New installs and every non-production process stay off until the
+flag is explicitly on. Production boot requires `REFERRAL_MANUAL_PAYOUT_SECRET` only when the flag
+is exactly `true`.
+
+### REFERRAL_MANUAL_PAYOUT_SECRET
+
+Not required merely to boot. `POST /api/referral/manual-payout` returns 401 when this is unset or
+wrong, and 404 when `REFERRAL_PAYOUTS_ENABLED=false`. Send it as `X-Referral-Payout-Secret`.
+Generate one with `openssl rand -base64 32`. Production requires it only when
+`REFERRAL_PAYOUTS_ENABLED=true`.
+
+The invoice amount must equal `amount_sats`. Amountless invoices and invoices larger than the
+declared amount are rejected before the wallet is called. Successful payouts are capped at
+`REFERRAL_PAYOUT_MAX_SATS` (default 1,000,000) per invoice and `REFERRAL_PAYOUT_DAILY_CAP_SATS`
+(default 5,000,000) per UTC day. Those caps do not replace a spending limit on the NWC wallet.
+
+The signed-in operator UI at `/dashboard/admin` does not use this secret. It relies on `ADMIN_NPUBS`
+and session auth, and it calls the same invoice checks.
+
+---
+
+### SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES
+
+How often, in minutes, the worker renews NWC auto-renew subscriptions. Default `60`. Set to `0` to
+turn the worker sweep off.
+
+Renewals do not depend on an outside cron. `GET` or `POST /cron/checksubscription` runs the same
+sweep when you want to trigger it by hand.
+
+---
+
+### CRON_SECRET
+
+Required in production for every `/cron/*` route: subscription renewal, post analytics, campaign
+autopay, referral payout, publish-ack cleanup, and the retained-record purge. Send it as
+`X-Cron-Secret` or `Authorization: Bearer <secret>`. When the secret is unset, those routes
+return 401. They do not run the job. Generate one with `openssl rand -base64 32`.
+
+POST is the preferred method. GET is still accepted when the secret matches, so an existing
+scheduler can keep its URL and add the header. Do not put the secret in a query string.
+
+The worker still runs subscription renewal and post analytics on their interval settings. Those
+in-process sweeps do not use this HTTP secret. Campaign autopay, referral payout, ack cleanup, and
+the retained-record purge (`/cron/purge-retained-records`) run only when something calls their cron
+route.
+
+---
+
+### APP_URL
+
+Canonical application URL. Used for CSRF origin validation and links in emails/push.
+
+**Format:** Full URL including scheme, no trailing slash.
+
+**Example:**
+
+```env
+APP_URL=http://localhost:3000
+APP_URL=https://smartflow.social
+```
+
+**Default:** Not set (some features may fall back to request host).
+
+**Required for:**
+
+- CSRF protection (origin check)
+- Web Push VAPID subject when `VAPID_SUBJECT` is not set
+
+---
+
+### ALLOWED_ORIGINS
+
+Comma-separated list of allowed origins for CSRF protection. Use when the app is accessed from
+multiple domains (e.g. main domain + www).
+
+**Example:**
+
+```env
+ALLOWED_ORIGINS=https://smartflow.social,https://www.smartflow.social
+```
+
+**Default:** If not set, only the same origin as the request is allowed.
+
+---
+
+### NOSTR_AUTH_V2_ENABLED
+
+Enable server-issued Nostr login (challenge/verify flow). When enabled, the app exposes
+`POST /auth/nostr/challenge` and `POST /auth/nostr/verify`.
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+NOSTR_AUTH_V2_ENABLED=true
+```
+
+**Default:** `true`
+
+---
+
+### MEDIA_PIPELINE_V2_ENABLED
+
+Enable the unified media intent/commit pipeline (`/api/media/intents`, `/api/media/commit`).
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+MEDIA_PIPELINE_V2_ENABLED=true
+```
+
+---
+
+### ENFORCE_NOSTR_SESSION_PUBKEY
+
+Enforce that every signed Nostr event’s pubkey matches the active session pubkey. Prevents using one
+session to sign as another identity.
+
+**Values:** `true` | `false`
+
+**Example:**
+
+```env
+ENFORCE_NOSTR_SESSION_PUBKEY=true
+```
+
+**Default:** `true`
+
+---
+
+### VAPID_PUBLIC_KEY
+
+Public key for Web Push (VAPID). Required for browser push notifications.
+
+**How to generate:**
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+**Example:**
+
+```env
+VAPID_PUBLIC_KEY=BEl62iUYgUivxIkv69yViEuiHIa-I0...
+```
+
+**Required for:** Push notifications (optional feature).
+
+---
+
+### VAPID_PRIVATE_KEY
+
+Private key for Web Push (VAPID). Keep secret.
+
+**Example:**
+
+```env
+VAPID_PRIVATE_KEY=...
+```
+
+**Security:** Never commit to version control. Store in secret manager.
+
+---
+
+### VAPID_SUBJECT
+
+Subject for Web Push (mailto or URL). Shown to users in push subscription UI.
+
+**Example:**
+
+```env
+VAPID_SUBJECT=mailto:admin@smartflow.social
+VAPID_SUBJECT=https://smartflow.social
+```
+
+**Default:** Falls back to `APP_URL` or a default mailto if unset.
+
+---
+
+### TEST_DATABASE_URL
+
+Test database connection string (optional).
+
+**Format:**
+
+```
+postgresql://user:password@host:port/testdb
+```
+
+**Example:**
+
+```env
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow_test
+```
+
+**Default:** With `E2E_TEST=true`, an unset `DATABASE_URL` falls back to this value, then to
+`postgresql://postgres:postgres@localhost:5432/smartflow_test`. That port is the code default, not
+the `pnpm docker` host port (5433).
+
+**Use case:**
+
+- Separate test database
+- Avoid polluting development data
+
+---
+
+### SENTRY_DSN
+
+Sentry error tracking DSN (optional).
+
+**Format:**
+
+```
+https://xxx@xxx.ingest.sentry.io/xxx
+```
+
+**Example:**
+
+```env
+SENTRY_DSN=https://abc123@o123456.ingest.sentry.io/123456
+```
+
+**How to get:**
+
+1. Create project at [sentry.io](https://sentry.io)
+2. Get DSN from project settings
+3. Set as this environment variable
+
+**Required for:**
+
+- Error tracking
+- Performance monitoring
+- Release tracking
+
+---
+
+### SENTRY_TRACES_SAMPLE_RATE
+
+Sentry performance tracing sample rate.
+
+**Format:** Number between 0 and 1 (inclusive).
+
+**Example:**
+
+```env
+SENTRY_TRACES_SAMPLE_RATE=0.1
+```
+
+---
+
+### SENTRY_PROFILES_SAMPLE_RATE
+
+Sentry profiling sample rate.
+
+**Format:** Number between 0 and 1 (inclusive).
+
+**Example:**
+
+```env
+SENTRY_PROFILES_SAMPLE_RATE=0.05
+```
+
+---
+
+### METRICS_PORT
+
+Port for the web process Prometheus endpoint (`GET /metrics`).
+
+**Example:**
+
+```env
+METRICS_PORT=3010
+```
+
+---
+
+### WORKER_METRICS_PORT
+
+Port for the worker process Prometheus endpoint (`GET /metrics`).
+
+**Example:**
+
+```env
+WORKER_METRICS_PORT=3011
+```
+
+---
+
+### METRICS_TOKEN
+
+Optional token to protect Prometheus endpoints.
+
+---
+
+### METRICS_ALLOWED_IPS
+
+Optional allowlist of source IPs that can access Prometheus endpoints.
+
+---
+
+### BLOSSOM_INTERNAL_SECRET
+
+Optional secret for `GET /internal/subscription-status`.
+[SmartFlowSocial Blossom](https://github.com/smartflowsocial/smartflowsocial-blossom) calls that
+route with header `x-internal-secret`. Set this to the same value as `SFS_INTERNAL_SECRET` on the
+gateway. `SFS_INTERNAL_SECRET` and `SFS_UPLOAD_TOKEN_SECRET` are gateway variables, not variables of
+this app.
+
+**Example:**
+
+```env
+BLOSSOM_INTERNAL_SECRET=your-shared-secret-with-blossom-server
+```
+
+---
+
+### BLOSSOM_SFS_API_URL
+
+Optional base URL for SmartFlow Blossom API operations performed by the app server (for example,
+deleting remote files from R2 when deleting media records in Settings). Defaults to
+`https://blossom-api.smartflow.social`.
+
+**Example:**
+
+```env
+BLOSSOM_SFS_API_URL=https://blossom-api.smartflow.social
+```
+
+---
+
+### BLOSSOM_UPLOAD_TOKEN_SECRET
+
+Optional secret used to sign Blossom v2 upload tokens issued by `POST /api/blossom/tokens`. If
+omitted, SmartFlow falls back to `BLOSSOM_INTERNAL_SECRET` for signing.
+
+Set this to the same value as `SFS_UPLOAD_TOKEN_SECRET` on the Blossom gateway. The gateway rejects
+startup when that secret matches `SFS_INTERNAL_SECRET`.
+
+**Example:**
+
+```env
+BLOSSOM_UPLOAD_TOKEN_SECRET=your-upload-token-signing-secret
+```
+
+---
+
+### ENABLE_NOSTR_DELETE_EVENTS
+
+Feature flag for asynchronous Nostr deletion requests (`kind:5`) when users delete published
+posts/longform content.
+
+When enabled, local delete still completes immediately, and relay delete requests are emitted
+through the outbox worker in best-effort mode.
+
+```env
+ENABLE_NOSTR_DELETE_EVENTS=false
+```
+
+Recommended rollout:
+
+1. Start with `false` in production.
+2. Enable in staging and monitor outbox dead-letter / relay ACK outcomes.
+3. Enable in production once relay error rates are acceptable.
+
+---
+
+### NIP88_POLLS_ENABLED
+
+When `true`, enables NIP-88 **polls** in the product: poll composer on **New post**,
+`PostType.POLL`, kind **`1068`** publish/schedule, vote submission (**`1018`**) through
+`/api/publish` with merged execution + poll relays, and in-app tally subscriptions.
+
+Defaults to **off**; safe for production until you intentionally roll out.
+
+```env
+NIP88_POLLS_ENABLED=true
+```
+
+**Related:** [Nostr reference - NIP-88](./nostr.md#nip-88-polls-kind-1068--1018)
+
+---
+
+### CONTESTS_V1_ENABLED
+
+When `true`, enables Contests v1 UI/routes under `/dashboard/contests`.
+
+```env
+CONTESTS_V1_ENABLED=true
+```
+
+---
+
+### SUBSCRIPTION_CHECKOUT_V2_ENABLED
+
+When `true`, enables dual-lane subscription checkout flows.
+
+```env
+SUBSCRIPTION_CHECKOUT_V2_ENABLED=true
+```
+
+---
+
+### BTCPAY_URL
+
+Base URL for BTCPay Server Greenfield API.
+
+```env
+BTCPAY_URL=https://btcpay.yourdomain.com
+```
+
+---
+
+### BTCPAY_API_KEY
+
+Greenfield API key used by SmartFlowSocial to create/query BTCPay resources.
+
+```env
+BTCPAY_API_KEY=your-btcpay-greenfield-api-key
+```
+
+---
+
+### BTCPAY_STORE_ID
+
+BTCPay Store ID associated with your checkout/invoice flows.
+
+```env
+BTCPAY_STORE_ID=your-store-id
+```
+
+---
+
+### BTCPAY_WEBHOOK_SECRET
+
+Secret used to verify signatures for `POST /api/btcpay/webhook`.
+
+```env
+BTCPAY_WEBHOOK_SECRET=your-webhook-secret
+```
+
+---
+
+## Storage Configuration
+
+### AWS S3
+
+```env
+STORAGE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
+STORAGE_SECRET=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+STORAGE_REGION=us-east-1
+STORAGE_BUCKET=my-smartflow-bucket
+STORAGE_CDN_URL=https://cdn.smartflow.social
+```
+
+**Setup:**
+
+1. Create S3 bucket in AWS Console
+2. Create IAM user with S3 access
+3. Generate access keys
+4. Configure bucket CORS if needed
+
+**CORS Configuration:**
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+    "AllowedOrigins": ["*"],
+    "ExposeHeaders": []
+  }
+]
+```
+
+---
+
+### Cloudflare R2
+
+```env
+STORAGE_ACCESS_KEY=your-r2-access-key
+STORAGE_SECRET=your-r2-secret-key
+STORAGE_REGION=auto
+STORAGE_BUCKET=your-bucket-name
+```
+
+**Setup:**
+
+1. Create R2 bucket in Cloudflare Dashboard
+2. Create API token
+3. Use `auto` for region
+
+---
+
+### MinIO (Self-Hosted)
+
+```env
+STORAGE_ACCESS_KEY=minioadmin
+STORAGE_SECRET=minioadmin
+STORAGE_REGION=us-east-1
+STORAGE_BUCKET=smartflow
+```
+
+**Docker Setup:**
+
+```bash
+docker run -d \
+  --name minio \
+  -p 9000:9000 \
+  -p 9001:9001 \
+  -e MINIO_ROOT_USER=minioadmin \
+  -e MINIO_ROOT_PASSWORD=minioadmin \
+  minio/minio server /data --console-address ":9001"
+```
+
+---
+
+## Companion services
+
+These are separate repositories. The app talks to them over HTTP.
+
+| Service      | Repository                                                                                      | App variables                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Publisher    | [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)       | `NOSTR_PUBLISHER_URL`, `NOSTR_PUBLISHER_API_TOKEN`                              |
+| Blastr       | [smartflowsocial-blastr](https://github.com/smartflowsocial/smartflowsocial-blastr)             | `BLASTR_ADMIN_URL`, `BLASTR_ADMIN_API_TOKEN`                                    |
+| Blossom      | [smartflowsocial-blossom](https://github.com/smartflowsocial/smartflowsocial-blossom)           | `BLOSSOM_SFS_API_URL`, `BLOSSOM_INTERNAL_SECRET`, `BLOSSOM_UPLOAD_TOKEN_SECRET` |
+| Cache worker | [smartflowsocial-cache-worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) | `PRIMAL_CACHING_URL`, `NOSTRMASH_BASE_URL`, `NOSTRMASH_API_TOKEN`               |
+| NostrMash    | [nostrmash](https://github.com/nostrmash/nostrmash)                                             | `NOSTRMASH_BASE_URL` (default `https://api.nostrmash.com`)                      |
+
+Blastr sync is a no-op when `BLASTR_ADMIN_URL` is unset. Profile lookups use public Primal sockets
+when `PRIMAL_CACHING_URL` is unset. The cache worker itself reads NostrMash before Primal.
+
+---
+
+## Additional runtime variables
+
+Read in `app/lib/env.server.ts` and not given their own section above.
+
+| Variable                                | Default                     | Purpose                                                                                       |
+| --------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
+| `PORT`                                  | `3000`                      | HTTP listen port.                                                                             |
+| `HOST`                                  | `0.0.0.0`                   | HTTP listen host.                                                                             |
+| `NOSTR_PUBLISHER_API_TOKEN`             | unset                       | Sent as `API-TOKEN`. Required in production unless public publisher mode is explicit.         |
+| `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` | unset                       | `true` only when the publisher is intentionally public.                                       |
+| `REFERRAL_PAYOUT_MAX_SATS`              | `1000000`                   | Maximum sats in one referral invoice.                                                         |
+| `REFERRAL_PAYOUT_DAILY_CAP_SATS`        | `5000000`                   | Maximum sats marked successful in one UTC day.                                                |
+| `NOSTRMASH_BASE_URL`                    | `https://api.nostrmash.com` | NostrMash HTTP origin.                                                                        |
+| `NOSTRMASH_API_TOKEN`                   | unset                       | Bearer token for NostrMash, only when that deployment requires one.                           |
+| `BLASTR_ADMIN_URL`                      | unset                       | Blastr origin. Unset disables entitlement and policy sync.                                    |
+| `BLASTR_ADMIN_API_TOKEN`                | unset                       | Sent as `X-API-TOKEN` to Blastr admin routes.                                                 |
+| `OWNER_NWC_RELAY`                       | unset                       | One relay URL that overrides relays embedded in `OWNER_NWC`.                                  |
+| `OWNER_NWC_RELAYS`                      | unset                       | Comma-separated relay override. Used before `OWNER_NWC_RELAY`.                                |
+| `POST_ANALYTICS_INTERVAL_MINUTES`       | `60`                        | Worker sweep interval. `0` disables it.                                                       |
+| `POST_ANALYTICS_BATCH_SIZE`             | `40`                        | Notes per analytics sweep.                                                                    |
+| `POST_ANALYTICS_CONCURRENCY`            | `4`                         | Concurrent NostrMash calls inside one sweep.                                                  |
+| `PRIMAL_HTTP_TIMEOUT_MS`                | `8000`                      | Per-attempt timeout for the HTTP Primal proxy.                                                |
+| `PRIMAL_HTTP_MAX_RETRIES`               | `0`                         | Extra retries after the first HTTP Primal attempt.                                            |
+| `RELAY_HEALTH_STORE`                    | `memory`                    | `memory` or `redis`.                                                                          |
+| `RUNWAY_LOW_CRON_INTERVAL_MINUTES`      | `60`                        | Runway-low sweep interval. `0` disables the worker scheduler.                                 |
+| `DISABLE_RATE_LIMIT`                    | unset                       | `true` disables rate limits (tests and local debugging).                                      |
+| `SIGNING_MULTI_SLOT`                    | unset                       | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`. |
+| `PUBLIC_STATS_ENABLED`                  | enabled                     | `false` disables `GET /api/public/stats` and the avatar proxy.                                |
+| `LANDING_STATS_ORIGINS`                 | `https://smartflow.social`  | Extra comma-separated CORS origins for public stats.                                          |
+| `REFERRAL_LANDING_URL`                  | `https://smartflow.social`  | Base URL used in referral links.                                                              |
+| `FLY_REGION`                            | unset                       | Set by Fly.io. Returned on responses as `x-fly-region`.                                       |
+| `PRIMARY_REGION`                        | unset                       | Fly primary region. With `FLY_REGION`, used to route database connections.                    |
+| `ENABLE_SOURCE_MAPS`                    | unset                       | `true` enables source maps outside production. Production always enables them.                |
+| `E2E_TEST`                              | unset                       | `true` fills missing required variables with test defaults.                                   |
+| `CYPRESS`                               | unset                       | Set by Cypress. Bypasses rate limits during end-to-end tests.                                 |
+| `COOLIFY_URL`                           | unset                       | Used as an allowed origin when `APP_URL` is unset.                                            |
+
+---
+
+## External Services
+
+### HTTP Nostr Publisher
+
+**Required:** Yes  
+**Purpose:** Publish signed Nostr events to relays
+
+**Deploy:**
+[SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
+
+```env
+NOSTR_PUBLISHER_URL=https://publisher.example.com
+NOSTR_PUBLISHER_API_TOKEN=
+```
+
+---
+
+### Cache worker and Primal
+
+**Required:** No (public Primal sockets are used when `PRIMAL_CACHING_URL` is unset)  
+**Purpose:** Profile and event lookups
+
+**Deploy:**
+[SmartFlowSocial Cache Worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker)
+
+```env
+PRIMAL_CACHING_URL=wss://cache.example.com/v1
+```
+
+---
+
+## Development Settings
+
+### Recommended Development Configuration
+
+```env
+# Database (pnpm docker)
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres
+
+# Session
+SESSION_SECRET=dev-secret-change-in-production
+
+# Nostr Publisher
+NOSTR_PUBLISHER_URL=http://localhost:8080
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Storage (MinIO for local dev)
+STORAGE_ACCESS_KEY=minioadmin
+STORAGE_SECRET=minioadmin
+STORAGE_REGION=us-east-1
+STORAGE_BUCKET=smartflow
+
+# Environment
+NODE_ENV=development
+```
+
+---
+
+## Production Settings
+
+### Recommended Production Configuration
+
+```env
+# Database (managed service)
+DATABASE_URL=postgresql://user:password@host:5432/db?sslmode=require
+
+# Session (strong secret)
+SESSION_SECRET=<generated-with-openssl-rand-base64-32>
+
+# Nostr Publisher
+NOSTR_PUBLISHER_URL=https://publisher.example.com
+
+# Redis (managed service)
+REDIS_URL=rediss://default:password@xxx.upstash.io:6379
+
+# Storage (production service)
+STORAGE_ACCESS_KEY=<production-key>
+STORAGE_SECRET=<production-secret>
+STORAGE_REGION=us-east-1
+STORAGE_BUCKET=smartflow-prod
+
+# Primal Cache (optional, self-hosted)
+PRIMAL_CACHING_URL=wss://cache.example.com/v1
+
+# Payments
+OWNER_NWC=nostr+walletconnect://...
+
+# Server signing (optional)
+NOSTR_NSEC=nsec1...
+
+# Error tracking
+SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+
+# Environment
+NODE_ENV=production
+```
+
+**Security Checklist:**
+
+- ✅ Strong `SESSION_SECRET` (32+ characters)
+- ✅ SSL/TLS for all connections
+- ✅ Secure secret management (not in code)
+- ✅ Regular secret rotation
+- ✅ Environment-specific values
+
+---
+
+## Validation
+
+### Validate Configuration
+
+Create a validation script:
+
+```javascript
+// scripts/validate-env.js
+const required = [
+  "DATABASE_URL",
+  "SESSION_SECRET",
+  "NOSTR_PUBLISHER_URL",
+  "REDIS_URL",
+  "STORAGE_ACCESS_KEY",
+  "STORAGE_SECRET",
+  "STORAGE_REGION",
+  "STORAGE_BUCKET",
+];
+
+const missing = required.filter((key) => !process.env[key]);
+
+if (missing.length > 0) {
+  console.error("❌ Missing required environment variables:");
+  missing.forEach((key) => console.error(`  - ${key}`));
+  process.exit(1);
+}
+
+console.log("✅ All required environment variables are set");
+```
+
+**Run:**
+
+```bash
+node scripts/validate-env.js
+```
+
+---
+
+## Related Documentation
+
+- [Installation Guide](../getting-started/installation.md) - Setup instructions
+- [Deployment Guide](../guides/deployment.md) - Production deployment
+- [Security Guide](../guides/security.md) - Security best practices
+- [Troubleshooting](../troubleshooting/common-issues.md) - Common issues
+
+---
+
+**Next:** [Installation Guide](../getting-started/installation.md) → Set up your environment

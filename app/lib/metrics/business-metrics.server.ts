@@ -1,0 +1,362 @@
+/**
+ * Business Metrics
+ *
+ * Tracks business-level metrics for posts:
+ * - Post creation rate (by type, by user)
+ * - Post publication success/failure
+ * - Post scheduling rate
+ * - State transitions
+ * - Outbox events processed
+ */
+
+import * as promClient from "prom-client";
+
+import { singleton } from "../singleton.server";
+
+/**
+ * Get or create a metric, handling hot-reloads gracefully
+ */
+function getOrCreateMetric<T extends promClient.Metric>(
+  name: string,
+  factory: () => T
+): T {
+  return singleton(`prom_metric_${name}`, () => {
+    const registry = promClient.register;
+    try {
+      const existingMetric = registry.getSingleMetric(name);
+      if (existingMetric) {
+        return existingMetric as T;
+      }
+    } catch {
+      // Metric doesn't exist, continue to create it
+    }
+
+    try {
+      return factory();
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("has already been registered")
+      ) {
+        const existingMetric = registry.getSingleMetric(name);
+        if (existingMetric) {
+          return existingMetric as T;
+        }
+      }
+      throw error;
+    }
+  });
+}
+
+/**
+ * Post creation counter
+ * Tracks posts created by type
+ */
+export const postCreatedCounter = getOrCreateMetric(
+  "posts_created_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_created_total",
+      help: "Total number of posts created",
+      labelNames: ["post_type", "is_scheduled"],
+    })
+);
+
+/**
+ * Post published counter
+ * Tracks posts successfully published
+ */
+export const postPublishedCounter = getOrCreateMetric(
+  "posts_published_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_published_total",
+      help: "Total number of posts published",
+      labelNames: ["post_type", "publish_method"], // publish_method: "immediate" | "scheduled"
+    })
+);
+
+/**
+ * Post publish failure counter
+ * Tracks failed post publications
+ */
+export const postPublishFailedCounter = getOrCreateMetric(
+  "posts_publish_failed_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_publish_failed_total",
+      help: "Total number of failed post publications",
+      labelNames: ["post_type", "publish_method", "error_type"],
+    })
+);
+
+/**
+ * Post cancelled counter
+ * Tracks posts that were cancelled
+ */
+export const postCancelledCounter = getOrCreateMetric(
+  "posts_cancelled_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_cancelled_total",
+      help: "Total number of posts cancelled",
+      labelNames: ["post_type"],
+    })
+);
+
+/**
+ * Post recycled counter
+ * Tracks posts that were recycled
+ */
+export const postRecycledCounter = getOrCreateMetric(
+  "posts_recycled_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_recycled_total",
+      help: "Total number of posts recycled",
+      labelNames: ["post_type"],
+    })
+);
+
+/**
+ * Post scheduled counter
+ * Tracks posts scheduled for future publication
+ */
+export const postScheduledCounter = getOrCreateMetric(
+  "posts_scheduled_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_scheduled_total",
+      help: "Total number of posts scheduled",
+      labelNames: ["post_type"],
+    })
+);
+
+/**
+ * Post state transition counter
+ * Tracks state transitions for posts
+ */
+export const postStateTransitionCounter = getOrCreateMetric(
+  "posts_state_transitions_total",
+  () =>
+    new promClient.Counter({
+      name: "posts_state_transitions_total",
+      help: "Total number of post state transitions",
+      labelNames: ["from_state", "to_state"],
+    })
+);
+
+/**
+ * Longform post state transition counter
+ * Tracks state transitions for longform posts
+ */
+export const longFormPostStateTransitionCounter = getOrCreateMetric(
+  "longform_posts_state_transitions_total",
+  () =>
+    new promClient.Counter({
+      name: "longform_posts_state_transitions_total",
+      help: "Total number of longform post state transitions",
+      labelNames: ["from_state", "to_state"],
+    })
+);
+
+/**
+ * Outbox events processed counter
+ * Tracks outbox events processed
+ */
+export const outboxEventsProcessedCounter = getOrCreateMetric(
+  "outbox_events_processed_total",
+  () =>
+    new promClient.Counter({
+      name: "outbox_events_processed_total",
+      help: "Total number of outbox events processed",
+      labelNames: ["event_type", "status"], // status: "success" | "error"
+    })
+);
+
+/**
+ * Outbox events retried counter
+ * Tracks outbox events that were scheduled for retry (not dead-lettered)
+ */
+export const outboxEventsRetriedCounter = getOrCreateMetric(
+  "outbox_events_retried_total",
+  () =>
+    new promClient.Counter({
+      name: "outbox_events_retried_total",
+      help: "Total number of outbox events scheduled for retry",
+      labelNames: ["event_type"],
+    })
+);
+
+/**
+ * Outbox events dead-lettered counter
+ * Tracks outbox events that were moved to dead-letter
+ */
+export const outboxEventsDeadLetteredCounter = getOrCreateMetric(
+  "outbox_events_dead_lettered_total",
+  () =>
+    new promClient.Counter({
+      name: "outbox_events_dead_lettered_total",
+      help: "Total number of outbox events moved to dead-letter",
+      labelNames: ["event_type", "reason"], // reason: "non_retryable" | "max_attempts"
+    })
+);
+
+/**
+ * Outbox backlog gauge
+ * Tracks current outbox backlog sizes
+ */
+export const outboxBacklogGauge = getOrCreateMetric(
+  "outbox_backlog",
+  () =>
+    new promClient.Gauge({
+      name: "outbox_backlog",
+      help: "Current number of outbox events by state",
+      labelNames: ["state"], // state: "pending" | "ready" | "dead_letter"
+    })
+);
+
+/**
+ * Outbox oldest ready age gauge
+ * Tracks how old the oldest ready-to-process outbox event is.
+ */
+export const outboxOldestReadyAgeSecondsGauge = getOrCreateMetric(
+  "outbox_oldest_ready_age_seconds",
+  () =>
+    new promClient.Gauge({
+      name: "outbox_oldest_ready_age_seconds",
+      help: "Age in seconds of oldest ready outbox event",
+    })
+);
+
+/**
+ * Record post creation
+ */
+export function recordPostCreated(
+  postType: string,
+  isScheduled: boolean
+): void {
+  postCreatedCounter.inc({
+    post_type: postType,
+    is_scheduled: isScheduled ? "true" : "false",
+  });
+}
+
+/**
+ * Record post published
+ */
+export function recordPostPublished(
+  postType: string,
+  publishMethod: "immediate" | "scheduled"
+): void {
+  postPublishedCounter.inc({
+    post_type: postType,
+    publish_method: publishMethod,
+  });
+}
+
+/**
+ * Record post publish failure
+ */
+export function recordPostPublishFailed(
+  postType: string,
+  publishMethod: "immediate" | "scheduled",
+  errorType?: string
+): void {
+  postPublishFailedCounter.inc({
+    post_type: postType,
+    publish_method: publishMethod,
+    error_type: errorType ?? "UnknownError",
+  });
+}
+
+/**
+ * Record post scheduled
+ */
+export function recordPostScheduled(postType: string): void {
+  postScheduledCounter.inc({
+    post_type: postType,
+  });
+}
+
+/**
+ * Record post cancelled
+ */
+export function recordPostCancelled(postType: string): void {
+  postCancelledCounter.inc({
+    post_type: postType,
+  });
+}
+
+/**
+ * Record post recycled
+ */
+export function recordPostRecycled(postType: string): void {
+  postRecycledCounter.inc({
+    post_type: postType,
+  });
+}
+
+/**
+ * Record post state transition
+ */
+export function recordPostStateTransition(
+  fromState: string,
+  toState: string
+): void {
+  postStateTransitionCounter.inc({
+    from_state: fromState,
+    to_state: toState,
+  });
+}
+
+/**
+ * Record longform post state transition
+ */
+export function recordLongFormPostStateTransition(
+  fromState: string,
+  toState: string
+): void {
+  longFormPostStateTransitionCounter.inc({
+    from_state: fromState,
+    to_state: toState,
+  });
+}
+
+/**
+ * Record outbox event processed
+ */
+export function recordOutboxEventProcessed(
+  eventType: string,
+  success: boolean
+): void {
+  outboxEventsProcessedCounter.inc({
+    event_type: eventType,
+    status: success ? "success" : "error",
+  });
+}
+
+export function recordOutboxEventRetried(eventType: string): void {
+  outboxEventsRetriedCounter.inc({ event_type: eventType });
+}
+
+export function recordOutboxEventDeadLettered(
+  eventType: string,
+  reason: "non_retryable" | "max_attempts"
+): void {
+  outboxEventsDeadLetteredCounter.inc({
+    event_type: eventType,
+    reason,
+  });
+}
+
+export function setOutboxBacklog(
+  state: "pending" | "ready" | "dead_letter",
+  count: number
+): void {
+  outboxBacklogGauge.set({ state }, count);
+}
+
+export function setOutboxOldestReadyAgeSeconds(ageSeconds: number): void {
+  outboxOldestReadyAgeSecondsGauge.set(Math.max(0, ageSeconds));
+}

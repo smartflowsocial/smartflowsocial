@@ -1,0 +1,214 @@
+/**
+ * High-level queue operations
+ * These functions provide a clean API for common queue operations
+ */
+
+import type { SignedEvent } from "~/features/nostr/types";
+import { createOutboxEvent } from "~/infra/outbox/outbox.server";
+import { logError } from "~/lib/error-logger.server";
+
+import { queueClient } from "./queue-client.server";
+import type {
+  PostJobData,
+  LongFormPostJobData,
+  BroadcastJobData,
+} from "./queue-types";
+
+export function broadcastRecipientJobId(
+  campaignId: string,
+  recipientId: string
+): string {
+  return `broadcast:${campaignId}:${recipientId}`;
+}
+
+/**
+ * Enqueue a broadcast DM publish job. Signed events must already be on BroadcastRecipient.
+ */
+export async function enqueueBroadcastRecipientJob(input: {
+  campaignId: string;
+  recipientId: string;
+  userId: string;
+  /** Unix seconds; 0 = publish as soon as worker picks up (after delayMs) */
+  scheduledForUnix: number;
+  /** Added to computed schedule delay (stagger / jitter between recipients) */
+  additionalDelayMs?: number;
+  correlationId?: string;
+}): Promise<void> {
+  const jobId = broadcastRecipientJobId(input.campaignId, input.recipientId);
+  let delay = 0;
+  if (input.scheduledForUnix > 0) {
+    delay = input.scheduledForUnix * 1000 - Date.now();
+    if (delay < 0) delay = 0;
+  }
+  if (input.additionalDelayMs) {
+    delay += input.additionalDelayMs;
+  }
+  const result = await queueClient.enqueue<BroadcastJobData>(
+    "broadcast-dm",
+    "publish-broadcast-dm",
+    {
+      campaignId: input.campaignId,
+      recipientId: input.recipientId,
+      userId: input.userId,
+      correlationId: input.correlationId,
+    },
+    { delay, jobId }
+  );
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to enqueue broadcast job");
+  }
+}
+
+export function cancelBroadcastRecipientJob(
+  campaignId: string,
+  recipientId: string
+): Promise<boolean> {
+  return queueClient.cancelByJobId(
+    "broadcast-dm",
+    broadcastRecipientJobId(campaignId, recipientId)
+  );
+}
+/**
+ * Schedule a regular post to be published
+ * @param postId - The post ID
+ * @param userId - The user ID
+ * @param signedEvent - The signed Nostr event
+ * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
+ */
+export async function enqueuePostJob(
+  postId: string,
+  userId: string,
+  signedEvent: SignedEvent,
+  scheduledFor: number
+): Promise<void> {
+  // Handle immediate scheduling (delay: 0)
+  const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  // Use postId as deterministic jobId for O(1) cancellation
+  const options = { ...baseOptions, jobId: postId };
+
+  const result = await queueClient.enqueue<PostJobData>(
+    "scheduled-posts",
+    "publish-post",
+    { postId, userId, signedEvent },
+    options
+  );
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to schedule post");
+  }
+}
+
+/**
+ * Cancel a scheduled post
+ * @param postId - The post ID to cancel (used as jobId for O(1) cancellation)
+ * @returns true if the job was found and cancelled, false otherwise
+ */
+export function cancelPostJob(postId: string): Promise<boolean> {
+  return (async () => {
+    // Persist cancellation intent first so queue cancellation can be retried by outbox worker.
+    try {
+      await createOutboxEvent(
+        "POST_CANCELLED",
+        postId,
+        "Post",
+        { postId, userId: "system" },
+        new Date()
+      );
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        postId,
+        message: "Failed to persist post cancellation intent in outbox",
+      });
+    }
+
+    // Best-effort immediate cancellation for lower latency UX.
+    return await queueClient.cancelByJobId("scheduled-posts", postId);
+  })();
+}
+
+/**
+ * Schedule a longform post to be published
+ * @param postId - The longform post ID
+ * @param userId - The user ID
+ * @param signedEvent - The signed Nostr event
+ * @param scheduledFor - Unix timestamp (in seconds) when the post should be published, or 0 for immediate
+ */
+export async function enqueueLongFormPostJob(
+  postId: string,
+  userId: string,
+  signedEvent: SignedEvent,
+  scheduledFor: number
+): Promise<void> {
+  // Handle immediate scheduling (delay: 0)
+  const baseOptions = scheduledFor === 0 ? { delay: 0 } : { scheduledFor };
+  // Use postId as deterministic jobId for O(1) cancellation
+  const options = { ...baseOptions, jobId: postId };
+
+  const result = await queueClient.enqueue<LongFormPostJobData>(
+    "scheduled-longform-posts",
+    "publish-longform-post",
+    { postId, userId, signedEvent },
+    options
+  );
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to schedule longform post");
+  }
+}
+
+/**
+ * Cancel a scheduled longform post
+ * @param postId - The longform post ID to cancel (used as jobId for O(1) cancellation)
+ * @returns true if the job was found and cancelled, false otherwise
+ */
+export function cancelLongFormPostJob(postId: string): Promise<boolean> {
+  return (async () => {
+    // Persist cancellation intent first so queue cancellation can be retried by outbox worker.
+    try {
+      await createOutboxEvent(
+        "LONGFORM_CANCELLED",
+        postId,
+        "LongFormPost",
+        { postId, userId: "system" },
+        new Date()
+      );
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        postId,
+        message: "Failed to persist longform cancellation intent in outbox",
+      });
+    }
+
+    // Best-effort immediate cancellation for lower latency UX.
+    return await queueClient.cancelByJobId("scheduled-longform-posts", postId);
+  })();
+}
+
+/**
+ * Enqueue a post checker job (for cron-like recurring jobs)
+ * @param delay - Delay in milliseconds before processing
+ */
+export async function enqueuePostCheckerJob(delay = 0): Promise<void> {
+  const result = await queueClient.enqueue<PostJobData>(
+    "post-checker",
+    "check-due-posts",
+    {
+      postId: "",
+      userId: "",
+      signedEvent: {
+        id: "",
+        pubkey: "",
+        created_at: 0,
+        kind: 0,
+        tags: [],
+        content: "",
+        sig: "",
+      },
+    },
+    { delay }
+  );
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Failed to enqueue post checker job");
+  }
+}

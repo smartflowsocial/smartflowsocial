@@ -1,0 +1,236 @@
+/**
+ * Engagement feed content component
+ * Renders by type tab: All (replies + mentions), Replies, or Mentions (quotes + mention-type).
+ */
+
+import { MessageCircle } from "lucide-react";
+import { useState } from "react";
+
+import { EmptyState } from "~/components/ui/empty-state";
+import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+
+import type { EngagementItemStateMap } from "../engagement-filter";
+import type { EngagementTypeTab } from "../hooks/useEngagementState";
+import type { ReplyTemplate } from "../hooks/useReplyTemplates";
+import type { GroupedNotification } from "../types";
+
+import GroupedNotificationList from "./GroupedNotificationList";
+
+interface EngagementContentProps {
+  activeTab: EngagementTypeTab;
+  groupedReplies: GroupedNotification[];
+  groupedMentionsTab: GroupedNotification[];
+  engagementItemStates: EngagementItemStateMap;
+  onMarkDone: (
+    eventId: string,
+    repliedFromApp?: boolean,
+    state?:
+      | "UNHANDLED"
+      | "DRAFTED"
+      | "SCHEDULED"
+      | "REPLIED"
+      | "IGNORED"
+      | "SNOOZED"
+      | "HANDLED",
+    snoozedUntil?: string | null
+  ) => Promise<void>;
+  userTimezone?: string | null;
+  userRelays?: string[];
+  trustScores: Record<string, number>;
+  postsCount: number;
+  focusedIndex?: number;
+  registerKeyboardHandlers?: (
+    index: number,
+    handlers: {
+      openReply: () => void;
+      openQuote?: () => void;
+      openRepost?: () => void;
+      like: () => void;
+      markDone: () => void;
+      ignore?: () => void;
+      snooze?: () => void;
+      publishNow?: () => void;
+      schedule?: () => void;
+      expandThread: () => void;
+    } | null
+  ) => void;
+  replyTemplates?: ReplyTemplate[];
+  engagementLinkedActions?: Record<
+    string,
+    Array<{
+      kind: string;
+      label?: string | null;
+      scheduledFor?: string | null;
+      postId?: string | null;
+      draftId?: string | null;
+    }>
+  >;
+  groupSummaries?: Record<
+    string,
+    {
+      total: number;
+      needResponse: number;
+      drafted: number;
+      scheduled: number;
+      handled: number;
+    }
+  >;
+  followedPubkeys?: string[];
+}
+
+export function EngagementContent({
+  activeTab,
+  groupedReplies,
+  groupedMentionsTab,
+  engagementItemStates,
+  onMarkDone,
+  userTimezone,
+  userRelays,
+  trustScores,
+  postsCount,
+  focusedIndex = -1,
+  registerKeyboardHandlers,
+  replyTemplates = [],
+  engagementLinkedActions = {},
+  groupSummaries = {},
+  followedPubkeys = [],
+}: EngagementContentProps) {
+  const [activeNotificationEventId, setActiveNotificationEventId] = useState<
+    string | null
+  >(null);
+  const defaultRelays = ["wss://relay.primal.net"];
+  const listProps = {
+    userTimezone: userTimezone ?? undefined,
+    userRelays: userRelays ?? defaultRelays,
+    trustScores,
+    engagementItemStates,
+    onMarkDone,
+    focusedIndex,
+    registerKeyboardHandlers,
+    replyTemplates,
+    engagementLinkedActions,
+    groupSummaries,
+    followedPubkeys,
+    activeNotificationEventId,
+    setActiveNotificationEventId,
+  };
+
+  const repliesFlatCount = groupedReplies.reduce(
+    (s, g) => s + g.notifications.length,
+    0
+  );
+
+  if (activeTab === "all") {
+    return (
+      <div className="space-y-6">
+        {groupedReplies.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedReplies}
+            {...listProps}
+            baseIndex={0}
+            listVariant="replies"
+          />
+        ) : null}
+
+        {groupedMentionsTab.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedMentionsTab}
+            {...listProps}
+            baseIndex={repliesFlatCount}
+            listVariant="mentions"
+          />
+        ) : null}
+
+        {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="No engagement yet"
+            description="When people reply, mention you, or quote your posts, it will show up here."
+            className="border-border bg-surface rounded-xl border"
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (activeTab === "replies") {
+    return (
+      <>
+        {groupedReplies.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedReplies}
+            {...listProps}
+            baseIndex={0}
+            listVariant="replies"
+          />
+        ) : (
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="No replies yet"
+            description={
+              postsCount > 0
+                ? `Nothing here matches your filters. (${String(postsCount)} post${postsCount === 1 ? "" : "s"} on your account.)`
+                : "Nothing here matches your filters yet, or replies have not synced. Try clearing filters or check back later."
+            }
+            className="border-border bg-surface rounded-xl border"
+          />
+        )}
+      </>
+    );
+  }
+
+  if (activeTab === "needs-response") {
+    return (
+      <div className="space-y-6">
+        {groupedReplies.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedReplies}
+            {...listProps}
+            baseIndex={0}
+            listVariant="replies"
+          />
+        ) : null}
+        {groupedMentionsTab.length > 0 ? (
+          <GroupedNotificationList
+            groupedNotifications={groupedMentionsTab}
+            {...listProps}
+            baseIndex={repliesFlatCount}
+            listVariant="mentions"
+          />
+        ) : null}
+        {groupedReplies.length === 0 && groupedMentionsTab.length === 0 ? (
+          <EmptyState
+            size="md"
+            icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+            title="You are all caught up"
+            description="Nothing in this view needs a response right now. Adjust filters or check other tabs for open threads."
+            className="border-border bg-surface rounded-xl border"
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {groupedMentionsTab.length > 0 ? (
+        <GroupedNotificationList
+          groupedNotifications={groupedMentionsTab}
+          {...listProps}
+          baseIndex={0}
+          listVariant="mentions"
+        />
+      ) : (
+        <EmptyState
+          size="md"
+          icon={<MessageCircle strokeWidth={INLINE_ICON_STROKE} />}
+          title="No mentions yet"
+          description="Quote reposts and mentions will appear here when people reference your posts."
+          className="border-border bg-surface rounded-xl border"
+        />
+      )}
+    </>
+  );
+}

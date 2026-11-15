@@ -1,0 +1,187 @@
+version: 2
+updates:
+  # npm (pnpm). PRs target develop so they go through staging before main.
+  # Direct dependencies only: transitive bumps generated most of the noise and
+  # multi-thousand-line lockfile diffs.
+  # No cooldown: Dependabot forwards it to pnpm as minimumReleaseAge, and pnpm
+  # then refuses packages already in the lockfile (prisma 7.10.1 failed the
+  # whole npm update job because it was published 5 days earlier).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Sofia"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    reviewers:
+      - "xdzczk"
+    assignees:
+      - "xdzczk"
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+    versioning-strategy: "increase"
+    allow:
+      - dependency-type: "direct"
+    # Group updates for better PR management
+    groups:
+      # Group all ESLint-related packages
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "eslint-plugin-*"
+          - "eslint-config-*"
+      # Group all testing-related packages
+      testing:
+        patterns:
+          - "@vitest/*"
+          - "vitest"
+          - "cypress"
+          - "fast-check"
+          - "@testing-library/*"
+          - "@faker-js/*"
+      # Group all TypeScript-related packages
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "globals"
+      # Group all build tools
+      build-tools:
+        patterns:
+          - "esbuild"
+          - "vite"
+          - "tailwindcss"
+          - "postcss"
+          - "autoprefixer"
+      # Group all Remix-related packages
+      remix:
+        patterns:
+          - "@remix-run/*"
+      # Group all Radix UI packages
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+      # Group all EditorJS packages
+      editorjs:
+        patterns:
+          - "@editorjs/*"
+      # Group all Nostr-related packages
+      nostr:
+        patterns:
+          - "@nostr-dev-kit/*"
+          - "@nostrify/*"
+          - "nostr-*"
+      # Group all AWS SDK packages
+      aws:
+        patterns:
+          - "@aws-sdk/*"
+      # Group all Sentry packages
+      sentry:
+        patterns:
+          - "@sentry/*"
+      # Group all TanStack packages
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      # Group all Prisma packages (minor/patch updates only)
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      # Group all UI icon packages
+      ui-icons:
+        patterns:
+          - "lucide-react"
+          - "@heroicons/react"
+          - "react-icons"
+      # Group all payment/lightning-related packages
+      payments:
+        patterns:
+          - "@getalby/*"
+          - "@gandlaf21/*"
+      # Group all React form packages
+      react-forms:
+        patterns:
+          - "react-hook-form"
+          - "@hookform/*"
+      # Group all UI utility packages
+      ui-utilities:
+        patterns:
+          - "clsx"
+          - "tailwind-merge"
+          - "class-variance-authority"
+          - "tailwindcss-animate"
+      # Group all server utility packages
+      server-utils:
+        patterns:
+          - "express"
+          - "helmet"
+          - "compression"
+          - "morgan"
+          - "express-rate-limit"
+          - "rate-limiter-flexible"
+    # Ignore major version updates for critical packages (review manually)
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    labels:
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 2
+    target-branch: "develop"
+    labels:
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+    # Coolify builds with nixpacks nodejs_22 (.nvmrc). The Dockerfile base is
+    # the same pin and is not the production image; do not jump Node majors.
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]

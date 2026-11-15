@@ -1,0 +1,2098 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                         String         @id @default(cuid())
+  npub                       String         @unique
+  createdAt                  DateTime       @default(now())
+  updatedAt                  DateTime       @updatedAt
+  isEnabled                  Boolean        @default(false)
+  timezone                   String?        @default("Etc/GMT")
+  userRelays                 String[]       @default(["wss://relay.primal.net", "wss://relay.damus.io", "wss://nos.lol/", "wss://nostr.mom", "wss://relay.ditto.pub"])
+  /// "app" = use userRelays (SmartFlow list); "nip65_profile" = use kind 10002 write relays from the user npub (default for new users)
+  publishRelaySource         String         @default("nip65_profile")
+  giveawayBlackListed        String[]       @default([])
+  uploadProvider             UploadProvider @default(S3)
+  customBlossomUrl           String?
+  showHashTagsinPosts        Boolean        @default(false)
+  scheduleInterval           String[]       @default(["0.25", "0.5", "1", "2", "4", "12", "24"])
+  nostrProfile               Json?
+  enableMirrorBlossom        Boolean        @default(false)
+  mirrorUploadUrls           String[]       @default([])
+  encryptedNwc               String?
+  nwcEnabled                 Boolean        @default(false)
+  nwcLastUsed                DateTime?
+  mutedList                  Json?
+  filterMuted                Boolean        @default(false)
+  hidePostsFromLowTrustUsers Boolean        @default(false)
+  // Push notification preferences
+  pushNotificationsEnabled   Boolean        @default(true)
+  pushNotifyPublishSuccess   Boolean        @default(true)
+  pushNotifyPublishFailure   Boolean        @default(true)
+  pushNotifyRunwayLow        Boolean        @default(false)
+  pushNotifyIncludePreview   Boolean        @default(true)
+  runwayNotifyBelowDays      Int?
+  lastRunwayLowNotificationAt DateTime?
+  // Time format preference (12-hour AM/PM or 24-hour)
+  timeFormat                 String?        @default("24h") // "12h" or "24h"
+  // Date format preference for display (dd/mm, mm/dd, or yyyy-mm-dd)
+  dateFormat                 String?        @default("ddmmyyyy") // "ddmmyyyy" | "mmddyyyy" | "yyyymmdd"
+  // Preferred Nostr client for "View note/article" links (PRIMAL, DAMUS, AMETHYST, NOSTUR, NOSTRUDEL, IRIS, YAKIHONNE, JUMBLE, CUSTOM)
+  preferredNostrClient      String?         @default("PRIMAL")
+  // Base URL when preferredNostrClient is CUSTOM (e.g. https://example.com)
+  customNostrClientBaseUrl   String?
+  // Set when we applied device locale for time/date once (so we never overwrite again)
+  localeDefaultsAppliedAt    DateTime?
+  // Runway KPI: which queues count and mode (last-post vs first-queue-empty)
+  runwaySettings             Json?
+  // Account-level preferred NIP-46 signer profile (non-secret metadata only)
+  primarySignerProfile       Json?
+  // When the user last opened the Engagement Feed (for time-based "unread")
+  engagementLastCheckedAt    DateTime?
+  /// Default zap amount (sats) for engagement surfaces; null = use app default (21)
+  defaultZapAmountSats       Int?
+  // Use SFS Blastr relay when eligible (paid + plan has enableRelayBlast); default true
+  blastrRelayEnabled         Boolean        @default(true)
+  /// When true, this account's public picture is left off the marketing site.
+  hideFromLanding            Boolean        @default(false)
+  /// Set once the user has seen (or acted on) the landing-picture notice.
+  landingNoticeSeenAt        DateTime?
+  // Account-level theme preference; null = no account override (use device/local default)
+  themePreference            String?
+  // Child/parent self-relation via npub
+  isChild                    Boolean        @default(false)
+  parentNpub                 String?
+  parent                     User?          @relation("UserChildrenByNpub", fields: [parentNpub], references: [npub], onDelete: SetNull)
+  children                   User[]         @relation("UserChildrenByNpub")
+  pendingParentRequests      String[]       @default([])
+
+  hashTagPresets HashTagPreset[]
+  longFormPosts  LongFormPost[]
+  Payment        Payment[]
+  giveawayFinalizationPayments GiveawayFinalizationPayment[]
+  notes          Post[]
+  queueTypes     QueueType[]
+  Subscription   Subscription?
+  templates      Template[]
+  sessions       Session[]
+  publishRelayAcks PublishRelayAck[]
+  pushSubscriptions PushSubscription[]
+  draftVersions      DraftVersion[]
+  draftGroups        DraftGroup[]
+  draftGroupVersions DraftGroupVersion[]
+  media              Media[]
+  mediaAssets        MediaAsset[]
+  mediaUploadIntents MediaUploadIntent[]
+  blossomReservationBatches BlossomReservationBatch[]
+  blossomUploadUsagePeriods BlossomUploadUsagePeriod[]
+  giveaways                Giveaway[]
+  contests                 Contest[]
+  contestLaunchOrchestrations ContestLaunchOrchestration[]
+  contestCreationDrafts     ContestCreationDraft[]
+  giveawayPresets          GiveawayPreset[]
+  contestPresets           ContestPreset[]
+  contestFinalizationPayments ContestFinalizationPayment[]
+  payoutRuns               PayoutRun[]
+  engagementItemStates     EngagementItemState[]
+  engagementReplyTemplates EngagementReplyTemplate[]
+  broadcastCampaigns       BroadcastCampaign[]
+  broadcastSuppressions    BroadcastSuppression[]
+  broadcastSavedAudiences  BroadcastSavedAudience[]
+  /** Default delivery prefs for Broadcasts: { defaultDeliveryMode?, defaultSendStrategy?, ... } */
+  broadcastSettings        Json?
+  productSessions          ProductSession[]
+  signerReconnectEvents    SignerReconnectEvent[]
+  SubscriptionNotificationAttempt SubscriptionNotificationAttempt[]
+  trackedAuthorEvents      TrackedAuthorEvent[]
+  authorEventSyncs         AuthorEventSync[]
+  postPerformanceObservations PostPerformanceObservation[]
+  postPerformanceLatests   PostPerformanceLatest[]
+
+  @@index([parentNpub])
+}
+
+enum ProductSessionDeviceCoarse {
+  mobile
+  desktop
+  tablet
+  unknown
+}
+
+enum SignerReconnectFailureBucket {
+  TIMEOUT
+  NETWORK
+  SESSION_DROPPED
+  UNKNOWN
+}
+
+/// Point-in-time copy of the public marketing stats payload.
+model PublicStatsSnapshot {
+  id         String   @id @default(cuid())
+  computedAt DateTime @default(now())
+  payload    Json
+
+  @@index([computedAt])
+}
+
+/// Product usage sessions (distinct from auth Session rows).
+model ProductSession {
+  id              String                      @id @default(cuid())
+  userId          String
+  clientSessionId String
+  startedAt       DateTime                    @default(now())
+  lastActivityAt  DateTime                    @default(now())
+  endedAt         DateTime?
+  deviceCoarse    ProductSessionDeviceCoarse?
+  user            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientSessionId])
+  @@index([userId, lastActivityAt])
+  @@index([lastActivityAt])
+}
+
+/// NIP-46 background reconnect outcomes (narrow telemetry).
+model SignerReconnectEvent {
+  id            String                       @id @default(cuid())
+  userId        String
+  success       Boolean
+  failureBucket SignerReconnectFailureBucket?
+  createdAt     DateTime                     @default(now())
+  user          User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+enum EngagementItemStateKind {
+  UNHANDLED
+  DRAFTED
+  SCHEDULED
+  REPLIED
+  IGNORED
+  SNOOZED
+  HANDLED
+}
+
+model EngagementItemState {
+  id              String                  @id @default(cuid())
+  userId          String
+  eventId         String
+  state           EngagementItemStateKind @default(UNHANDLED)
+  repliedFromApp  Boolean                 @default(false)
+  snoozedUntil    DateTime?
+  linkedActions   EngagementLinkedAction[]
+  updatedAt       DateTime                @updatedAt
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId, state])
+}
+
+enum EngagementLinkedActionKind {
+  DRAFT
+  SCHEDULED_REPLY
+  SCHEDULED_QUOTE
+  SCHEDULED_REPOST
+  QUEUED_REPLY
+  QUEUED_QUOTE
+  QUEUED_REPOST
+}
+
+model EngagementLinkedAction {
+  id                     String                     @id @default(cuid())
+  engagementItemStateId  String
+  kind                   EngagementLinkedActionKind
+  postId                 String?
+  draftId                String?
+  queueTypeId            String?
+  label                  String?
+  scheduledFor           DateTime?
+  isCanceled             Boolean                    @default(false)
+  isPublished            Boolean                    @default(false)
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  engagementItemState    EngagementItemState        @relation(fields: [engagementItemStateId], references: [id], onDelete: Cascade)
+
+  @@index([engagementItemStateId, kind])
+}
+
+model EngagementReplyTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  slug      String
+  body      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+enum BroadcastCampaignStatus {
+  DRAFT
+  /** Audience resolved; user must complete review and sign */
+  AWAITING_SIGNATURE
+  SCHEDULED
+  QUEUED
+  SENDING
+  COMPLETED
+  COMPLETED_WITH_FAILURES
+  PAUSED
+  FAILED
+  CANCELLED
+}
+
+enum BroadcastAudienceType {
+  CUSTOM
+  FOLLOWING
+  FOLLOWERS
+  MUTUALS
+}
+
+enum BroadcastDeliveryMode {
+  BEST_COMPATIBILITY
+  NIP17_ONLY
+  NIP04_ONLY
+  NIP17_FALLBACK_NIP04
+  BOTH
+}
+
+enum BroadcastSendStrategy {
+  STANDARD
+  STAGGERED
+}
+
+enum BroadcastRecipientStatus {
+  PENDING
+  READY
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  SUPPRESSED
+  SKIPPED
+}
+
+enum BroadcastSuppressionSource {
+  MANUAL
+  OPT_OUT
+  AUTO
+}
+
+enum BroadcastSuppressionReasonCode {
+  MANUAL_OPT_OUT
+  FAILED_REPEATEDLY
+  COMPLAINT_OR_ABUSE
+  DUPLICATE_PROTECTION
+  IMPORTED
+  POLICY_BLOCK
+  OTHER
+}
+
+enum BroadcastRecipientDeliveryMethod {
+  NIP04
+  NIP17
+  BOTH
+  UNKNOWN
+}
+
+enum BroadcastEventLogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+model BroadcastCampaign {
+  id               String                   @id @default(cuid())
+  userId           String
+  name             String
+  status           BroadcastCampaignStatus  @default(DRAFT)
+  audienceType     BroadcastAudienceType
+  messageBody      String
+  deliveryMode     BroadcastDeliveryMode    @default(BEST_COMPATIBILITY)
+  sendStrategy     BroadcastSendStrategy    @default(STANDARD)
+  scheduledFor     DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  totalRecipients  Int                      @default(0)
+  queuedCount      Int                      @default(0)
+  sentCount        Int                      @default(0)
+  failedCount      Int                      @default(0)
+  suppressedCount  Int                      @default(0)
+  skippedCount     Int                      @default(0)
+  /** CUSTOM audience: raw npubs/nhex lines from composer */
+  customNpubLines  String[]                 @default([])
+  /** Client snapshot of parse/review metrics for pre-flight review (Audience Builder v2) */
+  parseSnapshotJson   Json?
+  /** Optional exclusion rules, e.g. { excludeMessagedWithinDays: 7 } */
+  exclusionRulesJson  Json?
+  archivedAt       DateTime?
+  /** When duplicated from another campaign */
+  duplicatedFromId String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients       BroadcastRecipient[]
+  eventLogs        BroadcastEventLog[]
+  duplicatedFrom   BroadcastCampaign?       @relation("BroadcastDuplication", fields: [duplicatedFromId], references: [id], onDelete: SetNull)
+  duplicates       BroadcastCampaign[]      @relation("BroadcastDuplication")
+  suppressionsFromThis BroadcastSuppression[] @relation("SuppressionFromCampaign")
+
+  @@index([userId, status, updatedAt])
+  @@index([userId, createdAt])
+}
+
+model BroadcastRecipient {
+  id                    String                   @id @default(cuid())
+  campaignId            String
+  recipientPubkey       String
+  sourceType            BroadcastAudienceType?
+  status                BroadcastRecipientStatus @default(PENDING)
+  skipReason            String?
+  attemptCount          Int                      @default(0)
+  signedEvent           Json?
+  giftWraps             Json?
+  publishRelays         String[]                 @default([])
+  publishedNip04EventId String?
+  lastAttemptAt         DateTime?
+  sentAt                DateTime?
+  failureCode           String?
+  failureReason         String?
+  staggerDelayMs        Int?
+  deliveryMethodUsed    BroadcastRecipientDeliveryMethod?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  campaign              BroadcastCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, recipientPubkey])
+  @@index([campaignId, status])
+  unsubscribeToken BroadcastUnsubscribeToken?
+}
+
+/// Per-recipient capability URL for in-DM broadcast unsubscribe (raw secret never stored).
+model BroadcastUnsubscribeToken {
+  id           String              @id @default(cuid())
+  recipientId  String              @unique
+  tokenHash    String
+  createdAt    DateTime            @default(now())
+  expiresAt    DateTime?
+  usedAt       DateTime?
+  recipient    BroadcastRecipient  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+}
+
+model BroadcastSuppression {
+  id                   String                     @id @default(cuid())
+  userId               String
+  recipientPubkey      String
+  reason               String?
+  reasonCode           BroadcastSuppressionReasonCode @default(OTHER)
+  source               BroadcastSuppressionSource @default(MANUAL)
+  permanent            Boolean                    @default(true)
+  expiresAt            DateTime?
+  createdFromCampaignId String?
+  metadataJson         Json?
+  createdAt            DateTime                   @default(now())
+  user                 User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdFromCampaign  BroadcastCampaign?         @relation("SuppressionFromCampaign", fields: [createdFromCampaignId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, recipientPubkey])
+  @@index([userId])
+  @@index([userId, expiresAt])
+}
+
+model BroadcastSavedAudience {
+  id               String                @id @default(cuid())
+  userId           String
+  name             String
+  audienceType     BroadcastAudienceType
+  customNpubLines  String[]              @default([])
+  ruleSummary      String?
+  lastResolvedSize Int?
+  rulesJson        Json?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+}
+
+model BroadcastEventLog {
+  id           String                 @id @default(cuid())
+  campaignId   String
+  level        BroadcastEventLogLevel @default(INFO)
+  eventType    String
+  message      String
+  metadataJson Json?
+  createdAt    DateTime               @default(now())
+  campaign     BroadcastCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, createdAt])
+}
+
+model LoginChallenge {
+  id         String   @id @default(cuid())
+  nonce      String
+  purpose    String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  pubkey     String?
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([consumedAt])
+  @@index([pubkey])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  pubkey    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([pubkey])
+  @@index([expiresAt])
+}
+
+model QueueType {
+  id              String         @id @default(cuid())
+  name            String
+  scheduleType    ScheduleType   @default(INTERVAL)
+  scheduleConfig  Json
+  isEnabled       Boolean        @default(true)
+  status          QueueStatus    @default(ACTIVE)
+  colorToken      String?
+  description     String?
+  lastPostTime    DateTime?
+  isDefault       Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String
+  hashTagPresetId String?
+  /// When true (default), new posts for this queue default to appending preset hashtags into the note body; per-post toggle can still override in the composer.
+  includeHashtagsInNoteBody Boolean @default(true)
+  longFormPosts   LongFormPost[]
+  posts           Post[]
+  hashTagPreset   HashTagPreset? @relation(fields: [hashTagPresetId], references: [id])
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model HashTagPreset {
+  id            String         @id @default(cuid())
+  name          String
+  tags          String
+  description   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  longFormPosts LongFormPost[]
+  posts         Post[]
+  queueTypes    QueueType[]
+
+  @@unique([userId, name])
+}
+
+enum GiveawayScopeType {
+  PERIOD
+  SINGLE_POST
+  QUEUE
+  FOLLOWERS
+  FOLLOWING
+}
+
+enum GiveawayStatus {
+  DRAFT
+  PREVIEWED
+  LOCKED
+  PAID_OUT
+  CANCELLED
+}
+
+enum GiveawaySelectionMode {
+  UNIQUE_USER
+  WEIGHTED_BY_ENGAGEMENT
+}
+
+enum GiveawayFinalizationFeeStatus {
+  NONE
+  PENDING
+  PAID
+  WAIVED
+}
+
+enum GiveawayFinalizationPaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+}
+
+enum ContestStatus {
+  DRAFT
+  /** Draft with a future scheduled activation (see ContestLaunchOrchestration). */
+  SCHEDULED_LAUNCH
+  LIVE
+  ENDED_REVIEW
+  LOCKED
+  PAYOUT_IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ContestOrchestrationSourceMode {
+  existing_post
+  new_post
+}
+
+enum ContestOrchestrationLaunchMode {
+  now
+  schedule
+}
+
+enum ContestSourcePostPublishStatus {
+  not_needed
+  pending
+  scheduled
+  publishing
+  published
+  failed
+}
+
+enum ContestActivationOrchestrationStatus {
+  draft
+  scheduled
+  activating
+  active
+  failed
+  blocked_by_source_failure
+}
+
+enum ContestEntryType {
+  REPLY_DIRECT
+}
+
+enum ContestRankingMetric {
+  REACTIONS
+  ZAPS
+  SATS_ZAPPED
+  REPLIES
+  REPOSTS
+}
+
+enum ContestPrizeMode {
+  EQUAL
+  RANKED
+}
+
+enum ContestFinalizationFeeStatus {
+  NONE
+  PENDING
+  PAID
+  WAIVED
+}
+
+enum ContestFinalizationPaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+}
+
+enum PaymentPurpose {
+  SUBSCRIPTION
+  GIVEAWAY_FINALIZATION
+  CONTEST_FINALIZATION
+}
+
+model Giveaway {
+  id                 String               @id @default(cuid())
+  userId             String
+  name               String?              // optional human-readable label
+  scopeType          GiveawayScopeType
+  scopeReference     Json                 // { days?, postId?, queueId?, from?, to? }
+  eligibilityFrom    DateTime?
+  eligibilityTo      DateTime?
+  engagementTypes    Json                 // string[]: REACTION, REPOST, COMMENT, ZAP
+  winnerCount        Int                  // total (legacy or sum when engagementConfig set)
+  engagementConfig   Json?                // optional: { REACTION: { winnerCount, satsPerWinner }, ... }; when set, per-type winners + sats
+  selectionMode      GiveawaySelectionMode @default(UNIQUE_USER)
+  engagementWeights  Json?                // { REPOST: 2, COMMENT: 1.5, ... }
+  filters            Json?                // { excludeMuted, excludeBlocked, minAccountAgeDays?, minFollowers? }
+  status             GiveawayStatus       @default(DRAFT)
+  lockedAt           DateTime?
+  lockedByUserId     String?
+  /** Sum of satsPerWinner in locked snapshot (set at lock) */
+  plannedPayoutSats  Int?
+  finalizationFeeRateBps Int?
+  finalizationFeeSats    Int?
+  finalizationFeeStatus  GiveawayFinalizationFeeStatus?
+  /** Commercial plan id or label at lock (e.g. creator, pro) */
+  planAtFinalization String?
+  /** SHA-256 hex of canonical lock-bound config (preview snapshot + rules) */
+  lockConfigHash     String?
+  winnerSnapshot     Json?                // [{ pubkey, npub, qualifyingActions, satsPerWinner?, engagementType? }] at lock
+  /** Per-winner payout tracking: pubkey -> { status, updatedAt, note? } */
+  payoutState        Json?
+  /** Payout execution mode for this giveaway (manual vs NWC batch). */
+  payoutWalletMode   PayoutWalletMode @default(manual)
+  /** Trusted autopay (cron) toggle; only meaningful when payoutWalletMode != manual. */
+  payoutAutoRunEnabled Boolean @default(false)
+  /** Optional spend cap for trusted autopay runs. */
+  payoutAutoRunSpendCapSats Int?
+  /** Fairness/preview audit: pool size, filters, timestamps (updated on preview/reroll) */
+  lastPreviewMeta    Json?
+  rerollCount        Int                  @default(0)
+  /** Append-only log: { at, type, payload? }[] */
+  activityLog        Json?
+  /** Pubkeys manually excluded during preview (cumulative) */
+  excludedPubkeys    Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  finalizationPayments GiveawayFinalizationPayment[]
+  payoutRuns          PayoutRun[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+model GiveawayFinalizationPayment {
+  id                 String                           @id @default(cuid())
+  giveawayId         String
+  userId             String
+  planName           String
+  feeRateBps         Int
+  plannedPayoutSats  Int
+  feeSats            Int
+  lockConfigHash     String
+  status             GiveawayFinalizationPaymentStatus @default(PENDING)
+  paymentMethod      String?
+  paymentId          String?                          @unique
+  paidAt             DateTime?
+  createdAt          DateTime                         @default(now())
+  metadata           Json?
+  giveaway           Giveaway                         @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  user               User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment            Payment?                         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([giveawayId])
+  @@index([userId])
+  @@index([giveawayId, status])
+}
+
+model GiveawayPreset {
+  id                String                 @id @default(cuid())
+  userId            String
+  name              String
+  scopeType         GiveawayScopeType
+  scopeReference    Json                   // { days?, postId?, queueId?, from?, to? }
+  engagementTypes   Json                   // string[]
+  winnerCount       Int
+  engagementConfig Json?                  // optional: { REACTION: { winnerCount, satsPerWinner }, ... }
+  selectionMode     GiveawaySelectionMode  @default(UNIQUE_USER)
+  engagementWeights Json?
+  filters           Json?
+  lastUsedAt        DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model ContestPreset {
+  id               String                 @id @default(cuid())
+  userId           String
+  name             String
+  title            String?
+  rankingMetric    ContestRankingMetric
+  prizeMode        ContestPrizeMode
+  winnerCount      Int
+  equalRewardSats  Int?
+  rankRewards      Json?
+  fairnessConfig   Json?
+  lastUsedAt       DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+model Contest {
+  id                    String                    @id @default(cuid())
+  userId                String
+  title                 String?
+  status                ContestStatus             @default(DRAFT)
+  /** Set when source note is known; may be null for drafts awaiting linked source publish. */
+  sourceNoteId          String?
+  sourcePostId          String?
+  entryType             ContestEntryType          @default(REPLY_DIRECT)
+  rankingMetric         ContestRankingMetric
+  contestStartAt        DateTime?
+  contestEndAt          DateTime
+  freezeSnapshotAt      DateTime?
+  freezeSnapshotWindowEndsAt DateTime?
+  prizeMode             ContestPrizeMode
+  winnerCount           Int
+  equalRewardSats       Int?
+  rankRewards           Json?
+  fairnessConfig        Json?
+  tieBreakRule          String?
+  plannedPayoutSats     Int?
+  finalizationFeeRateBps Int?
+  finalizationFeeSats   Int?
+  finalizationFeeStatus ContestFinalizationFeeStatus?
+  planAtFinalization    String?
+  lockConfigHash        String?
+  payoutState           Json?
+  /** Payout execution mode for this contest (manual vs NWC batch). */
+  payoutWalletMode      PayoutWalletMode @default(manual)
+  /** Trusted autopay (cron) toggle; only meaningful when payoutWalletMode != manual. */
+  payoutAutoRunEnabled  Boolean @default(false)
+  /** Optional spend cap for trusted autopay runs. */
+  payoutAutoRunSpendCapSats Int?
+  lockedAt              DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots             ContestSnapshot[]
+  winners               ContestWinner[]
+  entries               ContestEntry[]
+  eventLogs             ContestEventLog[]
+  finalizationPayments  ContestFinalizationPayment[]
+  payments              Payment[]                 @relation("ContestPayoutPayment")
+  payoutRuns            PayoutRun[]
+  launchOrchestration   ContestLaunchOrchestration?
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+/** Linked launch flow for contest creation (publish source + activate contest). */
+model ContestLaunchOrchestration {
+  id                    String                           @id @default(cuid())
+  userId                String
+  contestId             String                           @unique
+  contest               Contest                          @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  sourceMode            ContestOrchestrationSourceMode
+  launchMode            ContestOrchestrationLaunchMode
+  scheduledFor          DateTime?
+  existingSourcePostId  String?
+  sourcePostId          String?
+  sourcePostPublishStatus ContestSourcePostPublishStatus @default(not_needed)
+  contestActivationStatus ContestActivationOrchestrationStatus @default(draft)
+  publishedSourceEventId String?
+  lastErrorCode         String?
+  lastErrorMessage      String?
+  activationJobId       String?
+  idempotencyKey        String?                          @unique
+  createdAt             DateTime                         @default(now())
+  updatedAt             DateTime                         @updatedAt
+  user                  User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sourcePostId])
+}
+
+/** Server-persisted in-progress contest form (incl. embedded composer snapshot) when source is not yet published. */
+model ContestCreationDraft {
+  id        String   @id @default(cuid())
+  userId    String
+  payload   Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+model ContestSnapshot {
+  id                 String    @id @default(cuid())
+  contestId          String
+  snapshotAt         DateTime  @default(now())
+  deadlineAt         DateTime
+  rankingMetric      ContestRankingMetric
+  tieBreakRule       String
+  freezeWindowEndsAt DateTime?
+  totalEntries       Int       @default(0)
+  eligibleEntries    Int       @default(0)
+  excludedEntries    Int       @default(0)
+  rerankCount        Int       @default(0)
+  relayCaveat        String?
+  metadata           Json?
+  contest            Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entries            ContestEntry[]
+
+  @@index([contestId, snapshotAt])
+}
+
+model ContestEntry {
+  id               String   @id @default(cuid())
+  contestId        String
+  snapshotId       String
+  entryEventId     String
+  authorPubkey     String
+  authorNpub       String?
+  createdAtUnix    Int
+  replySnippet     String?
+  score            Int      @default(0)
+  reactionsCount   Int      @default(0)
+  zapCount         Int      @default(0)
+  satsZapped       Int      @default(0)
+  repliesCount     Int      @default(0)
+  repostsCount     Int      @default(0)
+  rank             Int?
+  isEligible       Boolean  @default(true)
+  isExcluded       Boolean  @default(false)
+  exclusionReason  String?
+  discoveredAt     DateTime @default(now())
+  snapshotAt       DateTime
+  metadata         Json?
+  contest          Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  snapshot         ContestSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  winnerRow        ContestWinner?
+
+  @@unique([snapshotId, entryEventId])
+  @@index([contestId, rank])
+  @@index([contestId, isExcluded])
+  @@index([snapshotAt])
+}
+
+model ContestWinner {
+  id            String   @id @default(cuid())
+  contestId     String
+  entryId       String   @unique
+  rank          Int
+  rewardSats    Int
+  isAlternate   Boolean  @default(false)
+  wasPromoted   Boolean  @default(false)
+  promotedFromRank Int?
+  finalizedAt   DateTime?
+  payoutStatus  String?
+  payoutNote    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  contest       Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  entry         ContestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, rank, isAlternate])
+  @@index([contestId, isAlternate, rank])
+}
+
+model ContestEventLog {
+  id          String   @id @default(cuid())
+  contestId   String
+  eventType   String
+  message     String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  contest     Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@index([contestId, createdAt])
+}
+
+model ContestFinalizationPayment {
+  id                String                          @id @default(cuid())
+  contestId         String
+  userId            String
+  planName          String
+  feeRateBps        Int
+  plannedPayoutSats Int
+  feeSats           Int
+  lockConfigHash    String
+  status            ContestFinalizationPaymentStatus @default(PENDING)
+  paymentMethod     String?
+  paymentId         String?                         @unique
+  paidAt            DateTime?
+  createdAt         DateTime                        @default(now())
+  metadata          Json?
+  contest           Contest                         @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user              User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment           Payment?                        @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([contestId])
+  @@index([userId])
+  @@index([contestId, status])
+}
+
+model Post {
+  id                      String                @id @default(cuid())
+  nostrEventId            String?
+  caption                 String?
+  fileUrl                 String[]
+  scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
+  queueHoldStatus         QueueHoldStatus       @default(NONE)
+  queueHeldAtUtc          DateTime?
+  queueHeldOriginalScheduledAtUtc DateTime?
+  queueHeldByQueueTypeId  String?
+  publishedAt             DateTime?
+  content                 String?
+  postType                PostType              @default(IMAGE)
+  repost                  Boolean               @default(false)
+  isQuotedPost            Boolean               @default(false)
+  isRecyclable            Boolean               @default(false)
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  status                  Status                @default(ACTIVE)
+  currentState            String                @default("DRAFT") // State machine state - single source of truth
+  signedEvent             Json?
+  nostrEvent              Json?
+  queueTypeId             String?
+  tags                    String[]
+  manual_override         Boolean               @default(false)
+  userId                  String
+  hashTagPresetId         String?
+  // Idempotency keys
+  creationIdempotencyKey  String?               @unique
+  enqueueIdempotencyKey   String?               @unique
+  publishAttemptId        String?               @unique // First-class idempotency for publish attempts
+  // Publish lease (supports safe retries + future multi-worker)
+  publishingLockId        String?
+  publishingLockExpiresAt DateTime?
+  publishingStartedAt     DateTime?
+  hashTagPreset           HashTagPreset?        @relation(fields: [hashTagPresetId], references: [id])
+  queueType               QueueType?            @relation(fields: [queueTypeId], references: [id])
+  template                Template?             @relation("TemplatePost")
+  user                    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stateTransitions        PostStateTransition[]
+  // Source post for scheduled repost/quote (multiple reposts/quotes per source allowed)
+  repostOfPostId          String?
+  repostOf                Post?                 @relation("RepostOf", fields: [repostOfPostId], references: [id])
+  reposts                 Post[]                @relation("RepostOf")
+  // Optional: only publish repost if source post meets these engagement thresholds (AND)
+  repostConditions        Json?                 // { minReactions?, minZaps?, minComments?, minReposts?, minSats? }
+  quoteOfPostId           String?
+  quoteOf                 Post?                 @relation("QuoteOf", fields: [quoteOfPostId], references: [id])
+  quotes                  Post[]                @relation("QuoteOf")
+  // Quote of a longform article (kind 1 note referencing kind 30023)
+  quoteOfLongFormPostId   String?
+  quoteOfLongForm         LongFormPost?          @relation(fields: [quoteOfLongFormPostId], references: [id], onDelete: SetNull)
+  // Composer draft metadata (attachment meta, contentWithTokens, threadSegments, alsoScheduleRepost/Quote)
+  draftMeta               Json?
+  // Thread: links segment posts when created as a thread (schedule-thread / post-thread)
+  threadGroupId           String?
+  // What is this post? (POST = top-level, THREAD = thread segment, REPLY = reply to event, REPOST/QUOTE = scheduled repost/quote)
+  postKind                PostKind               @default(POST)
+  // Reply: Nostr event id being replied to (for postKind REPLY)
+  replyToEventId          String?
+  // Reply: our Post id when the replied-to event is one of our posts
+  replyToPostId           String?
+  replyTo                 Post?                  @relation("PostReplies", fields: [replyToPostId], references: [id])
+  replies                 Post[]                 @relation("PostReplies")
+  parentScheduledActionId String?
+  parentScheduledAction   Post?                  @relation("AttachedFollowups", fields: [parentScheduledActionId], references: [id], onDelete: SetNull)
+  attachedFollowups       Post[]                 @relation("AttachedFollowups")
+  rootScheduledActionId   String?
+  targetScheduledActionId String?
+  dependencyMode          ScheduledDependencyMode @default(standalone)
+  targetMode              ScheduledTargetMode     @default(direct)
+  followUpTimingMode      FollowUpTimingMode?
+  followUpOffsetSeconds   Int?
+  expectedParentEventId   String?
+  signedChildEventId      String?
+  signingState            ScheduledSigningState   @default(unsigned)
+  draftVersions           DraftVersion[]
+  draftGroupId            String?
+  draftGroup              DraftGroup?  @relation(fields: [draftGroupId], references: [id], onDelete: SetNull)
+  trackedAuthorEvents     TrackedAuthorEvent[] @relation("TrackedAuthorEventPost")
+  postPerformanceObservations PostPerformanceObservation[] @relation("PerformanceObservationPost")
+  postPerformanceLatests  PostPerformanceLatest[] @relation("PerformanceLatestPost")
+
+  // Indexes for common query patterns
+  // State machine indexes (use currentState as single source of truth)
+  @@index([userId, currentState])
+  @@index([currentState, scheduledAtUtc])
+  @@index([userId, currentState, scheduledAtUtc])
+  @@index([userId, scheduledAtUtc])
+  @@index([queueTypeId, queueHoldStatus, scheduledAtUtc])
+  @@index([publishedAt])
+  @@index([repostOfPostId])
+  @@index([quoteOfPostId])
+  @@index([quoteOfLongFormPostId])
+  @@index([replyToPostId])
+  @@index([draftGroupId])
+  @@index([parentScheduledActionId])
+  @@index([rootScheduledActionId])
+  @@index([targetScheduledActionId])
+  @@index([dependencyMode, currentState, scheduledAtUtc])
+  @@index([signingState, currentState])
+}
+
+enum PostKind {
+  POST
+  THREAD
+  REPLY
+  REPOST
+  QUOTE
+}
+
+enum ScheduledDependencyMode {
+  standalone
+  attached
+}
+
+enum ScheduledTargetMode {
+  direct
+  scheduled_parent
+}
+
+enum FollowUpTimingMode {
+  offset_from_parent
+  fixed_datetime
+}
+
+enum ScheduledSigningState {
+  unsigned
+  signed
+  stale
+  invalidated
+}
+
+enum QueueStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum QueueHoldStatus {
+  NONE
+  HELD_BY_QUEUE
+  NEEDS_RESIGN_AFTER_QUEUE_RESUME
+}
+
+model LongFormPost {
+  id                      String                        @id @default(cuid())
+  nostrEventId            String?
+  title                   String?
+  summary                 String?
+  content                 String?
+  image                   String?
+  scheduledAtUtc          DateTime? // New DateTime field (UTC)
+  nominalScheduledAtUtc   DateTime? // User-chosen time when random window used (for queue "next slot")
+  queueHoldStatus         QueueHoldStatus               @default(NONE)
+  queueHeldAtUtc          DateTime?
+  queueHeldOriginalScheduledAtUtc DateTime?
+  queueHeldByQueueTypeId  String?
+  postedAt                DateTime?
+  publishedAt             DateTime?
+  updatedAt               DateTime                      @updatedAt
+  createdAt               DateTime                      @default(now())
+  status                  Status                        @default(DRAFT)
+  currentState            String                        @default("DRAFT") // State machine state - single source of truth
+  queueTypeId             String?
+  tags                    String[]
+  signedEvent             Json?
+  nostrEvent              Json?
+  userId                  String
+  hashTagPresetId         String?
+  // Idempotency keys
+  creationIdempotencyKey  String?                       @unique
+  enqueueIdempotencyKey   String?                       @unique
+  publishAttemptId        String?                       @unique // First-class idempotency for publish attempts
+  // Publish lease (supports safe retries + future multi-worker)
+  publishingLockId        String?
+  publishingLockExpiresAt DateTime?
+  publishingStartedAt     DateTime?
+  hashTagPreset           HashTagPreset?                @relation(fields: [hashTagPresetId], references: [id])
+  queueType               QueueType?                    @relation(fields: [queueTypeId], references: [id])
+  user                    User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stateTransitions        LongFormPostStateTransition[]
+  // Kind 1 quote posts that reference this longform
+  quotesFromLongform      Post[]
+  draftVersions           DraftVersion[]
+  template                Template?
+
+  // Indexes for common query patterns
+  // State machine indexes (use currentState as single source of truth)
+  @@index([userId, currentState])
+  @@index([currentState, scheduledAtUtc])
+  @@index([userId, currentState, scheduledAtUtc])
+  @@index([userId, scheduledAtUtc])
+  @@index([queueTypeId, queueHoldStatus, scheduledAtUtc])
+  @@index([publishedAt])
+}
+
+model DraftVersion {
+  id                 String         @id @default(cuid())
+  postId             String?
+  longFormPostId     String?
+  version            Int
+  snapshot           Json?          // Short post: full snapshot JSON
+  snapshotCompressed Bytes?         // Longform: gzipped JSON
+  createdAt          DateTime      @default(now())
+  createdBy          String?
+  post               Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  longFormPost       LongFormPost?  @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
+  createdByUser      User?          @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([postId, version])
+  @@index([longFormPostId, version])
+}
+
+model DraftGroup {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts     Post[]
+  versions  DraftGroupVersion[]
+
+  @@index([userId])
+}
+
+model DraftGroupVersion {
+  id           String    @id @default(cuid())
+  draftGroupId String
+  version      Int
+  snapshot     Json      // Array of { caption, fileUrl, queueTypeId, scheduledFor, sortOrder, ... }
+  createdAt    DateTime  @default(now())
+  createdBy    String?
+  draftGroup   DraftGroup @relation(fields: [draftGroupId], references: [id], onDelete: Cascade)
+  createdByUser User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([draftGroupId, version])
+}
+
+enum TemplateType {
+  POST
+  LONGFORM
+}
+
+model Template {
+  id              String        @id @default(cuid())
+  name            String?
+  templateType    TemplateType  @default(POST)
+  postId          String?       @unique
+  post            Post?         @relation("TemplatePost", fields: [postId], references: [id], onDelete: Cascade)
+  longFormPostId  String?       @unique
+  longFormPost    LongFormPost? @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id             String        @id
+  userId         String
+  amount         Int
+  amountUsd      Decimal?
+  billingCadence BillingCadence?
+  accessDurationMonths Int?
+  billingPaymentMethod BillingPaymentMethod?
+  invoice        String
+  paymentHash    String
+  preimage       String?
+  status         PaymentStatus @default(PENDING)
+  description    String?
+  purpose        PaymentPurpose @default(SUBSCRIPTION)
+  subscriptionId String?
+  expiresAt      DateTime?
+  paidAt         DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+  paymentMethod  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giveawayFinalizationPayment GiveawayFinalizationPayment?
+  contestFinalizationPayment  ContestFinalizationPayment?
+  contestPayoutForId String?
+  contestPayoutFor Contest? @relation("ContestPayoutPayment", fields: [contestPayoutForId], references: [id], onDelete: SetNull)
+  /** BTCPay Greenfield invoice id (Founder on-chain checkout). */
+  btcpayInvoiceId String? @unique
+}
+
+enum PlanBillingModel {
+  free
+  recurring
+  lifetime
+  disabled
+}
+
+model Plan {
+  id                           String             @id
+  name                         String
+  price                        Decimal
+  description                  String?
+  features                     Json
+  maxPostsPerMonth             Int?
+  maxQueueTypes                Int?
+  maxTemplates                 Int?
+  maxLongFormPosts             Int?
+  isActive                     Boolean            @default(true)
+  /** Display order on pricing page (lower first). */
+  sortOrder                    Int                @default(0)
+  /** Commercial category: free tier, recurring paid, lifetime one-time, or future/disabled. */
+  planBillingModel             PlanBillingModel   @default(recurring)
+  /** When false, checkout and select_plan must reject (e.g. free, teams). */
+  purchasable                  Boolean            @default(true)
+  /** When false, plan is omitted from public pricing surfaces. */
+  visibleOnPricingPage         Boolean            @default(true)
+  isComingSoon                 Boolean            @default(false)
+  /** Founder-style offers shown outside the main recurring grid. */
+  isSpecialOffering            Boolean            @default(false)
+  /** Max concurrent active Founder subscriptions; null when not seat-limited. */
+  founderSeatCap               Int?
+  createdAt                    DateTime           @default(now())
+  updatedAt                    DateTime           @updatedAt
+  enableAdvancedAnalytics      Boolean        @default(false)
+  enableBasicScheduling        Boolean        @default(false)
+  enableBulkScheduling         Boolean        @default(false)
+  enableCommissions            Boolean        @default(false)
+  enableEngagementFeed         Boolean        @default(false)
+  enableGiveaways              Boolean        @default(false)
+  enableContests               Boolean        @default(false)
+  enableLeaderboards           Boolean        @default(false)
+  enableLifetimeAccess         Boolean        @default(false)
+  enableMultiAccountSwitching  Boolean        @default(false)
+  enableMultipleQueues         Boolean        @default(false)
+  enableNativeS3BlossomStorage Boolean        @default(false)
+  enableRelayBlast             Boolean        @default(false)
+  enableRepostsAndQuotes       Boolean        @default(false)
+  enableVisualPerks            Boolean        @default(false)
+  enableWolfFilteringAndVortex Boolean        @default(false)
+  Subscription                 Subscription[]
+  PlanPrice                    PlanPrice[]
+}
+
+enum BillingCadence {
+  monthly
+  yearly
+}
+
+enum BillingPaymentMethod {
+  nwc_auto_renew
+  lightning_one_time
+  btc_btcpay_onchain
+}
+
+model PlanPrice {
+  id                  String              @id @default(cuid())
+  planId              String
+  billingCadence      BillingCadence
+  accessDurationMonths Int
+  paymentMethod       BillingPaymentMethod
+  priceUsd            Decimal
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  Plan                Plan                @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, billingCadence, accessDurationMonths, paymentMethod])
+  @@index([planId, billingCadence, paymentMethod, isActive])
+}
+
+model Subscription {
+  id                 String             @id
+  userId             String             @unique
+  planId             String?
+  status             SubscriptionStatus @default(INACTIVE)
+  /** How this subscription is expected to renew: manual invoices or NWC auto-renew. */
+  renewalMode        String             @default("manual")
+  billingCadence     BillingCadence     @default(monthly)
+  accessDurationMonths Int              @default(1)
+  paymentMethod      BillingPaymentMethod @default(lightning_one_time)
+  /** Dunning metadata for auto-renew/manual grace handling. */
+  renewalFailureCount Int              @default(0)
+  lastRenewalAttemptAt DateTime?
+  nextRenewalAttemptAt DateTime?
+  gracePeriodEndsAt   DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  endDate            DateTime?
+  lastPaymentDate    DateTime?
+  metadata           Json?
+  nextPaymentDue     DateTime?
+  plan               String?
+  startDate          DateTime
+  amountSats         BigInt?
+  amountUsd          Decimal?
+  Payment            Payment[]
+  Plan               Plan?              @relation(fields: [planId], references: [id])
+  User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  NotificationAttempts SubscriptionNotificationAttempt[]
+}
+
+enum BillingNotificationCommMode {
+  AUTO_RENEW_NWC
+  MANUAL_TOP_UP
+}
+
+enum BillingNotificationChannel {
+  nostr_dm
+  in_app_state
+}
+
+enum BillingNotificationAttemptStatus {
+  pending
+  sent
+  failed
+}
+
+/// Durable log for subscription billing DMs / dedupe (SmartFlow notification system V2).
+model SubscriptionNotificationAttempt {
+  id               String                           @id @default(cuid())
+  userId           String
+  subscriptionId   String
+  planId           String?
+  eventType        String
+  commMode         BillingNotificationCommMode
+  channel          BillingNotificationChannel       @default(nostr_dm)
+  dedupeKey        String                           @unique
+  status           BillingNotificationAttemptStatus @default(pending)
+  attemptedAt      DateTime                         @default(now())
+  sentAt           DateTime?
+  failureReason    String?
+  deliveryMetaJson Json?
+  createdAt        DateTime                         @default(now())
+  updatedAt        DateTime                         @updatedAt
+
+  User         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([subscriptionId, eventType])
+}
+
+enum PostType {
+  IMAGE
+  CAROUSEL
+  TEXT
+  VIDEO
+  POLL
+}
+
+enum ScheduleType {
+  INTERVAL
+  FIXED_SLOTS
+  WEEKLY_SLOTS
+}
+
+enum Status {
+  DRAFT
+  ACTIVE
+  SCHEDULED
+  PAUSED
+  POSTED
+  FAILED
+}
+
+enum UploadProvider {
+  S3
+  BLOSSOM_PRIMAL
+  BLOSSOM_BLOSSTR
+  BLOSSOM_SFS
+  BLOSSOM_CUSTOM
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIALING
+  INACTIVE
+}
+
+enum PublishRelayAckStatus {
+  PENDING
+  ACCEPTED
+  FAILED
+  TIMEOUT
+}
+
+// Outbox pattern for transactional job enqueueing
+model OutboxEvent {
+  id             String    @id @default(cuid())
+  eventType      String // "POST_SCHEDULED", "LONGFORM_SCHEDULED", "POST_CANCELLED", etc.
+  aggregateId    String // postId or longFormPostId
+  aggregateType  String // "Post" or "LongFormPost"
+  payload        Json // Job payload data
+  scheduledFor   DateTime? // When job should run (UTC)
+  idempotencyKey String?   @unique
+  correlationId  String? // For request tracking and observability
+
+  // Processing lifecycle
+  processedAt     DateTime?
+  processingError String? // Back-compat: last error seen while processing (even if retried)
+
+  // Retry metadata (outbox is retryable; events are only marked processed on success)
+  attempts       Int       @default(0)
+  lastAttemptAt  DateTime?
+  nextAttemptAt  DateTime?
+  lastError      String?
+  deadLetteredAt DateTime?
+
+  // Concurrency guard for multi-worker deployments
+  processingLockId        String?
+  processingLockExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventType, processedAt])
+  @@index([scheduledFor, processedAt])
+  @@index([aggregateId, eventType])
+  @@index([correlationId]) // For tracing requests
+  @@index([processedAt, nextAttemptAt])
+  @@index([deadLetteredAt])
+  @@index([processingLockExpiresAt])
+}
+
+// State machine for post lifecycle
+model PostStateTransition {
+  id        String   @id @default(cuid())
+  postId    String
+  fromState String
+  toState   String
+  reason    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+// State machine for longform post lifecycle
+model LongFormPostStateTransition {
+  id             String       @id @default(cuid())
+  longFormPostId String
+  fromState      String
+  toState        String
+  reason         String
+  createdAt      DateTime     @default(now())
+  longFormPost   LongFormPost @relation(fields: [longFormPostId], references: [id], onDelete: Cascade)
+
+  @@index([longFormPostId, createdAt])
+}
+
+// Per-relay publish outcomes (execution observability), keyed by publish attempt.
+model PublishRelayAck {
+  id              String                @id @default(cuid())
+  publishAttemptId String
+  userId          String
+  eventId         String
+  relayUrl        String
+  status          PublishRelayAckStatus
+  receivedAt      DateTime?
+  createdAt       DateTime              @default(now())
+
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([publishAttemptId, relayUrl])
+  @@index([userId, relayUrl, createdAt])
+  @@index([eventId, createdAt])
+}
+
+model DeadLetterJob {
+  id            String   @id @default(cuid())
+  queueType     String // "scheduled-posts", "scheduled-longform-posts", etc.
+  jobId         String // Original BullMQ job ID
+  jobName       String // Job name (e.g., "publish-post")
+  jobData       Json // Original job data
+  error         String // Error message
+  errorStack    String? // Error stack trace
+  attemptsMade  Int // Number of attempts before failure
+  correlationId String? // Correlation ID for tracing
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([queueType, createdAt])
+  @@index([correlationId])
+  @@index([jobId])
+}
+
+// ============================================================================
+// Read Models (Lightweight CQRS)
+// ============================================================================
+
+// Denormalized read model for scheduled posts dashboard
+model ScheduledPostRead {
+  id              String   @id
+  userId          String
+  postId          String   @unique
+  caption         String?
+  scheduledAtUtc  DateTime
+  queueTypeName      String
+  queueTypeColorToken String?
+  hashTagPresetId    String?
+  templateId         String?
+  createdAt          DateTime
+  updatedAt          DateTime
+
+  @@index([userId, scheduledAtUtc])
+  @@index([userId, queueTypeName])
+  @@index([scheduledAtUtc])
+}
+
+// Denormalized read model for published posts dashboard
+model PublishedPostRead {
+  id              String   @id
+  userId          String
+  postId          String   @unique
+  caption         String?
+  publishedAt     DateTime
+  queueTypeName       String
+  queueTypeColorToken String?
+  engagementScore     Int? // Pre-computed engagement (can be updated later)
+  createdAt           DateTime
+  updatedAt           DateTime
+
+  @@index([userId, publishedAt])
+  @@index([userId, queueTypeName])
+  @@index([userId, publishedAt, engagementScore])
+  @@index([publishedAt])
+}
+
+// Analytics rollup table (daily aggregations)
+model PostAnalyticsDaily {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime @db.Date
+  postsScheduled Int      @default(0)
+  postsPublished Int      @default(0)
+  postsFailed    Int      @default(0)
+  avgEngagement  Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
+}
+
+// Notes and articles catalogued for a paid profile, including ones not published here.
+model TrackedAuthorEvent {
+  id             String    @id @default(cuid())
+  userId         String
+  nostrEventId   String
+  kind           Int
+  eventCreatedAt DateTime?
+  contentExcerpt String    @default("")
+  postId         String?
+  discoveredAt   DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post           Post?     @relation("TrackedAuthorEventPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, nostrEventId])
+  @@index([userId, eventCreatedAt])
+  @@index([postId])
+}
+
+// Cursor for walking a paid profile's notes, replies, or long-form on NostrMash.
+model AuthorEventSync {
+  id               String   @id @default(cuid())
+  userId           String
+  stream           String
+  nextCursor       String?
+  backfillComplete Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stream])
+  @@index([userId])
+}
+
+// Append-only performance checks. A miss stores null counts, not zeros.
+model PostPerformanceObservation {
+  id               String   @id @default(cuid())
+  userId           String
+  nostrEventId     String
+  postId           String?
+  reactionCount    Int?
+  replyCount       Int?
+  repostCount      Int?
+  zapCount         Int?
+  zapMsats         BigInt?
+  missingFromIndex Boolean
+  checkedAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post?    @relation("PerformanceObservationPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([userId, nostrEventId, checkedAt])
+  @@index([userId, checkedAt])
+  @@index([postId])
+}
+
+// One current row per catalogued note. History stays in PostPerformanceObservation.
+model PostPerformanceLatest {
+  id               String   @id @default(cuid())
+  userId           String
+  nostrEventId     String
+  postId           String?
+  reactionCount    Int?
+  replyCount       Int?
+  repostCount      Int?
+  zapCount         Int?
+  zapMsats         BigInt?
+  missingFromIndex Boolean
+  checkedAt        DateTime
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post?    @relation("PerformanceLatestPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, nostrEventId])
+  @@index([userId, checkedAt])
+  @@index([postId])
+}
+
+// Push notification subscriptions for PWA
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Media metadata for Blossom (and other) uploads; SmartFlow owns metadata, Blossom owns storage
+model Media {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  sha256    String?
+  size      Int?
+  mimeType  String?
+  provider  String   // e.g. BLOSSOM_SFS
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([provider])
+  @@index([createdAt])
+}
+
+enum MediaAssetStatus {
+  uploaded
+  processing
+  ready
+  failed
+}
+
+enum MediaVariantStatus {
+  pending
+  ready
+  failed
+}
+
+model MediaAsset {
+  id              String           @id @default(cuid())
+  userId          String
+  sha256          String?
+  sourceMimeType  String
+  sourceBytes     Int
+  sourceProvider  String
+  status          MediaAssetStatus @default(uploaded)
+  errorReason     String?
+  lastProcessedAt DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variants        MediaVariant[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([sha256])
+  @@unique([userId, sha256])
+}
+
+model MediaVariant {
+  id          String             @id @default(cuid())
+  assetId     String
+  variantKind String
+  mimeType    String
+  bytes       Int
+  width       Int?
+  height      Int?
+  durationMs  Int?
+  url         String
+  provider    String
+  isPrimary   Boolean            @default(false)
+  status      MediaVariantStatus @default(pending)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  asset       MediaAsset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, variantKind])
+  @@index([provider, status])
+  @@unique([assetId, variantKind, provider, url])
+}
+
+model MediaUploadIntent {
+  id              String         @id @default(cuid())
+  intentId        String         @unique
+  userId          String
+  provider        UploadProvider
+  composeSessionId String?
+  fileCount       Int
+  expiresAt       DateTime
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+}
+
+enum ReservationStatus {
+  RESERVED
+  COMMITTED
+  EXPIRED
+  CANCELED
+}
+
+enum ReservationBatchStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
+model BlossomReservationBatch {
+  id         String                 @id @default(cuid())
+  batchId    String                 @unique
+  userId     String
+  pubkey     String
+  provider   UploadProvider         @default(BLOSSOM_SFS)
+  sourceIntentId String?
+  totalBytes BigInt
+  expiresAt  DateTime
+  status     ReservationBatchStatus @default(ACTIVE)
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items      BlossomReservationItem[]
+
+  @@index([userId, status, expiresAt])
+  @@index([pubkey, status, expiresAt])
+  @@index([expiresAt, status])
+  @@index([provider, status, expiresAt])
+  @@index([sourceIntentId])
+}
+
+model BlossomReservationItem {
+  id        String            @id @default(cuid())
+  jti       String            @unique
+  batchId   String
+  pubkey    String
+  sha256    String
+  size      Int
+  mimeType  String?
+  expiresAt DateTime
+  status    ReservationStatus @default(RESERVED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  batch     BlossomReservationBatch @relation(fields: [batchId], references: [batchId], onDelete: Cascade)
+
+  @@index([batchId, status])
+  @@index([pubkey, status, expiresAt])
+  @@index([sha256])
+  @@index([expiresAt, status])
+}
+
+model BlossomCommit {
+  id        String   @id @default(cuid())
+  jti       String   @unique
+  batchId   String?
+  pubkey    String
+  sha256    String
+  size      Int
+  mimeType  String?
+  url       String
+  createdAt DateTime @default(now())
+
+  @@index([pubkey, createdAt])
+  @@index([batchId])
+}
+
+model BlossomUploadUsagePeriod {
+  id             String   @id @default(cuid())
+  userId         String
+  periodStartUtc DateTime @db.Date
+  uploadedBytes  BigInt   @default(0)
+  uploadedFiles  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodStartUtc])
+  @@index([periodStartUtc])
+}
+
+// ---------------------------------------------------------------------------
+// Referral system (operator-aligned revenue sharing)
+// ---------------------------------------------------------------------------
+
+model Referral {
+  referrerNpub  String   @map("referrer_npub")
+  referredNpub  String   @id @map("referred_npub")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([referrerNpub])
+}
+
+enum ReferralEarningStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model ReferralEarning {
+  id                    String               @id @default(cuid())
+  referrerNpub           String               @map("referrer_npub")
+  referredNpub           String               @map("referred_npub")
+  paymentId             String               @map("payment_id")
+  amountPaidSats        Int                  @map("amount_paid_sats")
+  commissionSats        Int                  @map("commission_sats")
+  status                ReferralEarningStatus @default(PENDING)
+  payoutAttemptCount    Int                  @default(0) @map("payout_attempt_count")
+  payoutFailureReason   String?              @map("payout_failure_reason")
+  /// Set while a payout for these earnings is in flight. Cleared on success or failure.
+  payoutClaimHash       String?              @map("payout_claim_hash")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  paidAt                DateTime?            @map("paid_at")
+
+  @@unique([referrerNpub, paymentId])
+  @@index([referrerNpub])
+  @@index([status])
+}
+
+model ReferrerPayoutConfig {
+  referrerNpub           String   @id @map("referrer_npub")
+  payoutDestination      String   @map("payout_destination")
+  payoutDestinationType  String?  @map("payout_destination_type") // ln_address | lnurl | invoice_on_demand
+  updatedAt              DateTime @updatedAt @map("updated_at")
+}
+
+/// Operator-visible payout history (batch runs + manual Lightning payouts).
+model ReferralPayoutAuditLog {
+  id            String   @id @default(cuid())
+  channel       String   @map("channel") // "batch" | "manual"
+  referrerNpub  String?  @map("referrer_npub")
+  amountSats    Int?     @map("amount_sats")
+  status        String   @map("status") // "success" | "failed"
+  batchSummary  Json?    @map("batch_summary")
+  errorMessage  String?  @map("error_message")
+  operatorNpub  String?  @map("operator_npub")
+  /// BOLT11 payment hash. Unique so the same invoice cannot be paid twice.
+  paymentHash   String?  @unique @map("payment_hash")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("referral_payout_audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Contest/Giveaway payouts (non-custodial batch execution + ledger)
+// ---------------------------------------------------------------------------
+
+enum PayoutRunScope {
+  CONTEST
+  GIVEAWAY
+}
+
+enum PayoutWalletMode {
+  /** Manual payouts tracked only (no server-side execution). */
+  manual
+  /** Server executes payments using the creator's connected NWC wallet. */
+  nwc_creator
+}
+
+enum PayoutRunTrigger {
+  /** User clicked "Run batch payout" in UI. */
+  manual_trigger
+  /** Scheduled/automatic execution at campaign end (trusted autopay). */
+  autorun
+}
+
+enum PayoutRunStatus {
+  draft
+  running
+  partial
+  complete
+  failed
+  skipped
+}
+
+enum PayoutItemStatus {
+  pending
+  paid
+  failed
+  claim_needed
+  skipped
+}
+
+enum PayoutAttemptStatus {
+  started
+  succeeded
+  failed
+}
+
+model PayoutRun {
+  id        String        @id @default(cuid())
+  scope     PayoutRunScope
+  userId    String
+  walletMode PayoutWalletMode @default(manual)
+  trigger   PayoutRunTrigger
+  /** Stable idempotency key per campaign (e.g. contest:<id> or giveaway:<id>). */
+  idempotencyKey String @unique
+
+  /** Exactly one of contestId/giveawayId should be set (enforced in app logic). */
+  contestId  String?
+  giveawayId String?
+
+  /** Snapshot of run constraints/intent. */
+  spendCapSats Int?
+  totalSats    Int?
+  totalItems   Int?
+
+  status    PayoutRunStatus @default(draft)
+  startedAt DateTime?
+  completedAt DateTime?
+
+  /** When autorun is enabled but not eligible to execute (e.g. missing NWC). */
+  eligibilityErrorCode    String?
+  eligibilityErrorMessage String?
+
+  metadataJson Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest  Contest?  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  giveaway Giveaway? @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  items    PayoutItem[]
+  attempts PayoutAttempt[]
+
+  @@index([userId, createdAt])
+  @@index([scope, status, createdAt])
+  @@index([contestId])
+  @@index([giveawayId])
+}
+
+model PayoutItem {
+  id        String          @id @default(cuid())
+  runId     String
+
+  /** Recipient identity */
+  winnerPubkey String
+
+  /** Intended payout amount (sats) */
+  amountSats Int
+
+  /** Payout target snapshots for auditability/debugging */
+  lnAddressSnapshot String?
+  destinationSnapshot Json?
+
+  /** BOLT11 invoice used for payment (when available) */
+  invoice          String?
+  invoiceExpiresAt DateTime?
+
+  /** Wallet execution artifacts (if available) */
+  walletRequestId String?
+  paymentPreimage String?
+  paymentHash     String?
+
+  status       PayoutItemStatus @default(pending)
+  errorCode    String?
+  errorMessage String?
+
+  /** First-class idempotency: unique per payout item execution intent */
+  idempotencyKey String
+
+  attemptCount  Int      @default(0)
+  lastAttemptAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run      PayoutRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  attempts PayoutAttempt[]
+
+  @@unique([runId, winnerPubkey])
+  @@index([runId, status])
+  @@index([status, updatedAt])
+  @@index([winnerPubkey])
+}
+
+model PayoutAttempt {
+  id      String             @id @default(cuid())
+  runId   String
+  itemId  String
+
+  attemptNumber Int
+  status        PayoutAttemptStatus @default(started)
+
+  /** Duplicate protection for retries and concurrent runners */
+  idempotencyKey String @unique
+
+  walletRequestId String?
+  walletResponseJson Json?
+
+  errorCode    String?
+  errorMessage String?
+
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+
+  item PayoutItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  run  PayoutRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, startedAt])
+  @@index([itemId, startedAt])
+  @@unique([itemId, attemptNumber])
+}
+
+/// Payment facts kept after account deletion. No public key and no invoice.
+model RetainedFinancialRecord {
+  id               String    @id @default(cuid())
+  retainedAt       DateTime  @default(now())
+  paymentId        String    @unique
+  amountSats       Int
+  status           String
+  purpose          String
+  paymentHash      String
+  paidAt           DateTime?
+  paymentCreatedAt DateTime
+
+  @@index([retainedAt])
+}

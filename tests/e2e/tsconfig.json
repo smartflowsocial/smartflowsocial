@@ -1,0 +1,29 @@
+{
+  "exclude": ["../node_modules/@types/jest", "../node_modules/@testing-library/jest-dom"],
+  "include": [
+    "**/*.cy.ts",
+    "**/*.config.ts",
+    "support/**/*",
+    "../../remix.env.d.ts",
+    "../../app/types/**/*.d.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "../../.cache/tsconfig.e2e.tsbuildinfo",
+    "types": ["node", "cypress", "@testing-library/cypress"],
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "target": "ES2020",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    "paths": {
+      "~/*": ["../../app/*"]
+    }
+  }
+}

@@ -1,0 +1,510 @@
+/**
+ * Plans action handlers
+ * Centralized action processing for plans page
+ */
+
+import { requireUser } from "~/features/auth/session.server";
+import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
+import {
+  checkPaymentStatus,
+  countActiveSubscriptionsForPlan,
+  createPlanInvoice,
+  getPlanById,
+  getPlanPriceUsd,
+  getUserSubscription,
+  manuallyVerifyPayment,
+  PlanBillingModel,
+} from "~/features/payments/data";
+import {
+  NwcChargeError,
+  nwcChargeFailureNotice,
+  payBolt11WithUserNwc,
+} from "~/features/payments/services/nwc-user-pay.server";
+import {
+  getDecryptedUserNWC,
+  touchUserNwcLastUsed,
+  updateUserNWC,
+} from "~/features/user";
+import { planSubscriptionDescription } from "~/lib/brand";
+import { logError } from "~/lib/error-logger.server";
+import { trackProductEvent } from "~/lib/product-events.server";
+import { plansActionSchema, validateFormDataOrRespond } from "~/lib/validation";
+
+async function handleCheckPaymentIntent(paymentId: string) {
+  try {
+    trackProductEvent("checkout_payment_status_checked", { paymentId });
+    const paymentStatus = await checkPaymentStatus(paymentId);
+
+    if (paymentStatus.paid) {
+      return {
+        success: true,
+        paid: true,
+        paidAt: paymentStatus.paidAt,
+        message: "Payment completed successfully!",
+      };
+    }
+
+    return { success: true, paid: false, status: paymentStatus.status };
+  } catch (error) {
+    const { handleActionError } = await import("~/lib/error-handler.server");
+    const errorResponse = handleActionError(error);
+    const errorData: unknown =
+      errorResponse instanceof Response ? await errorResponse.json() : null;
+    const errorMessage =
+      errorData &&
+      typeof errorData === "object" &&
+      !Array.isArray(errorData) &&
+      "message" in errorData &&
+      typeof (errorData as { message?: unknown }).message === "string"
+        ? (errorData as { message: string }).message
+        : "Failed to check payment status";
+    return { success: false, error: errorMessage };
+  }
+}
+
+function resolveDurationMonths(params: {
+  billingCadence: "monthly" | "yearly";
+  accessDurationMonths?: number;
+}): number {
+  if (typeof params.accessDurationMonths === "number")
+    return params.accessDurationMonths;
+  return params.billingCadence === "yearly" ? 12 : 1;
+}
+
+function fallbackPriceUsd(params: {
+  plan: { price: unknown; planBillingModel: PlanBillingModel };
+  billingCadence: "monthly" | "yearly";
+  accessDurationMonths: number;
+  billingPaymentMethod:
+    | "nwc_auto_renew"
+    | "lightning_one_time"
+    | "btc_btcpay_onchain";
+}): number | null {
+  const baseMonthly = Number(params.plan.price);
+  if (!Number.isFinite(baseMonthly) || baseMonthly < 0) return null;
+
+  if (params.plan.planBillingModel === PlanBillingModel.lifetime) {
+    return baseMonthly;
+  }
+
+  if (params.billingCadence === "yearly") {
+    if (params.accessDurationMonths !== 12) return null;
+    // Public policy: yearly equals 10 months.
+    return baseMonthly * 10;
+  }
+
+  if (
+    params.accessDurationMonths !== 1 &&
+    params.accessDurationMonths !== 3 &&
+    params.accessDurationMonths !== 6
+  ) {
+    return null;
+  }
+
+  if (params.billingPaymentMethod === "nwc_auto_renew") {
+    return params.accessDurationMonths === 1 ? baseMonthly : null;
+  }
+
+  return baseMonthly * params.accessDurationMonths;
+}
+
+async function createInvoiceForSelection(params: {
+  planId: string;
+  userId: string;
+  billingCadence: "monthly" | "yearly";
+  accessDurationMonths: number;
+  billingPaymentMethod:
+    | "nwc_auto_renew"
+    | "lightning_one_time"
+    | "btc_btcpay_onchain";
+  priceUsd: number;
+}) {
+  return createPlanInvoice({
+    planId: params.planId,
+    userId: params.userId,
+    description: planSubscriptionDescription,
+    amountUsdOverride: params.priceUsd,
+    billingCadence: params.billingCadence,
+    accessDurationMonths: params.accessDurationMonths,
+    billingPaymentMethod: params.billingPaymentMethod,
+  });
+}
+
+async function attemptImmediateNwcPayment(params: {
+  userId: string;
+  planId: string;
+  nwcString?: string;
+  invoice: { invoice: string; paymentId: string };
+}) {
+  const nwcString = params.nwcString;
+
+  if (nwcString && nwcString.length > 0) {
+    trackProductEvent("nwc_connect_attempted", {
+      userId: params.userId,
+      planId: params.planId,
+    });
+    await updateUserNWC(params.userId, nwcString, true);
+    trackProductEvent("nwc_connect_succeeded", {
+      userId: params.userId,
+      planId: params.planId,
+    });
+  }
+
+  const decryptedNwc = nwcString?.length
+    ? nwcString
+    : await getDecryptedUserNWC(params.userId);
+  if (!decryptedNwc) {
+    return {
+      ok: false as const,
+      error:
+        "Connect a wallet with Nostr Wallet Connect to enable automatic renewals.",
+      status: 400 as const,
+    };
+  }
+
+  try {
+    await payBolt11WithUserNwc(decryptedNwc, params.invoice.invoice);
+    await touchUserNwcLastUsed(params.userId);
+  } catch (error) {
+    if (!(error instanceof NwcChargeError) || error.kind !== "unconfirmed") {
+      const kind =
+        error instanceof NwcChargeError ? error.kind : "wallet_rejected";
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId: params.userId,
+        planId: params.planId,
+        kind,
+        message: "Immediate NWC payment failed",
+      });
+      return {
+        ok: false as const,
+        error: nwcChargeFailureNotice(kind),
+        status: 502 as const,
+      };
+    }
+  }
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+  for (let i = 0; i < 3; i++) {
+    const verification = await manuallyVerifyPayment(params.invoice.paymentId);
+    if (verification.success && verification.paid) {
+      return { ok: true as const, paid: true as const };
+    }
+    await sleep(500);
+  }
+
+  return { ok: true as const, paid: false as const };
+}
+
+async function assertFounderSeatsForInvoice(
+  plan: { id: string; founderSeatCap: number | null },
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (plan.founderSeatCap == null) return { ok: true };
+  const claimed = await countActiveSubscriptionsForPlan(plan.id);
+  const sub = await getUserSubscription(userId);
+  const alreadyFounder = sub?.planId === plan.id && sub.status === "ACTIVE";
+  if (!alreadyFounder && claimed >= plan.founderSeatCap) {
+    return { ok: false, error: "Founder access is sold out." };
+  }
+  return { ok: true };
+}
+
+async function handleSelectPlanIntent(
+  selectData: Extract<
+    (typeof plansActionSchema)["_output"],
+    { intent: "select_plan" }
+  >,
+  request: Request
+) {
+  const user = await requireUser(request);
+
+  trackProductEvent("checkout_lane_selected", {
+    userId: user.id,
+    planId: selectData.planId,
+    paymentMode: selectData.paymentMode,
+  });
+
+  if (selectData.planId === "free") {
+    if (selectData.paymentMode === "btc_onchain") {
+      return {
+        success: false,
+        error: "Bitcoin on-chain checkout is not available for the free plan.",
+        status: 400,
+      };
+    }
+    const invoice = await createInvoiceForSelection({
+      planId: "free",
+      userId: user.id,
+      billingCadence: "monthly",
+      accessDurationMonths: 1,
+      billingPaymentMethod: "lightning_one_time",
+      priceUsd: 0,
+    });
+    if (invoice.invoice === "free_plan") {
+      return {
+        redirect:
+          "/dashboard?planActivated=true&message=" +
+          encodeURIComponent("Free plan activated successfully!"),
+      };
+    }
+    return {
+      success: false,
+      error: "Could not activate the free plan.",
+      status: 500,
+    };
+  }
+
+  const plan = await getPlanById(selectData.planId);
+  if (!plan?.isActive) {
+    return {
+      success: false,
+      error: "This plan is not available.",
+      status: 404,
+    };
+  }
+  if (
+    plan.planBillingModel === PlanBillingModel.disabled ||
+    !plan.purchasable
+  ) {
+    return {
+      success: false,
+      error: "This plan is not available for purchase.",
+      status: 400,
+    };
+  }
+
+  const isLifetime = plan.planBillingModel === PlanBillingModel.lifetime;
+
+  if (isLifetime) {
+    if (selectData.paymentMode === "auto_renew") {
+      return {
+        success: false,
+        error:
+          "Lifetime access does not support wallet auto-renew. Use one-time Lightning or Bitcoin on-chain.",
+        status: 400,
+      };
+    }
+    const seatOk = await assertFounderSeatsForInvoice(plan, user.id);
+    if (!seatOk.ok) {
+      return { success: false, error: seatOk.error, status: 400 };
+    }
+  }
+
+  if (selectData.paymentMode === "btc_onchain") {
+    if (!isBtcpayConfigured()) {
+      return {
+        success: false,
+        error: "Bitcoin on-chain checkout is not available right now.",
+        status: 503,
+      };
+    }
+
+    const cadence = "yearly" as const;
+    const durationMonths = resolveDurationMonths({
+      billingCadence: cadence,
+      accessDurationMonths:
+        typeof selectData.accessDurationMonths === "number"
+          ? selectData.accessDurationMonths
+          : undefined,
+    });
+    const billingPaymentMethod = "btc_btcpay_onchain" as const;
+    const priceUsd = await getPlanPriceUsd({
+      planId: selectData.planId,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      paymentMethod: billingPaymentMethod,
+    });
+
+    const resolvedPriceUsd =
+      priceUsd ??
+      fallbackPriceUsd({
+        plan,
+        billingCadence: cadence,
+        accessDurationMonths: durationMonths,
+        billingPaymentMethod,
+      });
+
+    if (resolvedPriceUsd == null) {
+      return {
+        success: false,
+        error:
+          "Bitcoin on-chain price is not configured for this plan (yearly).",
+        status: 400,
+      };
+    }
+
+    const invoice = await createInvoiceForSelection({
+      planId: selectData.planId,
+      userId: user.id,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      billingPaymentMethod,
+      priceUsd: resolvedPriceUsd,
+    });
+
+    trackProductEvent("checkout_btcpay_invoice_created", {
+      userId: user.id,
+      planId: selectData.planId,
+      paymentId: invoice.paymentId,
+    });
+
+    return {
+      success: true,
+      paymentMode: selectData.paymentMode,
+      invoice: invoice.invoice,
+      paymentHash: invoice.paymentHash,
+      amount: invoice.amount,
+      amountUsd: invoice.amountUsd,
+      paymentId: invoice.paymentId,
+      expiresAt: invoice.expiresAt.toISOString(),
+      planName: invoice.planName,
+      planId: invoice.planId,
+      checkoutKind: invoice.checkoutKind ?? "btcpay",
+    };
+  }
+
+  let cadence = selectData.billingCadence;
+  let durationMonths = resolveDurationMonths({
+    billingCadence: cadence,
+    accessDurationMonths:
+      typeof selectData.accessDurationMonths === "number"
+        ? selectData.accessDurationMonths
+        : undefined,
+  });
+
+  if (isLifetime) {
+    cadence = "yearly";
+    durationMonths = 12;
+  }
+
+  const billingPaymentMethod =
+    selectData.paymentMode === "auto_renew"
+      ? "nwc_auto_renew"
+      : "lightning_one_time";
+
+  const priceUsd = await getPlanPriceUsd({
+    planId: selectData.planId,
+    billingCadence: cadence,
+    accessDurationMonths: durationMonths,
+    paymentMethod: billingPaymentMethod,
+  });
+
+  const resolvedPriceUsd =
+    priceUsd ??
+    fallbackPriceUsd({
+      plan,
+      billingCadence: cadence,
+      accessDurationMonths: durationMonths,
+      billingPaymentMethod,
+    });
+
+  if (resolvedPriceUsd == null) {
+    return {
+      success: false,
+      error: "This billing option is not available for the selected plan.",
+      status: 400,
+    };
+  }
+
+  const invoice = await createInvoiceForSelection({
+    planId: selectData.planId,
+    userId: user.id,
+    billingCadence: cadence,
+    accessDurationMonths: durationMonths,
+    billingPaymentMethod,
+    priceUsd: resolvedPriceUsd,
+  });
+
+  if (selectData.paymentMode === "auto_renew") {
+    const immediate = await attemptImmediateNwcPayment({
+      userId: user.id,
+      planId: selectData.planId,
+      nwcString: selectData.nwcString,
+      invoice: { invoice: invoice.invoice, paymentId: invoice.paymentId },
+    });
+
+    if (!immediate.ok) {
+      return {
+        success: false,
+        error: immediate.error,
+        status: immediate.status,
+      };
+    }
+
+    if (immediate.paid) {
+      trackProductEvent("first_payment_succeeded", {
+        userId: user.id,
+        planId: selectData.planId,
+        paymentMode: "auto_renew",
+      });
+      return {
+        success: true,
+        paid: true,
+        message: "Subscription started with auto-renew enabled.",
+      };
+    }
+
+    trackProductEvent("first_payment_pending", {
+      userId: user.id,
+      planId: selectData.planId,
+      paymentId: invoice.paymentId,
+      paymentMode: "auto_renew",
+    });
+  }
+
+  return {
+    success: true,
+    paymentMode: selectData.paymentMode,
+    invoice: invoice.invoice,
+    paymentHash: invoice.paymentHash,
+    amount: invoice.amount,
+    amountUsd: invoice.amountUsd,
+    paymentId: invoice.paymentId,
+    expiresAt: invoice.expiresAt.toISOString(),
+    planName: invoice.planName,
+    planId: invoice.planId,
+    checkoutKind: invoice.checkoutKind ?? "lightning",
+  };
+}
+
+export async function handlePlansAction(formData: FormData, request: Request) {
+  const result = validateFormDataOrRespond(formData, plansActionSchema);
+  if (!result.success) {
+    return result.response;
+  }
+
+  try {
+    if (result.data.intent === "check_payment") {
+      return await handleCheckPaymentIntent(result.data.paymentId);
+    }
+
+    return await handleSelectPlanIntent(result.data, request);
+  } catch (error) {
+    const userForLog = await (async () => {
+      try {
+        return await requireUser(request);
+      } catch {
+        return null;
+      }
+    })();
+
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      userId: userForLog?.id,
+      planId:
+        result.data.intent === "select_plan" ? result.data.planId : undefined,
+      message: "Error creating plan invoice",
+    });
+    const status =
+      typeof (error as { statusCode?: unknown }).statusCode === "number"
+        ? (error as { statusCode: number }).statusCode
+        : 500;
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create payment invoice",
+      status,
+    };
+  }
+}

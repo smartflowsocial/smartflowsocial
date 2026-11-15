@@ -1,0 +1,159 @@
+/**
+ * Integration tests for scheduled posts service
+ * Tests app/features/posts/services/scheduled-posts.server.ts
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock dependencies
+// Single mock so all used exports are available
+vi.mock("~/features/posts/server", () => ({
+  getScheduledLongFormPosts: vi.fn(),
+  getScheduledPosts: vi.fn(),
+  getScheduledRepostsCount: vi.fn(),
+}));
+
+vi.mock("~/features/user", () => ({
+  getUserById: vi.fn(),
+  getQueueTypes: vi.fn(),
+  getUserHashTagPresets: vi.fn(),
+}));
+
+vi.mock("~/features/posts/services/combined.server", () => ({
+  combineContent: vi.fn((posts: unknown[], longformPosts: unknown[]) => [
+    ...posts,
+    ...longformPosts,
+  ]),
+}));
+
+import { TEST_USER_ID } from "../../utils/test-helpers";
+
+import { getScheduledLongFormPosts } from "~/features/posts/server";
+import {
+  getScheduledPosts,
+  getScheduledRepostsCount,
+} from "~/features/posts/server";
+import { getScheduledDashboardData } from "~/features/posts/server/scheduling";
+import {
+  getUserById,
+  getQueueTypes,
+  getUserHashTagPresets,
+} from "~/features/user";
+
+describe("Scheduled Posts Service", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should get scheduled dashboard data", async () => {
+    const mockPosts = [
+      { id: "post-1", queueType: { id: "queue-1", name: "Queue 1" } },
+    ];
+    const mockLongformPosts = [
+      { id: "longform-1", queueType: { id: "queue-1", name: "Queue 1" } },
+    ];
+    const mockUser = { id: TEST_USER_ID };
+    const mockQueueTypes = [
+      { id: "queue-1", name: "Queue 1", isEnabled: true },
+    ];
+    const mockHashTagPresets = [{ id: "preset-1", name: "Preset 1" }];
+    const pagination = { total: 1, pages: 1, currentPage: 1, limit: 20 };
+
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockLongformPosts,
+      pagination,
+    });
+    (getScheduledRepostsCount as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockQueueTypes
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockHashTagPresets
+    );
+
+    const result = await getScheduledDashboardData({
+      userId: TEST_USER_ID,
+      queueType: "all",
+    });
+
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0]).toMatchObject(mockPosts[0] as object);
+    expect(result.longformPosts).toHaveLength(1);
+    expect(result.longformPosts[0]).toMatchObject(
+      mockLongformPosts[0] as object
+    );
+    expect(result.user).toEqual(mockUser);
+    expect(result.queueTypes).toEqual(mockQueueTypes);
+    expect(result.hashTagPresets).toEqual(mockHashTagPresets);
+    expect(result.selectedQueueType).toBe("all");
+  });
+
+  it("should filter longform posts by queue type", async () => {
+    const mockPosts = [
+      { id: "post-1", queueType: { id: "queue-1", name: "Queue 1" } },
+    ];
+    const allLongform = [
+      { id: "longform-1", queueType: { id: "queue-1", name: "Queue 1" } },
+      { id: "longform-2", queueType: { id: "queue-2", name: "Queue 2" } },
+    ];
+    const pagination = { total: 2, pages: 1, currentPage: 1, limit: 20 };
+
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: mockPosts,
+      pagination,
+    });
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- mock returns Promise
+      (opts: { queueType?: string }) =>
+        Promise.resolve({
+          posts:
+            opts.queueType === "Queue 1"
+              ? allLongform.filter((p) => p.queueType.name === "Queue 1")
+              : allLongform,
+          pagination,
+        })
+    );
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    const result = await getScheduledDashboardData({
+      userId: TEST_USER_ID,
+      queueType: "Queue 1",
+    });
+
+    expect(result.longformPosts).toHaveLength(1);
+    expect(result.longformPosts[0]?.id).toBe("longform-1");
+  });
+
+  it("should handle non-array queue types and hash tag presets", async () => {
+    (getScheduledPosts as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (getScheduledLongFormPosts as ReturnType<typeof vi.fn>).mockResolvedValue(
+      []
+    );
+    (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: TEST_USER_ID,
+    });
+    (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "not-an-array"
+    );
+    (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "not-an-array"
+    );
+
+    const result = await getScheduledDashboardData({
+      userId: TEST_USER_ID,
+      queueType: "all",
+    });
+
+    expect(result.queueTypes).toEqual([]);
+    expect(result.hashTagPresets).toEqual([]);
+  });
+});

@@ -1,0 +1,341 @@
+/**
+ * Unit tests for CreateLongFormPostUseCase
+ * Tests app/features/posts/use-cases/create-longform-post.use-case.server.ts
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock dependencies
+const { mockPrisma } = vi.hoisted(() => {
+  const mockLongFormPostUpdate = vi.fn().mockResolvedValue({});
+  const mockLongFormPostStateTransitionCreate = vi.fn().mockResolvedValue({});
+  const mockPrisma = {
+    longFormPost: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: mockLongFormPostUpdate,
+    },
+    $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        longFormPost: { update: mockLongFormPostUpdate },
+        longFormPostStateTransition: {
+          create: mockLongFormPostStateTransitionCreate,
+        },
+      };
+      return fn(tx);
+    }),
+  };
+  return { mockPrisma };
+});
+
+vi.mock("~/lib/prisma.server", () => ({
+  prisma: mockPrisma,
+}));
+
+vi.mock("~/features/posts/services/queue-type-resolver.server", () => ({
+  resolveQueueTypeId: vi.fn(),
+}));
+
+vi.mock("~/infra/outbox/outbox.server", () => ({
+  createOutboxEventInTransaction: vi.fn(),
+}));
+
+vi.mock("~/lib/idempotency.server", () => ({
+  generateEnqueueIdempotencyKey: vi.fn(),
+}));
+
+// Use case imports state machine from this path; mock so we don't need a full tx for isPublished path
+const mockTransition = vi.fn();
+vi.mock(
+  "~/features/posts/longform/state-machine/longform-post-state-machine.server",
+  () => ({
+    LongFormPostStateMachine: class {
+      transition = mockTransition;
+    },
+  })
+);
+
+vi.mock(
+  "~/features/posts/longform/services/longform-status-calculator.server",
+  () => ({
+    calculateLongFormStatus: vi.fn(),
+  })
+);
+
+const { mockCreateLongFormPost, mockResolveQueueTypeId } = vi.hoisted(() => ({
+  mockCreateLongFormPost: vi.fn(),
+  mockResolveQueueTypeId: vi.fn(),
+}));
+// Single mock: use case needs createLongFormPost and resolveQueueTypeId as vi.fn() (hoisted so same ref is used)
+vi.mock("~/features/posts/server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    createLongFormPost: mockCreateLongFormPost,
+    resolveQueueTypeId: mockResolveQueueTypeId,
+  };
+});
+
+import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
+
+import { calculateLongFormStatus } from "~/features/posts/longform/services/longform-status-calculator.server";
+import { CreateLongFormPostUseCase } from "~/features/posts/server/longform";
+import { createOutboxEventInTransaction } from "~/infra/outbox/outbox.server";
+import { generateEnqueueIdempotencyKey } from "~/lib/idempotency.server";
+import { prisma } from "~/lib/prisma.server";
+
+describe("CreateLongFormPostUseCase", () => {
+  let useCase: CreateLongFormPostUseCase;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockTransition.mockResolvedValue(undefined);
+    (
+      mockPrisma.longFormPost.findUnique as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: TEST_POST_ID,
+      userId: TEST_USER_ID,
+      currentState: "DRAFT",
+    });
+    useCase = new CreateLongFormPostUseCase();
+  });
+
+  describe("execute", () => {
+    it("should create a draft longform post successfully", async () => {
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "DRAFT",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
+
+      const result = await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+      });
+
+      expect(result.post).toEqual(mockPost);
+      expect(result.needsScheduling).toBe(false);
+      expect(mockCreateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: TEST_USER_ID,
+          title: "Test Title",
+          content: "Test content",
+        })
+      );
+    });
+
+    it("should create a scheduled longform post with outbox event", async () => {
+      const scheduledFor = Math.floor(Date.now() / 1000) + 3600;
+      const scheduledAtUtc = new Date(scheduledFor * 1000);
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "SCHEDULED",
+        status: "SCHEDULED",
+        scheduledAtUtc,
+        scheduledFor: scheduledFor.toString(),
+      };
+
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: scheduledFor,
+        kind: 1,
+        content: "test",
+        tags: [],
+        sig: "test-sig",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      (calculateLongFormStatus as ReturnType<typeof vi.fn>).mockReturnValue({
+        status: "SCHEDULED",
+        isScheduled: true,
+        isDraft: false,
+        publishedAt: null,
+        nostrEventId: null,
+        finalScheduledFor: scheduledFor.toString(),
+      });
+      (
+        generateEnqueueIdempotencyKey as ReturnType<typeof vi.fn>
+      ).mockReturnValue("enqueue-key-1");
+      (prisma.$transaction as ReturnType<typeof vi.fn>).mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock transaction callback
+        async (callback) => {
+          const tx = {
+            longFormPost: {
+              create: vi.fn().mockResolvedValue(mockPost),
+            },
+          };
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Mock transaction callback
+          return callback(tx);
+        }
+      );
+      (
+        createOutboxEventInTransaction as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(undefined);
+
+      const result = await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        scheduledFor,
+        signedEvent,
+      });
+
+      expect(result.post).toEqual(mockPost);
+      expect(result.needsScheduling).toBe(true);
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(createOutboxEventInTransaction).toHaveBeenCalledWith(
+        expect.any(Object),
+        "LONGFORM_SCHEDULED",
+        TEST_POST_ID,
+        "LongFormPost",
+        expect.objectContaining({
+          postId: TEST_POST_ID,
+          userId: TEST_USER_ID,
+          signedEvent,
+          scheduledFor,
+          schemaVersion: "1.0",
+        }),
+        scheduledAtUtc,
+        "enqueue-key-1"
+      );
+    });
+
+    it("should resolve queue type when queueType name is provided", async () => {
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "DRAFT",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
+
+      await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        queueType: "posts",
+      });
+
+      expect(mockResolveQueueTypeId).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        undefined,
+        "posts"
+      );
+    });
+
+    it("should not create outbox event if isPublished is true", async () => {
+      const scheduledFor = Math.floor(Date.now() / 1000) + 3600;
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "DRAFT",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
+
+      const result = await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        scheduledFor,
+        signedEvent: {
+          id: "event-123",
+          pubkey: "test-pubkey",
+          created_at: scheduledFor,
+          kind: 1,
+          content: "test",
+          tags: [],
+          sig: "test-sig",
+        },
+        isPublished: true,
+      });
+
+      expect(result.needsScheduling).toBe(false);
+      // State machine is mocked (mockTransition); real runTransaction not used for this path
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(createOutboxEventInTransaction).not.toHaveBeenCalled();
+    });
+
+    it("should create the post as DRAFT when isPublished is true so PublishLongFormNowUseCase owns the publish lifecycle (regression: must not pre-mark PUBLISHED)", async () => {
+      // Regression for the bug where this use case pre-set currentState to
+      // PUBLISHED before any relay publish happened. PublishLongFormNowUseCase
+      // then short-circuited as a "duplicate" and the event never reached
+      // any relay  -  but the UI still showed "Published".
+      const mockPost = {
+        id: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        currentState: "DRAFT",
+      };
+      const signedEvent = {
+        id: "event-123",
+        pubkey: "test-pubkey",
+        created_at: Math.floor(Date.now() / 1000),
+        kind: 30023,
+        content: "test",
+        tags: [["published_at", String(Math.floor(Date.now() / 1000))]],
+        sig: "test-sig",
+      };
+
+      mockResolveQueueTypeId.mockResolvedValue("queue-1");
+      mockCreateLongFormPost.mockResolvedValue(mockPost);
+
+      await useCase.execute({
+        userId: TEST_USER_ID,
+        title: "Test Title",
+        content: "Test content",
+        signedEvent,
+        nostrEvent: {
+          created_at: signedEvent.created_at,
+          kind: signedEvent.kind,
+          content: signedEvent.content,
+          tags: signedEvent.tags,
+        },
+        isPublished: true,
+      });
+
+      // Repo must be called with isPublished:false so it writes
+      // currentState:"DRAFT"  -  never "PUBLISHED"  -  at create time.
+      expect(mockCreateLongFormPost).toHaveBeenCalledWith(
+        expect.objectContaining({ isPublished: false })
+      );
+      // signedEvent / nostrEvent / scheduledAtUtc must NOT be persisted at
+      // create time for the immediate-publish path: the signed event carries
+      // a `published_at` tag that calculateLongFormStatus would otherwise
+      // mistakenly auto-promote into a SCHEDULED state.
+      const createCall = mockCreateLongFormPost.mock.calls[0]?.[0] as Record<
+        string,
+        unknown
+      >;
+      expect(createCall["signedEvent"]).toBeUndefined();
+      expect(createCall["nostrEvent"]).toBeUndefined();
+      expect(createCall["scheduledAtUtc"]).toBeUndefined();
+      // No PUBLISHED state-machine transition in this use case  -  that belongs
+      // to PublishLongFormNowUseCase after relays accept the event.
+      expect(mockTransition).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        "PUBLISHED",
+        expect.anything(),
+        expect.anything()
+      );
+    });
+  });
+});

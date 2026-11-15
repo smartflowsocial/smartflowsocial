@@ -1,0 +1,246 @@
+name: CI
+
+# Single pipeline for pushes and pull requests. It replaces the former
+# smoke-test, test-matrix, test-caching, coverage, pr-checks and deploy
+# workflows, which all re-ran the same test suites on separate runners.
+#
+# Jobs:
+#   lint   - eslint, prettier, tsc (app + e2e config), semantic PR title
+#   test   - full vitest run with coverage (unit, integration, property,
+#            security, performance) + DB index governance, all on one
+#            runner that already has Postgres and the schema pushed
+#   build  - production build + bundle budget
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# A new push to the same branch/PR cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # sticky coverage comment / semantic title check
+
+env:
+  NODE_ENV: test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+  TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+  SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
+
+jobs:
+  lint:
+    name: Lint, Format & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Production dependency audit
+        run: pnpm audit --prod --audit-level high
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: Check PR title (conventional commits)
+        if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+        uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            test
+            chore
+            perf
+            ci
+            build
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            must not start with an uppercase character.
+
+      - name: ESLint
+        run: pnpm lint:ci
+
+      - name: Prettier
+        run: pnpm format:check
+
+      - name: TypeScript
+        run: |
+          set +e
+          pnpm exec tsc --noEmit --skipLibCheck > /tmp/tsc-output.log 2>&1
+          # Only errors in our own code fail the build (some deps ship broken .d.ts).
+          ERRORS=$(grep -E "error TS" /tmp/tsc-output.log | grep -E "(app/|tests/|prisma/|server\.ts|worker\.ts)" | grep -v node_modules || true)
+          if [ -n "$ERRORS" ]; then
+            echo "TypeScript errors found:"
+            echo "$ERRORS"
+            exit 1
+          fi
+          if [ -f tests/e2e/tsconfig.json ]; then
+            pnpm exec tsc -p tests/e2e/tsconfig.json --noEmit --skipLibCheck > /tmp/tsc-e2e-output.log 2>&1
+            E2E_ERRORS=$(grep -E "error TS" /tmp/tsc-e2e-output.log | grep -v node_modules || true)
+            if [ -n "$E2E_ERRORS" ]; then
+              echo "TypeScript errors found in e2e tests:"
+              echo "$E2E_ERRORS"
+              exit 1
+            fi
+          fi
+          echo "TypeScript type check passed"
+
+      - name: Lint workflows
+        uses: raven-actions/actionlint@v2
+        with:
+          shellcheck: false
+          pyflakes: false
+
+  test:
+    name: Tests & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 17 # matches production
+          database: smartflow_test
+          user: postgres
+
+      - name: Push Prisma schema
+        run: pnpm exec prisma db push
+
+      - name: Verify critical indexes
+        run: psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f scripts/VERIFY_INDEXES.sql
+
+      # One vitest run covers unit, integration, property, security and
+      # performance suites. Coverage thresholds are enforced by
+      # vitest.config.ts (lines/statements/functions 70%, branches 60%).
+      - name: Run all test suites with coverage
+        run: pnpm test:coverage
+
+      - name: Enforce performance budget
+        run: node scripts/check-performance-budgets.mjs --source=vitest
+
+      - name: Summarise coverage
+        id: coverage
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const file = "coverage/coverage-summary.json";
+          if (!fs.existsSync(file)) process.exit(0);
+          const total = JSON.parse(fs.readFileSync(file, "utf8")).total;
+          const out = [];
+          const summary = ["## Coverage", "", "| Metric | Coverage |", "|---|---|"];
+          for (const m of ["lines", "statements", "functions", "branches"]) {
+            const pct = Number(total[m]?.pct ?? 0).toFixed(2);
+            out.push(`${m}=${pct}`);
+            summary.push(`| ${m} | ${pct}% |`);
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, out.join("\n") + "\n");
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join("\n") + "\n");
+          NODE
+
+      - name: Upload coverage to Codecov
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage/lcov.info,./coverage/coverage-summary.json
+          flags: unittests
+          fail_ci_if_error: false
+
+      - name: Upload test results & coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: |
+            test-results/junit.xml
+            test-results/results.json
+            coverage/coverage-summary.json
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && steps.coverage.outputs.lines != ''
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          recreate: true
+          message: |
+            ## Test Coverage
+
+            | Metric | Coverage | Threshold |
+            |---|---|---|
+            | Lines | ${{ steps.coverage.outputs.lines }}% | 70% |
+            | Statements | ${{ steps.coverage.outputs.statements }}% | 70% |
+            | Functions | ${{ steps.coverage.outputs.functions }}% | 70% |
+            | Branches | ${{ steps.coverage.outputs.branches }}% | 60% |
+
+            [Run details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  build:
+    name: Build & Bundle Budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Enforce frontend bundle budgets
+        run: node scripts/check-performance-budgets.mjs --source=bundle

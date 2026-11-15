@@ -1,0 +1,65 @@
+import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { capMessage } from "~/features/payments/entitlements/deployment-mode";
+import {
+  currentDeployment,
+  getEffectivePlanEntitlements,
+} from "~/features/payments/entitlements/deployment-mode.server";
+import { scheduleCapExceededMessage } from "~/features/payments/entitlements/entitlement-messages";
+import { countFutureScheduledItems } from "~/features/payments/entitlements/schedule-cap.server";
+import {
+  getUserPlanType,
+  type UserSubscription,
+} from "~/features/payments/types";
+
+export class ScheduleCapExceededError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ScheduleCapExceededError";
+  }
+}
+
+function subscriptionRowToUserSubscription(
+  sub: Awaited<ReturnType<typeof getUserSubscription>>
+): UserSubscription | null {
+  if (!sub?.planId) return null;
+  return {
+    planId: sub.planId,
+    status: sub.status,
+    currentPeriodEnd: sub.currentPeriodEnd ?? undefined,
+    Plan: sub.Plan
+      ? {
+          name: sub.Plan.name,
+          id: sub.Plan.id,
+          enableLifetimeAccess: sub.Plan.enableLifetimeAccess
+            ? true
+            : undefined,
+        }
+      : undefined,
+  };
+}
+
+/**
+ * Throws ScheduleCapExceededError when creating additionalScheduledItems would exceed the plan cap.
+ */
+export async function assertScheduleCapacity(
+  userId: string,
+  additionalScheduledItems: number
+): Promise<void> {
+  if (additionalScheduledItems <= 0) return;
+  const row = await getUserSubscription(userId);
+  const us = subscriptionRowToUserSubscription(row);
+  const planType = getUserPlanType(us);
+  const deployment = currentDeployment();
+  const { maxFutureScheduledItems } = getEffectivePlanEntitlements(planType);
+  if (maxFutureScheduledItems == null) return;
+  const current = await countFutureScheduledItems(userId);
+  if (current + additionalScheduledItems > maxFutureScheduledItems) {
+    throw new ScheduleCapExceededError(
+      capMessage(
+        scheduleCapExceededMessage(maxFutureScheduledItems),
+        `This install allows up to ${maxFutureScheduledItems} scheduled items.`,
+        deployment
+      )
+    );
+  }
+}

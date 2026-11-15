@@ -1,0 +1,176 @@
+import { useNavigation, useSearchParams } from "@remix-run/react";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { NWCSettings, SubscriptionSettings } from "~/features/payments";
+import { PaymentHistorySection } from "~/features/payments/components/subscription/payment-history-section";
+import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
+import { ReferralSettings } from "~/features/referral/components/ReferralSettings";
+import {
+  parseBillingSegmentParam,
+  type BillingSegmentId,
+} from "~/features/settings/settings-sections";
+
+import { BillingSegmentSkeleton } from "./BillingSegmentSkeleton";
+
+interface SubscriptionShape {
+  id: string;
+  planId: string | null;
+  status: string;
+  renewalMode?: string;
+  billingCadence?: string;
+  accessDurationMonths?: number;
+  billingPaymentMethod?: string;
+  renewalFailureCount?: number;
+  lastRenewalAttemptAt?: Date | null;
+  nextRenewalAttemptAt?: Date | null;
+  gracePeriodEndsAt?: Date | null;
+  startDate: Date;
+  currentPeriodEnd: Date | null;
+  nextPaymentDue: Date | null;
+  cancelAtPeriodEnd: boolean;
+  plan: {
+    id: string;
+    name: string;
+    price: number;
+    enableLifetimeAccess: boolean;
+  } | null;
+}
+
+interface BillingSettingsProps {
+  subscription: SubscriptionShape | null;
+  availablePlans: Array<{
+    id: string;
+    name: string;
+    price: number;
+    enableLifetimeAccess: boolean;
+  }>;
+  paymentHistory: Array<{
+    id: string;
+    amount: number;
+    amountUsd: number | null;
+    description: string | null;
+    paidAt: Date | null;
+    paymentMethod: string | null;
+    paymentHash: string;
+    planName?: string;
+    planPrice?: number;
+  }>;
+  nwcEnabled: boolean;
+  maskedNwcString: string | undefined;
+  nwcLastUsed: string | null;
+  referral: {
+    referralLink: string;
+    commissionRatePercent: number;
+    totalEarnedSats: number;
+    paidSats: number;
+    pendingSats: number;
+    failedSats: number;
+    payoutDestination: string | null;
+    payoutDestinationType: string | null;
+  };
+  billingContext: BillingContext | null;
+}
+
+export function BillingSettings({
+  subscription,
+  availablePlans,
+  paymentHistory,
+  nwcEnabled,
+  maskedNwcString,
+  nwcLastUsed,
+  referral,
+  billingContext,
+}: BillingSettingsProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
+  const segment = parseBillingSegmentParam(searchParams.get("billing"));
+
+  const setSegment = (next: BillingSegmentId) => {
+    const sp = new URLSearchParams(searchParams);
+    if (next === "overview") {
+      sp.delete("billing");
+    } else {
+      sp.set("billing", next);
+    }
+    setSearchParams(sp, { replace: true, preventScrollReset: true });
+  };
+
+  const isBillingNav =
+    navigation.state === "loading" &&
+    navigation.location.pathname === "/dashboard/settings";
+
+  const nextSegment = isBillingNav
+    ? parseBillingSegmentParam(
+        new URLSearchParams(navigation.location.search).get("billing")
+      )
+    : segment;
+
+  const isLoadingBillingSegment = isBillingNav && nextSegment !== segment;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-6">
+      <Tabs
+        value={nextSegment}
+        onValueChange={(v) => setSegment(v as BillingSegmentId)}
+        className="w-full"
+      >
+        <TabsList className="grid h-auto w-full max-w-md grid-cols-3 gap-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="text-xs sm:text-sm">
+            Payments
+          </TabsTrigger>
+          <TabsTrigger value="referral" className="text-xs sm:text-sm">
+            Referral
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <SubscriptionSettings
+              subscription={subscription}
+              availablePlans={availablePlans}
+              nwcEnabled={nwcEnabled}
+              billingContext={billingContext}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-6 space-y-6">
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <>
+              <NWCSettings
+                nwcEnabled={nwcEnabled}
+                maskedNwcString={maskedNwcString}
+                nwcLastUsed={nwcLastUsed}
+              />
+              <PaymentHistorySection paymentHistory={paymentHistory} />
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="referral" className="mt-6">
+          {isLoadingBillingSegment ? (
+            <BillingSegmentSkeleton />
+          ) : (
+            <ReferralSettings
+              referralLink={referral.referralLink}
+              commissionRatePercent={referral.commissionRatePercent}
+              totalEarnedSats={referral.totalEarnedSats}
+              paidSats={referral.paidSats}
+              pendingSats={referral.pendingSats}
+              failedSats={referral.failedSats}
+              payoutDestination={referral.payoutDestination}
+              payoutDestinationType={referral.payoutDestinationType}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

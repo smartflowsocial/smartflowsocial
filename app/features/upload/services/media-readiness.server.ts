@@ -1,0 +1,46 @@
+import { MediaNotReadyError } from "~/lib/errors";
+
+import { findMediaAssetsByIds } from "../repositories/media-data.server";
+
+const MEDIA_PATH_REGEX = /^\/media\/([^/]+)\/([^/]+)$/;
+
+function extractAssetIdFromMediaUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  const candidatePath = trimmed.startsWith("/")
+    ? trimmed
+    : (() => {
+        try {
+          return new URL(trimmed).pathname;
+        } catch {
+          return "";
+        }
+      })();
+  const match = MEDIA_PATH_REGEX.exec(candidatePath);
+  return match?.[1] ?? null;
+}
+
+export async function getNotReadyAssetIds(urls: string[]): Promise<string[]> {
+  const assetIds = Array.from(
+    new Set(
+      urls
+        .map((url) => extractAssetIdFromMediaUrl(url))
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    )
+  );
+  if (assetIds.length === 0) return [];
+
+  const rows = await findMediaAssetsByIds(assetIds);
+  const statusById = new Map(rows.map((row) => [row.id, row.status]));
+  return assetIds.filter((id) => statusById.get(id) !== "ready");
+}
+
+export async function assertMediaUrlsReady(urls: string[]): Promise<void> {
+  const notReadyIds = await getNotReadyAssetIds(urls);
+  if (notReadyIds.length > 0) {
+    throw new MediaNotReadyError(
+      "Media is still processing. Please retry in a moment.",
+      { assetIds: notReadyIds }
+    );
+  }
+}

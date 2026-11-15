@@ -1,0 +1,317 @@
+import { useFetcher } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
+
+import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+
+interface RunwaySettings {
+  queueNames: string[];
+  mode: "last-post" | "first-queue-empty";
+  /** Persisted: max days for orange/warning KPI band. */
+  redThresholdDays?: number;
+  /** Persisted: max days for yellow KPI band (≥ orange max). */
+  orangeThresholdDays?: number;
+}
+interface QueueTypeItem {
+  id: string;
+  name: string;
+}
+
+export interface RunwaySettingsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  queueTypes: QueueTypeItem[];
+  runwaySettings: RunwaySettings | null | undefined;
+  onSuccess?: () => void;
+}
+
+export function RunwaySettingsModal({
+  open,
+  onOpenChange,
+  queueTypes,
+  runwaySettings,
+  onSuccess,
+}: RunwaySettingsModalProps) {
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+
+  const allNames = queueTypes.map((qt) => qt.name);
+  const defaultSelected =
+    !runwaySettings || runwaySettings.queueNames.length === 0
+      ? allNames
+      : runwaySettings.queueNames.filter((n) => allNames.includes(n));
+
+  const [selectedQueueNames, setSelectedQueueNames] =
+    useState<string[]>(defaultSelected);
+  const [mode, setMode] = useState<RunwaySettings["mode"]>(
+    runwaySettings?.mode ?? "last-post"
+  );
+  const [redThresholdDays, setRedThresholdDays] = useState(
+    runwaySettings?.redThresholdDays ?? 3
+  );
+  const [orangeThresholdDays, setOrangeThresholdDays] = useState(
+    runwaySettings?.orangeThresholdDays ?? 7
+  );
+
+  const prevOpenRef = useRef(false);
+  const didSubmitRef = useRef(false);
+
+  useEffect(() => {
+    if (open && !prevOpenRef.current) {
+      const names = queueTypes.map((qt) => qt.name);
+      const initial =
+        !runwaySettings || runwaySettings.queueNames.length === 0
+          ? names
+          : runwaySettings.queueNames.filter((n) => names.includes(n));
+      const nextMode = runwaySettings?.mode ?? "last-post";
+      const nextRed = runwaySettings?.redThresholdDays ?? 3;
+      const nextOrange = runwaySettings?.orangeThresholdDays ?? 7;
+      queueMicrotask(() => {
+        setSelectedQueueNames(initial);
+        setMode(nextMode);
+        setRedThresholdDays(nextRed);
+        setOrangeThresholdDays(nextOrange);
+      });
+      didSubmitRef.current = false;
+    }
+    prevOpenRef.current = open;
+  }, [open, queueTypes, runwaySettings]);
+
+  useEffect(() => {
+    if (
+      didSubmitRef.current &&
+      fetcher.state === "idle" &&
+      fetcher.data?.success
+    ) {
+      didSubmitRef.current = false;
+      onSuccess?.();
+      onOpenChange(false);
+    }
+  }, [fetcher.state, fetcher.data, onSuccess, onOpenChange]);
+
+  const handleSave = () => {
+    didSubmitRef.current = true;
+    const formData = new FormData();
+    formData.set("_action", "updateRunwaySettings");
+    formData.set("mode", mode);
+    formData.set("redThresholdDays", String(redThresholdDays));
+    formData.set("orangeThresholdDays", String(orangeThresholdDays));
+    selectedQueueNames.forEach((name) => formData.append("queueNames", name));
+    fetcher.submit(formData, { method: "post" });
+  };
+
+  const toggleQueue = (name: string) => {
+    setSelectedQueueNames((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    );
+  };
+
+  const selectAll = () => setSelectedQueueNames([...allNames]);
+  const deselectAll = () => setSelectedQueueNames([]);
+
+  const isNoneSelected = selectedQueueNames.length === 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Runway settings</DialogTitle>
+          <DialogDescription>
+            Choose which queues count toward Runway and how the number is
+            calculated.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {fetcher.data?.error ? (
+            <p className="text-danger text-sm" role="alert">
+              {fetcher.data.error}
+            </p>
+          ) : null}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Queues that count</Label>
+              <div className="flex gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  className="text-text-secondary hover:text-text underline"
+                >
+                  Select all
+                </button>
+                <span className="text-text-secondary">|</span>
+                <button
+                  type="button"
+                  onClick={deselectAll}
+                  className="text-text-secondary hover:text-text underline"
+                >
+                  Deselect all
+                </button>
+              </div>
+            </div>
+            {queueTypes.length === 0 ? (
+              <p className="text-text-secondary text-sm">
+                No queues yet. Create a queue to filter Runway.
+              </p>
+            ) : (
+              <ul className="border-border flex max-h-40 flex-col gap-2 overflow-y-auto rounded-md border p-2">
+                {queueTypes.map((qt) => (
+                  <li key={qt.id} className="cluster">
+                    <Checkbox
+                      id={`runway-queue-${qt.id}`}
+                      checked={selectedQueueNames.includes(qt.name)}
+                      onCheckedChange={() => toggleQueue(qt.name)}
+                    />
+                    <Label
+                      htmlFor={`runway-queue-${qt.id}`}
+                      className="cursor-pointer text-sm font-normal"
+                    >
+                      {qt.name}
+                    </Label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Runway shows</Label>
+            <RadioGroup
+              value={mode}
+              onValueChange={(v) => {
+                setMode(v as RunwaySettings["mode"]);
+              }}
+              className="space-y-2"
+            >
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
+                  value="last-post"
+                  id="runway-mode-last-post"
+                  className="mt-1 shrink-0"
+                />
+                <Label
+                  htmlFor="runway-mode-last-post"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
+                  Days until <strong>last</strong> scheduled post (from selected
+                  queues)
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem
+                  value="first-queue-empty"
+                  id="runway-mode-first-queue-empty"
+                  className="mt-1 shrink-0"
+                />
+                <Label
+                  htmlFor="runway-mode-first-queue-empty"
+                  className="cursor-pointer pt-0.5 text-sm leading-snug font-normal"
+                >
+                  Days until <strong>first</strong> selected queue runs out
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              KPI color thresholds (days)
+            </Label>
+            <p className="text-text-secondary text-xs">
+              Runway KPI uses warning orange when days remaining ≤ first value,
+              chart yellow when above that but still ≤ second value, and a
+              neutral style when runway is above the second value.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="cluster">
+                <Label
+                  htmlFor="runway-orange-max-days"
+                  className="text-text-secondary shrink-0 text-sm"
+                >
+                  Orange when ≤
+                </Label>
+                <input
+                  id="runway-orange-max-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={redThresholdDays}
+                  onChange={(e) =>
+                    setRedThresholdDays(
+                      Math.min(
+                        365,
+                        Math.max(0, parseInt(e.target.value, 10) || 0)
+                      )
+                    )
+                  }
+                  className="border-border bg-canvas w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                />
+                <span className="text-text-secondary text-sm">days</span>
+              </div>
+              <div className="cluster">
+                <Label
+                  htmlFor="runway-yellow-max-days"
+                  className="text-text-secondary shrink-0 text-sm"
+                >
+                  Yellow when ≤
+                </Label>
+                <input
+                  id="runway-yellow-max-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={orangeThresholdDays}
+                  onChange={(e) =>
+                    setOrangeThresholdDays(
+                      Math.min(
+                        365,
+                        Math.max(0, parseInt(e.target.value, 10) || 0)
+                      )
+                    )
+                  }
+                  className="border-border bg-canvas w-16 rounded-md border px-2 py-1.5 text-sm tabular-nums"
+                />
+                <span className="text-text-secondary text-sm">days</span>
+              </div>
+            </div>
+            {orangeThresholdDays < redThresholdDays ? (
+              <p className="text-danger text-xs" role="alert">
+                Yellow threshold should be ≥ orange threshold.
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={
+              fetcher.state !== "idle" ||
+              isNoneSelected ||
+              orangeThresholdDays < redThresholdDays
+            }
+          >
+            {fetcher.state !== "idle" ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

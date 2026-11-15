@@ -1,0 +1,65 @@
+{
+  "exclude": ["./tests/e2e", "node_modules", "**/node_modules/**", "**/.pnpm/**"],
+  "include": [
+    "remix.env.d.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "app/types/**/*.d.ts",
+    "app/types/**/*.ts",
+    "server.ts",
+    "worker.ts",
+    "prisma/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "vitest.config.ts",
+    "cypress.config.ts"
+  ],
+  "compilerOptions": {
+    // Modern lib support
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2023"],
+
+    // Module system
+    // Note: Using "ES2022" to support dynamic imports while maintaining compatibility
+    // Dynamic imports are natively supported in ES2022
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+
+    // Target
+    "target": "ES2020",
+
+    // JSX
+    "jsx": "react-jsx",
+
+    // Strict mode (enables all strict checks)
+    "strict": true,
+
+    // Additional strict flags (world-class safety)
+    "noUncheckedIndexedAccess": true, // ✅ Critical: Prevents undefined array access
+    "noImplicitOverride": true, // ✅ Critical: Requires explicit override keyword
+    "noPropertyAccessFromIndexSignature": true, // ✅ Critical: Requires bracket notation for index signatures
+
+    // Module interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+
+    // Path mappings
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./app/*"],
+      "~/tests/*": ["./tests/*"]
+    },
+
+    // File handling
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Performance
+    "skipLibCheck": true,
+    "incremental": true, // Enable incremental compilation for faster builds and CI caching
+
+    // Remix takes care of building everything in `remix build`.
+    "noEmit": true
+  }
+}

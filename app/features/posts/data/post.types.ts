@@ -1,0 +1,79 @@
+/**
+ * Post Model - Shared Types
+ *
+ * Shared type definitions for Post model operations.
+ */
+
+import type { Post, PostKind, PostType, QueueType } from "@prisma/client";
+
+import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
+import type { RepostConditions } from "~/features/posts/types";
+
+export interface CreatePostData {
+  userId: string;
+  content?: string;
+  publishedAt?: Date;
+  fileUrl: string[];
+  /** When to publish (UTC). Date or Unix seconds. Null to clear. */
+  scheduledAtUtc?: Date | number | null;
+  nostrEventId?: string;
+  signedEvent?: SignedEvent;
+  nostrEvent?: NostrEvent;
+  postType: PostType;
+  tags: string[];
+  caption?: string;
+  manual_override?: boolean;
+  /** Resolved queue type ID. Use resolveQueueTypeId() from features layer before calling. */
+  queueTypeId?: string | null;
+  repost?: boolean;
+  isQuotedPost?: boolean;
+  isRecyclable?: boolean;
+  hashTagPresetId?: string | null;
+  /** Idempotency key for post creation */
+  creationIdempotencyKey?: string;
+  /** Source post id when this post is a scheduled repost */
+  repostOfPostId?: string | null;
+  /** Source post id when this post is a scheduled quote */
+  quoteOfPostId?: string | null;
+  /** Source longform post id when this post is a kind 1 quote of a longform article */
+  quoteOfLongFormPostId?: string | null;
+  /** What is this post? (POST, THREAD, REPLY, REPOST, QUOTE). Default POST. */
+  postKind?: PostKind;
+  /** Thread: group id when this post is a thread segment */
+  threadGroupId?: string | null;
+  /** Reply: Nostr event id being replied to (for postKind REPLY) */
+  replyToEventId?: string | null;
+  /** Reply: our Post id when the replied-to event is one of our posts */
+  replyToPostId?: string | null;
+  /** When random schedule window was used: user-chosen time (for queue "next slot"). */
+  nominalScheduledAtUtc?: Date | null;
+  /** Optional: only publish repost if source post meets these engagement thresholds */
+  repostConditions?: RepostConditions | null;
+  parentScheduledActionId?: string | null;
+  rootScheduledActionId?: string | null;
+  targetScheduledActionId?: string | null;
+  dependencyMode?: "standalone" | "attached";
+  targetMode?: "direct" | "scheduled_parent";
+  followUpTimingMode?: "offset_from_parent" | "fixed_datetime" | null;
+  followUpOffsetSeconds?: number | null;
+  expectedParentEventId?: string | null;
+  signedChildEventId?: string | null;
+  signingState?: "unsigned" | "signed" | "stale" | "invalidated";
+}
+
+export type PostWithQueueType = Post & { queueType: QueueType | null };
+
+export interface PostsWithPagination {
+  posts: PostWithQueueType[];
+  pagination: {
+    total: number;
+    pages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
+
+export interface PostStatistics {
+  scheduledCount: number;
+  successCount: number;
+}
