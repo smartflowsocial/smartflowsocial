@@ -94,8 +94,8 @@ jobs:
         run: |
           set +e
           pnpm exec tsc --noEmit --skipLibCheck > /tmp/tsc-output.log 2>&1
-          # Only errors in our own code fail the build (some deps ship broken .d.ts).
-          ERRORS=$(grep -E "error TS" /tmp/tsc-output.log | grep -E "(app/|tests/|prisma/|server\.ts|worker\.ts)" | grep -v node_modules || true)
+          # Every project error fails the build. Dependency .d.ts errors stay out.
+          ERRORS=$(grep -E "error TS" /tmp/tsc-output.log | grep -v node_modules || true)
           if [ -n "$ERRORS" ]; then
             echo "TypeScript errors found:"
             echo "$ERRORS"
@@ -122,6 +122,16 @@ jobs:
     name: Tests & Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -150,6 +160,13 @@ jobs:
 
       - name: Verify critical indexes
         run: psql -v ON_ERROR_STOP=1 "$DATABASE_URL" -f scripts/VERIFY_INDEXES.sql
+
+      # Loopback relay, ephemeral key, and the disposable CI database. This does
+      # not replace the unit suites and does not call a public relay.
+      - name: Local relay publishing integration
+        run: pnpm test:relay-publish
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
 
       # One vitest run covers unit, integration, property, security and
       # performance suites. Coverage thresholds are enforced by
@@ -180,13 +197,32 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join("\n") + "\n");
           NODE
 
-      - name: Upload coverage to Codecov
+      # Tokenless Codecov uploads are rejected for this organization. Coverage
+      # thresholds in vitest.config.ts stay enforced, and the artifact below is
+      # the record when CODECOV_TOKEN is unset. Fork PRs have no token and are
+      # not uploaded. A configured token that Codecov rejects fails this step.
+      - name: Note Codecov configuration
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        id: codecov-auth
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          if [ -z "$CODECOV_TOKEN" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Codecov not configured::CODECOV_TOKEN is unset. No coverage was sent to Codecov. Thresholds in this job remain enforced and the coverage artifact is uploaded."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "CODECOV_TOKEN is set. The upload fails the job if Codecov rejects it."
+          fi
+
+      - name: Upload coverage to Codecov
+        if: steps.codecov-auth.outputs.configured == 'true'
         uses: codecov/codecov-action@v7
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info,./coverage/coverage-summary.json
           flags: unittests
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
       - name: Upload test results & coverage
         if: always()

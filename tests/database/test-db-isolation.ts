@@ -8,6 +8,8 @@
 import { PrismaClient } from "@prisma/client";
 
 import { getTestPrisma } from "./test-db";
+
+import { requireTestDatabaseUrl } from "~/lib/test-database-target";
 /**
  * Run a test with true transaction isolation using savepoints
  * This allows rolling back individual tests while keeping the transaction open
@@ -36,21 +38,18 @@ export async function withIsolatedTransaction<T>(
  * This provides true isolation between tests
  */
 export function createIsolatedTestClient(databaseName: string): PrismaClient {
-  const testDatabaseUrl =
-    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-
-  if (!testDatabaseUrl) {
-    throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
-  }
-
-  // Create a new database URL for this test
-  const url = new URL(testDatabaseUrl);
+  const base = requireTestDatabaseUrl(process.env);
+  const url = new URL(base.url);
   url.pathname = `/${databaseName}`;
+  const derived = requireTestDatabaseUrl({
+    ...process.env,
+    TEST_DATABASE_URL: url.toString(),
+  });
 
   // Prisma 7: datasources option is no longer supported in constructor
   // Set DATABASE_URL environment variable instead
   const originalUrl = process.env["DATABASE_URL"];
-  process.env["DATABASE_URL"] = url.toString();
+  process.env["DATABASE_URL"] = derived.url;
   try {
     return new PrismaClient();
   } finally {

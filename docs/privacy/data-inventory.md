@@ -81,8 +81,8 @@ The schema does not enforce a single retention period.
 - Drafts, schedules, media, billing rows, and encrypted NWC connections stay until the user deletes
   them or the operator deletes the account.
 - `RetainedFinancialRecord` rows and referral payout audit rows older than 365 days are deleted by
-  the purge cron (`/cron/purge-retained-records`). The purge runs only when a scheduler calls that
-  route.
+  the worker, every 24 hours by default, and by `POST /cron/purge-retained-records`. `GET` still
+  works. 365 days is the software setting. It is not a claim that a statute requires that period.
 - Referral earnings and referral links of an account that still exists have no timer.
 - Signed events that have already been published to relays cannot be recalled by deleting the
   database row. Relays are independent.
@@ -102,17 +102,20 @@ public key, invoice, or preimage, and it is deleted after 365 days.
 Deletion also removes the account's public key from referral rows:
 
 - Referral links are deleted, whether the account was the referrer or the referred user.
-- Earnings owed to the deleted account are deleted. Commissions that were not paid out are
-  forfeited. An earning with a payout in flight is kept under the placeholder `deleted-account`
-  until that payout settles, then the purge deletes it.
+- Unpaid earnings with no payout in flight are deleted. Commissions that were not paid out are
+  forfeited. Paid earnings, and any earning with a payout in flight, stay under the placeholder
+  `deleted-account` until they are older than 365 days. The purge does not delete a row a payout
+  still holds.
 - Earnings another referrer earned from the deleted account stay, with `deleted-account` in place of
   the deleted key.
 - Payout audit rows keep the amount and the payment hash, lose the public key, and are deleted after
   365 days. The payment hash is what stops the same invoice from being paid twice, so payout
   invoices that stay valid for more than 365 days are refused.
 
-Media bytes in S3 or Blossom may remain after the metadata row is gone. Events a relay has already
-accepted stay on that relay.
+Objects in this install's own bucket are deleted when the URL is under `clients/<user id>/` and no
+other account references that URL. Blossom blobs and files on other servers are not deleted. Events
+a relay has already accepted stay on that relay. Scheduled jobs whose post row is gone are skipped.
+Sessions and the encrypted NWC connection are on the user row and go with it.
 
 `ENABLE_NOSTR_DELETE_EVENTS`, when set, lets the server publish a kind 5 deletion signed by the
 operator key in `NOSTR_NSEC`. That key is not the user's Nostr key. Relays may ignore the deletion.

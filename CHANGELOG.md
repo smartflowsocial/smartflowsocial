@@ -25,7 +25,11 @@ Prepared on `main`. The tag and GitHub release are not published. Notes:
   Blastr stay on the paid plan.
 - Referral payouts stay off unless `REFERRAL_PAYOUTS_ENABLED` is `true`, `1`, or `yes`. A missing
   `OWNER_NWC` never enables them. An existing production process that already has `OWNER_NWC` and
-  leaves the flag unset still pays, and logs a warning.
+  leaves the flag unset still pays, and logs a warning. Set the flag explicitly on that host. The
+  compatibility path stays until then.
+- `pnpm test:db:setup` requires `TEST_DATABASE_URL`. It does not fall back to `DATABASE_URL` and it
+  does not run `prisma db push --accept-data-loss`. That reset is `pnpm test:db:reset` with
+  `CONFIRM_DESTRUCTIVE_TEST_DB_RESET=reset-test-database`, and only for a loopback test database.
 - E2E Redis connections no longer use the 200ms unit-test timeout. That timeout dropped the worker
   when Redis answered slowly and stopped the smoke job.
 
@@ -43,7 +47,12 @@ Prepared on `main`. The tag and GitHub release are not published. Notes:
 - `pnpm test:relay-publish` schedules a signed event through the publish job and checks that a local
   relay stored it. `pnpm smoke:publish` remains the fast signature-only check.
 - Settings can export the account as JSON and delete it. Deletion keeps payment amount, status,
-  purpose, and payment hash without the public key. It does not remove events from relays.
+  purpose, and payment hash without the public key. Pending and failed referral commissions with no
+  in-flight claim are removed. Paid referral rows stay, with the key replaced, until the retention
+  purge. It does not remove events from relays. It deletes unshared objects in this install's
+  bucket. Blossom blobs stay.
+- The worker purges retained financial rows every 24 hours. `POST /cron/purge-retained-records`
+  remains the manual path. `GET` still runs and is marked deprecated.
 - `pnpm worker:local` runs the worker without the web server. Do not run it next to `pnpm dev`.
 
 ## [0.1.0-alpha.0] - 2026-11-14

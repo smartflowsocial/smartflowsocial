@@ -1201,9 +1201,12 @@ Deletes publish-relay acknowledgement rows older than 30 days. Uses the same `CR
 
 ### GET or POST `/cron/purge-retained-records`
 
-Deletes `RetainedFinancialRecord` rows and referral payout audit rows older than 365 days. Also
-deletes referral earnings that were left under the deleted-account placeholder once no payout holds
-them. Uses the same `CRON_SECRET` check. Run it daily. Nothing else runs this purge.
+Deletes `RetainedFinancialRecord` rows, referral payout audit rows, and anonymised referral earnings
+older than 365 days. Earnings with a payout in flight are kept. The payment hash on an audit row
+stays until that row is older than the window, which is what blocks paying the same invoice twice.
+The worker also runs this purge every 24 hours unless `FINANCIAL_RECORD_PURGE_INTERVAL_HOURS=0`.
+POST is preferred. GET still works and sends `Deprecation: true`. A missing secret returns 401. 365
+days is the current product setting, not a legal conclusion.
 
 ### GET or POST `/cron/referral-payout`
 

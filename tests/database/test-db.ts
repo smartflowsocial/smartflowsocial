@@ -22,6 +22,8 @@ import type { Prisma } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 
+import { requireTestDatabaseUrl } from "~/lib/test-database-target";
+
 let testPrisma: PrismaClient | null = null;
 let transactionClient: PrismaClient | null = null;
 
@@ -86,14 +88,7 @@ export function getTestPrisma(): PrismaClient {
     return testPrisma;
   }
 
-  const testDatabaseUrl =
-    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-
-  if (!testDatabaseUrl) {
-    throw new Error(
-      "TEST_DATABASE_URL or DATABASE_URL must be set for database tests"
-    );
-  }
+  const testDatabaseUrl = requireTestDatabaseUrl(process.env).url;
 
   // Prisma 7: datasources option is no longer supported in constructor
   // Set DATABASE_URL environment variable instead
@@ -178,17 +173,11 @@ export async function withTransaction<T>(
  * Tries to use migrations first, falls back to db push if migrations aren't available
  */
 export function setupTestDatabase(): Promise<void> {
-  const testDatabaseUrl =
-    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-
-  if (!testDatabaseUrl) {
-    throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
-  }
-
-  // If SKIP_DATABASE_TESTS is set, skip the setup
   if (process.env["SKIP_DATABASE_TESTS"] === "true") {
     return Promise.resolve();
   }
+  const decision = requireTestDatabaseUrl(process.env);
+  const testDatabaseUrl = decision.url;
 
   const fingerprint = getSchemaFingerprint();
 
@@ -213,18 +202,20 @@ export function setupTestDatabase(): Promise<void> {
         });
         console.log("✅ Migrations applied successfully");
       } catch (migrateError) {
-        // If migrate deploy fails (e.g., no migration history, database doesn't exist, etc.), fall back to db push
         const errorMessage =
           migrateError instanceof Error
             ? migrateError.message
             : String(migrateError);
+        if (!decision.disposableLoopback) {
+          throw new Error(
+            `prisma migrate deploy failed for ${decision.target}. Refusing prisma db push --accept-data-loss. ${errorMessage}`
+          );
+        }
         console.warn(
-          "⚠️  Migrate deploy failed, falling back to db push:",
-          errorMessage
+          "⚠️  Migrate deploy failed on the disposable loopback test database. Syncing with prisma db push without --accept-data-loss."
         );
-
-        execSync("npx prisma db push --accept-data-loss", {
-          env: { ...process.env, DATABASE_URL: testDatabaseUrl },
+        execSync("npx prisma db push", {
+          env: { ...process.env, DATABASE_URL: testDatabaseUrl, CI: "true" },
           stdio: "inherit",
         });
         console.log("✅ Database schema synced with db push");
@@ -323,8 +314,7 @@ export async function seedTestDatabase(fixtures?: TestFixtures): Promise<void> {
       execSync("npm run db:seed", {
         env: {
           ...process.env,
-          DATABASE_URL:
-            process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"],
+          DATABASE_URL: requireTestDatabaseUrl(process.env).url,
         },
         stdio: "inherit",
       });

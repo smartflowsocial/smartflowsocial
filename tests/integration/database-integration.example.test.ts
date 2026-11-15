@@ -5,7 +5,7 @@
  * with transaction-based isolation for safety.
  *
  * **Requirements:**
- * - Set `RUN_DATABASE_EXAMPLES=true` and `TEST_DATABASE_URL` or `DATABASE_URL` to a working DB
+ * - Set `RUN_DATABASE_EXAMPLES=true` and `TEST_DATABASE_URL` to a disposable test database
  * - Or set `SKIP_DATABASE_TESTS=true` (suite still skipped without the run flag)
  * - Database must exist and be migrated (e.g. `smartflow_test` if that is your URL)
  *
@@ -33,10 +33,10 @@ import { getTestPrisma } from "../database/test-db";
 
 import { createPost } from "~/features/posts/server";
 import { getUserById } from "~/features/user";
+import { explicitTestDatabaseUrl } from "~/lib/test-database-target";
 
 // Opt-in example suite: avoids failures when env has a URL but the DB was never created.
-const testDatabaseUrl =
-  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const testDatabaseUrl = explicitTestDatabaseUrl(process.env);
 const shouldSkipDatabaseExamples =
   process.env["SKIP_DATABASE_TESTS"] === "true" ||
   !testDatabaseUrl ||

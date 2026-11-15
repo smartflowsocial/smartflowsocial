@@ -461,10 +461,16 @@ return 401. They do not run the job. Generate one with `openssl rand -base64 32`
 POST is the preferred method. GET is still accepted when the secret matches, so an existing
 scheduler can keep its URL and add the header. Do not put the secret in a query string.
 
-The worker still runs subscription renewal and post analytics on their interval settings. Those
-in-process sweeps do not use this HTTP secret. Campaign autopay, referral payout, ack cleanup, and
-the retained-record purge (`/cron/purge-retained-records`) run only when something calls their cron
-route.
+The worker still runs subscription renewal, post analytics, and the retained-record purge on their
+interval settings. Those in-process sweeps do not use this HTTP secret. The purge defaults to every
+24 hours (`FINANCIAL_RECORD_PURGE_INTERVAL_HOURS`). Set that to `0` when an external scheduler is
+the only caller. Campaign autopay, referral payout, and ack cleanup run only when something calls
+their cron route.
+
+`POST /cron/purge-retained-records` is the preferred manual call. `GET` still runs the purge when
+the secret matches, and the response sets `Deprecation: true`. A missing or wrong secret returns 401
+and deletes nothing. The 365-day window is the software's current retention setting. It is not a
+determination that 365 days satisfies a statute. The operator decides the period.
 
 ---
 

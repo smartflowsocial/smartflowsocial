@@ -23,12 +23,15 @@ catches more integration issues but requires careful setup to ensure test isolat
 Set `TEST_DATABASE_URL` in your `.env` file:
 
 ```env
-# Use a separate test database
+# Required. pnpm test:db:setup does not fall back to DATABASE_URL.
 TEST_DATABASE_URL=postgresql://user:password@localhost:5432/smartflow_test
-
-# Or use the same database (not recommended for CI)
-TEST_DATABASE_URL=${DATABASE_URL}
 ```
+
+The database name must identify a test database (`test`, `tests`, or `testing` as its own word). The
+command rejects `postgres`, `template0`, and `template1`, and it rejects a URL that points at the
+same host, port, and database as `DATABASE_URL` unless that database is a loopback test database.
+`pnpm test:db:reset` is the only command that passes `--accept-data-loss`, and only when
+`CONFIRM_DESTRUCTIVE_TEST_DB_RESET=reset-test-database`.
 
 ### 2. Run Migrations
 

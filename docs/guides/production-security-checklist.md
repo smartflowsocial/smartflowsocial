@@ -21,8 +21,9 @@ not prove the running process has the variable set.
 - The secret is not in a query string, a shell history file, or a repository.
 - `REFERRAL_PAYOUTS_ENABLED` is `false` unless this install pays referral commissions. `true`, `1`,
   and `yes` are the only on values. A missing wallet never enables payouts. An existing production
-  process that already has `OWNER_NWC` and leaves the flag unset still pays and logs a warning; set
-  `false` there to turn it off. When the flag is exactly `true`, `REFERRAL_MANUAL_PAYOUT_SECRET` is
+  process that already has `OWNER_NWC` and leaves the flag unset still pays and logs a warning. Set
+  `true` to keep those payouts on purpose, or `false` to stop them. The compatibility path stays
+  until that variable is set. When the flag is exactly `true`, `REFERRAL_MANUAL_PAYOUT_SECRET` is
   set, at least 32 characters, and different from `CRON_SECRET`. When payouts are off, the manual
   route still does not pay.
 - `BLOSSOM_INTERNAL_SECRET` matches the Blossom server, and is not the upload-token secret unless

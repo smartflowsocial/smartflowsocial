@@ -19,10 +19,10 @@ import {
   type PostScheduledPayload,
 } from "~/infra/outbox/outbox.server";
 import { prisma } from "~/lib/prisma.server";
+import { explicitTestDatabaseUrl } from "~/lib/test-database-target";
 
 // Skip if no test database configured
-const TEST_DATABASE_URL =
-  process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+const TEST_DATABASE_URL = explicitTestDatabaseUrl(process.env);
 const SHOULD_SKIP_DB_TESTS = process.env["SKIP_DATABASE_TESTS"] === "true";
 
 describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(

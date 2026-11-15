@@ -14,6 +14,8 @@ import {
   useTestDatabase,
 } from "./test-db";
 
+import { explicitTestDatabaseUrl } from "~/lib/test-database-target";
+
 /**
  * Setup database before all tests
  */
@@ -59,8 +61,7 @@ export function describeDatabase(
     return;
   }
 
-  const testDatabaseUrl =
-    process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
+  const testDatabaseUrl = explicitTestDatabaseUrl(process.env);
   const shouldSkip = !testDatabaseUrl;
 
   // Skip the entire suite if database is not configured

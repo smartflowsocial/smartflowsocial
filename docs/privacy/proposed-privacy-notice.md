@@ -28,8 +28,9 @@ to debug failed jobs.
 
 **How long.** [State the retention period for drafts, media, billing, and logs. The software does
 not delete most of these on a timer. Publish-relay acknowledgements are deleted after 30 days.
-Payment facts kept after account deletion, and referral payout audit rows, are deleted after 12
-months. Events already sent to Nostr relays stay on those relays.]
+Payment facts kept after account deletion, and referral payout audit rows, are deleted after 365
+days. That is the software's current setting, not a statutory period. Events already sent to Nostr
+relays stay on those relays.]
 
 **Who else processes it.** [List the database host, object storage, publisher, Blossom if used,
 error tracking if used, and the relays. Say which country they operate in if you know.]
@@ -40,11 +41,13 @@ controller holds. You can complain to a supervisory authority. A signed-in user 
 export at `/dashboard/account/export` and can delete the account from Settings. Deletion removes the
 account row, drafts, schedules, sessions, and the encrypted wallet connection. It keeps payment
 amount, status, purpose, and payment hash in `RetainedFinancialRecord`, without the public key or
-the invoice, for 12 months. It removes the public key from referral records. Referral commissions
-that have not been paid out are forfeited. Payout audit rows keep the amount and payment hash
-without the public key for 12 months. Deleting the account does not delete events that relays
-already accepted. When the operator enables delete events, those events are signed by the operator
-key in `NOSTR_NSEC`, which is not the user's key. Media bytes in object storage may remain.
+the invoice, for 365 days. It removes the public key from referral records. Pending and failed
+commissions with no payout in progress are removed. Paid commissions, and any commission already
+submitted for payment, stay without the public key until the retention purge. Payout audit rows keep
+the amount and payment hash without the public key for 365 days. Deleting the account does not
+delete events that relays already accepted. When the operator enables delete events, those events
+are signed by the operator key in `NOSTR_NSEC`, which is not the user's key. Unshared objects in
+this install's bucket are deleted. Blossom blobs and files on other servers may remain.
 
 **Contact.** [A contact that is not only a Nostr profile, if Article 13 requires an identity people
 can use. The existing Nostr contact can stay as an additional channel.]

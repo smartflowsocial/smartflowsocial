@@ -6,7 +6,12 @@ import {
   deletionRequestIsConfirmed,
   deleteAccountData,
 } from "~/features/user/data/account-data.server";
+import {
+  deletePlannedAccountObjects,
+  planUnsharedOwnedObjects,
+} from "~/features/user/data/account-object-cleanup.server";
 import { withCSRFProtection } from "~/lib/csrf";
+import { logError } from "~/lib/error-logger.server";
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
@@ -32,9 +37,33 @@ export const action = withCSRFProtection(
         { status: 400 }
       );
     }
+    let objectPlan: Awaited<ReturnType<typeof planUnsharedOwnedObjects>>;
+    try {
+      objectPlan = await planUnsharedOwnedObjects(userId);
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message: "Account deletion stopped before removing the account",
+        userId,
+      });
+      return json(
+        {
+          error: "Could not inspect stored media. The account was not deleted.",
+        },
+        { status: 500 }
+      );
+    }
     const deleted = await deleteAccountData(userId);
     if (!deleted) {
       return json({ error: "Account not found" }, { status: 404 });
+    }
+    try {
+      await deletePlannedAccountObjects(userId, objectPlan);
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        message:
+          "Account was deleted. Some owned objects could not be removed.",
+        userId,
+      });
     }
     return logout(request);
   }

@@ -10,6 +10,8 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 // eslint-disable-next-line testing-library/no-manual-cleanup -- vitest is not configured with globals: true, so RTL's auto-cleanup never runs; we wire it through the global afterEach below.
 import { cleanup } from "@testing-library/react";
 import { expect, afterEach, vi } from "vitest";
+
+import { evaluateTestDatabase } from "~/lib/test-database-target";
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
@@ -53,24 +55,31 @@ process.env["NODE_ENV"] = process.env["NODE_ENV"] || "test";
 
 // Set required environment variables for tests
 // These are needed by modules that check env vars at import time
-process.env["DATABASE_URL"] ??=
-  process.env["TEST_DATABASE_URL"] ??
+const DISPOSABLE_TEST_DATABASE_URL =
   "postgresql://postgres:postgres@localhost:5432/smartflow_test";
 
-process.env["TEST_DATABASE_URL"] ??=
-  process.env["DATABASE_URL"] ??
-  "postgresql://postgres:postgres@localhost:5432/smartflow_test";
-
-// Skip database tests by default unless explicitly enabled
-// Users can set SKIP_DATABASE_TESTS=false to enable them
-// or set a real TEST_DATABASE_URL to enable them
-// This prevents tests from failing when a database is not available
-// If TEST_DATABASE_URL or DATABASE_URL is set, don't skip database tests
-if (!process.env["SKIP_DATABASE_TESTS"]) {
-  const hasDatabaseUrl =
-    process.env["TEST_DATABASE_URL"] || process.env["DATABASE_URL"];
-  process.env["SKIP_DATABASE_TESTS"] = hasDatabaseUrl ? "false" : "true";
+// Never copy DATABASE_URL into TEST_DATABASE_URL. An application database,
+// including a production URL already exported in the shell, is not a test target.
+// After the test URL is accepted, this process uses that URL for DATABASE_URL too,
+// so a unit test that opens Prisma cannot reach the application database.
+const configuredTestUrl = process.env["TEST_DATABASE_URL"]?.trim();
+const testDatabaseCandidate =
+  configuredTestUrl && configuredTestUrl.length > 0
+    ? configuredTestUrl
+    : DISPOSABLE_TEST_DATABASE_URL;
+const testDatabaseDecision = evaluateTestDatabase({
+  testDatabaseUrl: testDatabaseCandidate,
+  appDatabaseUrl: process.env["DATABASE_URL"],
+});
+if (!testDatabaseDecision.ok) {
+  throw new Error(testDatabaseDecision.message);
 }
+process.env["TEST_DATABASE_URL"] = testDatabaseDecision.url;
+process.env["DATABASE_URL"] = testDatabaseDecision.url;
+
+// The default test URL is disposable and local. SKIP_DATABASE_TESTS=true still
+// skips database suites.
+process.env["SKIP_DATABASE_TESTS"] ??= "false";
 
 process.env["SESSION_SECRET"] ??=
   "test-session-secret-very-long-and-secure-32-chars-minimum";

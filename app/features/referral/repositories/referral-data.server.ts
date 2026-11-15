@@ -482,10 +482,9 @@ const PLAIN_KEY_TEXT = /^[0-9a-z]+$/;
  * account-deletion transaction. Takes the payout lock first, so a payout
  * cannot claim earnings while they are being removed.
  *
- * Earnings with a payout in flight keep their row under a placeholder key.
- * The payout settles against them by id and claim hash, and the retention
- * purge deletes them once the claim is cleared. Payment hashes in the audit
- * log are left as they are.
+ * Unpaid earnings with no payout in flight are forfeited. Paid earnings and
+ * earnings with a payout in flight stay, with the public key replaced, until
+ * the retention purge. Payment hashes in the audit log are left as they are.
  */
 export async function removeReferralDataForDeletedAccount(
   tx: Tx,
@@ -494,7 +493,13 @@ export async function removeReferralDataForDeletedAccount(
   await tx.$queryRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
 
   await tx.referralEarning.deleteMany({
-    where: { referrerNpub: npub, payoutClaimHash: null },
+    where: {
+      referrerNpub: npub,
+      payoutClaimHash: null,
+      status: {
+        in: [ReferralEarningStatus.PENDING, ReferralEarningStatus.FAILED],
+      },
+    },
   });
   await tx.referralEarning.updateMany({
     where: { referrerNpub: npub },
@@ -536,8 +541,9 @@ export async function removeReferralDataForDeletedAccount(
 }
 
 /**
- * Deletes payout audit rows created before the cutoff, and earnings that were
- * left under the deleted-account placeholder once no payout holds them.
+ * Deletes payout audit rows and anonymised earnings older than the cutoff.
+ * Rows inside the window stay, including payment hashes that block a second
+ * payment of the same invoice. An in-flight payout is not deleted.
  */
 export async function purgeReferralRecords(cutoff: Date): Promise<{
   payoutAuditRows: number;
@@ -547,7 +553,11 @@ export async function purgeReferralRecords(cutoff: Date): Promise<{
     where: { createdAt: { lt: cutoff } },
   });
   const earnings = await prisma.referralEarning.deleteMany({
-    where: { referrerNpub: DELETED_ACCOUNT_NPUB, payoutClaimHash: null },
+    where: {
+      referrerNpub: DELETED_ACCOUNT_NPUB,
+      payoutClaimHash: null,
+      createdAt: { lt: cutoff },
+    },
   });
   return {
     payoutAuditRows: audit.count,

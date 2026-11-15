@@ -16,6 +16,10 @@ import { connect as connectNet } from "node:net";
 import { finalizeEvent, getPublicKey } from "nostr-tools";
 
 import { createLocalPublisher } from "./local-publisher.mjs";
+import {
+  isLoopbackHost,
+  parseDatabaseTarget,
+} from "~/lib/test-database-target";
 
 function write(line: string): void {
   process.stdout.write(`${line}\n`);
@@ -47,11 +51,20 @@ async function main(): Promise<void> {
   if (!databaseUrl.startsWith("postgres")) {
     fail("DATABASE_URL is missing. Copy example.env and run pnpm docker.");
   }
+  const database = parseDatabaseTarget(databaseUrl);
+  if (!database || !isLoopbackHost(database.host)) {
+    fail(
+      "DATABASE_URL must be a loopback Postgres. This script creates and deletes a user and will not use a remote database."
+    );
+  }
   if (!redisUrl.startsWith("redis://")) {
     fail("REDIS_URL is missing. pnpm docker starts Redis on 127.0.0.1:6379.");
   }
 
   const redis = new URL(redisUrl);
+  if (!isLoopbackHost(redis.hostname)) {
+    fail("REDIS_URL must be a loopback Redis.");
+  }
   const redisPort = Number(redis.port || 6379);
   if (!(await tcpReachable(redis.hostname, redisPort))) {
     fail(

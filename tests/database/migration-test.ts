@@ -9,6 +9,9 @@ import { execSync } from "child_process";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import { getTestPrisma, setupTestDatabase } from "./test-db";
+
+import { requireTestDatabaseUrl } from "~/lib/test-database-target";
+
 describe("Database Migrations", () => {
   beforeAll(async () => {
     await setupTestDatabase();
@@ -19,12 +22,7 @@ describe("Database Migrations", () => {
   });
 
   it("should run migrations successfully", async () => {
-    const testDatabaseUrl =
-      process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"];
-
-    if (!testDatabaseUrl) {
-      throw new Error("TEST_DATABASE_URL or DATABASE_URL must be set");
-    }
+    const testDatabaseUrl = requireTestDatabaseUrl(process.env).url;
 
     try {
       execSync("npx prisma migrate deploy", {

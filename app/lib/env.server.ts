@@ -81,6 +81,12 @@ interface EnvConfig {
    */
   SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES?: string;
   /**
+   * How often (hours) the worker deletes retained financial rows older than
+   * FINANCIAL_RECORD_RETENTION_DAYS. Defaults to 24. Set to "0" to disable.
+   * POST /cron/purge-retained-records runs the same purge on demand.
+   */
+  FINANCIAL_RECORD_PURGE_INTERVAL_HOURS?: string;
+  /**
    * Shared secret for cron routes. Required in production. Routes reject
    * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
    */
@@ -277,6 +283,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "WORKER_METRICS_PORT",
     "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
     "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
+    "FINANCIAL_RECORD_PURGE_INTERVAL_HOURS",
     "CRON_SECRET",
     "FLY_REGION",
     "PRIMARY_REGION",

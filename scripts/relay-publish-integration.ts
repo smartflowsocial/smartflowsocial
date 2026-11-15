@@ -11,6 +11,9 @@
  *
  *   pnpm test:relay-publish
  *
+ * CI runs this on the test job after the disposable schema push. Postgres and
+ * Redis must be loopback addresses.
+ *
  * Covered here: successful delivery, publisher down then recovery, a second
  * job for the same published post, an invalid signature, and a relay that is
  * not running. A wrong publisher token is covered by
@@ -26,6 +29,10 @@ import { finalizeEvent, getPublicKey } from "nostr-tools";
 
 import { startEphemeralRelay } from "./ephemeral-relay.mjs";
 import { createRelayPublisher } from "./relay-publisher.mjs";
+import {
+  isLoopbackHost,
+  parseDatabaseTarget,
+} from "~/lib/test-database-target";
 
 function write(line: string): void {
   process.stdout.write(`${line}\n`);
@@ -71,10 +78,19 @@ async function main(): Promise<void> {
   if (!databaseUrl.startsWith("postgres")) {
     fail("DATABASE_URL is missing. Copy example.env and run pnpm docker.");
   }
+  const database = parseDatabaseTarget(databaseUrl);
+  if (!database || !isLoopbackHost(database.host)) {
+    fail(
+      "DATABASE_URL must be a loopback Postgres. This script creates and deletes a user and will not use a remote database."
+    );
+  }
   if (!redisUrl.startsWith("redis://")) {
     fail("REDIS_URL is missing. pnpm docker starts Redis on 127.0.0.1:6379.");
   }
   const redis = new URL(redisUrl);
+  if (!isLoopbackHost(redis.hostname)) {
+    fail("REDIS_URL must be a loopback Redis.");
+  }
   if (!(await tcpReachable(redis.hostname, Number(redis.port || 6379)))) {
     fail("Redis is not accepting connections. Run pnpm docker.");
   }

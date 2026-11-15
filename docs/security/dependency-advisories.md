@@ -1,8 +1,10 @@
 # Dependency advisories
 
 Refreshed on 15 November 2026 with pnpm 10.27.0, the version pinned by `packageManager`.
-`pnpm audit --prod` still reports exactly two moderate findings, both in `react-router` 6.30.6.
-There is still no 6.x release that contains the fix. High and critical production findings: none.
+`pnpm audit --prod` still reports exactly two moderate findings, both in `react-router` 6.30.6. The
+6.30 line has no release that contains the fixes shipped in React Router 7.18.0. High and critical
+production findings: none. CI typecheck now fails on every project diagnostic outside
+`node_modules`, not only on paths under `app/`, `tests/`, `prisma/`, `server.ts`, and `worker.ts`.
 The 15 November check is `pnpm audit --prod` in this repository. Companion development trees pull in
 Vite, Wrangler, and Vitest, so a full audit is noisy. The production audit is the one that describes
 what a deployment installs. The publisher, Blastr, Blossom, and cache-worker results below are from

@@ -28,6 +28,7 @@ vi.mock("~/lib/env.server", () => ({
 
 vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
+  logWarning: vi.fn(),
 }));
 
 vi.mock("~/lib/websocket-polyfill.server", () => ({
@@ -184,4 +185,23 @@ describe("cron route authentication", () => {
       expect(job).toHaveBeenCalledTimes(2);
     }
   );
+
+  it("keeps GET purge working and marks it deprecated", async () => {
+    envState.CRON_SECRET = SECRET;
+    const route = await import("~/routes/cron.purge-retained-records");
+    const gotten = await route.loader({
+      request: request("/cron/purge-retained-records", "GET", SECRET),
+      params: {},
+      context: {},
+    });
+    const posted = await route.action({
+      request: request("/cron/purge-retained-records", "POST", SECRET),
+      params: {},
+      context: {},
+    });
+    expect(gotten.status).toBe(200);
+    expect(gotten.headers.get("Deprecation")).toBe("true");
+    expect(posted.status).toBe(200);
+    expect(posted.headers.get("Deprecation")).toBeNull();
+  });
 });

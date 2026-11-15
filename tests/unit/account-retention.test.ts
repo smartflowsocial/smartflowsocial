@@ -78,11 +78,15 @@ describe("account deletion and referral rows", () => {
     expect(calls.at(-1)).toBe("deleteUser");
   });
 
-  it("deletes the referrer's earnings only when no payout holds them", async () => {
+  it("forfeits unpaid earnings and keeps paid rows for anonymisation", async () => {
     await deleteAccountData("user_1");
 
     expect(mockTx.referralEarning.deleteMany).toHaveBeenCalledWith({
-      where: { referrerNpub: NPUB, payoutClaimHash: null },
+      where: {
+        referrerNpub: NPUB,
+        payoutClaimHash: null,
+        status: { in: ["PENDING", "FAILED"] },
+      },
     });
     expect(mockTx.referralEarning.updateMany).toHaveBeenCalledWith({
       where: { referrerNpub: NPUB },
@@ -180,11 +184,19 @@ describe("retained record purge", () => {
     });
   });
 
-  it("removes placeholder earnings only when no payout holds them", async () => {
-    await purgeRetainedRecords(new Date("2027-12-01T00:00:00.000Z"));
+  it("keeps anonymised earnings inside the retention window", async () => {
+    const now = new Date("2027-12-01T00:00:00.000Z");
+    const cutoff = new Date(
+      now.getTime() - FINANCIAL_RECORD_RETENTION_DAYS * 24 * 60 * 60 * 1000
+    );
+    await purgeRetainedRecords(now);
 
     expect(mockPrisma.referralEarning.deleteMany).toHaveBeenCalledWith({
-      where: { referrerNpub: DELETED_ACCOUNT_NPUB, payoutClaimHash: null },
+      where: {
+        referrerNpub: DELETED_ACCOUNT_NPUB,
+        payoutClaimHash: null,
+        createdAt: { lt: cutoff },
+      },
     });
   });
 });

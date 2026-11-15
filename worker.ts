@@ -29,6 +29,7 @@ import { getQueueInstance } from "./app/infra/queue";
 import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-low-notifications.server";
 import { runPaidPostAnalyticsSweep } from "./app/features/analytics/run-sweep.server";
 import { checkAndRenewSubscriptions } from "./app/features/payments/services/subscription-renewal.server";
+import { purgeRetainedRecords } from "./app/features/user/data/account-data.server";
 import {
   expireBlossomReservations,
   getBlossomReservationDriftStats,
@@ -265,6 +266,52 @@ if (
   );
 }
 
+const financialRecordPurgeIntervalHours = parseInt(
+  env.FINANCIAL_RECORD_PURGE_INTERVAL_HOURS ?? "24",
+  10
+);
+let financialRecordPurgeInterval: ReturnType<typeof setInterval> | null = null;
+let financialRecordPurgeInFlight = false;
+const runFinancialRecordPurge = () => {
+  if (financialRecordPurgeInFlight) return;
+  financialRecordPurgeInFlight = true;
+  void (async () => {
+    try {
+      const result = await purgeRetainedRecords();
+      logInfo("Retained financial record purge completed", { ...result });
+    } catch (error) {
+      logWarning("Retained financial record purge failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      financialRecordPurgeInFlight = false;
+    }
+  })();
+};
+if (
+  Number.isFinite(financialRecordPurgeIntervalHours) &&
+  financialRecordPurgeIntervalHours > 0
+) {
+  const financialRecordPurgeIntervalMs =
+    financialRecordPurgeIntervalHours * 60 * 60_000;
+  const financialRecordPurgeStartupDelay = setTimeout(
+    runFinancialRecordPurge,
+    180_000
+  );
+  financialRecordPurgeStartupDelay.unref?.();
+  financialRecordPurgeInterval = setInterval(
+    runFinancialRecordPurge,
+    financialRecordPurgeIntervalMs
+  );
+  logInfo("Retained financial record purge scheduled", {
+    intervalHours: financialRecordPurgeIntervalHours,
+  });
+} else {
+  logInfo(
+    "Retained financial record purge disabled (FINANCIAL_RECORD_PURGE_INTERVAL_HOURS=0)"
+  );
+}
+
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
   scheduledPostsWorker: !!scheduledPostsWorker,
@@ -395,6 +442,9 @@ process.on("SIGTERM", () => {
   if (postAnalyticsInterval) {
     clearInterval(postAnalyticsInterval);
   }
+  if (financialRecordPurgeInterval) {
+    clearInterval(financialRecordPurgeInterval);
+  }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
@@ -419,6 +469,9 @@ process.on("SIGINT", () => {
   }
   if (postAnalyticsInterval) {
     clearInterval(postAnalyticsInterval);
+  }
+  if (financialRecordPurgeInterval) {
+    clearInterval(financialRecordPurgeInterval);
   }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);

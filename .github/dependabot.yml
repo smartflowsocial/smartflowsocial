@@ -15,10 +15,6 @@ updates:
       timezone: "Europe/Sofia"
     open-pull-requests-limit: 5
     target-branch: "develop"
-    reviewers:
-      - "xdzczk"
-    assignees:
-      - "xdzczk"
     labels:
       - "dependencies"
       - "automated"
