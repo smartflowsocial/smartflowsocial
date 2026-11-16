@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
@@ -44,7 +44,7 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
 
   if (isDataRequest) {
     try {
-      return json(await loadEngagementValidatedOrThrow(userId, page, limit));
+      return await loadEngagementValidatedOrThrow(userId, page, limit);
     } catch (error) {
       const { handleLoaderError } = await import("~/lib/error-handler.server");
       return handleLoaderError(error, ENGAGEMENT_LOADER_FALLBACK);
@@ -64,9 +64,9 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
     }
   })();
 
-  return defer({
+  return {
     engagement: engagementPromise,
-  });
+  };
 }
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -89,9 +89,7 @@ export default function EngagementFeedRoute() {
     <Suspense fallback={<EngagementFeedSkeleton />}>
       <Await resolve={engagement} errorElement={<EngagementFeedAwaitError />}>
         {(data) => (
-          <EngagementResolvedLoaderProvider
-            value={data as EngagementLoaderData}
-          >
+          <EngagementResolvedLoaderProvider value={data}>
             <EngagementFeedPage />
           </EngagementResolvedLoaderProvider>
         )}

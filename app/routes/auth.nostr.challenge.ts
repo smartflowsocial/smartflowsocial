@@ -1,6 +1,5 @@
 import { randomBytes } from "crypto";
 
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { issueLoginChallenge } from "~/features/auth";
@@ -14,11 +13,11 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return json({ error: "Method not allowed" }, { status: 405 });
+        return Response.json({ error: "Method not allowed" }, { status: 405 });
       }
 
       if (!featureFlags.nostrAuthV2Enabled) {
-        return json(
+        return Response.json(
           {
             success: false,
             error: {
@@ -40,7 +39,7 @@ export const action = withCSRFProtection(
         expiresAt,
       });
 
-      return json({
+      return Response.json({
         challengeId: challenge.id,
         nonce: challenge.nonce,
         purpose: challenge.purpose,

@@ -8,6 +8,8 @@ vi.mock("~/features/upload/services/media-ingest.server", () => ({
   createMediaIngestIntent: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { requireUserId } from "~/features/auth";
 import { createMediaIngestIntent } from "~/features/upload/services/media-ingest.server";
 import { action, loader } from "~/routes/api.media.intents";
@@ -42,10 +44,7 @@ describe("API: Media Intents", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       intentId?: string;
       files?: unknown[];
@@ -64,10 +63,7 @@ describe("API: Media Intents", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(400);
   });

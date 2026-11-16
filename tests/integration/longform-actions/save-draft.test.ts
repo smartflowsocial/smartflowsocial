@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   createMockQueueType,
@@ -76,7 +77,9 @@ describe("Save Draft Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
 
     expect(mockCreateLongFormPostExecute).toHaveBeenCalledWith(
       // expect.objectContaining returns 'any' - acceptable for test mocks
@@ -106,7 +109,9 @@ describe("Save Draft Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -133,7 +138,9 @@ describe("Save Draft Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

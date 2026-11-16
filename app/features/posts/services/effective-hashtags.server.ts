@@ -3,8 +3,6 @@
  * Handles effective hashtag calculation for queue types
  */
 
-import { json } from "@remix-run/node";
-
 import { getQueueTypes } from "~/features/user";
 import { ValidationError } from "~/lib/errors";
 /**
@@ -18,7 +16,7 @@ export async function getEffectiveHashtags(
 ) {
   // If explicitly "unassigned", return empty hashtags (valid case)
   if (queueTypeName === "unassigned") {
-    return json({ hashtags: "" });
+    return Response.json({ hashtags: "" });
   }
 
   // If no queue type specified at all, return validation error
@@ -45,12 +43,12 @@ export async function getEffectiveHashtags(
     !("hashTagPreset" in queueType) ||
     !queueType.hashTagPreset
   ) {
-    return json({ hashtags: "" });
+    return Response.json({ hashtags: "" });
   }
 
   // Return the hashtag preset tags assigned to this queue type
   // Use consistent unwrapped format to match other return statements
-  return json({
+  return Response.json({
     hashtags: (queueType.hashTagPreset as { tags: string | null }).tags ?? "",
   });
 }

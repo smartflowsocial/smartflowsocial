@@ -39,6 +39,7 @@ vi.mock("~/features/posts/ui", () => ({
 }));
 
 import { userFactory } from "../factories";
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -78,10 +79,7 @@ describe("Drafts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -130,10 +128,7 @@ describe("Drafts Loader Integration", () => {
         params: { queueType: "posts" },
         context: {},
       });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -180,10 +175,7 @@ describe("Drafts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -220,10 +212,7 @@ describe("Drafts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -263,10 +252,7 @@ describe("Drafts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -306,10 +292,7 @@ describe("Drafts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

@@ -113,6 +113,7 @@ vi.mock("~/features/user", () => ({
 }));
 
 // Import after mocks are set up
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createValidUserMock,
   createValidPostDTOMock,
@@ -158,10 +159,7 @@ describe("Calendar Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -202,10 +200,7 @@ describe("Calendar Loader Integration", () => {
         params: { queueType: "posts" },
         context: {},
       });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -250,10 +245,7 @@ describe("Calendar Loader Integration", () => {
         params: { queueType: "posts" },
         context: {},
       });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -293,10 +285,7 @@ describe("Calendar Loader Integration", () => {
         params: { queueType: "all" },
         context: {},
       });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -341,10 +330,7 @@ describe("Calendar Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -386,10 +372,7 @@ describe("Calendar Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -420,10 +403,7 @@ describe("Calendar Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -455,10 +435,7 @@ describe("Calendar Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

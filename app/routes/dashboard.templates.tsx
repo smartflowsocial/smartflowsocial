@@ -1,8 +1,7 @@
 import {
-  defer,
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  data,
 } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
@@ -37,12 +36,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
 
   if (isRemixResourceRequest(request)) {
-    return json(await loadTemplatesValidated(userId));
+    return await loadTemplatesValidated(userId);
   }
 
-  return defer({
+  return {
     templates: loadTemplatesValidated(userId),
-  });
+  };
 }
 
 export const action = withCSRFProtection(
@@ -57,10 +56,10 @@ export const action = withCSRFProtection(
       }
 
       if (typeof result === "object" && "error" in result && result.error) {
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
@@ -73,7 +72,7 @@ interface TemplatesDeferredLoaderData {
 }
 
 function TemplatesFeedRoute() {
-  const { templates } = useLoaderData() as TemplatesDeferredLoaderData;
+  const { templates } = useLoaderData<TemplatesDeferredLoaderData>();
 
   return (
     <Suspense fallback={<TemplatesPageSkeleton />}>

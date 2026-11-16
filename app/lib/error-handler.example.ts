@@ -11,7 +11,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Example file, unsafe assignments for demonstration */
 
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -75,7 +74,7 @@ export async function manualLoaderExample({
 
     // Your loader logic here
     const data = { userId };
-    return json(data);
+    return Response.json(data);
   } catch (error) {
     return handleLoaderError(error, { userId: null, data: [] });
   }
@@ -103,7 +102,7 @@ export async function manualActionExample({
     }
 
     // Your action logic here
-    return json(createSuccessResponse({ email }));
+    return Response.json(createSuccessResponse({ email }));
   } catch (error) {
     return handleActionError(error);
   }
@@ -138,7 +137,7 @@ export async function assertionExample({
     { userId, resourceId }
   );
 
-  return json({ resource });
+  return Response.json({ resource });
 }
 
 // ============================================================================
@@ -179,7 +178,7 @@ export async function specificErrorsExample({
   }
 
   // Your logic here
-  return json(createSuccessResponse({ post }));
+  return Response.json(createSuccessResponse({ post }));
 }
 
 // ============================================================================
@@ -197,7 +196,7 @@ export async function externalServiceExample({ request }: ActionFunctionArgs) {
       );
     }
     const data = await response.json();
-    return json(createSuccessResponse(data));
+    return Response.json(createSuccessResponse(data));
   } catch (error) {
     if (error instanceof ExternalServiceError) {
       throw error; // Re-throw our custom error

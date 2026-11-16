@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const presets = limits.canUsePresets
     ? await getGiveawayPresetsByUser(userId)
     : [];
-  return json({
+  return {
     presets: presets.map((p) => ({
       id: p.id,
       name: p.name,
@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
     })),
     canUsePresets: limits.canUsePresets,
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -45,19 +45,19 @@ export async function action({ request }: ActionFunctionArgs) {
     getUserPlanType(sub.currentSubscription ?? null)
   );
   if (!limits.canUsePresets) {
-    return json({ error: "Presets require a paid plan" }, { status: 403 });
+    return data({ error: "Presets require a paid plan" }, { status: 403 });
   }
   const fd = await request.formData();
   const intent = fd.get("intent");
   if (intent === "delete") {
     const id = fd.get("presetId");
     if (typeof id !== "string" || !id.trim()) {
-      return json({ error: "Missing preset" }, { status: 400 });
+      return data({ error: "Missing preset" }, { status: 400 });
     }
     await deleteGiveawayPreset(userId, id.trim());
     return redirect("/dashboard/giveaway/presets");
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function GiveawayPresetsPage() {

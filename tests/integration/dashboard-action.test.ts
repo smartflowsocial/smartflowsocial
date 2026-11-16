@@ -12,6 +12,7 @@ vi.mock("~/features/posts/server", () => ({
   deleteLongFormPost: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createActionFormData,
   createFormData,
@@ -54,7 +55,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation returns a Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(data.error).toContain("postId");
       expect(deletePost).not.toHaveBeenCalled();
@@ -113,7 +116,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation requires at least one post ID
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(data.error).toContain("postIds");
       expect(deletePost).not.toHaveBeenCalled();
@@ -128,7 +133,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation returns a Response with error for invalid JSON
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(deletePost).not.toHaveBeenCalled();
     });
@@ -183,7 +190,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation returns a Response with error for invalid JSON
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(deleteLongFormPost).not.toHaveBeenCalled();
     });
@@ -197,7 +206,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation fails because "invalidAction" is not in the enum
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(deletePost).not.toHaveBeenCalled();
       expect(deleteLongFormPost).not.toHaveBeenCalled();
@@ -210,7 +221,9 @@ describe("Dashboard Action Handler", () => {
 
       // Zod validation returns a Response with error when _action is missing
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
     });
 

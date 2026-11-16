@@ -18,6 +18,7 @@ vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
   formatScheduleTimeForInput: vi.fn(),
 }));
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { TEST_USER_ID } from "../../utils/test-helpers";
 
 import {
@@ -45,10 +46,7 @@ describe("Queue Schedule Service", () => {
       });
 
       expect(getUserTimezone).not.toHaveBeenCalled();
-      const response =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const response = await asRouteResponse(result);
       const jsonResultRaw: unknown = await response.json();
       const jsonResult =
         jsonResultRaw &&
@@ -102,10 +100,7 @@ describe("Queue Schedule Service", () => {
         "America/New_York"
       );
 
-      const response =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const response = await asRouteResponse(result);
       const jsonResultRaw: unknown = await response.json();
       const jsonResult =
         jsonResultRaw &&
@@ -248,10 +243,7 @@ describe("Queue Schedule Service", () => {
         "queue-1"
       );
 
-      const response =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const response = await asRouteResponse(result);
       const jsonResultRaw: unknown = await response.json();
       const jsonResult =
         jsonResultRaw &&

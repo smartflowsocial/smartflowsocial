@@ -1,6 +1,4 @@
 import {
-  defer,
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
@@ -71,11 +69,11 @@ async function loadScheduledValidated(
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (isRemixResourceRequest(request)) {
-      return json(await loadScheduledValidated(request, params));
+      return await loadScheduledValidated(request, params);
     }
-    return defer({
+    return {
       scheduled: loadScheduledValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -132,7 +130,7 @@ export const action = withCSRFProtection(
         return result;
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       if (error instanceof Response) {
         return error;
@@ -148,7 +146,7 @@ interface ScheduledDeferredLoaderData {
 }
 
 function ScheduledFeedRoute() {
-  const { scheduled } = useLoaderData() as ScheduledDeferredLoaderData;
+  const { scheduled } = useLoaderData<ScheduledDeferredLoaderData>();
 
   return (
     <Suspense fallback={<ScheduledPostsPageSkeleton />}>

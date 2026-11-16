@@ -13,6 +13,8 @@ vi.mock("~/features/upload", () => ({
   recordBlossomCompatUsage: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { requireUserId } from "~/features/auth";
 import {
   createMediaIfMissing,
@@ -55,10 +57,7 @@ describe("API: Upload Blossom", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: boolean;
       data?: { file?: { url?: string; provider?: string } };
@@ -88,10 +87,7 @@ describe("API: Upload Blossom", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(403);
   });
@@ -108,10 +104,7 @@ describe("API: Upload Blossom", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: boolean;
       error?: unknown;
@@ -143,10 +136,7 @@ describe("API: Upload Blossom", () => {
     });
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     expect(responseObj.status).toBe(200);
     expect(createMediaIfMissing).toHaveBeenCalled();
     expect(recordBlossomCompatUsage).toHaveBeenCalled();

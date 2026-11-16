@@ -47,6 +47,7 @@ vi.mock("~/features/posts/hooks/useRefreshPostViews", () => ({
   refreshPostViews: () => {},
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createValidUserMock,
   createValidPostDTOMock,
@@ -97,10 +98,7 @@ describe("Posted Posts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -155,10 +153,7 @@ describe("Posted Posts Loader Integration", () => {
         params: { queueType: "posts" },
         context: {},
       });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -211,10 +206,7 @@ describe("Posted Posts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -267,10 +259,7 @@ describe("Posted Posts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -310,10 +299,7 @@ describe("Posted Posts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -353,10 +339,7 @@ describe("Posted Posts Loader Integration", () => {
         context: {},
       };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

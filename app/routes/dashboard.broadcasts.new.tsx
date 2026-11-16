@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import {
   Await,
   Form,
@@ -153,12 +153,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   })();
 
   if (isRemixResourceRequest(request)) {
-    return json(await dataPromise);
+    return await dataPromise;
   }
 
-  return defer<{ data: Promise<BroadcastNewLoaderDataShape> }>({
+  return {
     data: dataPromise,
-  });
+  };
 }
 
 function broadcastResolveErrorMessage(
@@ -194,13 +194,13 @@ async function handleSaveAudienceIntent(userId: string, form: FormData) {
     .map((l) => l.trim())
     .filter(Boolean);
   if (!name) {
-    return json({ error: "Name required" }, { status: 400 });
+    return data({ error: "Name required" }, { status: 400 });
   }
   if (!["CUSTOM", "MUTUALS"].includes(audienceType)) {
-    return json({ error: "Invalid audience" }, { status: 400 });
+    return data({ error: "Invalid audience" }, { status: 400 });
   }
   if (audienceType === "CUSTOM" && customNpubLines.length === 0) {
-    return json(
+    return data(
       { error: "Add at least one valid recipient to save a custom audience." },
       { status: 400 }
     );
@@ -246,7 +246,7 @@ async function handleBroadcastCreateIntents(
   }
   if (intent === "create_schedule") {
     if (!limits.allowSchedule) {
-      return json(
+      return data(
         {
           error: "Scheduling is not available on your plan.",
         },
@@ -254,7 +254,7 @@ async function handleBroadcastCreateIntents(
       );
     }
     if (!scheduledForIso) {
-      return json(
+      return data(
         {
           error: "Choose a date and time for a scheduled broadcast.",
         },
@@ -275,7 +275,7 @@ async function handleBroadcastCreateIntents(
     exclusionRulesJson,
   });
   if (!parsed.success) {
-    return json(
+    return data(
       { error: "Check the form", details: parsed.error.flatten() },
       { status: 400 }
     );
@@ -307,7 +307,7 @@ async function handleBroadcastCreateIntents(
 async function handleBroadcastResolveIntent(userId: string, form: FormData) {
   const campaignId = String(form.get("campaignId") ?? "");
   if (!campaignId) {
-    return json({ error: "Missing campaign" }, { status: 400 });
+    return data({ error: "Missing campaign" }, { status: 400 });
   }
   try {
     await resolveRecipientsForCampaign(userId, campaignId);
@@ -348,7 +348,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return handleBroadcastResolveIntent(userId, form);
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function BroadcastNewCampaignPhase({
@@ -477,7 +477,7 @@ export default function BroadcastNewRoute() {
       >
         {(loaded) => (
           <BroadcastNewRouteLoaded
-            loaded={loaded as BroadcastNewLoaderDataShape}
+            loaded={loaded}
             busy={busy}
             actionError={actionError}
           />

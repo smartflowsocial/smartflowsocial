@@ -196,7 +196,7 @@ export async function handleDraftText({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: TextHandlerParams): Promise<Response> {
+}: TextHandlerParams) {
   const contentValue = formData.get("content");
   let content = contentValue ? String(contentValue) : "";
   let fileUrl: string[] = [];
@@ -253,7 +253,7 @@ export async function handlePostOrScheduleText({
   sanitizedRelays = [],
   action = "post-text",
   correlationId,
-}: TextHandlerParams): Promise<Response> {
+}: TextHandlerParams) {
   const contentValue = formData.get("content");
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");

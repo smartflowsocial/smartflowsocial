@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -73,7 +72,7 @@ export const action = withCSRFProtection(
       // Fetch stats using the optimized function
       const stats = await getPostStats(eventIdsArray);
 
-      return json({ stats });
+      return Response.json({ stats });
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

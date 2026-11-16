@@ -9,7 +9,6 @@
  */
 
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -143,7 +142,7 @@ export function withErrorHandling<T>(
       if (result instanceof Response) {
         return result;
       }
-      return json(result);
+      return Response.json(result);
     } catch (error) {
       rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
@@ -153,7 +152,7 @@ export function withErrorHandling<T>(
         return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
-      return json(errorResponse, { status: statusCode });
+      return Response.json(errorResponse, { status: statusCode });
     }
   };
 }
@@ -173,7 +172,7 @@ export function withActionErrorHandling<T>(
       if (result instanceof Response) {
         return result;
       }
-      return json(result);
+      return Response.json(result);
     } catch (error) {
       rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
@@ -183,7 +182,7 @@ export function withActionErrorHandling<T>(
         return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
-      return json(errorResponse, { status: statusCode });
+      return Response.json(errorResponse, { status: statusCode });
     }
   };
 }
@@ -199,7 +198,7 @@ export function handleLoaderError(
   const [errorResponse, statusCode] = createErrorResponse(error);
   const defaultDataObj =
     defaultData && typeof defaultData === "object" ? defaultData : {};
-  return json(
+  return Response.json(
     {
       ...defaultDataObj,
       error: errorResponse.error,
@@ -214,7 +213,7 @@ export function handleLoaderError(
 export function handleActionError(error: unknown): Response {
   rethrowIfAbortReason(error);
   const [errorResponse, statusCode] = createErrorResponse(error);
-  return json(errorResponse, { status: statusCode });
+  return Response.json(errorResponse, { status: statusCode });
 }
 
 /**

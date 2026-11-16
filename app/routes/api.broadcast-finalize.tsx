@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireSession } from "~/features/auth";
 import {
@@ -12,7 +11,7 @@ import { withCSRFProtection } from "~/lib/csrf";
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
 
     const session = await requireSession(request);
@@ -21,12 +20,12 @@ export const action = withCSRFProtection(
     try {
       bodyRaw = await request.json();
     } catch {
-      return json({ error: "Invalid JSON body." }, { status: 400 });
+      return Response.json({ error: "Invalid JSON body." }, { status: 400 });
     }
 
     const parsed = finalizeBroadcastSchema.safeParse(bodyRaw);
     if (!parsed.success) {
-      return json(
+      return Response.json(
         {
           error: "Validation failed",
           details: parsed.error.flatten(),
@@ -41,10 +40,10 @@ export const action = withCSRFProtection(
         session.pubkey,
         parsed.data
       );
-      return json({ success: true as const, ...result });
+      return Response.json({ success: true as const, ...result });
     } catch (error) {
       if (error instanceof BroadcastActionError) {
-        return json(
+        return Response.json(
           { error: error.message, code: error.code },
           { status: 400 }
         );

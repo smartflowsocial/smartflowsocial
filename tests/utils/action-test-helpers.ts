@@ -259,3 +259,24 @@ export const actionScenarios = {
     },
   },
 };
+
+/**
+ * Loaders and actions may return a Response, a single-fetch `data()` result,
+ * or a plain object. Tests still assert on status and JSON.
+ */
+export async function asRouteResponse(result: unknown): Promise<Response> {
+  if (result instanceof Response) return result;
+  if (
+    result !== null &&
+    typeof result === "object" &&
+    "type" in result &&
+    (result as { type?: unknown }).type === "DataWithResponseInit" &&
+    "data" in result
+  ) {
+    const init = (result as { init?: number | ResponseInit | null }).init;
+    const responseInit =
+      typeof init === "number" ? { status: init } : (init ?? undefined);
+    return Response.json((result as { data: unknown }).data, responseInit);
+  }
+  return Response.json(result ?? null);
+}

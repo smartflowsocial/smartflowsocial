@@ -12,7 +12,6 @@
  */
 
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 // Cache for server-only functions (loaded dynamically on server)
 let serverFunctions: {
@@ -70,7 +69,7 @@ export function withCSRFProtection<T>(
         validateOrigin(args.request);
       } catch (error) {
         // Return 403 Forbidden for CSRF validation failures
-        return json(
+        return Response.json(
           {
             error: "CSRF validation failed",
             message: error instanceof Error ? error.message : "Invalid origin",

@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import {
   Await,
   Form,
@@ -92,11 +92,11 @@ async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
 
 export async function loader(args: LoaderFunctionArgs) {
   if (isRemixResourceRequest(args.request)) {
-    return json(await loadSettingsMediaData(args));
+    return await loadSettingsMediaData(args);
   }
-  return defer({
+  return {
     mediaSettings: loadSettingsMediaData(args),
-  });
+  };
 }
 
 export const action = withCSRFProtection(
@@ -109,18 +109,18 @@ export const action = withCSRFProtection(
     if (actionType === "delete_media") {
       const mediaId = formData.get("mediaId");
       if (typeof mediaId !== "string" || !mediaId) {
-        return json({ error: "Missing media ID" }, { status: 400 });
+        return data({ error: "Missing media ID" }, { status: 400 });
       }
       const media = await findMediaByIdForUser(mediaId, userId);
       if (!media) {
-        return json({ error: "Media not found" }, { status: 404 });
+        return data({ error: "Media not found" }, { status: 404 });
       }
 
       if (media.provider === "BLOSSOM_SFS") {
         try {
           await deleteRemoteBlossomObject(media.url);
         } catch {
-          return json(
+          return data(
             {
               error: `Could not delete file from ${BRAND_BLOSSOM_LABEL}. Nothing was removed.`,
             },
@@ -132,7 +132,7 @@ export const action = withCSRFProtection(
       return redirect("/dashboard/settings/media");
     }
 
-    return json({ error: "Unknown action" }, { status: 400 });
+    return data({ error: "Unknown action" }, { status: 400 });
   }
 );
 
@@ -437,9 +437,9 @@ function SettingsMediaPageInner() {
 }
 
 export default function SettingsMediaPage() {
-  const { mediaSettings } = useLoaderData() as {
+  const { mediaSettings } = useLoaderData<{
     mediaSettings: Promise<SettingsMediaLoaderPayload>;
-  };
+  }>();
 
   return (
     <Suspense fallback={<MediaSettingsPageSkeleton />}>

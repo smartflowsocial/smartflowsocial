@@ -2,7 +2,7 @@
  * Referrals tab: loader (tables + audit) and payout actions (NWC / ws polyfill server-only).
  */
 
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
 import {
@@ -50,7 +50,7 @@ export type ReferralPayoutBatchResult = Awaited<
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
 
   const url = new URL(request.url);
@@ -119,7 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }),
     ]);
 
-  return json({
+  return {
     section,
     rangePreset,
     payoutAvailable: Boolean(env.OWNER_NWC?.trim()),
@@ -164,17 +164,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       operatorNpub: a.operatorNpub,
       createdAt: a.createdAt.toISOString(),
     })),
-  });
+  };
 }
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const user = await requireUser(request);
     if (!isReferralAdmin(user.npub)) {
-      return json({ error: "Forbidden" }, { status: 403 });
+      return data({ error: "Forbidden" }, { status: 403 });
     }
     if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
-      return json({ error: "Referral payouts are disabled" }, { status: 403 });
+      return data({ error: "Referral payouts are disabled" }, { status: 403 });
     }
 
     const formData = await request.formData();
@@ -183,17 +183,17 @@ export const action = withCSRFProtection(
     if (_action === "retry_payout") {
       const earningId = formData.get("earning_id");
       if (typeof earningId !== "string") {
-        return json({ error: "Missing earning_id" }, { status: 400 });
+        return data({ error: "Missing earning_id" }, { status: 400 });
       }
       const result = await retryFailedPayout(earningId);
       if (!result.success) {
-        return json({ error: result.error }, { status: 400 });
+        return data({ error: result.error }, { status: 400 });
       }
-      return json({ success: true });
+      return { success: true };
     }
 
     if (!env.OWNER_NWC?.trim()) {
-      return json(
+      return data(
         { error: "OWNER_NWC is not configured; payouts are disabled." },
         { status: 400 }
       );
@@ -201,14 +201,14 @@ export const action = withCSRFProtection(
 
     if (_action === "run_batch_payout") {
       if (formData.get("confirm_batch") !== "on") {
-        return json(
+        return data(
           { error: "Check the confirmation box to run the batch payout." },
           { status: 400 }
         );
       }
       const phrase = String(formData.get("confirm_phrase") ?? "").trim();
       if (phrase !== "PAY") {
-        return json(
+        return data(
           {
             error:
               "Type PAY in the confirmation field to authorize this batch.",
@@ -219,7 +219,7 @@ export const action = withCSRFProtection(
       const result = await runReferralPayoutBatch({
         operatorNpub: user.npub,
       });
-      return json({ ok: true as const, batch: result });
+      return { ok: true as const, batch: result };
     }
 
     if (_action === "manual_payout") {
@@ -235,7 +235,7 @@ export const action = withCSRFProtection(
         !Number.isFinite(amountSats) ||
         amountSats < 1
       ) {
-        return json(
+        return data(
           {
             error:
               "Invalid form: referrer npub, BOLT11 invoice, and a positive amount (sats) are required.",
@@ -252,18 +252,18 @@ export const action = withCSRFProtection(
       );
 
       if (!result.success) {
-        return json(
+        return data(
           { error: result.error ?? "Payment failed" },
           { status: 422 }
         );
       }
 
-      return json({
+      return {
         ok: true as const,
         manual: { paidSats: amountSats, referrerNpub },
-      });
+      };
     }
 
-    return json({ error: "Invalid action" }, { status: 400 });
+    return data({ error: "Invalid action" }, { status: 400 });
   }
 );

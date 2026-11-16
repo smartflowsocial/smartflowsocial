@@ -7,6 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUser } from "~/features/auth/session.server";
@@ -169,7 +170,7 @@ describe("Plans Action Handler", () => {
 
       // Zod validation returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as {
+      const data = (await (await asRouteResponse(result)).json()) as {
         error?: string;
         success?: boolean;
       };
@@ -466,7 +467,7 @@ describe("Plans Action Handler", () => {
 
       // Zod validation returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as {
+      const data = (await (await asRouteResponse(result)).json()) as {
         error?: string;
         success?: boolean;
       };
@@ -535,7 +536,9 @@ describe("Plans Action Handler", () => {
 
       expect(result).toBeInstanceOf(Response);
       expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data.error).toBeDefined();
       expect(String(data.error)).toMatch(/yearly/i);
     });
@@ -765,7 +768,7 @@ describe("Plans Action Handler", () => {
 
       // Zod validation fails for invalid intent, returns Response with error
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as {
+      const data = (await (await asRouteResponse(result)).json()) as {
         error?: string;
         success?: boolean;
       };

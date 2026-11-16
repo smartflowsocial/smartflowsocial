@@ -3,7 +3,7 @@
  * Centralized action processing for scheduled posts page
  */
 
-import { json } from "@remix-run/node";
+import { data as routeData } from "@remix-run/node";
 
 import {
   assertScheduleCapacity,
@@ -47,17 +47,7 @@ async function getExistingScheduledPostByIdempotency(
 export async function handleScheduledAction(
   formData: FormData,
   userId: string
-): Promise<
-  | ReturnType<typeof json>
-  | {
-      success: boolean;
-      deleted?: boolean;
-      deletedCount?: number;
-      postId?: string;
-      moved?: boolean;
-      cascadeDeletedIds?: string[];
-    }
-> {
+) {
   const result = validateFormDataOrRespond(formData, scheduledActionSchema);
   if (!result.success) {
     return result.response;
@@ -227,11 +217,11 @@ async function handleScheduleRepost(
 ) {
   const signedEvent = parseSignedEvent(data.signedEvent);
   if (!signedEvent) {
-    return json({ error: "Invalid signed event" }, { status: 400 });
+    return routeData({ error: "Invalid signed event" }, { status: 400 });
   }
   const scheduledForUnix = parseInt(data.scheduledFor, 10);
   if (Number.isNaN(scheduledForUnix)) {
-    return json({ error: "Invalid scheduled time" }, { status: 400 });
+    return routeData({ error: "Invalid scheduled time" }, { status: 400 });
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
   const creationIdempotencyKey = generateCreationIdempotencyKey(
@@ -249,7 +239,7 @@ async function handleScheduleRepost(
     await assertScheduleCapacity(userId, 1);
   } catch (e) {
     if (e instanceof ScheduleCapExceededError) {
-      return json({ error: e.message }, { status: 403 });
+      return routeData({ error: e.message }, { status: 403 });
     }
     throw e;
   }
@@ -258,10 +248,10 @@ async function handleScheduleRepost(
   if (postId) {
     const sourcePost = await getPostById({ id: postId, userId });
     if (!sourcePost) {
-      return json({ error: "Post not found" }, { status: 404 });
+      return routeData({ error: "Post not found" }, { status: 404 });
     }
     if (isPureRepostSourcePost(sourcePost)) {
-      return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+      return routeData({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
     }
     const isAttachedFollowUp =
       sourcePost.currentState === "SCHEDULED" &&
@@ -270,7 +260,10 @@ async function handleScheduleRepost(
       sourcePost.nostrEventId ??
       getSignedEventIdFromUnknown(sourcePost.signedEvent);
     if (isAttachedFollowUp && !expectedParentEventId) {
-      return json({ error: PARENT_SIGNING_REQUIRED_ERROR }, { status: 400 });
+      return routeData(
+        { error: PARENT_SIGNING_REQUIRED_ERROR },
+        { status: 400 }
+      );
     }
     const post = await createPostWithOutbox(
       {
@@ -321,10 +314,10 @@ async function handleScheduleRepost(
 
   const sourceEv = parseSourceSignedEvent(data.sourceSignedEvent);
   if (!sourceEv) {
-    return json({ error: "Invalid source event" }, { status: 400 });
+    return routeData({ error: "Invalid source event" }, { status: 400 });
   }
   if (sourceEv.kind === 6) {
-    return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+    return routeData({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
   }
   const queueTypeId = await resolveQueueTypeId(userId, null, null);
   const post = await createPostWithOutbox(
@@ -372,11 +365,11 @@ async function handleScheduleQuote(
 ) {
   const signedEvent = parseSignedEvent(data.signedEvent);
   if (!signedEvent) {
-    return json({ error: "Invalid signed event" }, { status: 400 });
+    return routeData({ error: "Invalid signed event" }, { status: 400 });
   }
   const scheduledForUnix = parseInt(data.scheduledFor, 10);
   if (Number.isNaN(scheduledForUnix)) {
-    return json({ error: "Invalid scheduled time" }, { status: 400 });
+    return routeData({ error: "Invalid scheduled time" }, { status: 400 });
   }
   const scheduledAtUtc = new Date(scheduledForUnix * 1000);
   const creationIdempotencyKey = generateCreationIdempotencyKey(
@@ -394,7 +387,7 @@ async function handleScheduleQuote(
     await assertScheduleCapacity(userId, 1);
   } catch (e) {
     if (e instanceof ScheduleCapExceededError) {
-      return json({ error: e.message }, { status: 403 });
+      return routeData({ error: e.message }, { status: 403 });
     }
     throw e;
   }
@@ -403,10 +396,10 @@ async function handleScheduleQuote(
   if (postId) {
     const sourcePost = await getPostById({ id: postId, userId });
     if (!sourcePost) {
-      return json({ error: "Post not found" }, { status: 404 });
+      return routeData({ error: "Post not found" }, { status: 404 });
     }
     if (isPureRepostSourcePost(sourcePost)) {
-      return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+      return routeData({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
     }
     const isAttachedFollowUp =
       sourcePost.currentState === "SCHEDULED" &&
@@ -415,7 +408,10 @@ async function handleScheduleQuote(
       sourcePost.nostrEventId ??
       getSignedEventIdFromUnknown(sourcePost.signedEvent);
     if (isAttachedFollowUp && !expectedParentEventId) {
-      return json({ error: PARENT_SIGNING_REQUIRED_ERROR }, { status: 400 });
+      return routeData(
+        { error: PARENT_SIGNING_REQUIRED_ERROR },
+        { status: 400 }
+      );
     }
     const post = await createPostWithOutbox(
       {
@@ -465,10 +461,10 @@ async function handleScheduleQuote(
 
   const sourceEv = parseSourceSignedEvent(data.sourceSignedEvent);
   if (!sourceEv) {
-    return json({ error: "Invalid source event" }, { status: 400 });
+    return routeData({ error: "Invalid source event" }, { status: 400 });
   }
   if (sourceEv.kind === 6) {
-    return json({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
+    return routeData({ error: REPOST_CHAIN_BLOCKED_ERROR }, { status: 400 });
   }
   const queueTypeId = await resolveQueueTypeId(userId, null, null);
   const post = await createPostWithOutbox(

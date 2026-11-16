@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { logout, requireUserId } from "~/features/auth";
@@ -16,7 +15,7 @@ import { logError } from "~/lib/error-logger.server";
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
     const userId = await requireUserId(request);
     const form = await request.formData();
@@ -29,7 +28,7 @@ export const action = withCSRFProtection(
           typeof acknowledgeRelays === "string" ? acknowledgeRelays : null,
       })
     ) {
-      return json(
+      return Response.json(
         {
           error:
             'Type "delete my account" and confirm that relays keep published events.',
@@ -45,7 +44,7 @@ export const action = withCSRFProtection(
         message: "Account deletion stopped before removing the account",
         userId,
       });
-      return json(
+      return Response.json(
         {
           error: "Could not inspect stored media. The account was not deleted.",
         },
@@ -54,7 +53,7 @@ export const action = withCSRFProtection(
     }
     const deleted = await deleteAccountData(userId);
     if (!deleted) {
-      return json({ error: "Account not found" }, { status: 404 });
+      return Response.json({ error: "Account not found" }, { status: 404 });
     }
     try {
       await deletePlannedAccountObjects(userId, objectPlan);

@@ -32,6 +32,8 @@ vi.mock("@remix-run/node", async () => {
   };
 });
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { requireUserId } from "~/features/auth";
 import {
   processImageForWeb,
@@ -79,10 +81,7 @@ describe("API: Upload EditorJS Image", () => {
     );
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: number;
       file?: { url?: string };
@@ -122,10 +121,7 @@ describe("API: Upload EditorJS Image", () => {
     );
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(400);
   });
@@ -157,10 +153,7 @@ describe("API: Upload EditorJS Image", () => {
     );
 
     const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: number;
       file?: { url?: string };

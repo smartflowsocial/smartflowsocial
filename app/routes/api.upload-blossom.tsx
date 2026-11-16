@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -218,5 +217,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return json({ message: "Blossom Upload API" });
+  return Response.json({ message: "Blossom Upload API" });
 }

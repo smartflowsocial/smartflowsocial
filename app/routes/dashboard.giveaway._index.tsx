@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
@@ -174,7 +174,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
     }
 
-    return json({
+    return {
       giveaways: rows,
       kpis,
       filters: {
@@ -185,7 +185,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         from: fromStr ?? "",
         to: toStr ?? "",
       },
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -201,7 +201,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await requireAnySubscription(userId);
 
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return data({ error: "Method not allowed" }, { status: 405 });
     }
 
     const formData = await request.formData();
@@ -210,11 +210,11 @@ export async function action({ request }: ActionFunctionArgs) {
     if (intent === "duplicate") {
       const id = formData.get("giveawayId");
       if (typeof id !== "string" || !id.trim()) {
-        return json({ error: "Missing giveaway" }, { status: 400 });
+        return data({ error: "Missing giveaway" }, { status: 400 });
       }
       const result = await duplicateGiveaway(userId, id.trim());
       if (result.error || !result.id) {
-        return json(
+        return data(
           { error: result.error ?? "Could not duplicate giveaway" },
           { status: 400 }
         );
@@ -225,11 +225,11 @@ export async function action({ request }: ActionFunctionArgs) {
     if (intent === "delete") {
       const id = formData.get("giveawayId");
       if (typeof id !== "string" || !id.trim()) {
-        return json({ error: "Missing giveaway" }, { status: 400 });
+        return data({ error: "Missing giveaway" }, { status: 400 });
       }
       const result = await deleteGiveaway(userId, id.trim());
       if (!result.success) {
-        return json(
+        return data(
           { error: result.error ?? "Delete failed" },
           { status: 400 }
         );
@@ -237,7 +237,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return redirect("/dashboard/giveaway");
     }
 
-    return json({ error: "Unknown intent" }, { status: 400 });
+    return data({ error: "Unknown intent" }, { status: 400 });
   } catch (error) {
     if (error instanceof Response) {
       return error;

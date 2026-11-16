@@ -2,8 +2,6 @@
  * Hashtag preset action handlers
  */
 
-import { json } from "@remix-run/node";
-
 import {
   createHashTagPreset,
   updateHashTagPreset,
@@ -40,7 +38,7 @@ export async function handleHashtagPresetAction(
       result.data.description
     );
     await invalidateHashTagPresetsCache(userId);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_hashtag_preset") {
@@ -59,7 +57,7 @@ export async function handleHashtagPresetAction(
       result.data.description
     );
     await invalidateHashTagPresetsCache(userId);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "delete_hashtag_preset") {
@@ -73,7 +71,7 @@ export async function handleHashtagPresetAction(
     await deleteHashTagPreset(userId, result.data.id);
     await invalidateHashTagPresetsCache(userId);
     await invalidateQueueTypesCache(userId);
-    return json({ success: true });
+    return { success: true };
   }
 
   return null;

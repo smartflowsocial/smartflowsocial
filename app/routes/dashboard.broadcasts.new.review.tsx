@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { Await, Form, Link, useLoaderData } from "@remix-run/react";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
@@ -177,12 +177,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const reviewPromise = getBroadcastReviewData({ campaignId, userId, request });
 
   if (isRemixResourceRequest(request)) {
-    return json(await reviewPromise);
+    return await reviewPromise;
   }
 
-  return defer<{ review: Promise<BroadcastReviewLoaderData> }>({
+  return {
     review: reviewPromise,
-  });
+  };
 }
 
 export default function BroadcastNewReviewRoute() {
@@ -197,11 +197,7 @@ export default function BroadcastNewReviewRoute() {
           <DeferredRouteAwaitError retryTo="/dashboard/broadcasts/new" />
         }
       >
-        {(loaded) => (
-          <BroadcastNewReviewRouteLoaded
-            loaded={loaded as BroadcastReviewLoaderData}
-          />
-        )}
+        {(loaded) => <BroadcastNewReviewRouteLoaded loaded={loaded} />}
       </Await>
     </Suspense>
   );

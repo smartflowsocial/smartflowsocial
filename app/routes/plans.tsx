@@ -1,4 +1,4 @@
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 
 import {
@@ -65,16 +65,15 @@ export const action = withCSRFProtection(
         "status" in result && typeof result.status === "number"
           ? result.status
           : 400;
-      return json(result, { status });
+      return data(result, { status });
     }
 
-    return json(result);
+    return result;
   }
 );
 
 export const loader = async ({ request }: { request: Request }) => {
-  const data = await loadPlansData(request);
-  return json(data);
+  return await loadPlansData(request);
 };
 
 export default PlansPage;

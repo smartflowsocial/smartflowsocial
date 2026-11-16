@@ -3,7 +3,6 @@ import type {
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { commitBlossomBatch, type CommitItem } from "~/features/upload";
 import { env } from "~/lib/env.server";
@@ -37,7 +36,7 @@ function authorizeInternalRequest(request: Request): boolean {
 export async function action({ request }: ActionFunctionArgs) {
   try {
     if (!authorizeInternalRequest(request)) {
-      return json({ error: "unauthorized" }, { status: 401 });
+      return Response.json({ error: "unauthorized" }, { status: 401 });
     }
 
     const body = (await request.json()) as {
@@ -45,10 +44,10 @@ export async function action({ request }: ActionFunctionArgs) {
       items?: unknown[];
     };
     if (!body.batchId || !Array.isArray(body.items)) {
-      return json({ error: "invalid_request" }, { status: 400 });
+      return Response.json({ error: "invalid_request" }, { status: 400 });
     }
     if (!body.items.every((item) => isCommitItem(item))) {
-      return json({ error: "invalid_request" }, { status: 400 });
+      return Response.json({ error: "invalid_request" }, { status: 400 });
     }
 
     const result = await commitBlossomBatch(body.batchId, body.items);
@@ -58,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
       duplicate: result.duplicate,
       failed: result.failed,
     });
-    return json(result);
+    return Response.json(result);
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -67,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!authorizeInternalRequest(request)) {
-    return json({ error: "unauthorized" }, { status: 401 });
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  return json({ message: "Internal Blossom commit-batch endpoint" });
+  return Response.json({ message: "Internal Blossom commit-batch endpoint" });
 }

@@ -2,7 +2,7 @@
  * Server-side action handlers for published posts
  * Extracted from dashboard.published.tsx
  */
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -51,7 +51,7 @@ async function handleDelete(formData: FormData, userId: string) {
     userId
   );
   await deletePost({ id: result.data.postId, userId });
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -67,7 +67,7 @@ async function handleDeleteLongForm(formData: FormData, userId: string) {
     userId
   );
   await deleteLongFormPost({ id: result.data.postId, userId });
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -84,7 +84,7 @@ async function handleBulkDelete(formData: FormData, userId: string) {
       await deletePost({ id, userId });
     })
   );
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -104,7 +104,7 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
       await deleteLongFormPost({ id, userId });
     })
   );
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -124,7 +124,7 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
     }
   });
   await Promise.all(promises);
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -137,9 +137,9 @@ async function handleBulkRepost(formData: FormData, userId: string) {
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
   if (postsData.some((p) => isPureRepostSourcePost(p))) {
-    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+    return data({ error: ERROR_REPOST_CHAIN }, { status: 400 });
   }
-  return json({ repostData: postsData });
+  return { repostData: postsData };
 }
 
 /**
@@ -152,9 +152,9 @@ async function handleBulkScheduledRepost(formData: FormData, userId: string) {
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
   if (postsData.some((p) => isPureRepostSourcePost(p))) {
-    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+    return data({ error: ERROR_REPOST_CHAIN }, { status: 400 });
   }
-  return json({ scheduledRepostData: postsData });
+  return { scheduledRepostData: postsData };
 }
 
 /**
@@ -167,7 +167,7 @@ async function handleBulkQuote(formData: FormData, userId: string) {
   }
   const postsData = await getPostsByIds({ ids: result.data.postIds, userId });
   if (postsData.some((p) => isPureRepostSourcePost(p))) {
-    return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+    return data({ error: ERROR_REPOST_CHAIN }, { status: 400 });
   }
 
   // Transform posts data into quote post format
@@ -214,7 +214,7 @@ async function handleBulkQuote(formData: FormData, userId: string) {
     };
   });
 
-  return json({ quotePostData: quotePostsData });
+  return { quotePostData: quotePostsData };
 }
 
 /**
@@ -231,15 +231,15 @@ async function handleRepost(formData: FormData, userId: string) {
     // Get the original post data
     const postsData = await getPostsByIds({ ids: [postId], userId });
     if (postsData.length === 0) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     if (isPureRepostSourcePost(originalPost)) {
-      return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+      return data({ error: ERROR_REPOST_CHAIN }, { status: 400 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -250,7 +250,7 @@ async function handleRepost(formData: FormData, userId: string) {
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json({ error: "Invalid event data" }, { status: 400 });
+      return data({ error: "Invalid event data" }, { status: 400 });
     }
 
     const eventIdValue = originalEvent["id"];
@@ -276,17 +276,17 @@ async function handleRepost(formData: FormData, userId: string) {
     };
 
     // Return the unsigned event data for client-side signing
-    return json({
+    return {
       repostEventData: kind6EventData,
       originalPost: originalPost,
-    });
+    };
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
       postId: formData.get("postId") as string,
       message: "Repost error",
     });
-    return json(
+    return data(
       {
         error: true,
         message:
@@ -311,15 +311,15 @@ async function handleQuote(formData: FormData, userId: string) {
     // Get the original post data
     const postsData = await getPostsByIds({ ids: [postId], userId });
     if (postsData.length === 0) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     if (isPureRepostSourcePost(originalPost)) {
-      return json({ error: ERROR_REPOST_CHAIN }, { status: 400 });
+      return data({ error: ERROR_REPOST_CHAIN }, { status: 400 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -330,7 +330,7 @@ async function handleQuote(formData: FormData, userId: string) {
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json({ error: "Invalid event data" }, { status: 400 });
+      return data({ error: "Invalid event data" }, { status: 400 });
     }
 
     const eventIdValue = originalEvent["id"];
@@ -355,14 +355,14 @@ async function handleQuote(formData: FormData, userId: string) {
       originalCaption: originalPost.caption ?? "",
     };
 
-    return json({ quotePostData: [quotePostData] });
+    return { quotePostData: [quotePostData] };
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
       postId: formData.get("postId") as string,
       message: "Quote post error",
     });
-    return json(
+    return data(
       {
         error: true,
         message:
@@ -392,12 +392,12 @@ async function handleLongformRepost(formData: FormData, userId: string) {
       userId,
     });
     if (longformData.length === 0) {
-      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = longformData[0];
     if (!originalPost) {
-      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -407,7 +407,7 @@ async function handleLongformRepost(formData: FormData, userId: string) {
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json(
+      return data(
         { error: "Longform post has no associated NOSTR event" },
         { status: 400 }
       );
@@ -454,18 +454,18 @@ async function handleLongformRepost(formData: FormData, userId: string) {
     };
 
     // Return the unsigned event data for client-side signing
-    return json({
+    return {
       longformRepostEventData: kind1EventData,
       originalPost: originalPost,
       naddr: naddr,
-    });
+    };
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
       longformPostId,
       message: "Longform repost error",
     });
-    return json(
+    return data(
       {
         error: true,
         message:
@@ -495,12 +495,12 @@ async function handleLongformQuote(formData: FormData, userId: string) {
       userId,
     });
     if (longformData.length === 0) {
-      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
 
     const originalPost = longformData[0];
     if (!originalPost) {
-      return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -510,7 +510,7 @@ async function handleLongformQuote(formData: FormData, userId: string) {
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json(
+      return data(
         { error: "Longform post has no associated NOSTR event" },
         { status: 400 }
       );
@@ -557,14 +557,14 @@ async function handleLongformQuote(formData: FormData, userId: string) {
       naddr: naddr,
     };
 
-    return json({ longformQuotePostData: [quotePostData] });
+    return { longformQuotePostData: [quotePostData] };
   } catch (error: unknown) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
       longformPostId: formData.get("longformPostId") as string,
       message: "Longform quote post error",
     });
-    return json(
+    return data(
       {
         error: true,
         message:
@@ -611,6 +611,6 @@ export async function publishedPostsAction({ request }: { request: Request }) {
     case "longformQuote":
       return handleLongformQuote(formData, userId);
     default:
-      return json({ error: "Invalid action" }, { status: 400 });
+      return data({ error: "Invalid action" }, { status: 400 });
   }
 }

@@ -1,6 +1,6 @@
 import { BroadcastSuppressionReasonCode } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 import { useState } from "react";
 
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const profileMap = Object.fromEntries(
     profiles.map((p) => [p.pubkey.toLowerCase(), p])
   );
-  return json({ rows, notice, savedAudiences, profileMap });
+  return { rows, notice, savedAudiences, profileMap };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -96,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect("/dashboard/broadcasts/suppression");
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function BroadcastSuppressionRoute() {

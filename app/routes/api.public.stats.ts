@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import {
   allowedStatsOrigin,
@@ -46,9 +46,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return new Response("Not found", { status: 404 });
   }
   if (await limited(request)) {
-    return json({ error: "Too many requests" }, { status: 429 });
+    return Response.json({ error: "Too many requests" }, { status: 429 });
   }
   const origin = new URL(request.url).origin;
   const stats = await getPublicStats(origin);
-  return json(stats, { headers: corsHeaders(request) });
+  return Response.json(stats, { headers: corsHeaders(request) });
 }

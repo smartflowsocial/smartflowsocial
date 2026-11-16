@@ -3,7 +3,7 @@
  */
 
 import { NWCClient } from "@getalby/sdk";
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 
 import {
   createPlanInvoice,
@@ -77,11 +77,11 @@ async function tryNwcAutoRenewTopUpResponse(params: {
   userId: string;
   planId: string;
   invoice: InvoiceResponse;
-}): Promise<Response | null> {
+}) {
   const { userId, planId, invoice } = params;
   const decryptedNwc = await getDecryptedUserNWC(userId);
   if (!decryptedNwc) {
-    return json(
+    return data(
       {
         error:
           "Connect a wallet with Nostr Wallet Connect to pay this top-up via NWC.",
@@ -123,11 +123,11 @@ async function tryNwcAutoRenewTopUpResponse(params: {
   for (let i = 0; i < 3; i++) {
     const verification = await manuallyVerifyPayment(invoice.paymentId);
     if (verification.success && verification.paid) {
-      return json({
+      return {
         success: true,
         paid: true,
         message: "Top-up completed successfully.",
-      });
+      };
     }
     await sleep(500);
   }
@@ -171,10 +171,7 @@ function topUpInvoiceJsonPayload(params: {
   };
 }
 
-async function handleCancelAtPeriodEnd(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleCancelAtPeriodEnd(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, cancelAtPeriodEndSchema);
   if (!result.success) {
     return result.response;
@@ -182,25 +179,25 @@ async function handleCancelAtPeriodEnd(
 
   const subscription = await getUserSubscription(userId);
   if (!subscription) {
-    return json({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
+    return data({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
   }
   if (!subscription.Plan) {
-    return json({ error: ERROR_SUBSCRIPTION_PLAN_NOT_FOUND }, { status: 400 });
+    return data({ error: ERROR_SUBSCRIPTION_PLAN_NOT_FOUND }, { status: 400 });
   }
   if (Number(subscription.Plan.price) === 0) {
-    return json(
+    return data(
       { error: "Free plan cannot be canceled at period end" },
       { status: 400 }
     );
   }
   if (subscription.Plan.enableLifetimeAccess) {
-    return json(
+    return data(
       { error: "Lifetime plans cannot be canceled at period end" },
       { status: 400 }
     );
   }
   if (subscription.cancelAtPeriodEnd) {
-    return json(
+    return data(
       { error: "Subscription is already set to cancel at period end" },
       { status: 400 }
     );
@@ -208,17 +205,14 @@ async function handleCancelAtPeriodEnd(
 
   await updateSubscriptionCancelAtPeriodEnd(userId, true);
 
-  return json({
+  return {
     success: true,
     message:
       "Your subscription will cancel at the end of the current billing period. You will keep access until then.",
-  });
+  };
 }
 
-async function handleScheduleDowngrade(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleScheduleDowngrade(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, scheduleDowngradeSchema);
   if (!result.success) {
     return result.response;
@@ -226,32 +220,32 @@ async function handleScheduleDowngrade(
 
   const plan = await getPlanById(result.data.planId);
   if (!plan) {
-    return json({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
+    return data({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
   }
 
   const subscription = await getUserSubscription(userId);
   if (!subscription) {
-    return json({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
+    return data({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
   }
   if (!subscription.Plan) {
-    return json({ error: ERROR_SUBSCRIPTION_PLAN_NOT_FOUND }, { status: 400 });
+    return data({ error: ERROR_SUBSCRIPTION_PLAN_NOT_FOUND }, { status: 400 });
   }
   if (Number(subscription.Plan.price) === 0) {
-    return json({ error: "You are already on the free plan" }, { status: 400 });
+    return data({ error: "You are already on the free plan" }, { status: 400 });
   }
   if (subscription.Plan.enableLifetimeAccess) {
-    return json(
+    return data(
       { error: "Lifetime plans cannot be downgraded" },
       { status: 400 }
     );
   }
   if (subscription.planId === result.data.planId) {
-    return json({ error: "You are already on this plan" }, { status: 400 });
+    return data({ error: "You are already on this plan" }, { status: 400 });
   }
 
   const metadata = (subscription.metadata ?? {}) as Record<string, unknown>;
   if (subscription.cancelAtPeriodEnd && metadata["scheduledPlanId"]) {
-    return json({ error: "A downgrade is already scheduled" }, { status: 400 });
+    return data({ error: "A downgrade is already scheduled" }, { status: 400 });
   }
 
   await updateSubscriptionCancelAtPeriodEndAndMetadata(userId, {
@@ -259,16 +253,13 @@ async function handleScheduleDowngrade(
     metadata: { ...metadata, scheduledPlanId: result.data.planId },
   });
 
-  return json({
+  return {
     success: true,
     message: `You will be moved to ${plan.name} at the end of your current billing period. You will keep access until ${subscription.currentPeriodEnd?.toLocaleDateString() ?? "period end"}.`,
-  });
+  };
 }
 
-async function handleSwitchToFreePlan(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleSwitchToFreePlan(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, switchToFreePlanSchema);
   if (!result.success) {
     return result.response;
@@ -276,10 +267,10 @@ async function handleSwitchToFreePlan(
 
   const plan = await getPlanById(result.data.planId);
   if (!plan) {
-    return json({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
+    return data({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
   }
   if (Number(plan.price) > 0) {
-    return json(
+    return data(
       { error: "This action is only allowed for free plans" },
       { status: 400 }
     );
@@ -291,16 +282,13 @@ async function handleSwitchToFreePlan(
     `free_${Date.now()}_${userId}`
   );
 
-  return json({
+  return {
     success: true,
     message: "Successfully switched to free plan",
-  });
+  };
 }
 
-async function handleTopUpSubscription(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleTopUpSubscription(userId: string, formData: FormData) {
   try {
     const result = validateFormDataOrRespond(formData, topUpSubscriptionSchema);
     if (!result.success) {
@@ -309,16 +297,16 @@ async function handleTopUpSubscription(
 
     const subscription = await getUserSubscription(userId);
     if (!subscription) {
-      return json({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
+      return data({ error: ERROR_NO_ACTIVE_SUBSCRIPTION }, { status: 400 });
     }
     if (!subscription.Plan) {
-      return json(
+      return data(
         { error: ERROR_SUBSCRIPTION_PLAN_NOT_FOUND },
         { status: 400 }
       );
     }
     if (subscription.Plan.enableLifetimeAccess) {
-      return json(
+      return data(
         { error: "Lifetime plans cannot be topped up" },
         { status: 400 }
       );
@@ -326,10 +314,10 @@ async function handleTopUpSubscription(
 
     const plan = await getPlanById(result.data.targetPlanId);
     if (!plan) {
-      return json({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
+      return data({ error: ERROR_PLAN_NOT_FOUND }, { status: 400 });
     }
     if (!plan.isActive) {
-      return json({ error: "Plan is not available" }, { status: 400 });
+      return data({ error: "Plan is not available" }, { status: 400 });
     }
 
     const cadence = result.data.billingCadence;
@@ -344,7 +332,7 @@ async function handleTopUpSubscription(
     });
 
     if (priceUsd == null) {
-      return json(
+      return data(
         {
           error: "This top-up option is not available for the selected plan.",
         },
@@ -363,7 +351,7 @@ async function handleTopUpSubscription(
     });
 
     if (invoice.invoice === "free_plan") {
-      return json({ error: "Free plan cannot be topped up" }, { status: 400 });
+      return data({ error: "Free plan cannot be topped up" }, { status: 400 });
     }
 
     if (billingPaymentMethod === "nwc_auto_renew") {
@@ -377,25 +365,23 @@ async function handleTopUpSubscription(
       }
     }
 
-    return json(
-      topUpInvoiceJsonPayload({
-        invoice,
-        cadence,
-        durationMonths,
-        billingPaymentMethod,
-        defaultPlanName: plan.name,
-        defaultPlanId: plan.id,
-      })
-    );
+    return topUpInvoiceJsonPayload({
+      invoice,
+      cadence,
+      durationMonths,
+      billingPaymentMethod,
+      defaultPlanName: plan.name,
+      defaultPlanId: plan.id,
+    });
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       userId,
       message: "Top-up subscription failed",
     });
     if (error instanceof ExternalServiceError) {
-      return json({ error: error.message }, { status: error.statusCode });
+      return data({ error: error.message }, { status: error.statusCode });
     }
-    return json(
+    return data(
       {
         error:
           "We could not start this top-up. Check that payments are configured, then try again or contact support.",
@@ -409,7 +395,7 @@ export async function handleSubscriptionAction(
   userId: string,
   action: string,
   formData: FormData
-): Promise<Response | null> {
+) {
   if (action === "cancel_at_period_end") {
     return handleCancelAtPeriodEnd(userId, formData);
   }

@@ -1,6 +1,4 @@
 import {
-  defer,
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
 } from "@remix-run/node";
@@ -41,11 +39,11 @@ async function loadCalendarQueueValidated(
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (isRemixResourceRequest(request)) {
-      return json(await loadCalendarQueueValidated(request, params));
+      return await loadCalendarQueueValidated(request, params);
     }
-    return defer({
+    return {
       calendarQueue: loadCalendarQueueValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -76,7 +74,7 @@ interface CalendarQueueDeferredLoaderData {
 }
 
 function CalendarQueueFeedRoute() {
-  const { calendarQueue } = useLoaderData() as CalendarQueueDeferredLoaderData;
+  const { calendarQueue } = useLoaderData<CalendarQueueDeferredLoaderData>();
 
   return (
     <Suspense fallback={<CalendarQueuePageSkeleton />}>

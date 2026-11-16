@@ -1,6 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import {
-  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -36,7 +35,7 @@ type AssertFunction = (
 ) => asserts condition;
 
 function createEditorJsUrlResponse(url: string) {
-  return json({
+  return Response.json({
     success: 1,
     file: {
       url,
@@ -208,7 +207,7 @@ export const action = withCSRFProtection(
         }
 
         // Return EditorJS compatible response
-        return json({
+        return Response.json({
           success: 1,
           file: {
             url: imageUrl,
@@ -248,5 +247,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return json({ message: "EditorJS Image Upload API" });
+  return Response.json({ message: "EditorJS Image Upload API" });
 }

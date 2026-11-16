@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { validateEvent } from "nostr-tools";
 
@@ -47,11 +46,11 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return json({ error: "Method not allowed" }, { status: 405 });
+        return Response.json({ error: "Method not allowed" }, { status: 405 });
       }
 
       if (!featureFlags.nostrAuthV2Enabled) {
-        return json(
+        return Response.json(
           {
             success: false,
             error: {
@@ -201,7 +200,7 @@ export const action = withCSRFProtection(
       headers.append("Set-Cookie", sessionCookie);
       headers.append("Set-Cookie", clearReferralCookie);
 
-      return json(
+      return Response.json(
         {
           success: true,
           redirectTo: "/dashboard",

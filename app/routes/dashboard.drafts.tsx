@@ -1,8 +1,7 @@
 import {
-  defer,
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  data,
 } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
@@ -46,11 +45,11 @@ async function loadDraftsValidated(
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (isRemixResourceRequest(request)) {
-      return json(await loadDraftsValidated(request, params));
+      return await loadDraftsValidated(request, params);
     }
-    return defer({
+    return {
       drafts: loadDraftsValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -109,10 +108,10 @@ export const action = withCSRFProtection(
       }
 
       if (typeof result === "object" && "error" in result && result.error) {
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       if (error instanceof Response) {
         return error;
@@ -128,7 +127,7 @@ interface DraftsDeferredLoaderData {
 }
 
 function DraftsFeedRoute() {
-  const { drafts } = useLoaderData() as DraftsDeferredLoaderData;
+  const { drafts } = useLoaderData<DraftsDeferredLoaderData>();
 
   return (
     <Suspense fallback={<DraftsPageSkeleton />}>

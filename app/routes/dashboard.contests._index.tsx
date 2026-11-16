@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -86,7 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sourcePostIds
   );
 
-  return json({
+  return {
     contests: filteredByQ.map((c) => ({
       id: c.id,
       title: c.title ?? `Contest ${c.id.slice(0, 8)}`,
@@ -105,7 +105,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totals: { totalSatsPlanned, totalEntries },
     kpiCounts,
     filters: { status, metric, sort, q },
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -120,29 +120,29 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "delete") {
     const contestId = formData.get("contestId");
     if (typeof contestId !== "string" || !contestId.trim()) {
-      return json({ error: "Missing contest id" }, { status: 400 });
+      return data({ error: "Missing contest id" }, { status: 400 });
     }
     const result = await deleteContest(userId, contestId);
     if (!result.success) {
-      return json({ error: result.error ?? "Delete failed" }, { status: 400 });
+      return data({ error: result.error ?? "Delete failed" }, { status: 400 });
     }
     return redirect("/dashboard/contests");
   }
   if (intent === "duplicate") {
     const contestId = formData.get("contestId");
     if (typeof contestId !== "string" || !contestId.trim()) {
-      return json({ error: "Missing contest id" }, { status: 400 });
+      return data({ error: "Missing contest id" }, { status: 400 });
     }
     const result = await duplicateContest(userId, contestId);
     if (!result.success || !result.newId) {
-      return json(
+      return data(
         { error: result.error ?? "Duplicate failed" },
         { status: 400 }
       );
     }
     return redirect(`/dashboard/contests/detail/${result.newId}`);
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function contestStatusPillClass(status: string): string {

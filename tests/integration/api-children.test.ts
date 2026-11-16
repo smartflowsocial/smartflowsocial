@@ -3,7 +3,7 @@
  *
  * Tests the API endpoint in app/routes/api.children.tsx
  */
-import { json } from "@remix-run/node";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
@@ -53,14 +53,14 @@ describe("API: Children", () => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
     // Set default mock for error handler
-    mockHandleChildrenApiError.mockReturnValue(json({ children: [] }));
+    mockHandleChildrenApiError.mockReturnValue(Response.json({ children: [] }));
     // Create loader with injected dependencies for each test
     loader = createLoader(mockLoadChildrenData, mockHandleChildrenApiError);
   });
 
   describe("Successful Requests", () => {
     it("should return children for parent with pro subscription", async () => {
-      const expectedResponse = json({
+      const expectedResponse = Response.json({
         children: [
           {
             npub: "npub-child-1",
@@ -123,7 +123,7 @@ describe("API: Children", () => {
 
     it("should return children for founder subscription", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -154,7 +154,7 @@ describe("API: Children", () => {
 
     it("should handle case-insensitive plan matching", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -185,7 +185,7 @@ describe("API: Children", () => {
 
     it("should handle children with missing profile data", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({
+        Response.json({
           children: [
             {
               npub: "npub-child-1",
@@ -232,7 +232,7 @@ describe("API: Children", () => {
 
     it("should handle children with object profile data", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({
+        Response.json({
           children: [
             {
               npub: "npub-child-1",
@@ -276,7 +276,7 @@ describe("API: Children", () => {
   describe("Access Control", () => {
     it("should return empty array when user has no npub", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -307,7 +307,7 @@ describe("API: Children", () => {
 
     it("should return empty array when user is a child account", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -338,7 +338,7 @@ describe("API: Children", () => {
 
     it("should return empty array when user doesn't have pro/founder subscription", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -369,7 +369,7 @@ describe("API: Children", () => {
 
     it("should return empty array when subscription is null", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({ children: [] })
+        Response.json({ children: [] })
       );
 
       const request = new Request("http://localhost:3000/api/children");
@@ -414,7 +414,7 @@ describe("API: Children", () => {
         if (error instanceof Response) {
           throw error;
         }
-        return json({ children: [] });
+        return Response.json({ children: [] });
       });
 
       const request = new Request("http://localhost:3000/api/children");
@@ -441,7 +441,7 @@ describe("API: Children", () => {
       mockLoadChildrenData.mockRejectedValue(dbError);
 
       // Mock the error handler to return a graceful response
-      const errorResponse = json({ children: [] });
+      const errorResponse = Response.json({ children: [] });
       mockHandleChildrenApiError.mockReturnValue(errorResponse);
 
       const request = new Request("http://localhost:3000/api/children");
@@ -463,7 +463,7 @@ describe("API: Children", () => {
 
     it("should handle invalid JSON in nostrProfile", async () => {
       (loadChildrenData as ReturnType<typeof vi.fn>).mockResolvedValue(
-        json({
+        Response.json({
           children: [
             {
               npub: "npub-child-1",

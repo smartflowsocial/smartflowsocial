@@ -3,7 +3,7 @@
  *
  * Tests the API endpoint in app/routes/api.parent.tsx
  */
-import { json } from "@remix-run/node";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
@@ -51,7 +51,7 @@ describe("API: Parent", () => {
     vi.clearAllMocks();
     (requireUserId as ReturnType<typeof vi.fn>).mockResolvedValue(TEST_USER_ID);
     // Set default mock for error handler
-    mockHandleParentApiError.mockReturnValue(json({ parent: null }));
+    mockHandleParentApiError.mockReturnValue(Response.json({ parent: null }));
     // Create loader with injected dependencies for each test
     loader = createLoader(mockLoadParentData, mockHandleParentApiError);
   });
@@ -59,7 +59,7 @@ describe("API: Parent", () => {
   describe("Successful Requests", () => {
     it("should return parent information for child account", async () => {
       mockLoadParentData.mockResolvedValue(
-        json({
+        Response.json({
           parent: {
             npub: "npub-parent",
             name: "Parent User",
@@ -105,7 +105,7 @@ describe("API: Parent", () => {
 
     it("should handle parent with object profile data", async () => {
       mockLoadParentData.mockResolvedValue(
-        json({
+        Response.json({
           parent: {
             npub: "npub-parent",
             name: "Parent User",
@@ -144,7 +144,7 @@ describe("API: Parent", () => {
 
     it("should handle parent with missing profile data", async () => {
       mockLoadParentData.mockResolvedValue(
-        json({
+        Response.json({
           parent: {
             npub: "npub-parent",
             name: undefined,
@@ -188,7 +188,7 @@ describe("API: Parent", () => {
 
   describe("Access Control", () => {
     it("should return null when user is not a child account", async () => {
-      mockLoadParentData.mockResolvedValue(json({ parent: null }));
+      mockLoadParentData.mockResolvedValue(Response.json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
 
@@ -217,7 +217,7 @@ describe("API: Parent", () => {
     });
 
     it("should return null when user has no parentNpub", async () => {
-      mockLoadParentData.mockResolvedValue(json({ parent: null }));
+      mockLoadParentData.mockResolvedValue(Response.json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
 
@@ -246,7 +246,7 @@ describe("API: Parent", () => {
     });
 
     it("should return null when parent not found", async () => {
-      mockLoadParentData.mockResolvedValue(json({ parent: null }));
+      mockLoadParentData.mockResolvedValue(Response.json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
 
@@ -290,7 +290,7 @@ describe("API: Parent", () => {
         if (error instanceof Response) {
           throw error;
         }
-        return json({ parent: null });
+        return Response.json({ parent: null });
       });
 
       const request = new Request("http://localhost:3000/api/parent");
@@ -316,7 +316,7 @@ describe("API: Parent", () => {
       mockLoadParentData.mockRejectedValue(new Error("Database error"));
 
       // Mock the error handler to return a graceful response
-      mockHandleParentApiError.mockReturnValue(json({ parent: null }));
+      mockHandleParentApiError.mockReturnValue(Response.json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
       const loaderArgs = { request, params: {}, context: {} };
@@ -336,7 +336,7 @@ describe("API: Parent", () => {
 
     it("should handle invalid JSON in parent profile", async () => {
       mockLoadParentData.mockResolvedValue(
-        json({
+        Response.json({
           parent: {
             npub: "npub-parent",
             name: undefined,

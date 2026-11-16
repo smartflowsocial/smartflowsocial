@@ -1,8 +1,8 @@
 import {
-  json,
   redirect,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  data,
 } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -57,7 +57,7 @@ export const action = withCSRFProtection(
         result.error
       ) {
         /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
 
       // Type narrowing: check if result has redirect property
@@ -72,7 +72,7 @@ export const action = withCSRFProtection(
         return redirect(result.redirect);
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

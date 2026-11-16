@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { upsertLinkedActionForEngagementItem } from "~/features/engagement/repositories/engagement-item-state.server";
@@ -66,7 +65,7 @@ function parseBody(value: unknown): {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return Response.json(
       { success: false, error: "Method not allowed" },
       { status: 405 }
     );
@@ -75,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const userId = await requireUserId(request);
     const body = parseBody(await request.json());
     if (!body) {
-      return json(
+      return Response.json(
         { success: false, error: "eventId and kind are required" },
         { status: 400 }
       );
@@ -91,7 +90,7 @@ export async function action({ request }: ActionFunctionArgs) {
       label: body.label,
       scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
     });
-    return json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     if (error instanceof Response) return error;
     const { handleActionError } = await import("~/lib/error-handler.server");

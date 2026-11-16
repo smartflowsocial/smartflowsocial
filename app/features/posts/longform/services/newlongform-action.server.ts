@@ -4,7 +4,6 @@
  */
 
 import {
-  json,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
 } from "@remix-run/node";
@@ -30,7 +29,7 @@ import {
 export async function handleNewLongFormAction(
   userId: string,
   request: Request
-): Promise<Response> {
+) {
   const user = await getUserById(userId);
   if (!user) {
     return new Response("User not found", { status: 404 });
@@ -128,5 +127,5 @@ export async function handleNewLongFormAction(
     );
   }
 
-  return json({ success: false });
+  return { success: false };
 }

@@ -10,7 +10,6 @@
  * - Create test fixtures
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Example: Testing a simple loader function directly
 // This approach tests the loader logic without the full Remix request/response cycle
@@ -32,7 +31,7 @@ describe("Example Loader Integration Tests", () => {
       const url = new URL(request.url);
       const query = url.searchParams.get("q");
 
-      return json({
+      return Response.json({
         query,
         results: query ? [`Result for ${query}`] : [],
       });

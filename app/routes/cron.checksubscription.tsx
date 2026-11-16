@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { checkAndRenewSubscriptions } from "~/features/payments";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
@@ -26,7 +25,7 @@ export async function loader(args?: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
   return runSubscriptionCron(request);
 }

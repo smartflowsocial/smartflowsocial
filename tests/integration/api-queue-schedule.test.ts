@@ -22,6 +22,7 @@ vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
   formatScheduleTimeForInput: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -81,10 +82,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -146,10 +144,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -199,10 +194,7 @@ describe("API: Queue Schedule", () => {
       });
 
       const response = await action({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -234,10 +226,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -346,10 +335,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -387,10 +373,7 @@ describe("API: Queue Schedule", () => {
 
       const response = await action({ request, params: {}, context: {} });
       // Response should be rethrown by error handler, so we should get a redirect
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       expect(responseObj.status).toBe(302);
       expect(responseObj.headers.get("Location")).toBe("/login");
     });
@@ -409,10 +392,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -449,10 +429,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -496,10 +473,7 @@ describe("API: Queue Schedule", () => {
       }
       const actionArgs: ActionArgs = { request, params: {}, context: {} };
       const response = await action(actionArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

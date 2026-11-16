@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth/session.server";
@@ -63,13 +62,13 @@ export const action = withCSRFProtection(
 
       const paymentUserId = await getPaymentUserId(paymentId);
       if (!paymentUserId) {
-        return json(
+        return Response.json(
           { success: false, error: "Payment not found" },
           { status: 404, headers: { "Content-Type": CONTENT_TYPE_JSON } }
         );
       }
       if (paymentUserId !== userId) {
-        return json(
+        return Response.json(
           { success: false, error: "Forbidden" },
           { status: 403, headers: { "Content-Type": CONTENT_TYPE_JSON } }
         );
@@ -90,7 +89,7 @@ export const action = withCSRFProtection(
 
 // Handle GET requests with a proper error response
 export async function loader() {
-  return json(
+  return Response.json(
     { success: false, error: "GET method not allowed. Use POST." },
     {
       status: 405,

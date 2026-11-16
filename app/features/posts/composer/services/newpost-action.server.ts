@@ -5,10 +5,10 @@
 /* eslint-disable sonarjs/cognitive-complexity -- action router branches by _action */
 
 import {
-  json,
   redirect,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
+  data,
 } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
@@ -50,17 +50,17 @@ async function handleComposerUpdateMutation(
   userId: string,
   formData: FormData,
   mode: "edit_scheduled" | "edit_follow_up"
-): Promise<Response> {
+) {
   const targetId =
     mode === "edit_follow_up"
       ? String(formData.get("followUpActionId") ?? "")
       : String(formData.get("scheduledActionId") ?? "");
   if (!targetId) {
-    return json({ error: "Missing edit target id" }, { status: 400 });
+    return data({ error: "Missing edit target id" }, { status: 400 });
   }
   const post = await getPostById({ id: targetId, userId });
   if (!post) {
-    return json({ error: "Scheduled item not found" }, { status: 404 });
+    return data({ error: "Scheduled item not found" }, { status: 404 });
   }
   const postMeta = post as {
     dependencyMode?: string | null;
@@ -69,13 +69,13 @@ async function handleComposerUpdateMutation(
     scheduledAtUtc?: Date | null;
   };
   if (mode === "edit_follow_up" && postMeta.dependencyMode !== "attached") {
-    return json(
+    return data(
       { error: "This scheduled item is not an attached follow-up." },
       { status: 400 }
     );
   }
   if (mode === "edit_scheduled" && postMeta.dependencyMode === "attached") {
-    return json(
+    return data(
       { error: "Use follow-up editing for attached follow-ups." },
       { status: 400 }
     );
@@ -90,7 +90,7 @@ async function handleComposerUpdateMutation(
   const isThreadUpdate = String(formData.get("segments") ?? "").trim() !== "";
   const attachmentDiffRaw = String(formData.get("attachmentDiff") ?? "").trim();
   if (!attachmentDiffRaw && !isThreadUpdate) {
-    return json(
+    return data(
       { error: "Attachment diff is required when editing scheduled content." },
       { status: 400 }
     );
@@ -108,7 +108,7 @@ async function handleComposerUpdateMutation(
         added?: Array<{ localId?: string }>;
       };
     } catch {
-      return json(
+      return data(
         { error: "Attachment diff is invalid JSON." },
         { status: 400 }
       );
@@ -138,7 +138,7 @@ async function handleComposerUpdateMutation(
   );
   for (const removedId of removedIds) {
     if (!existingIds.has(removedId)) {
-      return json(
+      return data(
         {
           error: "Attachment removal payload is inconsistent with saved media.",
         },
@@ -151,7 +151,7 @@ async function handleComposerUpdateMutation(
   const scheduledFor =
     scheduledForRaw.trim() !== "" ? parseInt(scheduledForRaw, 10) : null;
   if (scheduledForRaw.trim() !== "" && Number.isNaN(scheduledFor)) {
-    return json({ error: "Invalid scheduled time." }, { status: 400 });
+    return data({ error: "Invalid scheduled time." }, { status: 400 });
   }
 
   if (mode === "edit_follow_up") {
@@ -168,14 +168,14 @@ async function handleComposerUpdateMutation(
       if (parent?.scheduledAtUtc && effectiveScheduledFor != null) {
         const parentUnix = Math.floor(parent.scheduledAtUtc.getTime() / 1000);
         if (effectiveScheduledFor < parentUnix) {
-          return json(
+          return data(
             { error: "Follow-up must be scheduled at or after its parent." },
             { status: 400 }
           );
         }
       }
     } else {
-      return json(
+      return data(
         { error: "Follow-up parent relationship is missing." },
         { status: 400 }
       );
@@ -234,35 +234,26 @@ async function handleComposerUpdateMutation(
   return redirect(`/dashboard/scheduled?scheduled=${updated.id}`);
 }
 
-async function handleUpdateScheduledAction(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleUpdateScheduledAction(userId: string, formData: FormData) {
   return handleComposerUpdateMutation(userId, formData, "edit_scheduled");
 }
 
-async function handleUpdateFollowUpAction(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleUpdateFollowUpAction(userId: string, formData: FormData) {
   return handleComposerUpdateMutation(userId, formData, "edit_follow_up");
 }
 
 /**
  * Main action handler for new post page
  */
-export async function handleNewPostAction(
-  userId: string,
-  request: Request
-): Promise<Response> {
+export async function handleNewPostAction(userId: string, request: Request) {
   try {
     return await handleNewPostActionImpl(userId, request);
   } catch (e) {
     if (e instanceof ScheduleCapExceededError) {
-      return json({ error: e.message }, { status: 403 });
+      return data({ error: e.message }, { status: 403 });
     }
     if (e instanceof PublishEventMismatchError) {
-      return json(
+      return data(
         {
           error:
             "This post id is already published with a different signed event. Please try publishing again as a new post.",
@@ -276,10 +267,7 @@ export async function handleNewPostAction(
   }
 }
 
-async function handleNewPostActionImpl(
-  userId: string,
-  request: Request
-): Promise<Response> {
+async function handleNewPostActionImpl(userId: string, request: Request) {
   // Extract correlation ID from request headers
   const correlationId = extractCorrelationId(request.headers);
 
@@ -334,7 +322,7 @@ async function handleNewPostActionImpl(
       action: _action || "unknown",
       route: "/dashboard/compose",
     });
-    return json(
+    return data(
       {
         success: false,
         error: "Upload media client-side via Blossom first, then submit URLs.",
@@ -349,12 +337,12 @@ async function handleNewPostActionImpl(
   ) {
     const result = handleUploadPreview(formData);
     if (!result.success) {
-      return json(
+      return data(
         { error: result.error ?? "Upload preview failed" },
         { status: 400 }
       );
     }
-    return json(result);
+    return result;
   }
 
   if (_action === "save-draft") {
@@ -365,11 +353,11 @@ async function handleNewPostActionImpl(
   if (_action === "update-draft") {
     const draftId = String(formData.get("draftId") ?? "").trim();
     if (!draftId) {
-      return json({ error: "Missing draftId for update." }, { status: 400 });
+      return data({ error: "Missing draftId for update." }, { status: 400 });
     }
     const existingDraft = await getPostById({ id: draftId, userId });
     if (existingDraft?.currentState !== "DRAFT") {
-      return json(
+      return data(
         { error: "Draft no longer exists or is not editable." },
         { status: 404 }
       );
@@ -520,6 +508,6 @@ async function handleNewPostActionImpl(
     return handleDraftImages(handlerParams);
   }
 
-  return json({ success: false });
+  return { success: false };
 }
 /* eslint-enable sonarjs/cognitive-complexity */

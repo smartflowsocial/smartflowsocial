@@ -4,9 +4,9 @@
  */
 
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  data,
 } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
@@ -27,8 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const data = await loadNewLongFormData(userId);
-  return json(data);
+  return await loadNewLongFormData(userId);
 }
 
 export const action = withCSRFProtection(
@@ -41,7 +40,7 @@ export const action = withCSRFProtection(
     if (actionType === "createTemplate") {
       return await handleCreateTemplateFromScratchLongform(userId, formData);
     }
-    return json({ error: "Unknown action" }, { status: 400 });
+    return data({ error: "Unknown action" }, { status: 400 });
   }
 );
 

@@ -77,6 +77,7 @@ vi.mock("~/features/engagement/engagement-reply-templates.server", () => ({
   updateReplyTemplate: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { createFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { updateReplyTemplate } from "~/features/engagement/engagement-reply-templates.server";
@@ -149,7 +150,9 @@ describe("Settings Action Handler", () => {
           q: "npub1alice",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -176,7 +179,9 @@ describe("Settings Action Handler", () => {
           timezone: "America/New_York",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -203,7 +208,9 @@ describe("Settings Action Handler", () => {
           publishRelaySource: "app",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -234,7 +241,9 @@ describe("Settings Action Handler", () => {
           relays: "wss://relay1.com\n\nwss://relay2.com\n  \nwss://relay3.com",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -267,7 +276,9 @@ describe("Settings Action Handler", () => {
           blacklist: "npub1abc123\nnpub1def456\nnpub1ghi789",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -288,7 +299,9 @@ describe("Settings Action Handler", () => {
           blacklist: "npub1abc123\ninvalid-npub\nnpub1def456",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -316,7 +329,9 @@ describe("Settings Action Handler", () => {
           body: "Thanks for connecting!",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -339,7 +354,9 @@ describe("Settings Action Handler", () => {
           body: "Hi",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -363,7 +380,9 @@ describe("Settings Action Handler", () => {
           scheduleIntervals: "2\n3\n4\n5",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -385,7 +404,9 @@ describe("Settings Action Handler", () => {
           scheduleIntervals: "09:00\ninvalid\n15:00",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -415,7 +436,9 @@ describe("Settings Action Handler", () => {
           description: "Tags for marketing posts",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -438,7 +461,9 @@ describe("Settings Action Handler", () => {
           tags: "#marketing",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -463,7 +488,9 @@ describe("Settings Action Handler", () => {
           tags: "#marketing",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -494,7 +521,9 @@ describe("Settings Action Handler", () => {
           description: "Updated description",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -519,7 +548,9 @@ describe("Settings Action Handler", () => {
           tags: "#marketing",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -545,7 +576,9 @@ describe("Settings Action Handler", () => {
           id: "preset-123",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -564,7 +597,9 @@ describe("Settings Action Handler", () => {
           _action: "delete_hashtag_preset",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -607,7 +642,9 @@ describe("Settings Action Handler", () => {
           hashTagPresetId: "preset-123",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
 
         const data: {
@@ -666,7 +703,9 @@ describe("Settings Action Handler", () => {
           hashTagPresetId: "none", // Required by schema, "none" transforms to null
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
 
         const data: {
@@ -712,7 +751,9 @@ describe("Settings Action Handler", () => {
           color: "#FF5733",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -741,7 +782,9 @@ describe("Settings Action Handler", () => {
           hashTagPresetId: "invalid-preset",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -767,7 +810,9 @@ describe("Settings Action Handler", () => {
           id: "queue-123",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const dataRaw: unknown = await result.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -818,7 +863,9 @@ describe("Settings Action Handler", () => {
           deleteMode: "queue_and_scheduled",
         });
 
-        const result = await handleSettingsAction(TEST_USER_ID, formData);
+        const result = await asRouteResponse(
+          await handleSettingsAction(TEST_USER_ID, formData)
+        );
         const data = (await result.json()) as { success?: boolean };
 
         expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
@@ -872,7 +919,9 @@ describe("Settings Action Handler", () => {
         accessDurationMonths: "3",
       });
 
-      const res = await handleSettingsAction(TEST_USER_ID, formData);
+      const res = await asRouteResponse(
+        await handleSettingsAction(TEST_USER_ID, formData)
+      );
       const data = (await res.json()) as Record<string, unknown>;
 
       expect(res.status).toBe(200);

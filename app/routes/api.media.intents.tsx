@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { createMediaIngestIntent } from "~/features/upload";
@@ -39,7 +38,7 @@ export const action = withCSRFProtection(
         files.length === 0 ||
         !files.every((file) => isIntentFilePayload(file))
       ) {
-        return json({ error: "invalid_request" }, { status: 400 });
+        return Response.json({ error: "invalid_request" }, { status: 400 });
       }
       const intent = await createMediaIngestIntent(userId, files, {
         composeSessionId:
@@ -65,7 +64,7 @@ export const action = withCSRFProtection(
             : null,
         requestId,
       });
-      return json(intent);
+      return Response.json(intent);
     } catch (error) {
       if (error instanceof Response) return error;
       const { handleActionError } = await import("~/lib/error-handler.server");
@@ -75,5 +74,5 @@ export const action = withCSRFProtection(
 );
 
 export async function loader() {
-  return json({ message: "Media intent endpoint" });
+  return Response.json({ message: "Media intent endpoint" });
 }

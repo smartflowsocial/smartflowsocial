@@ -9,6 +9,7 @@
 
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
   prisma: {
@@ -46,6 +47,7 @@ vi.mock("~/features/posts/ui", () => ({
 }));
 
 import { userFactory } from "../factories";
+import { asRouteResponse } from "../utils/action-test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
@@ -119,7 +121,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -147,7 +149,7 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: { queueType: "posts" },
       } as unknown as LoaderFunctionArgs;
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -187,7 +189,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -211,7 +213,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -256,7 +258,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -284,7 +286,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
 
       expect(response.status).toBe(200);
       expect(loadFlowData).toHaveBeenCalledWith(
@@ -304,7 +306,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
 
       expect(response.status).toBe(200);
       expect(loadFlowData).toHaveBeenCalledWith(
@@ -324,7 +326,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
 
       expect(response.status).toBe(200);
       expect(loadFlowData).toHaveBeenCalledWith(
@@ -349,7 +351,7 @@ describe("Dashboard Loader Integration", () => {
         context: {},
       };
 
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       expect(response.status).toBe(401);
     });
 
@@ -365,7 +367,7 @@ describe("Dashboard Loader Integration", () => {
         context: {},
       };
 
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       expect(response.status).toBe(403);
     });
 
@@ -381,7 +383,7 @@ describe("Dashboard Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = await loader(loaderArgs);
+      const response = await asRouteResponse(await loader(loaderArgs));
       expect(response.status).toBe(500);
     });
   });

@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { z } from "zod";
 
 import { requireSession } from "~/features/auth";
@@ -13,7 +12,7 @@ const bodySchema = z.object({
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
 
     await requireSession(request);
@@ -22,12 +21,12 @@ export const action = withCSRFProtection(
     try {
       raw = await request.json();
     } catch {
-      return json({ error: "Invalid JSON" }, { status: 400 });
+      return Response.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
     const parsed = bodySchema.safeParse(raw);
     if (!parsed.success) {
-      return json({ error: "Invalid body" }, { status: 400 });
+      return Response.json({ error: "Invalid body" }, { status: 400 });
     }
 
     const hints: Record<string, string> = {};
@@ -39,6 +38,6 @@ export const action = withCSRFProtection(
       if (first) hints[lower] = first;
     }
 
-    return json({ hints });
+    return Response.json({ hints });
   }
 );

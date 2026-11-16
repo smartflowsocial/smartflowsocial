@@ -1,6 +1,5 @@
 import { NWCClient } from "@getalby/sdk";
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -44,24 +43,24 @@ async function payInvoiceWithNwcTimeout(
  * Used by the client zap flow before falling back to WebLN.
  */
 export async function loader(_args: LoaderFunctionArgs) {
-  return json({ error: "Use POST" }, { status: 405 });
+  return Response.json({ error: "Use POST" }, { status: 405 });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
 
   const userId = await getUserId(request);
   if (!userId) {
-    return json({ code: "UNAUTHENTICATED" as const }, { status: 401 });
+    return Response.json({ code: "UNAUTHENTICATED" as const }, { status: 401 });
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Invalid JSON" }, { status: 400 });
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const invoice =
@@ -73,12 +72,15 @@ export async function action({ request }: ActionFunctionArgs) {
       : "";
 
   if (!isLikelyBolt11(invoice)) {
-    return json({ error: "Invalid Lightning invoice" }, { status: 400 });
+    return Response.json(
+      { error: "Invalid Lightning invoice" },
+      { status: 400 }
+    );
   }
 
   const decryptedNwc = await getDecryptedUserNWC(userId);
   if (!decryptedNwc) {
-    return json({ code: "NO_NWC" as const }, { status: 400 });
+    return Response.json({ code: "NO_NWC" as const }, { status: 400 });
   }
 
   const nwcClient = new NWCClient({
@@ -92,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
       userId,
     });
     const message = err instanceof Error ? err.message : "NWC payment failed";
-    return json({ error: message }, { status: 502 });
+    return Response.json({ error: message }, { status: 502 });
   } finally {
     try {
       nwcClient.close();
@@ -102,5 +104,5 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   await touchUserNwcLastUsed(userId);
-  return json({ ok: true as const });
+  return Response.json({ ok: true as const });
 }

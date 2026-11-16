@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -32,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const errorRate = getErrorRate();
     const rateHigh = isErrorRateHigh(10); // 10 errors per minute threshold
 
-    return json({
+    return Response.json({
       summary: metrics,
       errorRate: {
         perMinute: errorRate,
@@ -44,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (topErrors) {
     const limit = parseInt(topErrors, 10) || 10;
-    return json({
+    return Response.json({
       topErrors: getTopErrorCodes(limit),
     });
   }
@@ -52,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (checkRate) {
     const rate = getErrorRate();
     const threshold = 10;
-    return json({
+    return Response.json({
       errorRate: rate,
       isHigh: rate > threshold,
       threshold,
@@ -60,7 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Return full metrics by default
-  return json({
+  return Response.json({
     metrics: getErrorMetrics(),
     errorRate: getErrorRate(),
   });

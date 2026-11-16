@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import {
   Await,
   Form,
@@ -79,12 +79,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   })();
 
   if (isRemixResourceRequest(request)) {
-    return json(await audiencesPromise);
+    return await audiencesPromise;
   }
 
-  return defer<{ audiences: Promise<BroadcastAudiencesLoaderData> }>({
+  return {
     audiences: audiencesPromise,
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -107,14 +107,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const customNpubLines = splitCustom(customRaw);
     const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
     if (!name) {
-      return json({ error: "Name required" }, { status: 400 });
+      return data({ error: "Name required" }, { status: 400 });
     }
     if (
       !VALID_SAVED_AUDIENCE_TYPES.includes(
         audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
       )
     ) {
-      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
+      return data({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
     }
     await createBroadcastSavedAudience(userId, {
       name,
@@ -132,16 +132,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const customRaw = String(form.get("customNpubs") ?? "");
     const customNpubLines = splitCustom(customRaw);
     const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     if (!name) {
-      return json({ error: "Name required" }, { status: 400 });
+      return data({ error: "Name required" }, { status: 400 });
     }
     if (
       !VALID_SAVED_AUDIENCE_TYPES.includes(
         audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
       )
     ) {
-      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
+      return data({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
     }
     await updateBroadcastSavedAudience(userId, id, {
       name,
@@ -154,7 +154,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "duplicate") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     const { id: newId } = await duplicateBroadcastSavedAudience(userId, id);
     return redirect(
       `${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(newId)}`
@@ -163,7 +163,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "refresh_estimate") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     await refreshSavedAudienceEstimate(userId, id);
     return redirect(BROADCAST_AUDIENCES_PATH);
   }
@@ -172,20 +172,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const campaignId = String(form.get("campaignId") ?? "");
     const name = String(form.get("name") ?? "").trim();
     if (!campaignId) {
-      return json({ error: "Missing campaign" }, { status: 400 });
+      return data({ error: "Missing campaign" }, { status: 400 });
     }
     const campaign = await getBroadcastCampaignForUser(campaignId, userId);
     if (!campaign) {
-      return json({ error: "Campaign not found" }, { status: 404 });
+      return data({ error: "Campaign not found" }, { status: 404 });
     }
     if (campaign.audienceType === "FOLLOWING") {
-      return json(
+      return data(
         { error: "This audience type cannot be saved" },
         { status: 400 }
       );
     }
     if (campaign.audienceType === "FOLLOWERS") {
-      return json(
+      return data(
         { error: "This audience type cannot be saved" },
         { status: 400 }
       );
@@ -201,12 +201,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "delete") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     await deleteBroadcastSavedAudience(userId, id);
     return redirect(BROADCAST_AUDIENCES_PATH);
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function BroadcastAudiencesRoute() {
@@ -223,9 +223,9 @@ export default function BroadcastAudiencesRoute() {
       >
         {(loaded) => (
           <BroadcastAudiencesRouteLoaded
-            rows={(loaded as BroadcastAudiencesLoaderData).rows}
-            notice={(loaded as BroadcastAudiencesLoaderData).notice}
-            editingRow={(loaded as BroadcastAudiencesLoaderData).editingRow}
+            rows={loaded.rows}
+            notice={loaded.notice}
+            editingRow={loaded.editingRow}
           />
         )}
       </Await>

@@ -22,6 +22,8 @@ vi.mock("~/features/admin/repositories/admin-overview-queries.server", () => ({
     mockGetAdminOverviewPageData(...args),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { loader } from "~/routes/dashboard.admin._index";
 
 const minimalOverview = {
@@ -124,7 +126,7 @@ describe("dashboard.admin._index loader", () => {
       params: {},
       context: {},
     };
-    const res = await loader(args);
+    const res = await asRouteResponse(await loader(args));
     expect(res.status).toBe(403);
   });
 
@@ -134,7 +136,7 @@ describe("dashboard.admin._index loader", () => {
       params: {},
       context: {},
     };
-    const res = await loader(args);
+    const res = await asRouteResponse(await loader(args));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({
       rangePreset: "7d",

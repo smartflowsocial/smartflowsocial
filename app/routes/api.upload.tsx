@@ -1,6 +1,5 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import {
-  json,
   unstable_composeUploadHandlers as composeUploadHandlers,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
@@ -55,7 +54,7 @@ export const action = withCSRFProtection(
             "Upload provider is set to Blossom. Use Blossom upload (refresh the page if bulk upload still calls S3)."
           )
         );
-        return json(errorResponse, { status: 400 });
+        return Response.json(errorResponse, { status: 400 });
       }
 
       // S3 path: require S3 env vars so we fail fast with a clear message instead of "Region is missing"
@@ -67,7 +66,7 @@ export const action = withCSRFProtection(
             "S3 storage is not configured. Set STORAGE_REGION, STORAGE_BUCKET, STORAGE_ACCESS_KEY, and STORAGE_SECRET in your .env, or switch to Primal Blossom in Settings."
           )
         );
-        return json(errorResponse, { status: 503 });
+        return Response.json(errorResponse, { status: 503 });
       }
 
       // Validate content type
@@ -131,5 +130,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return json({ message: "General File Upload API" });
+  return Response.json({ message: "General File Upload API" });
 }

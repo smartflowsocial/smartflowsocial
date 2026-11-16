@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
@@ -12,13 +12,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const url = new URL(request.url);
     const queueTypeId = url.searchParams.get("queueTypeId");
     if (!queueTypeId || queueTypeId.length === 0) {
-      return json({ error: "queueTypeId is required" }, { status: 400 });
+      return Response.json(
+        { error: "queueTypeId is required" },
+        { status: 400 }
+      );
     }
     const result = await loadNeedsResignItemsForQueue(userId, queueTypeId);
     if ("error" in result) {
-      return json({ error: result.error }, { status: result.status });
+      return Response.json({ error: result.error }, { status: result.status });
     }
-    return json(result);
+    return Response.json(result);
   } catch (error) {
     if (error instanceof Response) {
       return error;

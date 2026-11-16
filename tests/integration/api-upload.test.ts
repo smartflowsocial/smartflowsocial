@@ -51,6 +51,7 @@ vi.mock("@remix-run/node", async () => {
   };
 });
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth";
@@ -84,10 +85,7 @@ describe("API: Upload", () => {
           context: Record<string, unknown>;
         } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -124,10 +122,7 @@ describe("API: Upload", () => {
         });
 
         const response = await action({ request, params: {}, context: {} });
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -153,10 +148,7 @@ describe("API: Upload", () => {
 
         // requireUserId throws a Response (redirect), not an Error
         const response = await action({ request, params: {}, context: {} });
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         expect(responseObj.status).toBeGreaterThanOrEqual(400);
       });
 
@@ -174,10 +166,7 @@ describe("API: Upload", () => {
           context: Record<string, unknown>;
         } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -217,10 +206,7 @@ describe("API: Upload", () => {
           context: Record<string, unknown>;
         } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -257,10 +243,7 @@ describe("API: Upload", () => {
           context: Record<string, unknown>;
         } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -297,10 +280,7 @@ describe("API: Upload", () => {
           context: Record<string, unknown>;
         } = { request, params: {}, context: {} };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

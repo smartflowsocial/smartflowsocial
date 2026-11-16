@@ -1,4 +1,4 @@
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 
 import { LoginPage, getUser } from "~/features/auth";
@@ -44,7 +44,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       headers.append("Set-Cookie", cookieValue);
     }
 
-    return json({}, { headers });
+    return data({}, { headers });
   } catch (error) {
     if (error instanceof Response) {
       return error;

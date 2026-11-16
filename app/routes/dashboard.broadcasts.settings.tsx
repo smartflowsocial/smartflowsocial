@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { z } from "zod";
 
@@ -23,16 +23,40 @@ const settingsSchema = z.object({
   minDaysBetweenRemessage: z.coerce.number().min(0).max(365).optional(),
 });
 
+interface BroadcastSettings {
+  defaultDeliveryMode: string | null;
+  defaultSendStrategy: string | null;
+  failurePausePercent: number | null;
+  minDaysBetweenRemessage: number | null;
+}
+
+function readBroadcastSettings(
+  raw: Awaited<ReturnType<typeof findUserBroadcastSettings>>
+): BroadcastSettings {
+  const record =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
+  const text = (key: string): string | null =>
+    typeof record[key] === "string" ? record[key] : null;
+  const number = (key: string): number | null =>
+    typeof record[key] === "number" ? record[key] : null;
+  return {
+    defaultDeliveryMode: text("defaultDeliveryMode"),
+    defaultSendStrategy: text("defaultSendStrategy"),
+    failurePausePercent: number("failurePausePercent"),
+    minDaysBetweenRemessage: number("minDaysBetweenRemessage"),
+  };
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const raw = await findUserBroadcastSettings(userId);
-  const settings =
-    raw && typeof raw === "object" && !Array.isArray(raw)
-      ? (raw as Record<string, unknown>)
-      : {};
-  return json({ settings });
+  const settings = readBroadcastSettings(
+    await findUserBroadcastSettings(userId)
+  );
+  return { settings };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -47,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
     minDaysBetweenRemessage: form.get("minDaysBetweenRemessage") ?? undefined,
   });
   if (!parsed.success) {
-    return json({ error: "Invalid settings" }, { status: 400 });
+    return data({ error: "Invalid settings" }, { status: 400 });
   }
 
   await updateUserBroadcastSettings(userId, parsed.data);
@@ -75,9 +99,7 @@ export default function BroadcastSettingsRoute() {
           <select
             id="broadcast-default-delivery"
             name="defaultDeliveryMode"
-            defaultValue={String(
-              settings["defaultDeliveryMode"] ?? "BEST_COMPATIBILITY"
-            )}
+            defaultValue={settings.defaultDeliveryMode ?? "BEST_COMPATIBILITY"}
             className={campaignSelectClassNames}
           >
             <option value="BEST_COMPATIBILITY">Best compatibility</option>
@@ -97,7 +119,7 @@ export default function BroadcastSettingsRoute() {
           <select
             id="broadcast-default-strategy"
             name="defaultSendStrategy"
-            defaultValue={String(settings["defaultSendStrategy"] ?? "STANDARD")}
+            defaultValue={settings.defaultSendStrategy ?? "STANDARD"}
             className={campaignSelectClassNames}
           >
             <option value="STANDARD">Standard</option>
@@ -117,7 +139,7 @@ export default function BroadcastSettingsRoute() {
             name="failurePausePercent"
             min={0}
             max={100}
-            defaultValue={String(settings["failurePausePercent"] ?? 50)}
+            defaultValue={settings.failurePausePercent ?? 50}
             className={campaignFieldClassNames}
           />
         </div>
@@ -134,7 +156,7 @@ export default function BroadcastSettingsRoute() {
             name="minDaysBetweenRemessage"
             min={0}
             max={365}
-            defaultValue={String(settings["minDaysBetweenRemessage"] ?? 7)}
+            defaultValue={settings.minDaysBetweenRemessage ?? 7}
             className={campaignFieldClassNames}
           />
         </div>

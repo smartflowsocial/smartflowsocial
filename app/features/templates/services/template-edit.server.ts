@@ -3,7 +3,7 @@
  * Handles template editing operations
  */
 
-import { json } from "@remix-run/node";
+import { data as routeData } from "@remix-run/node";
 
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";
@@ -46,7 +46,7 @@ async function applyUpdateLongform(
 ) {
   const template = await getTemplateById({ id: templateId, userId });
   if (template?.longFormPost?.id !== data.longFormPostId) {
-    return json(
+    return routeData(
       { error: "Template or longform post not found" },
       {
         status: 404,
@@ -88,7 +88,7 @@ async function applyUpdateLongform(
       name: data.name.trim(),
     });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 /**
@@ -166,7 +166,7 @@ export async function handleTemplateEditAction(
       name: updateData.name,
     });
 
-    return json({ success: true });
+    return { success: true };
   }
 
   if (_action === "delete") {
@@ -175,20 +175,23 @@ export async function handleTemplateEditAction(
       userId,
     });
 
-    return json({ success: true });
+    return { success: true };
   }
 
   if (_action === "deleteTemplate") {
     await deleteTemplate({ id: templateId, userId });
     // Return JSON so the client can navigate; redirect() from fetcher does not navigate the browser
-    return json({ success: true, redirectTo: "/dashboard/templates" });
+    return { success: true, redirectTo: "/dashboard/templates" };
   }
 
   if (_action === "updateTemplatePost") {
     const data = result.data;
     const template = await getTemplateById({ id: templateId, userId });
     if (template?.post?.id !== data.postId) {
-      return json({ error: "Template or post not found" }, { status: 404 });
+      return routeData(
+        { error: "Template or post not found" },
+        { status: 404 }
+      );
     }
 
     const attachmentMeta = parseAttachmentMeta(formData);
@@ -245,7 +248,7 @@ export async function handleTemplateEditAction(
       });
     }
 
-    return json({ success: true });
+    return { success: true };
   }
 
   return applyUpdateLongform(result.data, templateId, userId);

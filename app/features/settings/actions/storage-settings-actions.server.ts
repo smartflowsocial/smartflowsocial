@@ -2,7 +2,7 @@
  * Storage settings action handlers
  */
 
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 
 import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
 import {
@@ -33,7 +33,7 @@ export async function handleStorageSettingsAction(
     }
     const isPaidActive = await isSubscriptionActiveForGating(userId);
     if (!isPaidActive && result.data.uploadProvider === "BLOSSOM_SFS") {
-      return json(
+      return data(
         {
           success: false,
           error: `${BRAND_BLOSSOM_LABEL} requires an active paid subscription. Upgrade to select it.`,
@@ -50,7 +50,7 @@ export async function handleStorageSettingsAction(
       resolvedProvider,
       result.data.customBlossomUrl
     );
-    return json({
+    return {
       success: true,
       uploadProvider: resolvedProvider,
       customBlossomUrl:
@@ -58,7 +58,7 @@ export async function handleStorageSettingsAction(
           ? result.data.customBlossomUrl
           : null,
       invalidateUploadProviderCache: true,
-    });
+    };
   }
 
   if (action === "update_blossom_mirrors") {
@@ -74,10 +74,10 @@ export async function handleStorageSettingsAction(
       result.data.enableMirrorBlossom
     );
     await updateUserMirrorUploadUrls(userId, result.data.mirrorUrls);
-    return json({
+    return {
       success: true,
       invalidateUploadProviderCache: true,
-    });
+    };
   }
 
   return null;

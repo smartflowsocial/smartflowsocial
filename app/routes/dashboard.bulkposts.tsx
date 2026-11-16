@@ -1,4 +1,3 @@
-import { defer, json } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
@@ -29,14 +28,14 @@ export async function loader({ request }: { request: Request }) {
     const shouldAvoidDeferredFallback =
       url.searchParams.get("bulkScheduled") === "true";
     if (isRemixResourceRequest(request)) {
-      return json(await loadBulkPostsData(request));
+      return await loadBulkPostsData(request);
     }
     if (shouldAvoidDeferredFallback) {
-      return json(await loadBulkPostsData(request));
+      return await loadBulkPostsData(request);
     }
-    return defer({
+    return {
       bulkPosts: loadBulkPostsData(request),
-    });
+    };
   } catch (error) {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
@@ -53,7 +52,7 @@ interface BulkPostsDeferredLoaderData {
 }
 
 function BulkPostsFeedRoute() {
-  const { bulkPosts } = useLoaderData() as BulkPostsDeferredLoaderData;
+  const { bulkPosts } = useLoaderData<BulkPostsDeferredLoaderData>();
 
   return (
     <Suspense fallback={<BulkPostsPageSkeleton />}>

@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { loadSearchThreadChildReplies } from "~/features/search";
@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentId = url.searchParams.get("parent_event_id")?.trim() ?? "";
   const parentNorm = parentId.toLowerCase();
   if (!EVENT_ID_HEX.test(parentNorm)) {
-    return json(
+    return Response.json(
       {
         parent_event_id: parentNorm,
         error: "Invalid parent_event_id",
@@ -27,9 +27,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     const { replies } = await loadSearchThreadChildReplies(parentNorm);
-    return json({ parent_event_id: parentNorm, replies });
+    return Response.json({ parent_event_id: parentNorm, replies });
   } catch {
-    return json(
+    return Response.json(
       {
         parent_event_id: parentNorm,
         error: "Failed to load nested replies",

@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { commitMediaIngest } from "~/features/upload";
@@ -45,7 +44,7 @@ export const action = withCSRFProtection(
         items.length === 0 ||
         !items.every((item) => isCommitItemPayload(item))
       ) {
-        return json({ error: "invalid_request" }, { status: 400 });
+        return Response.json({ error: "invalid_request" }, { status: 400 });
       }
       const intentId =
         typeof payload.intentId === "string" ? payload.intentId : undefined;
@@ -56,7 +55,7 @@ export const action = withCSRFProtection(
         committedCount: result.committed.length,
         intentId: intentId ?? null,
       });
-      return json(result);
+      return Response.json(result);
     } catch (error) {
       if (error instanceof Response) return error;
       const message = error instanceof Error ? error.message : String(error);
@@ -65,7 +64,7 @@ export const action = withCSRFProtection(
         message.includes("media_intent_") ||
         message.includes("invalid_media_intent")
       ) {
-        return json(
+        return Response.json(
           {
             error: "MEDIA_PROVIDER_MISMATCH",
             message:
@@ -81,5 +80,5 @@ export const action = withCSRFProtection(
 );
 
 export async function loader() {
-  return json({ message: "Media commit endpoint" });
+  return Response.json({ message: "Media commit endpoint" });
 }

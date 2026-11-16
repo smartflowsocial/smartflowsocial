@@ -1,5 +1,4 @@
 import {
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   type MetaFunction,
@@ -87,7 +86,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     queueCountsByQueue,
   });
 
-  return json({
+  return {
     userId: user.id,
     user,
     currentSubscription: subscriptionData.currentSubscription,
@@ -101,7 +100,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     feedbackInboxKind10050Relays,
     nostrDmNip17Enabled: featureFlags.nostrDmNip17Enabled,
     nip88PollsEnabled: featureFlags.nip88PollsEnabled,
-  });
+  };
 };
 
 export const action = withCSRFProtection(

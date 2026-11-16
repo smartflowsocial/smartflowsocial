@@ -5,7 +5,7 @@
  * Individual action handlers are split by domain in the actions/ directory
  */
 
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 
 import { handleAccountsAction } from "./actions/accounts-actions.server";
 import { handleBlastrPolicyAction } from "./actions/blastr-policy-actions.server";
@@ -26,7 +26,7 @@ export async function handleSettingsAction(userId: string, formData: FormData) {
   const _action = formData.get("_action") as string;
 
   if (!_action) {
-    return json({ error: "Action is required" }, { status: 400 });
+    return data({ error: "Action is required" }, { status: 400 });
   }
 
   // Try each handler category
@@ -51,5 +51,5 @@ export async function handleSettingsAction(userId: string, formData: FormData) {
     }
   }
 
-  return json({ error: "Invalid action type" }, { status: 400 });
+  return data({ error: "Invalid action type" }, { status: 400 });
 }

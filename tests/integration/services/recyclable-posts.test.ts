@@ -25,6 +25,7 @@ vi.mock("~/features/posts/stats.server", () => ({
   getPostStats: vi.fn(),
 }));
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import {
@@ -222,10 +223,7 @@ describe("Recyclable Posts Service", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -254,10 +252,7 @@ describe("Recyclable Posts Service", () => {
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
       expect(deletePost).toHaveBeenCalledTimes(2);
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -309,10 +304,7 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -355,10 +347,7 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -402,10 +391,7 @@ describe("Recyclable Posts Service", () => {
         ids: ["post-1"],
         userId: TEST_USER_ID,
       });
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -452,10 +438,7 @@ describe("Recyclable Posts Service", () => {
         ids: ["post-1"],
         userId: TEST_USER_ID,
       });
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -479,10 +462,7 @@ describe("Recyclable Posts Service", () => {
 
       const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&

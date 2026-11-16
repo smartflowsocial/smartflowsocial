@@ -3,7 +3,6 @@
  * Requires REFERRAL_MANUAL_PAYOUT_SECRET. A missing secret rejects the request.
  */
 
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import {
@@ -17,14 +16,14 @@ const SECRET_HEADER = "X-Referral-Payout-Secret";
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return Response.json(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );
   }
 
   if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
-    return json(
+    return Response.json(
       { error: "Referral payouts are disabled" },
       { status: 404, headers: { "Cache-Control": "no-store" } }
     );
@@ -36,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
       env.REFERRAL_MANUAL_PAYOUT_SECRET
     )
   ) {
-    return json(
+    return Response.json(
       { error: "Unauthorized" },
       { status: 401, headers: { "Cache-Control": "no-store" } }
     );
@@ -46,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Invalid JSON" }, { status: 400 });
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const o =
@@ -65,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
     !Number.isFinite(amountSats) ||
     amountSats < 1
   ) {
-    return json(
+    return Response.json(
       { error: "Missing or invalid referrer_npub, bolt11, or amount_sats" },
       { status: 400 }
     );
@@ -74,8 +73,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await payReferrerWithInvoice(referrerNpub, bolt11, amountSats);
 
   if (!result.success) {
-    return json({ success: false, error: result.error }, { status: 422 });
+    return Response.json(
+      { success: false, error: result.error },
+      { status: 422 }
+    );
   }
 
-  return json({ success: true });
+  return Response.json({ success: true });
 }

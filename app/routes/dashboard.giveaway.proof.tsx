@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
 import { requireUserId } from "~/features/auth";
@@ -102,7 +101,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   })();
 
   const giveaways = await giveawaysPromise;
-  return json({ giveaways });
+  return { giveaways };
 }
 
 export default function GiveawayProofPage() {

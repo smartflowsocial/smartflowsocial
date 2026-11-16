@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { useCallback } from "react";
 import { toast } from "react-hot-toast";
@@ -19,7 +18,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!id) throw new Response("Not found", { status: 404 });
   const data = await getContestPublicPageData(id);
   if (!data) throw new Response("Not found", { status: 404 });
-  return json(data);
+  return data;
 }
 
 export const meta: MetaFunction<typeof loader> = ({

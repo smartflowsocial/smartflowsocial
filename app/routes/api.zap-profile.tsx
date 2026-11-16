@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import {
   fetchPrimalProfileData,
@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const raw = url.searchParams.get("npub")?.trim();
   if (!raw) {
-    return json({ error: "Missing npub" }, { status: 400 });
+    return Response.json({ error: "Missing npub" }, { status: 400 });
   }
 
   const npub =
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ? raw
         : null;
   if (!npub) {
-    return json({ error: "Invalid npub" }, { status: 400 });
+    return Response.json({ error: "Invalid npub" }, { status: 400 });
   }
 
   try {
@@ -35,8 +35,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       typeof profile.lud16 === "string" && profile.lud16.trim() !== ""
         ? profile.lud16.trim()
         : null;
-    return json({ lud16 });
+    return Response.json({ lud16 });
   } catch {
-    return json({ lud16: null });
+    return Response.json({ lud16: null });
   }
 }

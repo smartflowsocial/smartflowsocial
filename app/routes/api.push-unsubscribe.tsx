@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -12,7 +11,7 @@ import {
  */
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
 
   try {
@@ -22,7 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { endpoint } = body;
 
     if (!endpoint) {
-      return json({ error: "Missing endpoint" }, { status: 400 });
+      return Response.json({ error: "Missing endpoint" }, { status: 400 });
     }
 
     // Verify the subscription belongs to the user
@@ -30,12 +29,15 @@ export async function action({ request }: ActionFunctionArgs) {
     const subscription = subscriptions.find((sub) => sub.endpoint === endpoint);
 
     if (!subscription) {
-      return json({ error: "Subscription not found" }, { status: 404 });
+      return Response.json(
+        { error: "Subscription not found" },
+        { status: 404 }
+      );
     }
 
     await deletePushSubscription(endpoint);
 
-    return json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     if (error instanceof Response) {
       return error;

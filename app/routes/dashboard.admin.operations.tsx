@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, data } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
@@ -23,7 +23,7 @@ import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const preset = parseRangePreset(
@@ -31,11 +31,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultRangeForAdminPath(url.pathname)
   );
   if (isRemixResourceRequest(request)) {
-    return json(await getAdminOperationsPageData(preset));
+    return await getAdminOperationsPageData(preset);
   }
-  return defer({
+  return {
     operations: getAdminOperationsPageData(preset),
-  });
+  };
 }
 
 export const action = adminOperationsAction;
@@ -45,7 +45,7 @@ type AdminOperationsLoaderResult =
   | { operations: Promise<AdminOperationsPageDTO> };
 
 export default function AdminOperationsPage() {
-  const raw = useLoaderData() as AdminOperationsLoaderResult;
+  const raw = useLoaderData<AdminOperationsLoaderResult>();
   if ("error" in raw) {
     return <AdminAccessDenied />;
   }

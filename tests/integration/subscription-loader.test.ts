@@ -45,6 +45,8 @@ vi.mock("~/features/settings", () => ({
   handleSettingsAction: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import type * as SettingsLoaderServer from "~/features/settings/settings-loader.server";
@@ -102,7 +104,7 @@ describe("Subscription/Billing Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -164,7 +166,7 @@ describe("Subscription/Billing Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -216,7 +218,7 @@ describe("Subscription/Billing Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -275,7 +277,7 @@ describe("Subscription/Billing Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -332,7 +334,7 @@ describe("Subscription/Billing Loader Integration", () => {
         params: {},
         context: {},
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -364,11 +366,13 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(401);
     });
@@ -390,11 +394,13 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -415,11 +421,13 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -431,11 +439,13 @@ describe("Subscription/Billing Loader Integration", () => {
 
       const request = settingsLoaderJsonRequest("tab=billing");
 
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(500);
 

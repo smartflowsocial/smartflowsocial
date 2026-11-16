@@ -1,5 +1,4 @@
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -165,10 +164,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         templateId && templateId.length > 0 ? templateId : null,
         composerContext
       );
-      return json({
+      return {
         ...payload,
         __composeMode: "article" as const,
-      });
+      };
     }
 
     const draftId = url.searchParams.get("draftId");
@@ -178,18 +177,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       templateId: templateId && templateId.length > 0 ? templateId : null,
       composerContext,
     });
-    return json({
+    return {
       ...payload,
       __composeMode: "shortform" as const,
       composerContextError: composerContextResult.error,
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
     }
     const url = new URL(request.url);
     const mode = getComposeMode(url.searchParams.get("type"));
-    return json({
+    return {
       scheduleIntervals: [],
       queueTypes: [],
       hashTagPresets: [],
@@ -207,7 +206,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: {
         message: "Composer data temporarily unavailable",
       },
-    });
+    };
   }
 }
 

@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -45,10 +45,10 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
     try {
       payload = JSON.parse(raw) as Record<string, unknown>;
     } catch {
-      return json({ error: "Invalid draft payload" }, { status: 400 });
+      return data({ error: "Invalid draft payload" }, { status: 400 });
     }
     await upsertContestCreationDraftPayload(userId, payload);
-    return json({ ok: true, draftSaved: true });
+    return { ok: true, draftSaved: true };
   }
 
   const title = String(formData.get("title") ?? "");
@@ -86,7 +86,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   }
 
   if (prizeMode === "RANKED" && !rankRewards.some((r) => r.sats > 0)) {
-    return json(
+    return data(
       { error: "Enter at least one rank reward above 0 sats." },
       { status: 400 }
     );
@@ -94,11 +94,11 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
 
   const contestEndAt = new Date(contestEndAtRaw);
   if (!Number.isFinite(contestEndAt.getTime())) {
-    return json({ error: "Set a contest end time." }, { status: 400 });
+    return data({ error: "Set a contest end time." }, { status: 400 });
   }
 
   if (contestEndAt.getTime() <= Date.now()) {
-    return json(
+    return data(
       { error: "Set a contest end time in the future." },
       { status: 400 }
     );
@@ -112,19 +112,19 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
       !scheduledActivationAt ||
       !Number.isFinite(scheduledActivationAt.getTime())
     ) {
-      return json(
+      return data(
         { error: "Choose a future activation date and time." },
         { status: 400 }
       );
     }
     if (scheduledActivationAt.getTime() <= Date.now()) {
-      return json(
+      return data(
         { error: "Activation must be in the future." },
         { status: 400 }
       );
     }
     if (contestEndAt.getTime() <= scheduledActivationAt.getTime()) {
-      return json(
+      return data(
         {
           error: "End time must be after scheduled activation.",
         },
@@ -134,7 +134,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   }
 
   if (!sourcePostId) {
-    return json(
+    return data(
       {
         error:
           sourceMode === "create"
@@ -147,7 +147,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
 
   const sourcePost = await getPostById({ id: sourcePostId, userId });
   if (!sourcePost) {
-    return json({ error: "Source post not found." }, { status: 400 });
+    return data({ error: "Source post not found." }, { status: 400 });
   }
 
   const sourceNoteId = sourcePost.nostrEventId?.trim() ?? "";
@@ -155,7 +155,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
 
   if (sourceMode === "existing") {
     if (!hasPublishedNote) {
-      return json(
+      return data(
         {
           error:
             "Selected post must be published with a Nostr note id before launching.",
@@ -166,7 +166,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   }
 
   if (sourceMode === "create" && launchMode === "now" && !hasPublishedNote) {
-    return json(
+    return data(
       {
         error:
           "Publish the source post first (use the primary contest action), then submit again.",
@@ -204,7 +204,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
       });
       const launched = await launchContest(userId, contest.id);
       if (!launched.success) {
-        return json(
+        return data(
           { error: launched.error ?? "Contest created but launch failed." },
           { status: 400 }
         );
@@ -240,7 +240,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
     });
     const launched = await launchContest(userId, contest.id);
     if (!launched.success) {
-      return json(
+      return data(
         { error: launched.error ?? "Contest created but launch failed." },
         { status: 400 }
       );

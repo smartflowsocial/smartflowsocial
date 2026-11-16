@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -17,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const publishAttemptId = url.searchParams.get("publishAttemptId");
 
     if (!postId || !publishAttemptId) {
-      return json(
+      return Response.json(
         { error: "postId and publishAttemptId are required" },
         { status: 400 }
       );
@@ -27,13 +26,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const postData = await getPostDataForModal(postId, userId);
 
     if (!postData) {
-      return json({ error: "Post not found or unauthorized" }, { status: 404 });
+      return Response.json(
+        { error: "Post not found or unauthorized" },
+        { status: 404 }
+      );
     }
 
     // Get relay acknowledgements
     const acks = await getPublishRelayAcksByAttemptId(publishAttemptId, userId);
 
-    return json({
+    return Response.json({
       acks: acks.map((ack) => ({
         relayUrl: ack.relayUrl,
         status: ack.status,

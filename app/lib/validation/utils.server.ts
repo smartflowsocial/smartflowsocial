@@ -3,7 +3,6 @@
  * Helper functions for parsing FormData and validating with Zod schemas
  */
 
-import { json } from "@remix-run/node";
 import { z } from "zod";
 
 import { ValidationError } from "~/lib/errors";
@@ -209,12 +208,15 @@ export function validateFormDataOrRespond<T extends z.ZodTypeAny>(
         : error.message;
       return {
         success: false,
-        response: json({ error: errorMessage }, { status: 400 }),
+        response: Response.json({ error: errorMessage }, { status: 400 }),
       };
     }
     return {
       success: false,
-      response: json({ error: VALIDATION_FAILED_MESSAGE }, { status: 400 }),
+      response: Response.json(
+        { error: VALIDATION_FAILED_MESSAGE },
+        { status: 400 }
+      ),
     };
   }
 }

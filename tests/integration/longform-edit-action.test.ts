@@ -223,6 +223,7 @@ vi.mock("@remix-run/node", async () => {
   };
 });
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
 import { handleLongFormEditAction } from "~/features/posts/server/longform";
@@ -311,10 +312,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -348,10 +347,8 @@ describe("Longform Edit Action Handler", () => {
         body: formData,
       });
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -397,10 +394,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
 
       // The handler calls updateLongFormPost, then state machine transitions to DRAFT
@@ -429,10 +424,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -459,10 +452,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -532,10 +523,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
 
       // The handler calls updateLongFormPost first, then PublishLongFormNowUseCase
@@ -577,10 +566,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -612,10 +599,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =
@@ -744,10 +729,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
 
       // The handler calls updateLongFormPost first, then ScheduleLongFormPostUseCase
@@ -783,10 +766,8 @@ describe("Longform Edit Action Handler", () => {
         }
       );
 
-      const response = await handleLongFormEditAction(
-        TEST_USER_ID,
-        POST_ID,
-        request
+      const response = await asRouteResponse(
+        await handleLongFormEditAction(TEST_USER_ID, POST_ID, request)
       );
       const dataRaw: unknown = await response.json();
       const data =

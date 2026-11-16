@@ -1,8 +1,7 @@
 import {
-  defer,
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  data as routeData,
 } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
@@ -51,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const userId = await requireUserId(request);
       await requireAnySubscription(userId);
       if (parsedRange.kind === "invalid") {
-        return json(
+        return routeData(
           { ok: false, error: "Invalid calendar range" },
           { status: 400 }
         );
@@ -64,25 +63,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         parsedRange.start,
         parsedRange.end
       );
-      return json(
-        validateLoaderResponse(
-          {
-            pastPosts: data.pastPosts,
-            pastLongFormPosts: data.pastLongFormPosts,
-            from: parsedRange.start.toISOString(),
-            to: parsedRange.end.toISOString(),
-          },
-          calendarPastRangeLoaderDataSchema
-        )
+      return validateLoaderResponse(
+        {
+          pastPosts: data.pastPosts,
+          pastLongFormPosts: data.pastLongFormPosts,
+          from: parsedRange.start.toISOString(),
+          to: parsedRange.end.toISOString(),
+        },
+        calendarPastRangeLoaderDataSchema
       );
     }
 
     if (isRemixResourceRequest(request)) {
-      return json(await loadCalendarValidated(request, params));
+      return await loadCalendarValidated(request, params);
     }
-    return defer({
+    return {
       calendar: loadCalendarValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -113,7 +110,7 @@ interface CalendarDeferredLoaderData {
 }
 
 function CalendarFeedRoute() {
-  const { calendar } = useLoaderData() as CalendarDeferredLoaderData;
+  const { calendar } = useLoaderData<CalendarDeferredLoaderData>();
 
   return (
     <Suspense fallback={<CalendarPageSkeleton />}>

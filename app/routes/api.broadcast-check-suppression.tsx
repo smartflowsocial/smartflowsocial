@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { getSuppressionFlagsForPubkeys } from "~/features/broadcast";
@@ -24,21 +23,21 @@ function parsePubkeysFromJson(body: unknown): string[] {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
     const userId = await requireUserId(request);
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return json({ error: "Invalid JSON" }, { status: 400 });
+      return Response.json({ error: "Invalid JSON" }, { status: 400 });
     }
     const normalized = parsePubkeysFromJson(body);
     if (normalized.length === 0) {
       const empty: Record<string, boolean> = {};
-      return json({ suppressed: empty });
+      return Response.json({ suppressed: empty });
     }
     const suppressed = await getSuppressionFlagsForPubkeys(userId, normalized);
-    return json({ suppressed });
+    return Response.json({ suppressed });
   }
 );

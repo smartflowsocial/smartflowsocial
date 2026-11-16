@@ -1,5 +1,4 @@
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -20,8 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Post not found", { status: 404 });
   }
 
-  const data = await loadLongFormEditData(userId, postId);
-  return json(data);
+  return await loadLongFormEditData(userId, postId);
 }
 
 export const action = withCSRFProtection(

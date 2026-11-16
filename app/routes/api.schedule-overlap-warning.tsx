@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { getScheduleOverlapWarning } from "~/features/posts/server/scheduling";
@@ -79,7 +78,7 @@ export const action = withCSRFProtection(
         excludeContentId,
       });
 
-      return json({ warning });
+      return Response.json({ warning });
     } catch (error) {
       if (error instanceof Response) {
         return error;

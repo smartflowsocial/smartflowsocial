@@ -2,8 +2,6 @@
  * NWC (Nostr Wallet Connect) action handlers
  */
 
-import { json } from "@remix-run/node";
-
 import {
   updateUserNWC,
   updateUserNWCEnabled,
@@ -29,12 +27,12 @@ export async function handleNWCAction(
       // Just update enabled status
       await updateUserNWCEnabled(userId, result.data.nwcEnabled);
     }
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "clear_nwc") {
     await clearUserNWC(userId);
-    return json({ success: true });
+    return { success: true };
   }
 
   return null;

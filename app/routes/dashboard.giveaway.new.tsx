@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { Await, useActionData, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
@@ -298,11 +298,11 @@ async function loadGiveawayNewData(request: Request) {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (isRemixResourceRequest(request)) {
-    return json(await loadGiveawayNewData(request));
+    return await loadGiveawayNewData(request);
   }
-  return defer({
+  return {
     giveawayNew: loadGiveawayNewData(request),
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -320,7 +320,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "createFromPreset" && typeof presetId === "string") {
     const preset = await getGiveawayPresetById(userId, presetId);
     if (!preset) {
-      return json({ error: "Preset not found" }, { status: 404 });
+      return data({ error: "Preset not found" }, { status: 404 });
     }
     const scopeRef = preset.scopeReference as Record<string, unknown>;
     if (preset.scopeType === "QUEUE" && scopeRef["queueId"]) {
@@ -370,13 +370,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const scopeResult = parseScopeReference(formData, scopeTypeResolved);
   if ("error" in scopeResult) {
-    return json({ error: scopeResult.error }, { status: scopeResult.status });
+    return data({ error: scopeResult.error }, { status: scopeResult.status });
   }
   const { scopeReference } = scopeResult;
 
   const engagementResult = parseEngagementAndWinners(formData);
   if ("error" in engagementResult) {
-    return json(
+    return data(
       { error: engagementResult.error },
       { status: engagementResult.status }
     );
@@ -402,13 +402,13 @@ export async function action({ request }: ActionFunctionArgs) {
       filters: filters ?? undefined,
     });
     if (formData.get("responseMode") === "json") {
-      return json({ ok: true as const, giveawayId: giveaway.id });
+      return { ok: true as const, giveawayId: giveaway.id };
     }
     return redirect(`/dashboard/giveaway/detail/${giveaway.id}`);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to create giveaway";
-    return json({ error: message }, { status: 400 });
+    return data({ error: message }, { status: 400 });
   }
 }
 
@@ -429,9 +429,9 @@ function DashboardGiveawayNewPageInner() {
 }
 
 export default function DashboardGiveawayNewPage() {
-  const { giveawayNew } = useLoaderData() as {
+  const { giveawayNew } = useLoaderData<{
     giveawayNew: Promise<GiveawayNewLoaderPayload>;
-  };
+  }>();
 
   return (
     <Suspense fallback={<GiveawayBuilderPageSkeleton />}>

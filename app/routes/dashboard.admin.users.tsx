@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, data } from "@remix-run/node";
 import {
   Await,
   Form,
@@ -40,7 +40,7 @@ import { cn } from "~/lib/utils";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const page = url.searchParams.get("page");
@@ -54,9 +54,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     search,
   });
   if (isRemixResourceRequest(request)) {
-    return json(await usersPagePromise);
+    return await usersPagePromise;
   }
-  return defer({ usersPage: usersPagePromise });
+  return { usersPage: usersPagePromise };
 }
 
 const SEGMENTS: Array<{ id: AdminUserSegment | "all"; label: string }> = [
@@ -104,11 +104,7 @@ export default function AdminUsersPage() {
           <DeferredRouteAwaitError retryTo="/dashboard/admin/users" />
         }
       >
-        {(loaded) => (
-          <AdminUsersPageLoaded
-            data={loaded as Awaited<ReturnType<typeof getAdminUsersPageData>>}
-          />
-        )}
+        {(loaded) => <AdminUsersPageLoaded data={loaded} />}
       </Await>
     </Suspense>
   );

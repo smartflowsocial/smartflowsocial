@@ -35,9 +35,7 @@ export interface PollActionParams {
   hashTagPresetId: string | null;
 }
 
-export async function handlePostOrSchedulePoll(
-  params: PollActionParams
-): Promise<Response> {
+export async function handlePostOrSchedulePoll(params: PollActionParams) {
   const {
     userId,
     sessionPubkey,

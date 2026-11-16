@@ -4,7 +4,6 @@
  */
 
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -65,8 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const data = await loadNewPostData(userId, null);
-  return json(data);
+  return await loadNewPostData(userId, null);
 }
 
 export const action = withCSRFProtection(

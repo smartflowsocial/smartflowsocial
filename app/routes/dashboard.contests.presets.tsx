@@ -1,6 +1,6 @@
 import type { ContestPreset } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import { Form, Link, useLoaderData } from "@remix-run/react";
 
 import { Button } from "~/components/ui/button";
@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const presets: ContestPreset[] = limits.canUsePresets
     ? await getContestPresetsForUser(userId)
     : [];
-  return json({
+  return {
     presets: presets.map((p: ContestPreset) => ({
       id: p.id,
       name: p.name,
@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       lastUsedAt: p.lastUsedAt?.toISOString() ?? null,
     })),
     canUsePresets: limits.canUsePresets,
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -54,19 +54,19 @@ export async function action({ request }: ActionFunctionArgs) {
     getUserPlanType(sub.currentSubscription ?? null)
   );
   if (!limits.canUsePresets) {
-    return json({ error: "Presets require a paid plan" }, { status: 403 });
+    return data({ error: "Presets require a paid plan" }, { status: 403 });
   }
   const fd = await request.formData();
   const intent = fd.get("intent");
   if (intent === "delete") {
     const id = fd.get("presetId");
     if (typeof id !== "string" || !id.trim()) {
-      return json({ error: "Missing preset" }, { status: 400 });
+      return data({ error: "Missing preset" }, { status: 400 });
     }
     await deleteContestPreset(userId, id.trim());
     return redirect("/dashboard/contests/presets");
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function ContestPresetsPage() {

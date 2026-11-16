@@ -1,5 +1,4 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { createDeferredEngagementAction } from "~/features/engagement";
@@ -55,7 +54,7 @@ function parseBody(value: unknown): {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return Response.json(
       { success: false, error: "Method not allowed" },
       { status: 405 }
     );
@@ -69,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
       !Array.isArray(raw) &&
       (raw as Record<string, unknown>)["mode"] === "queue"
     ) {
-      return json(
+      return Response.json(
         {
           success: false,
           error: "Queue is not supported for engagement actions",
@@ -79,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const body = parseBody(raw);
     if (!body) {
-      return json(
+      return Response.json(
         { success: false, error: "eventId, actionType, and mode are required" },
         { status: 400 }
       );
@@ -94,11 +93,14 @@ export async function action({ request }: ActionFunctionArgs) {
       queueTypeId: body.queueTypeId,
       signedEvent: body.signedEvent,
     });
-    return json({ success: true, ...result });
+    return Response.json({ success: true, ...result });
   } catch (error) {
     if (error instanceof Response) return error;
     if (error instanceof ScheduleCapExceededError) {
-      return json({ success: false, error: error.message }, { status: 403 });
+      return Response.json(
+        { success: false, error: error.message },
+        { status: 403 }
+      );
     }
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);

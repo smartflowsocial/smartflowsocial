@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
 
@@ -34,11 +34,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const p = params as { queueType?: string };
     if (isRemixResourceRequest(request)) {
-      return json(await loadPublishedData(request, p));
+      return await loadPublishedData(request, p);
     }
-    return defer({
+    return {
       published: loadPublishedData(request, p),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -89,7 +89,7 @@ interface PublishedDeferredLoaderData {
 }
 
 function PublishedFeedRoute() {
-  const { published } = useLoaderData() as PublishedDeferredLoaderData;
+  const { published } = useLoaderData<PublishedDeferredLoaderData>();
 
   return (
     <Suspense fallback={<PublishedPostsPageSkeleton />}>

@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
@@ -16,10 +15,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const postId = url.searchParams.get("postId");
 
     if (!groupId?.trim()) {
-      return json({ error: "groupId is required" }, { status: 400 });
+      return Response.json({ error: "groupId is required" }, { status: 400 });
     }
     if (!postId?.trim()) {
-      return json({ error: "postId is required" }, { status: 400 });
+      return Response.json({ error: "postId is required" }, { status: 400 });
     }
 
     const result = await getThreadGroupSegmentsForUser(
@@ -29,10 +28,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     if (!result) {
-      return json({ segments: [], currentIndex: -1, total: 0 });
+      return Response.json({ segments: [], currentIndex: -1, total: 0 });
     }
 
-    return json({
+    return Response.json({
       segments: result.segments,
       currentIndex: result.currentIndex,
       total: result.segments.length,

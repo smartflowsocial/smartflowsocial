@@ -1,5 +1,5 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
@@ -102,7 +102,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       user = await refreshUserProfileIfChanged(user);
     }
 
-    return json(
+    return data(
       {
         user,
         siteOrigin,

@@ -1,6 +1,4 @@
 import {
-  defer,
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -25,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const q = url.searchParams.get("q")?.trim();
 
   if (!q) {
-    return json(data);
+    return data;
   }
 
   const searchResultPromise = (async () => {
@@ -49,10 +47,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   })();
 
-  return defer({
+  return {
     ...data,
     searchResultPromise,
-  });
+  };
 }
 
 export const action = withCSRFProtection(
@@ -74,7 +72,7 @@ export const action = withCSRFProtection(
         userId,
         searchResult.event.id
       );
-      return json({ ...searchResult, scheduleSourcePost });
+      return { ...searchResult, scheduleSourcePost };
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

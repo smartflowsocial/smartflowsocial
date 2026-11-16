@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 import {
   Await,
   Outlet,
@@ -45,7 +45,7 @@ async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
 
   if (isDataRequest) {
     try {
-      return json(await loadSettingsOrThrow(userId));
+      return await loadSettingsOrThrow(userId);
     } catch (error) {
       const { handleLoaderError } = await import("~/lib/error-handler.server");
       return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
@@ -65,9 +65,9 @@ async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
     }
   })();
 
-  return defer({
+  return {
     settings: settingsPromise,
-  });
+  };
 }
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -150,7 +150,7 @@ function SettingsIndexRoute() {
     <Suspense fallback={<SettingsPageSkeleton />}>
       <Await resolve={settings} errorElement={<SettingsAwaitError />}>
         {(data) => (
-          <SettingsResolvedLoaderProvider value={data as SettingsLoaderData}>
+          <SettingsResolvedLoaderProvider value={data}>
             <SettingsPage />
           </SettingsResolvedLoaderProvider>
         )}

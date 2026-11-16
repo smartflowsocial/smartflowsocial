@@ -118,6 +118,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   createActionFormData,
@@ -184,7 +185,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -208,7 +209,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -223,7 +224,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -313,7 +314,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result).toBeInstanceOf(Response);
       if (result.status !== 302) {
@@ -394,7 +395,7 @@ describe("Bulk Posts Action Handler", () => {
         }
       );
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBe(302);
       expect(updatePost).toHaveBeenCalledWith(
@@ -420,7 +421,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -497,7 +498,9 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const response = await bulkPostsAction({ request });
+      const response = await asRouteResponse(
+        await bulkPostsAction({ request })
+      );
 
       expect(response.status).toBe(302);
       expect(createPostWithOutbox).toHaveBeenCalledWith(
@@ -565,7 +568,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result).toBeInstanceOf(Response);
       expect(result.status).toBe(302); // Redirect
@@ -602,7 +605,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -617,7 +620,7 @@ describe("Bulk Posts Action Handler", () => {
         body: formData,
       });
 
-      const result = await bulkPostsAction({ request });
+      const result = await asRouteResponse(await bulkPostsAction({ request }));
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });

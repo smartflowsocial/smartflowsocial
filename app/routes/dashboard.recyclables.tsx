@@ -1,6 +1,4 @@
 import {
-  defer,
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -40,11 +38,11 @@ async function loadRecyclablesValidated(
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     if (isRemixResourceRequest(request)) {
-      return json(await loadRecyclablesValidated(request, params));
+      return await loadRecyclablesValidated(request, params);
     }
-    return defer({
+    return {
       recyclables: loadRecyclablesValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -75,7 +73,7 @@ interface RecyclablesDeferredLoaderData {
 }
 
 function RecyclablesFeedRoute() {
-  const { recyclables } = useLoaderData() as RecyclablesDeferredLoaderData;
+  const { recyclables } = useLoaderData<RecyclablesDeferredLoaderData>();
 
   return (
     <Suspense fallback={<RecyclablesPageSkeleton />}>

@@ -24,6 +24,7 @@ vi.mock("~/lib/validation", () => ({
 }));
 
 // RecyclePostUseCase is mocked above
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { handleRecyclablePostAction } from "~/features/posts/publishing/index.server";
@@ -52,17 +53,16 @@ describe("Recyclable Posts Service Recycle Action", () => {
       formData.append("_action", "recycle");
       formData.append("postId", TEST_POST_ID);
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       expect(mockRecycleExecute).toHaveBeenCalledWith({
         originalPostId: TEST_POST_ID,
         userId: TEST_USER_ID,
       });
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -96,7 +96,9 @@ describe("Recyclable Posts Service Recycle Action", () => {
       formData.append("scheduledFor", scheduledFor.toString());
       formData.append("queueTypeId", "queue-1");
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       expect(mockRecycleExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -106,10 +108,7 @@ describe("Recyclable Posts Service Recycle Action", () => {
         })
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -133,13 +132,12 @@ describe("Recyclable Posts Service Recycle Action", () => {
       formData.append("_action", "recycle");
       formData.append("postId", TEST_POST_ID);
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       // Should handle error and return error response
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // Error handler returns an error response
@@ -166,7 +164,9 @@ describe("Recyclable Posts Service Recycle Action", () => {
       formData.append("_action", "recycle");
       // Missing postId
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       expect(result).toBeInstanceOf(Response);
       const responseObj = result;

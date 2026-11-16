@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { redirect, data } from "@remix-run/node";
 import {
   Await,
   Form,
@@ -135,11 +135,11 @@ async function loadBroadcastsIndexData(request: Request) {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (isRemixResourceRequest(request)) {
-    return json(await loadBroadcastsIndexData(request));
+    return await loadBroadcastsIndexData(request);
   }
-  return defer({
+  return {
     broadcastsIndex: loadBroadcastsIndexData(request),
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -150,7 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = form.get("intent");
   const campaignId = form.get("campaignId");
   if (typeof campaignId !== "string" || !campaignId) {
-    return json({ error: "Missing campaign" }, { status: 400 });
+    return data({ error: "Missing campaign" }, { status: 400 });
   }
 
   if (intent === "cancel") {
@@ -181,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
       `/dashboard/broadcasts/new/review?campaignId=${encodeURIComponent(id)}`
     );
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function SummaryCard(props: {
@@ -532,7 +532,7 @@ interface BroadcastsIndexDeferredLoaderData {
 
 export default function BroadcastsIndexRoute() {
   const { broadcastsIndex } =
-    useLoaderData() as BroadcastsIndexDeferredLoaderData;
+    useLoaderData<BroadcastsIndexDeferredLoaderData>();
 
   return (
     <Suspense fallback={<BroadcastIndexPageSkeleton />}>

@@ -1,7 +1,7 @@
 import {
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
+  data,
 } from "@remix-run/node";
 import { useLocation, useNavigation } from "@remix-run/react";
 
@@ -121,7 +121,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             ? validationErr.context
             : undefined,
       });
-      return json({
+      return {
         ...FALLBACK_FLOW,
         postStatistics,
         queueCountsByQueue,
@@ -129,7 +129,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
         scheduleNext7Days: [],
         serverNowMs,
-      });
+      };
     }
 
     const now = new Date(serverNowMs);
@@ -140,7 +140,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       getScheduleNext7DaysCounts(userId, "all", userTimezone),
     ]);
 
-    return json({
+    return {
       ...validatedData,
       runwayLastScheduledAtUtc,
       runwaySettings,
@@ -150,7 +150,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       isFirstRunDashboard: dashboardActivity.isFirstRunDashboard,
       scheduleNext7Days,
       serverNowMs,
-    });
+    };
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {
@@ -184,10 +184,10 @@ export const action = withCSRFProtection(
 
       // Check if result has error property
       if (typeof result === "object" && "error" in result && result.error) {
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

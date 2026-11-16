@@ -3,8 +3,6 @@
  * Handles queue schedule time calculation for API endpoints
  */
 
-import { json } from "@remix-run/node";
-
 import {
   getUserTimezone,
   getQueueTypeByIdForUser,
@@ -51,7 +49,7 @@ export async function calculateQueueScheduleTime(
   const queueTypeId = await resolveQueueTypeIdForSchedule(userId, input);
 
   if (!queueTypeId) {
-    return json({ scheduledTime: "" });
+    return Response.json({ scheduledTime: "" });
   }
 
   const userTimezone = await getUserTimezone(userId);
@@ -77,7 +75,7 @@ export async function calculateQueueScheduleTime(
     userTimezone ?? "UTC"
   );
 
-  return json({ scheduledTime: formattedTime });
+  return Response.json({ scheduledTime: formattedTime });
 }
 
 /**

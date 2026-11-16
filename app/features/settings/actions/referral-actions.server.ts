@@ -2,7 +2,7 @@
  * Referral settings actions: save payout destination.
  */
 
-import { json } from "@remix-run/node";
+import { data } from "@remix-run/node";
 
 import { upsertReferrerPayoutConfig } from "~/features/referral/repositories/referral-data.server";
 import { getUserById } from "~/features/user";
@@ -13,12 +13,12 @@ export async function handleReferralAction(
   userId: string,
   _action: string,
   formData: FormData
-): Promise<ReturnType<typeof json> | null> {
+) {
   if (_action !== REFERRAL_SAVE_PAYOUT) return null;
 
   const user = await getUserById(userId);
   if (!user?.npub) {
-    return json({ error: "User not found" }, { status: 400 });
+    return data({ error: "User not found" }, { status: 400 });
   }
 
   const payoutDestination = formData.get("payout_destination");
@@ -32,7 +32,7 @@ export async function handleReferralAction(
       : null;
 
   if (!dest) {
-    return json(
+    return data(
       {
         error: "Payout destination is required",
         _action: REFERRAL_SAVE_PAYOUT,
@@ -46,5 +46,5 @@ export async function handleReferralAction(
     payoutDestinationType: type,
   });
 
-  return json({ success: true, _action: REFERRAL_SAVE_PAYOUT });
+  return { success: true, _action: REFERRAL_SAVE_PAYOUT };
 }

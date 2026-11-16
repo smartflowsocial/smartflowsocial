@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import "./shared-setup";
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   createMockQueueType,
@@ -95,7 +96,9 @@ describe("Publish Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
 
     expect(mockCreateLongFormPostExecute).toHaveBeenCalledWith(
       // expect.objectContaining returns 'any' - acceptable for test mocks
@@ -136,7 +139,9 @@ describe("Publish Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -167,7 +172,9 @@ describe("Publish Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -197,7 +204,9 @@ describe("Publish Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -312,7 +321,9 @@ describe("Publish Action", () => {
     );
 
     // Handler catches errors and returns error response, doesn't throw
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     expect(response.status).toBeGreaterThanOrEqual(400);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
     const data = await response.json();

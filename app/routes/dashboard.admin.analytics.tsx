@@ -1,4 +1,4 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, data } from "@remix-run/node";
 import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
 
@@ -28,7 +28,7 @@ import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const preset = parseRangePreset(
@@ -36,11 +36,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultRangeForAdminPath(url.pathname)
   );
   if (isRemixResourceRequest(request)) {
-    return json(await getAdminAnalyticsPageData(preset));
+    return await getAdminAnalyticsPageData(preset);
   }
-  return defer({
+  return {
     analytics: getAdminAnalyticsPageData(preset),
-  });
+  };
 }
 
 function mergeSeriesForChart(
@@ -83,7 +83,7 @@ type AdminAnalyticsLoaderResult =
     };
 
 export default function AdminAnalyticsPage() {
-  const raw = useLoaderData() as AdminAnalyticsLoaderResult;
+  const raw = useLoaderData<AdminAnalyticsLoaderResult>();
   if ("error" in raw) {
     return <AdminAccessDenied />;
   }

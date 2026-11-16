@@ -1,4 +1,3 @@
-import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireSession } from "~/features/auth";
@@ -203,7 +202,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
 
   const session = await requireSession(request);
 
-  void relays;
+  relays;
   const resolvedRelays = await resolveExecutionRelays(session.userId);
 
   const validatedEvent = validateSignedEventCryptographically(event);
@@ -259,7 +258,10 @@ async function runPublishApiAction(request: Request): Promise<Response> {
     });
   }
 
-  return json({ success: true, ...(deduped ? { deduped: true } : {}) });
+  return Response.json({
+    success: true,
+    ...(deduped ? { deduped: true } : {}),
+  });
 }
 
 export const action = withCSRFProtection(

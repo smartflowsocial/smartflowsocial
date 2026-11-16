@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import {
   getSubscriptionData,
@@ -25,7 +24,7 @@ function authorizeInternalRequest(request: Request): boolean {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!authorizeInternalRequest(request)) {
-    return json({ error: "unauthorized" }, { status: 401 });
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const url = new URL(request.url);
@@ -34,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const pubkeyHex = pubkeyParam.trim().toLowerCase();
 
   if (!pubkeyHex || pubkeyHex.length < 32) {
-    return json({
+    return Response.json({
       active: false,
       planId: null,
       allowCompatUpload: false,
@@ -48,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (npub) user = await getUserByNpub(npub);
   }
   if (!user?.isEnabled) {
-    return json({
+    return Response.json({
       active: false,
       planId: null,
       allowCompatUpload: false,
@@ -66,7 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const isFreePlan = planId === "free";
   const allowCompatUpload = active && !isFreePlan;
 
-  return json({
+  return Response.json({
     active,
     planId,
     allowCompatUpload,

@@ -1,5 +1,3 @@
-import { json } from "@remix-run/node";
-
 import { cronRequestAuthorized } from "~/lib/cron-auth.server";
 import { env } from "~/lib/env.server";
 
@@ -13,11 +11,14 @@ export function denyCronUnlessAuthorized(
   request: Request | undefined
 ): Response | null {
   if (!cronRequestAuthorized(request, env.CRON_SECRET)) {
-    return json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401, headers: NO_STORE }
+    );
   }
   return null;
 }
 
 export function cronJson(data: unknown, status = 200): Response {
-  return json(data, { status, headers: NO_STORE });
+  return Response.json(data, { status, headers: NO_STORE });
 }

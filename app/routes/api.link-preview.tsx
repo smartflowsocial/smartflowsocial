@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
@@ -135,7 +135,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Use dynamic import to avoid bundling issues
     const { createErrorResponse } = await import("~/lib/error-handler.server");
     const [errorResponse, statusCode] = createErrorResponse(error);
-    return json(
+    return Response.json(
       { success: false, error: errorResponse.error },
       { status: statusCode }
     );

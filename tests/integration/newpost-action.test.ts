@@ -135,6 +135,7 @@ vi.mock("~/lib/prisma.server", () => ({
 // Mock global fetch for Nostr publisher
 global.fetch = vi.fn();
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { createActionFormData, TEST_USER_ID } from "../utils/test-helpers";
 
 import { handleNewPostAction } from "~/features/posts/server/composer";
@@ -225,7 +226,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -361,7 +364,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -426,7 +431,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -460,7 +467,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -493,7 +502,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -526,7 +537,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -597,7 +610,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalled();
       expect(mockPublishNowExecute).toHaveBeenCalled();
@@ -641,7 +656,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
 
       expect(mockCreatePostExecute).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -664,7 +681,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -799,7 +818,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const body = (await result.json()) as { error?: string };
       expect(result.status).toBe(400);
       expect(body.error).toContain("Attachment diff is required");
@@ -827,7 +848,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const body = (await result.json()) as { error?: string };
       expect(result.status).toBe(400);
       expect(body.error).toContain("Use follow-up editing");
@@ -856,7 +879,9 @@ describe("New Post Action Handler", () => {
         body: formData,
       });
 
-      const result = await handleNewPostAction(TEST_USER_ID, request);
+      const result = await asRouteResponse(
+        await handleNewPostAction(TEST_USER_ID, request)
+      );
       const body = (await result.json()) as { error?: string };
       expect(result.status).toBe(400);
       expect(body.error).toContain("parent relationship is missing");

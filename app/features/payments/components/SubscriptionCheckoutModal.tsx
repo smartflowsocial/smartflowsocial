@@ -40,7 +40,7 @@ interface SubscriptionCheckoutModalProps {
   plan: SubscriptionCheckoutPlan | null;
   isSubmitting: boolean;
   billingCadence: "monthly" | "yearly";
-  manualDurations: number[];
+  manualDurations: readonly number[];
   selectedManualDurationMonths: number;
   onSelectedManualDurationMonthsChange: (months: number) => void;
   nwcEnabled: boolean;

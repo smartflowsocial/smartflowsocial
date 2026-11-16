@@ -38,6 +38,8 @@ vi.mock("~/lib/csrf", () => ({
     fn,
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { action } from "~/routes/dashboard.admin.operations";
 
 function postForm(body: FormData): ActionFunctionArgs {
@@ -81,7 +83,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_1");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(403);
   });
 
@@ -90,7 +92,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_1");
     body.set("confirm_phrase", "no");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(400);
     expect(mockRetryDeadLetterJob).not.toHaveBeenCalled();
   });
@@ -100,7 +102,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_abc");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true });
     expect(mockRetryDeadLetterJob).toHaveBeenCalledWith("dl_abc");
@@ -115,7 +117,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "missing");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(422);
     await expect(res.json()).resolves.toMatchObject({
       error: "Dead letter entry not found",
@@ -126,7 +128,7 @@ describe("dashboard.admin.operations action", () => {
     const body = new FormData();
     body.set("_action", "clean_failed_jobs");
     body.set("confirm_phrase", "CLEAN");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       ok: true,
@@ -141,7 +143,7 @@ describe("dashboard.admin.operations action", () => {
     const body = new FormData();
     body.set("_action", "clean_failed_jobs");
     body.set("confirm_phrase", "no");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(400);
     expect(mockCleanFailedJobsInAllQueues).not.toHaveBeenCalled();
   });
@@ -151,7 +153,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "purge_relay_acks");
     body.set("confirm_phrase", "PURGE");
     body.set("older_than_days", "14");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       ok: true,

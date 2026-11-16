@@ -179,7 +179,7 @@ export async function handlePostImages({
   hashTagPresetId,
   sanitizedRelays = [],
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
@@ -269,7 +269,7 @@ export async function handleScheduleImages({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
@@ -386,7 +386,7 @@ export async function handleDraftImages({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const fileUrlValue = formData.get("fileUrl");
   const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
   const caption = formData.get("caption") as string;

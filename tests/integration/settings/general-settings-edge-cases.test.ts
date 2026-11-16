@@ -14,6 +14,7 @@ vi.mock("~/features/user", () => ({
   invalidateRelayIntentCache: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { handleGeneralSettingsAction } from "~/features/settings/actions/general-settings-actions.server";
@@ -44,10 +45,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_relays",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -81,10 +79,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_relays",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -118,10 +113,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_relays",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -148,10 +140,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_blacklist",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -182,10 +171,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_blacklist",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -217,10 +203,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_blacklist",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -251,10 +234,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_blacklist",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -280,10 +260,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -310,10 +287,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -340,10 +314,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -374,10 +345,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -409,10 +377,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -443,10 +408,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         "update_schedule_intervals",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&

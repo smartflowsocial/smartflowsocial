@@ -1,5 +1,4 @@
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
@@ -16,11 +15,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Require at least 2 characters to search (matches client-side requirement)
   if (!trimmedQuery || trimmedQuery.length < 2) {
-    return json({ results: [], total: 0 });
+    return Response.json({ results: [], total: 0 });
   }
 
   const results = await performGlobalSearch(userId, trimmedQuery, 5, context);
-  return json(results);
+  return Response.json(results);
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -32,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Require at least 2 characters to search (matches client-side requirement)
   if (!trimmedQuery || trimmedQuery.length < 2) {
-    return json({ results: [], total: 0 });
+    return Response.json({ results: [], total: 0 });
   }
 
   const context =
@@ -40,5 +39,5 @@ export async function action({ request }: ActionFunctionArgs) {
       ? (formData.get("context") as string)
       : undefined;
   const results = await performGlobalSearch(userId, trimmedQuery, 5, context);
-  return json(results);
+  return Response.json(results);
 }

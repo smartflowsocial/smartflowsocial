@@ -4,10 +4,10 @@
  */
 
 import {
-  json,
   redirect,
   unstable_createMemoryUploadHandler as createMemoryUploadHandler,
   unstable_parseMultipartFormData as parseMultipartFormData,
+  data,
 } from "@remix-run/node";
 
 import {
@@ -123,10 +123,7 @@ async function getEffectiveHashtagsForPost(
 /**
  * Handle image upload action
  */
-async function handleImageUpload(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleImageUpload(userId: string, formData: FormData) {
   const imageFileRaw = formData.get("imageFile");
   const imageFile = imageFileRaw;
 
@@ -136,7 +133,7 @@ async function handleImageUpload(
     typeof imageFile === "string" &&
     imageFile.startsWith("https://")
   ) {
-    return json({ success: true, imageUrl: imageFile });
+    return { success: true, imageUrl: imageFile };
   }
 
   // If it's a File object, we need to process it manually
@@ -166,14 +163,14 @@ async function handleImageUpload(
         file.type
       );
 
-      return json({ success: true, imageUrl });
+      return { success: true, imageUrl };
     } catch (error) {
       logError(error instanceof Error ? error : new Error(String(error)), {
         userId,
         fileName: imageFile.name,
         message: "S3 upload error",
       });
-      return json(
+      return data(
         {
           success: false,
           error: "Failed to upload image to storage.",
@@ -184,12 +181,12 @@ async function handleImageUpload(
   }
 
   if (!imageFile) {
-    return json(
+    return data(
       { success: false, error: "No image file provided." },
       { status: 400 }
     );
   } else {
-    return json(
+    return data(
       {
         success: false,
         error: "Image upload failed. Please try again.",
@@ -208,7 +205,7 @@ async function handleSaveDraft(
   formData: FormData,
   queueType: string,
   hashTagPresetId: string | null
-): Promise<Response> {
+) {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -223,11 +220,11 @@ async function handleSaveDraft(
   }
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   const markdownContent = editorContent.trim();
@@ -288,7 +285,7 @@ async function handlePublish(
   sanitizedRelays: string[],
   request: Request,
   sessionPubkey: string
-): Promise<Response> {
+) {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -305,29 +302,29 @@ async function handlePublish(
   }
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return json(
+    return data(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return json(
+    return data(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
-    return json(
+    return data(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -411,7 +408,7 @@ async function handleScheduleLongform(
   effectiveHashtags: string,
   showHashTagsinPosts: boolean,
   sessionPubkey: string
-): Promise<Response> {
+) {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -428,29 +425,29 @@ async function handleScheduleLongform(
   }
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return json(
+    return data(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return json(
+    return data(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!signedEvent || !nostrEvent) {
-    return json(
+    return data(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -491,7 +488,7 @@ async function handleScheduleLongform(
   });
 
   // Extract published_at from NOSTR event tags for scheduling
-  let scheduledForTimestamp: number | undefined = undefined;
+  let scheduledForTimestamp: number | undefined;
 
   const publishedAtTag = signedEventJson.tags.find(
     (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
@@ -536,7 +533,7 @@ async function handleScheduleLongform(
       await assertScheduleCapacity(userId, additionalSlots);
     } catch (e) {
       if (e instanceof ScheduleCapExceededError) {
-        return json({ error: e.message }, { status: 403 });
+        return data({ error: e.message }, { status: 403 });
       }
       throw e;
     }
@@ -575,7 +572,7 @@ export async function handleLongFormEditAction(
   userId: string,
   postId: string,
   request: Request
-): Promise<Response> {
+) {
   const user = await getUserById(userId);
   if (!user) {
     return new Response("User not found", { status: 404 });
@@ -690,5 +687,5 @@ export async function handleLongFormEditAction(
     );
   }
 
-  return json({ success: false });
+  return { success: false };
 }

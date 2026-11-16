@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { json } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { requireAnySubscription } from "~/features/payments";
@@ -79,7 +78,7 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
       postType: p.postType,
     }));
 
-  return json({
+  return {
     ...composerLoader,
     posts,
     planType,
@@ -88,7 +87,7 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
     canUsePresets,
     userTimezone: userRow?.timezone ?? "UTC",
     savedContestDraft: savedContestDraft?.payload ?? null,
-  });
+  };
 }
 
 export type ContestNewLoaderData = SerializeFrom<typeof contestNewLoader>;

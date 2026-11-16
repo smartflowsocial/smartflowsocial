@@ -34,6 +34,7 @@ vi.mock("~/features/posts/server", () => ({
   getPostsByIds: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -59,7 +60,9 @@ describe("Recyclables Action Handler", () => {
         postId: TEST_POST_ID,
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -95,7 +98,9 @@ describe("Recyclables Action Handler", () => {
         postIds: JSON.stringify(postIds),
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -142,7 +147,9 @@ describe("Recyclables Action Handler", () => {
         postIds: JSON.stringify(postIds),
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -189,7 +196,9 @@ describe("Recyclables Action Handler", () => {
         postIds: JSON.stringify(postIds),
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -236,7 +245,9 @@ describe("Recyclables Action Handler", () => {
         postIds: JSON.stringify(postIds),
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -297,7 +308,9 @@ describe("Recyclables Action Handler", () => {
         postId: TEST_POST_ID,
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -350,7 +363,9 @@ describe("Recyclables Action Handler", () => {
         postId: "non-existent",
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -375,7 +390,9 @@ describe("Recyclables Action Handler", () => {
         postId: TEST_POST_ID,
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -421,7 +438,9 @@ describe("Recyclables Action Handler", () => {
         postId: "non-existent",
       });
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
 
       expect(result.status).toBeGreaterThanOrEqual(400);
     });
@@ -431,7 +450,9 @@ describe("Recyclables Action Handler", () => {
     it("should return error for invalid action", async () => {
       const formData = createActionFormData("invalid_action", {});
 
-      const result = await handleRecyclablePostAction(formData, TEST_USER_ID);
+      const result = await asRouteResponse(
+        await handleRecyclablePostAction(formData, TEST_USER_ID)
+      );
       const dataRaw: unknown = await result.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
