@@ -90,7 +90,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 
 **When to Use:**
 
-- Remix loaders and actions
+- React Router loaders and actions
 - API routes
 - Database operations (via mocked Prisma)
 - Service layer functions
@@ -184,7 +184,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 
 ### Prerequisites
 
-1. **Node.js 20+** installed
+1. **Node.js 22.22+** installed (`.nvmrc` is `22.22`)
 2. **Dependencies installed**: Run `pnpm install`
 3. **Database running**: Ensure PostgreSQL is accessible (via Docker or local install)
 4. **Environment configured**: Copy `example.env` to `.env` and configure required variables
@@ -667,7 +667,7 @@ Coverage thresholds are enforced in CI/CD and `vitest.config.ts`:
 **Excluded from Coverage:**
 
 - Third-party library code
-- Framework code (Remix, Prisma)
+- Framework code (React Router, Prisma)
 - Generated code
 - Simple pass-through functions
 - Configuration constants

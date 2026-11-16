@@ -41,3 +41,8 @@ in the worker bundle. Do not treat that list as production exposure.
 `pnpm audit --prod` reported no advisories in Blastr, Blossom, or the cache worker on 14
 November 2026. Their full audits report the same class of development-tool findings as the
 publisher. Those trees were not opened in this pass.
+
+## What this does not do
+
+The web app is React Router 8.5.1 and React 19.2.7. Remix packages are gone except
+`@remix-run/form-data-parser`, which parses multipart uploads.

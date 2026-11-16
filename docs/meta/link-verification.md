@@ -64,7 +64,7 @@ All documentation links should be verified regularly to ensure:
 
 **Technology Docs:**
 
-- Remix: https://remix.run/docs
+- React Router: https://reactrouter.com/start/framework/routing
 - Prisma: https://www.prisma.io/docs
 - BullMQ: https://docs.bullmq.io
 

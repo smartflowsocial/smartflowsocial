@@ -1,16 +1,16 @@
 /**
- * TanStack Query integration with Remix loaders
- * Allows using Remix loader data with React Query for client-side refetching
+ * TanStack Query integration with React Router loaders.
+ * The hook name is still `useRemixQuery`.
  *
  * Note: This is a simplified version. For complex use cases, use useFetcher directly
- * or create custom hooks that combine Remix loaders with TanStack Query.
+ * or create custom hooks that combine loader data with TanStack Query.
  */
 
 import { useQuery } from "@tanstack/react-query";
 import { useFetcher } from "react-router";
 
 /**
- * Hook to use Remix loader data with TanStack Query
+ * Hook to use React Router loader data with TanStack Query
  * Useful when you want to refetch loader data on the client side
  *
  * @example

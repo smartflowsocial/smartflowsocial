@@ -27,8 +27,8 @@ point production processes at the same Redis as a development session.
 
 ## Steps
 
-1. Install Node.js 20 or newer. CI and `.nvmrc` use Node 22. Enable Corepack and activate pnpm
-   10.27.0 (`package.json` `packageManager`).
+1. Install Node.js 22.22 or newer. `.nvmrc` is `22.22`. Enable Corepack and activate pnpm 10.27.0
+   (`package.json` `packageManager`).
 2. Clone the repository and install:
 
 ```bash

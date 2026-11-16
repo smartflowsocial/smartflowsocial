@@ -67,12 +67,12 @@ The name SmartFlowSocial and the logo are not part of the Unlicense grant. See
 
 ## Project Setup
 
-SmartFlowSocial is built with React Router 8. Follow these steps to set up the development
-environment:
+SmartFlowSocial is built with **React Router 8**, a full-stack React framework. Follow these steps
+to set up the development environment:
 
 ### Prerequisites
 
-- **Node.js**: Version 20.0.0 or higher
+- **Node.js**: Version 22.22.0 or higher (`package.json` `engines`)
 - **pnpm**: `10.27.0`, installed with Corepack
   (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - **PostgreSQL**: Database server (local or remote)
@@ -164,7 +164,8 @@ To ensure a consistent and maintainable codebase, please follow these coding sta
 
 ### 4. **File Structure**
 
-- **Routes**: `app/routes/` - Follow Remix file-based routing
+- **Routes**: `app/routes/` — file-based routes registered from `app/routes.ts` with
+  `@react-router/fs-routes`
 - **Components**: `app/components/` - Reusable UI components
 - **Data**: Database access lives in `app/features/*/data/` or `app/features/*/services/` (no
   top-level models folder)
@@ -245,7 +246,7 @@ async function action({ request }: ActionFunctionArgs) {
 async function badLoader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   // Use feature loaders / public API, not raw data functions from other features
-  return json({ posts: [], user: null });
+  return { posts: [], user: null };
 }
 
 // ❌ Bad: Business logic in routes
@@ -253,7 +254,8 @@ async function badAction({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await getUserById(userId);
   if (!user.subscription) {
-    return json({ error: "Subscription required" }, { status: 403 });
+    // Resource route. jsonResponse is from ~/lib/http/json-response.
+    return jsonResponse({ error: "Subscription required" }, { status: 403 });
   }
   // ... business logic
 }
@@ -737,17 +739,18 @@ export function YourComponent({ ...props }: YourComponentProps) {
 
 ```typescript
 // app/routes/api.your-endpoint.tsx
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 
 async function loader({ request }: LoaderFunctionArgs) {
-  // Handle GET requests
-  return json({ data: "..." });
+  // Handle GET requests. Resource routes return JSON responses.
+  return jsonResponse({ data: "..." });
 }
 
 async function action({ request }: ActionFunctionArgs) {
   // Handle POST/PUT/DELETE requests
-  return json({ success: true });
+  return jsonResponse({ success: true });
 }
 ```
 
@@ -793,7 +796,7 @@ pnpm test:performance
 - [ ] No secrets in code (use environment variables)
 - [ ] SQL injection prevention (use Prisma)
 - [ ] XSS protection (sanitize user content)
-- [ ] CSRF protection (use Remix Forms)
+- [ ] CSRF protection (`withCSRFProtection` from `~/lib/csrf.server` on actions)
 
 See [Security Guide](./docs/guides/security.md) for detailed security practices.
 

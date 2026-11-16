@@ -209,11 +209,12 @@ export async function getCachedData(key: string) {
 Set appropriate cache headers:
 
 ```typescript
-// In loader
-export async function loader({ request }: LoaderFunctionArgs) {
-  const data = await getData();
+import { data } from "react-router";
 
-  return json(data, {
+export async function loader({ request }: LoaderFunctionArgs) {
+  const payload = await getData();
+
+  return data(payload, {
     headers: {
       "Cache-Control": "public, max-age=300", // 5 minutes
     },
@@ -239,7 +240,7 @@ app.use(express.static("public", { maxAge: "1h" }));
 
 ### 1. Code Splitting
 
-Remix automatically code-splits routes. For additional splitting:
+React Router code-splits routes. For additional splitting:
 
 ```typescript
 // Lazy load heavy components

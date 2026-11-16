@@ -182,7 +182,7 @@ graph TB
         B[Nostr Extension]
     end
     subgraph "Backend"
-        C[Remix Server]
+        C[React Router server]
         D[PostgreSQL]
         E[Redis]
     end
