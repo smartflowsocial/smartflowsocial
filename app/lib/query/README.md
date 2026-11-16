@@ -7,7 +7,7 @@ efficient data fetching, caching, and state management.
 
 - ✅ Automatic caching and background refetching
 - ✅ Optimistic updates for mutations
-- ✅ Integration with Remix loaders
+- ✅ Integration with React Router loaders
 - ✅ Type-safe API queries
 - ✅ React Hook Form integration
 - ✅ React Query Devtools in development
@@ -97,10 +97,10 @@ The QueryClient is configured with:
 - **Retry**: 1 attempt for failed requests
 - **Refetch on window focus**: Only in development
 
-## Integration with Remix
+## Integration with React Router
 
-TanStack Query works alongside Remix loaders:
+TanStack Query works alongside React Router loaders:
 
 - Use `useLoaderData()` for initial server-rendered data
 - Use TanStack Query for client-side refetching and caching
-- Use `useRemixQuery()` to combine both approaches
+- Use `useRemixQuery()` to combine both approaches. The hook still has that name.

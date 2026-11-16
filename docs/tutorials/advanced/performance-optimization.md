@@ -139,10 +139,12 @@ async function getCachedUser(userId: string) {
 **Set cache headers:**
 
 ```typescript
-export async function loader({ request }: LoaderFunctionArgs) {
-  const data = await loadData();
+import { data } from "react-router";
 
-  return json(data, {
+export async function loader({ request }: LoaderFunctionArgs) {
+  const payload = await loadData();
+
+  return data(payload, {
     headers: {
       "Cache-Control": "public, max-age=300", // 5 minutes
     },

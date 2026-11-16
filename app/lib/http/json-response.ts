@@ -1,6 +1,6 @@
 /**
- * JSON response that works after Remix `installGlobals()`.
- * That polyfill's `Response` has no static `Response.json`.
+ * JSON `Response` for resource routes.
+ * UI loaders and actions return plain objects instead.
  */
 export function jsonResponse(data: unknown, init?: ResponseInit): Response {
   const headers = new Headers(init?.headers);
