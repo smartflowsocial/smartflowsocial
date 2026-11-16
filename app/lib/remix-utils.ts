@@ -42,7 +42,7 @@ export function useMatchesData(
     () => matchingRoutes.find((route) => route.id === id),
     [matchingRoutes, id]
   );
-  const data = route?.data;
+  const data = route?.loaderData;
   // Type guard to ensure data is an object and not an error type
   if (data && typeof data === "object" && !(data instanceof Error)) {
     return data as Record<string, unknown>;
