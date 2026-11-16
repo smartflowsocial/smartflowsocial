@@ -120,6 +120,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@remix-run/css-bundle": "^2.17.3",
     "@remix-run/express": "^2.17.3",
+    "@remix-run/form-data-parser": "1.1.1",
     "@remix-run/node": "^2.17.3",
     "@remix-run/react": "^2.17.3",
     "@sentry/remix": "^10.32.1",

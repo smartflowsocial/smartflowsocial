@@ -1,12 +1,9 @@
+import { parseFormData } from "@remix-run/form-data-parser";
 import type { ActionFunctionArgs } from "@remix-run/node";
-import {
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import { MAX_FILE_SIZE } from "~/features/upload/validation.server";
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { env } from "~/lib/env.server";
@@ -81,13 +78,11 @@ export const action = withCSRFProtection(
       // Parse the multipart form data using the general upload handler
       let formData: FormData;
       try {
-        const uploadHandler = composeUploadHandlers(
-          createUploadHandler(userId),
-          createMemoryUploadHandler({
-            maxPartSize: 100 * 1024 * 1024, // 100MB max for videos
-          })
+        formData = await parseFormData(
+          request,
+          { maxFileSize: MAX_FILE_SIZE },
+          createUploadHandler(userId)
         );
-        formData = await parseMultipartFormData(request, uploadHandler);
       } catch (error) {
         throw new ExternalServiceError(
           "Failed to parse multipart form data",

@@ -153,77 +153,17 @@ vi.mock("~/features/user", () => ({
 // Store FormData objects for mock access (using URL as key since Request objects are recreated)
 const formDataStore = new Map<string, FormData>();
 
-// Mock Remix upload handlers
-vi.mock("@remix-run/node", async () => {
-  const actual = await vi.importActual("@remix-run/node");
-  return {
-    ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => {
-      // Return a handler that processes files through the first handler
-      return async (part: {
-        filename?: string;
-        name?: string;
-        data: AsyncIterable<Uint8Array>;
-      }) => {
-        if (part.filename) {
-          // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0] as
-            | ((part: {
-                filename?: string;
-                name?: string;
-                data: AsyncIterable<Uint8Array>;
-              }) => Promise<unknown>)
-            | undefined;
-          if (firstHandler) {
-            return await firstHandler(part);
-          }
-        }
-        // For non-file parts, return the value as-is
-        return part.data;
-      };
-    }),
-    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(
-      async (
-        request: { url?: string; formData?: () => Promise<FormData> },
-        _uploadHandler: unknown
-      ) => {
-        // Try to get FormData from store first (set by test using request URL as key)
-        const url =
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock request
-          request &&
-          typeof request === "object" &&
-          "url" in request &&
-          typeof request.url === "string"
-            ? request.url
-            : String(request.url ?? "");
-        const storedFormData = formDataStore.get(url);
-        if (storedFormData) {
-          formDataStore.delete(url); // Clean up after use
-          return storedFormData;
-        }
+vi.mock("@remix-run/form-data-parser", () => ({
+  parseFormData: vi.fn(
+    async (request: { url?: string; formData?: () => Promise<FormData> }) =>
+      readMockMultipartFormData(formDataStore, request)
+  ),
+}));
 
-        // Fallback: try to parse from request
-        try {
-          const formData =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: type narrowing for mock request
-            request &&
-            typeof request === "object" &&
-            "formData" in request &&
-            typeof request.formData === "function"
-              ? await request.formData()
-              : new FormData();
-          return formData;
-        } catch (_error) {
-          // If parsing fails, return empty FormData
-          return new FormData();
-        }
-      }
-    ),
-  };
-});
-
-import { asRouteResponse } from "../utils/action-test-helpers";
+import {
+  asRouteResponse,
+  readMockMultipartFormData,
+} from "../utils/action-test-helpers";
 import { TEST_USER_ID, createMockFormData } from "../utils/test-helpers";
 
 import { handleLongFormEditAction } from "~/features/posts/server/longform";

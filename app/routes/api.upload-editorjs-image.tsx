@@ -1,9 +1,5 @@
+import { parseFormData } from "@remix-run/form-data-parser";
 import type { ActionFunctionArgs } from "@remix-run/node";
-import {
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import {
@@ -71,12 +67,9 @@ async function handleBlossomEditorJsRequest(
     );
   }
 
-  const uploadHandler = composeUploadHandlers(
-    createMemoryUploadHandler({
-      maxPartSize: EDITORJS_MAX_PART_SIZE,
-    })
-  );
-  const formData = await parseMultipartFormData(request, uploadHandler);
+  const formData = await parseFormData(request, {
+    maxFileSize: EDITORJS_MAX_PART_SIZE,
+  });
   const imageValue = formData.get("image") ?? formData.get("imageFile");
   assert(imageValue !== null, "No image file provided", {
     formDataKeys: Array.from(formData.keys()),
@@ -121,12 +114,9 @@ export const action = withCSRFProtection(
 
       let formData: FormData;
       try {
-        const uploadHandler = composeUploadHandlers(
-          createMemoryUploadHandler({
-            maxPartSize: EDITORJS_MAX_PART_SIZE,
-          })
-        );
-        formData = await parseMultipartFormData(request, uploadHandler);
+        formData = await parseFormData(request, {
+          maxFileSize: EDITORJS_MAX_PART_SIZE,
+        });
       } catch (error) {
         throw new ExternalServiceError(
           "Failed to parse multipart form data",

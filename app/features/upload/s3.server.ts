@@ -1,18 +1,11 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import {
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-} from "@remix-run/node";
+import type { FileUpload } from "@remix-run/form-data-parser";
 import { v4 as uuidv4 } from "uuid";
 
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
-import {
-  validateUpload,
-  getS3ContentType,
-  MAX_FILE_SIZE,
-} from "./validation.server";
+import { validateUpload, getS3ContentType } from "./validation.server";
 
 const ERROR_UPLOAD_VALIDATION_FAILED = "Upload validation failed";
 
@@ -80,41 +73,45 @@ const uploadStreamToS3 = async (
   }
 };
 
+async function* fileBytes(file: File): AsyncIterable<Uint8Array> {
+  const reader = file.stream().getReader();
+  try {
+    let next = await reader.read();
+    while (!next.done) {
+      yield next.value;
+      next = await reader.read();
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export function createUploadHandler(userId: string) {
-  return composeUploadHandlers(
-    async ({ name: _name, filename, contentType, data }) => {
-      // Skip if no filename is provided
-      if (!filename) {
-        return;
-      }
+  return async (file: FileUpload): Promise<string> => {
+    const filename = file.name;
+    try {
+      const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+      const uniqueFilename = `${uuidv4()}.${ext}`;
+      const key = `clients/${userId}/${uniqueFilename}`;
 
-      try {
-        const ext = filename.split(".").pop()?.toLowerCase() ?? "";
-        const uniqueFilename = `${uuidv4()}.${ext}`;
-        const key = `clients/${userId}/${uniqueFilename}`;
+      const s3Client = createS3Client();
 
-        const s3Client = createS3Client();
-
-        return await uploadStreamToS3(
-          data,
-          key,
-          s3Client,
-          filename,
-          contentType
-        );
-      } catch (error) {
-        logError(error instanceof Error ? error : new Error(String(error)), {
-          userId,
-          filename,
-          message: "Upload handler error",
-        });
-        throw error;
-      }
-    },
-    createMemoryUploadHandler({
-      maxPartSize: MAX_FILE_SIZE, // Use same limit as validation
-    })
-  );
+      return await uploadStreamToS3(
+        fileBytes(file),
+        key,
+        s3Client,
+        filename,
+        file.type || undefined
+      );
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId,
+        filename,
+        message: "Upload handler error",
+      });
+      throw error;
+    }
+  };
 }
 
 // Upload a buffer directly to S3 (useful for processed files)

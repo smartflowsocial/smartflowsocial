@@ -18,19 +18,13 @@ vi.mock("~/features/upload/s3.server", () => ({
   uploadEditorJSImage: vi.fn(),
 }));
 
-vi.mock("@remix-run/node", async () => {
-  const actual = await vi.importActual("@remix-run/node");
-  return {
-    ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => handlers[0]),
-    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async () => {
-      const formData = new FormData();
-      formData.append("image", "https://cdn.example.com/default.jpg");
-      return formData;
-    }),
-  };
-});
+vi.mock("@remix-run/form-data-parser", () => ({
+  parseFormData: vi.fn(async () => {
+    const formData = new FormData();
+    formData.append("image", "https://cdn.example.com/default.jpg");
+    return formData;
+  }),
+}));
 
 import { asRouteResponse } from "../utils/action-test-helpers";
 
@@ -99,15 +93,13 @@ describe("API: Upload EditorJS Image", () => {
       provider: "BLOSSOM_SFS",
     });
 
-    const { unstable_parseMultipartFormData } = await import("@remix-run/node");
+    const { parseFormData } = await import("@remix-run/form-data-parser");
     const formData = new FormData();
     formData.append(
       "image",
       new File(["image-bytes"], "cover.jpg", { type: "image/jpeg" })
     );
-    (
-      unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(formData);
+    (parseFormData as ReturnType<typeof vi.fn>).mockResolvedValue(formData);
 
     const request = new Request(
       "http://localhost:3000/api/upload-editorjs-image",
@@ -131,15 +123,13 @@ describe("API: Upload EditorJS Image", () => {
       provider: "S3",
     });
 
-    const { unstable_parseMultipartFormData } = await import("@remix-run/node");
+    const { parseFormData } = await import("@remix-run/form-data-parser");
     const formData = new FormData();
     formData.append(
       "image",
       new File(["image-bytes"], "cover.jpg", { type: "image/jpeg" })
     );
-    (
-      unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(formData);
+    (parseFormData as ReturnType<typeof vi.fn>).mockResolvedValue(formData);
 
     const request = new Request(
       "http://localhost:3000/api/upload-editorjs-image",

@@ -3,12 +3,8 @@
  * Centralized action processing for longform edit page
  */
 
-import {
-  redirect,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-  data,
-} from "@remix-run/node";
+import { parseFormData } from "@remix-run/form-data-parser";
+import { data, redirect } from "@remix-run/node";
 
 import {
   assertScheduleCapacity,
@@ -21,6 +17,7 @@ import {
 } from "~/features/posts/server/drafts";
 import { resolveExecutionRelaysFromForm } from "~/features/relays/relay-resolution.server";
 import { uploadBufferToS3 } from "~/features/upload/s3.server";
+import { DEFAULT_MEMORY_PART_BYTES } from "~/features/upload/validation.server";
 import {
   getUserById,
   getHashTagPresetById,
@@ -583,8 +580,9 @@ export async function handleLongFormEditAction(
   let formData: FormData;
 
   if (contentType.includes("multipart/form-data")) {
-    const uploadHandler = createMemoryUploadHandler();
-    formData = await parseMultipartFormData(request, uploadHandler);
+    formData = await parseFormData(request, {
+      maxFileSize: DEFAULT_MEMORY_PART_BYTES,
+    });
   } else {
     formData = await request.formData();
   }

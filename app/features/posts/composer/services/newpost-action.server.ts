@@ -4,12 +4,8 @@
  */
 /* eslint-disable sonarjs/cognitive-complexity -- action router branches by _action */
 
-import {
-  redirect,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-  data,
-} from "@remix-run/node";
+import { parseFormData } from "@remix-run/form-data-parser";
+import { data, redirect } from "@remix-run/node";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
@@ -21,6 +17,7 @@ import {
 import { getPostById, updatePost } from "~/features/posts/server";
 import { PublishEventMismatchError } from "~/features/posts/server/publishing";
 import { resolveExecutionRelaysFromFormDetailed } from "~/features/relays/relay-resolution.server";
+import { DEFAULT_MEMORY_PART_BYTES } from "~/features/upload/validation.server";
 import { getUserById } from "~/features/user";
 import { extractCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo, logWarning } from "~/lib/error-logger.server";
@@ -283,8 +280,9 @@ async function handleNewPostActionImpl(userId: string, request: Request) {
 
   let formData: FormData;
   if (isMultipart) {
-    const uploadHandler = createMemoryUploadHandler();
-    formData = await parseMultipartFormData(request, uploadHandler);
+    formData = await parseFormData(request, {
+      maxFileSize: DEFAULT_MEMORY_PART_BYTES,
+    });
   } else {
     formData = await request.formData();
   }
