@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.thread-view.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/cache/primalCache.server", () => ({
@@ -47,7 +48,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -90,7 +91,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -129,7 +130,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -159,7 +160,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -193,7 +194,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -223,7 +224,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -255,7 +256,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -289,7 +290,7 @@ describe("API: Thread View", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });

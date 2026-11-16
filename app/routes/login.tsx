@@ -17,8 +17,7 @@ export const meta: MetaFunction = ({ matches }) =>
  * Legacy /login route: redirect to app root so login lives at app.smartflow.social.
  * Preserves query params (e.g. ?expectedPubkey= for account switcher).
  */
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const url = new URL(request.url);
+export const loader = async ({ url }: LoaderFunctionArgs) => {
   const search = url.search ? url.search : "";
   return redirect(`/${search}`, {
     status: 302,

@@ -13,7 +13,7 @@ export const meta: MetaFunction = ({ matches }) =>
 /**
  * Public GET: no auth. Uses opaque token in <code>?t=</code>; response does not distinguish invalid vs valid tokens.
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   if (request.method !== "GET") {
     return data(
       {
@@ -23,7 +23,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { status: 405 }
     );
   }
-  const url = new URL(request.url);
   const t = url.searchParams.get("t");
   await applyUnsubscribeFromRawToken(t);
   return data(

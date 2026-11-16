@@ -2,6 +2,7 @@
  * Loader tests for app/routes/dashboard.admin._index (Overview tab).
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -124,7 +125,7 @@ describe("dashboard.admin._index loader", () => {
     const args: LoaderFunctionArgs = {
       request: new Request("http://localhost/dashboard/admin"),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -136,7 +137,7 @@ describe("dashboard.admin._index loader", () => {
     const args: LoaderFunctionArgs = {
       request: new Request("http://localhost/dashboard/admin"),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };

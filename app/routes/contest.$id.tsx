@@ -22,7 +22,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export const meta: MetaFunction<typeof loader> = ({
-  data,
+  loaderData: data,
   matches,
   params,
 }) => {

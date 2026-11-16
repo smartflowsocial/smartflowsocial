@@ -33,11 +33,10 @@ const REASON_LABELS: Record<BroadcastSuppressionReasonCode, string> = {
   OTHER: "Other",
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const notice = url.searchParams.get("notice");
   const [rows, savedAudiences] = await Promise.all([
     listSuppressionsByUser(userId),

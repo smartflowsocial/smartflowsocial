@@ -13,7 +13,6 @@ import {
 import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { BRAND_NAME } from "~/lib/brand";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
 import { cn } from "~/lib/utils";
 
 import { contestCopy } from "../contest-copy";
@@ -38,7 +37,7 @@ import { ContestSourcePostCard } from "./ContestSourcePostCard";
 import { ContestStateBanner } from "./ContestStateBanner";
 import { ContestStatsStrip } from "./ContestStatsStrip";
 
-type DetailData = SerializeFrom<ContestDetailPageData>;
+type DetailData = ContestDetailPageData;
 type ContestRow = DetailData["contest"];
 export type ContestDetailNostrUrls = NostrClientUrls;
 

@@ -31,6 +31,7 @@ import { getUserPlanType, requireAnySubscription } from "~/features/payments";
 import { getEffectiveBroadcastPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { dateLikeToIsoString } from "~/lib/date";
 
 interface BroadcastCampaignPreview {
@@ -59,11 +60,10 @@ interface BroadcastNewLoaderDataShape {
   >;
   unsubscribePreviewBaseUrl: string;
 }
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");
   const savedAudienceId = url.searchParams.get("savedAudienceId");
   const noticeParam = url.searchParams.get("notice");
@@ -74,7 +74,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userTimezone = user?.timezone ?? "Etc/UTC";
   const unsubscribePreviewBaseUrl =
     process.env["APP_URL"]?.trim().replace(/\/$/, "") ??
-    new URL(request.url).origin;
+    appUrlFromRequest(request).origin;
 
   const dataPromise = (async (): Promise<BroadcastNewLoaderDataShape> => {
     if (!campaignId) {

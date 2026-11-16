@@ -4,7 +4,7 @@ import path from "node:path";
 import url from "node:url";
 
 import { createRequestHandler } from "@react-router/express";
-import type { ServerBuild } from "react-router";
+import { RouterContextProvider, type ServerBuild } from "react-router";
 import compression from "compression";
 import { config } from "dotenv";
 import express from "express";
@@ -22,6 +22,7 @@ import rateLimit from "express-rate-limit";
 import { PlanBillingModel } from "@prisma/client";
 
 import { env } from "./app/lib/env.server";
+import { nonceContext } from "./app/lib/nonce-context";
 import { logInfo, logWarning } from "./app/lib/error-logger.server";
 import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
 import {
@@ -152,11 +153,12 @@ async function run() {
             "virtual:react-router/server-build"
           ) as Promise<ServerBuild>
       : ((await import(buildPath)) as ServerBuild),
-    getLoadContext: (_req, res) => ({
-      nonce: (res.locals as Record<string, unknown>)["nonce"] as
-        | string
-        | undefined,
-    }),
+    getLoadContext: (_req, res) => {
+      const context = new RouterContextProvider();
+      const nonce = (res.locals as Record<string, unknown>)["nonce"];
+      if (typeof nonce === "string") context.set(nonceContext, nonce);
+      return context;
+    },
   });
 
   const app = express();

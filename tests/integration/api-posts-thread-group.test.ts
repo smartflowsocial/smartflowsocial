@@ -2,6 +2,7 @@
  * Integration tests for GET /api/posts/thread-group
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("~/features/auth/auth.server", () => ({
@@ -19,7 +20,7 @@ import { loader } from "~/routes/api.posts.thread-group";
 
 const loaderArgs = {
   params: {},
-  context: {},
+  context: new RouterContextProvider(),
   url: new URL("http://localhost:3000/"),
   pattern: "*",
 } as const;

@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/loaders/dashboard-loader.cy.ts
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -119,7 +120,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -189,7 +190,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -215,7 +216,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -262,7 +263,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -292,7 +293,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -314,7 +315,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -336,7 +337,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -362,7 +363,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -380,7 +381,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -399,7 +400,7 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

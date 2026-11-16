@@ -5,7 +5,7 @@ import { GiveawayQueuePage, loadGiveawayData } from "~/features/giveaway";
 import { requireAnySubscription } from "~/features/payments";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import { giveawayLoaderDataSchema } from "~/lib/validation/schemas/loader-responses.schemas";
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, url, params }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
 
@@ -14,7 +14,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Check if user has access to giveaway feature
     await requireAnySubscription(userId);
 
-    const url = new URL(request.url);
     const queueType = params["queueType"] ?? "all";
     const days = parseInt(url.searchParams.get("days") ?? "7");
 

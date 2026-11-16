@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Posted Queue Loader section)
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock Prisma to prevent $use errors
@@ -95,7 +96,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -153,7 +154,7 @@ describe("Posted Posts Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -207,7 +208,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -236,7 +237,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -264,7 +265,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -306,7 +307,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -348,7 +349,7 @@ describe("Posted Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

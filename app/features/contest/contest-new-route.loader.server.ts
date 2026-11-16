@@ -10,7 +10,8 @@ import { getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import { getUserById } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
+
+import type { Route } from "../../routes/+types/dashboard.contests.new";
 
 import { getContestPresetById } from "./contest-presets.server";
 import { findContestCreationDraftByUserId } from "./repositories/contest-creation-draft.server";
@@ -19,7 +20,7 @@ import type { ContestRankReward, ContestRankingMetric } from "./types";
 /**
  * Remix loader for `/dashboard/contests/new`.
  */
-export async function contestNewLoader({ request }: LoaderFunctionArgs) {
+export async function contestNewLoader({ request, url }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
     throw new Response("Not found", { status: 404 });
   }
@@ -38,7 +39,6 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
   const planLabel = getPlanDisplayName(subscription as UserSubscription | null);
   const canUsePresets = getEffectiveGiveawayPlanLimits(planType).canUsePresets;
 
-  const url = new URL(request.url);
   const presetParam = url.searchParams.get("preset");
   let presetDefaults: null | {
     id: string;
@@ -91,4 +91,4 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export type ContestNewLoaderData = SerializeFrom<typeof contestNewLoader>;
+export type ContestNewLoaderData = Route.ComponentProps["loaderData"];

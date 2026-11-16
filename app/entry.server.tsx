@@ -9,12 +9,17 @@ import { PassThrough } from "node:stream";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
-import type { EntryContext } from "react-router";
-import { ServerRouter } from "react-router";
+import {
+  ServerRouter,
+  type EntryContext,
+  type RouterContextProvider,
+} from "react-router";
+
+import { logError } from "~/lib/error-logger.server";
+import { nonceContext } from "~/lib/nonce-context";
+import { initSentry } from "~/lib/sentry.server";
 
 // Initialize Sentry early for server-side error tracking
-import { logError } from "~/lib/error-logger.server";
-import { initSentry } from "~/lib/sentry.server";
 
 initSentry();
 
@@ -31,9 +36,9 @@ export default function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   reactRouterContext: EntryContext,
-  loadContext: { nonce?: string }
+  loadContext: RouterContextProvider
 ) {
-  const nonce = loadContext.nonce;
+  const nonce = loadContext.get(nonceContext);
   return isbot(request.headers.get("user-agent"))
     ? handleBotRequest(
         request,
