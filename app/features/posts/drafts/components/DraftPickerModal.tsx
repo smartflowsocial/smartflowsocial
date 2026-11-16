@@ -1,6 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { FileText, LayoutTemplate, List } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -66,14 +66,25 @@ export function DraftPickerModal({
 
   const templatesOnly = Boolean(draftsAndTemplates?.templatesOnly);
   const skipDraftsFetch = templatesOnly;
+  const requestedThisOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!open || skipDraftsFetch || fetcher.state !== "idle" || fetcher.data) {
+    if (!open) {
+      requestedThisOpenRef.current = false;
       return;
     }
+    if (
+      skipDraftsFetch ||
+      requestedThisOpenRef.current ||
+      fetcher.state !== "idle"
+    ) {
+      return;
+    }
+    // Fetcher data persists across unmount. Load again each time the dialog opens.
+    requestedThisOpenRef.current = true;
     fetcher.load("/dashboard/drafts");
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes; we only want to react to state/data
-  }, [open, skipDraftsFetch, fetcher.state, fetcher.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes; we only want to react to state
+  }, [open, skipDraftsFetch, fetcher.state]);
 
   const data = fetcher.data;
   const postsRaw = data?.posts ?? [];

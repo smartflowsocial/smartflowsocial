@@ -106,6 +106,29 @@ export function createSuccessResponse<T>(data: T): SuccessResponse<T> {
 }
 
 /**
+ * `v3_throwAbortReason` throws the request's abort reason out of cancelled
+ * loader and action calls. Loaders that catch everything must rethrow it so
+ * a disconnected client does not become a logged 500.
+ */
+export function isAbortReason(error: unknown): boolean {
+  if (typeof DOMException !== "undefined" && error instanceof DOMException) {
+    return error.name === "AbortError";
+  }
+  if (!(error instanceof Error)) return false;
+  if (error.name === "AbortError") return true;
+  return (
+    error.message.startsWith("query() call aborted") ||
+    error.message.startsWith("queryRoute() call aborted")
+  );
+}
+
+export function rethrowIfAbortReason(error: unknown): void {
+  if (isAbortReason(error)) {
+    throw error;
+  }
+}
+
+/**
  * Wrapper for Remix loaders with automatic error handling
  * Using export function (not const) to match pattern used by other server utilities
  * that work correctly with Remix bundler (e.g., requireUserId, requireFeatureAccess)
@@ -122,6 +145,7 @@ export function withErrorHandling<T>(
       }
       return json(result);
     } catch (error) {
+      rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
       // In Remix runtime, thrown Responses are caught and used as the response
       // In tests, we need to return it so we can assert on it
@@ -151,6 +175,7 @@ export function withActionErrorHandling<T>(
       }
       return json(result);
     } catch (error) {
+      rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
       // In Remix runtime, thrown Responses are caught and used as the response
       // In tests, we need to return it so we can assert on it
@@ -170,6 +195,7 @@ export function handleLoaderError(
   error: unknown,
   defaultData: unknown
 ): Response {
+  rethrowIfAbortReason(error);
   const [errorResponse, statusCode] = createErrorResponse(error);
   const defaultDataObj =
     defaultData && typeof defaultData === "object" ? defaultData : {};
@@ -186,6 +212,7 @@ export function handleLoaderError(
  * Handle errors in actions - returns error response
  */
 export function handleActionError(error: unknown): Response {
+  rethrowIfAbortReason(error);
   const [errorResponse, statusCode] = createErrorResponse(error);
   return json(errorResponse, { status: statusCode });
 }

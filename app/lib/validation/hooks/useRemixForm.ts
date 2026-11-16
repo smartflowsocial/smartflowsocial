@@ -5,7 +5,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFetcher } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -45,28 +45,26 @@ export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
   const isSuccess = fetcher.data?.success === true;
   const error = fetcher.data?.error;
 
-  // Handle success callback
+  const previousFetcherStateRef = useRef(fetcher.state);
+  // v3_fetcherPersist keeps fetcher.data after unmount. Callbacks run only on
+  // the submitting/loading → idle edge so a remount does not replay them.
   useEffect(() => {
-    if (isSuccess && onSuccess) {
-      onSuccess(fetcher.data);
+    const previous = previousFetcherStateRef.current;
+    previousFetcherStateRef.current = fetcher.state;
+    if (previous === "idle" || fetcher.state !== "idle") return;
+    const data = fetcher.data;
+    if (data?.success === true) {
+      onSuccess?.(data);
+      if (defaultValues) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Hook Form reset requires type assertion
+        form.reset(defaultValues as any);
+      }
+      return;
     }
-  }, [isSuccess, fetcher.data, onSuccess]);
-
-  // Handle error callback
-  useEffect(() => {
-    if (error && onError) {
-      onError(error);
+    if (typeof data?.error === "string" && data.error.length > 0) {
+      onError?.(data.error);
     }
-  }, [error, onError]);
-
-  // Reset form on successful submission
-  useEffect(() => {
-    if (isSuccess && defaultValues) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React Hook Form reset requires type assertion
-      form.reset(defaultValues as any);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Dependencies are intentionally limited to avoid unnecessary re-renders
-  }, [isSuccess, defaultValues]);
+  }, [fetcher.state, fetcher.data, form, onSuccess, onError, defaultValues]);
 
   const onSubmit = form.handleSubmit((data) => {
     const formData = new FormData();

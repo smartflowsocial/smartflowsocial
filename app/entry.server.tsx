@@ -18,7 +18,13 @@ import { initSentry } from "~/lib/sentry.server";
 
 initSentry();
 
-const ABORT_DELAY = 5_000;
+/**
+ * How long single fetch waits for deferred loader promises. The render abort
+ * is longer so a timed-out promise can flush before the HTML stream closes.
+ */
+export const streamTimeout = 5_000;
+
+const ABORT_DELAY = streamTimeout + 1_000;
 
 export default function handleRequest(
   request: Request,

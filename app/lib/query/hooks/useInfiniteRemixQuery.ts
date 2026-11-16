@@ -7,6 +7,19 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
+import { fetchRemixLoader } from "~/lib/remix/single-fetch";
+
+function loaderPathname(url: string): string {
+  try {
+    const base =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost";
+    return new URL(url, base).pathname;
+  } catch {
+    return url.split("?")[0] ?? url;
+  }
+}
 
 // PageData is a flexible type that allows any data structure
 // Some loaders have pagination, others don't - we make it optional
@@ -101,44 +114,15 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // Two params are needed for Remix to return plain JSON from a loader:
-      //   _data=<routeId>  – tells Remix to call only the loader (not render HTML)
-      //   _loader=json     – our custom flag; the loader checks this via
-      //                      isRemixResourceRequest() and returns json() instead
-      //                      of defer().  Remix strips _data before the loader
-      //                      sees the Request, so _loader is the only reliable
-      //                      signal the loader can inspect.
-      if (typeof window !== "undefined") {
-        try {
-          const baseUrl = url.startsWith("http")
-            ? url
-            : window.location.origin + url;
-          const urlObj = new URL(baseUrl);
-
-          if (!urlObj.searchParams.has("_data")) {
-            const routeId = pathnameToRemixDataRouteId(urlObj.pathname);
-            urlObj.searchParams.set("_data", routeId);
-          }
-          urlObj.searchParams.set("_loader", "json");
-          url = urlObj.pathname + urlObj.search;
-        } catch {
-          // Silently continue - URL might still work without _data parameter
-        }
+      // Single fetch returns turbo-stream at pathname.data. `_loader=json` makes
+      // the loader return plain data instead of defer(). The route id selects
+      // that loader via `_routes`.
+      const routeId = pathnameToRemixDataRouteId(loaderPathname(url));
+      const result = await fetchRemixLoader<TData>(url, routeId);
+      if (!result.ok || result.data == null) {
+        throw new Error(`HTTP error! status: ${result.status}`);
       }
-
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return (await response.json()) as TData;
+      return result.data;
     },
     initialPageParam: 1,
     getNextPageParam: wrappedGetNextPageParam,

@@ -1,11 +1,9 @@
-import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
+import { toSingleFetchActionUrl } from "~/lib/remix/single-fetch";
 
 /**
- * Builds a URL with the Remix `_data` parameter so a bare `fetch()` POST
- * returns the action's JSON response instead of a full HTML document.
+ * Bare `fetch()` POST target for a route action. Single fetch serves the
+ * action payload at `pathname.data` as turbo-stream, not HTML.
  */
 export function buildActionUrl(pathname: string): string {
-  const routeId = pathnameToRemixDataRouteId(pathname);
-  const separator = pathname.includes("?") ? "&" : "?";
-  return `${pathname}${separator}_data=${encodeURIComponent(routeId)}`;
+  return toSingleFetchActionUrl(pathname);
 }

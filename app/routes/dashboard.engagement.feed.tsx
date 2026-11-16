@@ -14,6 +14,7 @@ import {
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
 import { logError } from "~/lib/error-logger.server";
+import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   engagementLoaderDataSchema,
@@ -36,7 +37,10 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
   const limit = ENGAGEMENT_FEED_PAGE_SIZE;
-  const isDataRequest = url.searchParams.has("_data");
+  // Direct loader tests still pass `?_data=`. Remix strips that before a real
+  // request. Raw single-fetch calls send `_loader=json`, which is not stripped.
+  const isDataRequest =
+    url.searchParams.has("_data") || isRemixResourceRequest(request);
 
   if (isDataRequest) {
     try {

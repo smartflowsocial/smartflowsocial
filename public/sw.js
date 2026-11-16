@@ -166,9 +166,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Dashboard (and other) data requests with ?_data= - do not intercept; let the browser
-  // fetch directly so Remix fetcher gets a clean response and we avoid ERR_FAILED / SW issues.
-  if (url.searchParams.has("_data")) {
+  // Remix data requests. ?_data= is the pre-single-fetch protocol. .data and
+  // /__manifest are single fetch and lazy route discovery. Do not intercept;
+  // a service-worker wrapper turns those bodies into ERR_FAILED for the router.
+  if (
+    url.searchParams.has("_data") ||
+    url.pathname.endsWith(".data") ||
+    url.pathname === "/__manifest"
+  ) {
     return;
   }
 

@@ -13,12 +13,14 @@ vi.mock("~/lib/error-logger.server", () => ({
 // Don't mock errors - use actual implementations
 
 import {
+  assert,
+  assertExists,
   createErrorResponse,
   createSuccessResponse,
   handleActionError,
-  assert,
-  assertExists,
+  handleLoaderError,
 } from "~/lib/error-handler.server";
+import { logError } from "~/lib/error-logger.server";
 import {
   ValidationError,
   NotFoundError,
@@ -148,6 +150,25 @@ describe("Error Handler Utilities", () => {
       expect(jsonData.success).toBe(false);
       const normalized = normalizeError(error);
       expect(jsonData.error?.message).toBe(getUserFriendlyMessage(normalized));
+    });
+  });
+
+  describe("abort reasons", () => {
+    it("rethrows AbortError instead of logging a loader failure", () => {
+      const reason = new DOMException(
+        "The operation was aborted",
+        "AbortError"
+      );
+      expect(() => handleLoaderError(reason, {})).toThrow(reason);
+      expect(logError).not.toHaveBeenCalled();
+    });
+
+    it("rethrows Remix's cancelled query error from actions", () => {
+      const reason = new Error(
+        "query() call aborted: GET http://localhost/dashboard"
+      );
+      expect(() => handleActionError(reason)).toThrow(reason);
+      expect(logError).not.toHaveBeenCalled();
     });
   });
 

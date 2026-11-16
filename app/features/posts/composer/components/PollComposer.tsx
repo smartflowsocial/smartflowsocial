@@ -344,14 +344,18 @@ export function PollComposer({
     onComposerStatusChange?.(composerStatus);
   }, [composerStatus, onComposerStatusChange]);
 
+  const previousPollFetcherStateRef = useRef(fetcher.state);
   useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data) {
-      const data = fetcher.data as { error?: string };
-      if (typeof data.error === "string") {
-        setLastPublishFailed(true);
-        toast.error(data.error);
-        trackComposerEvent("composer_publish_failed", { source: "poll" });
-      }
+    const previous = previousPollFetcherStateRef.current;
+    previousPollFetcherStateRef.current = fetcher.state;
+    // Persisted fetcher data survives unmount. Toast only when this submission settles.
+    if (previous === "idle" || fetcher.state !== "idle" || !fetcher.data)
+      return;
+    const data = fetcher.data as { error?: string };
+    if (typeof data.error === "string") {
+      setLastPublishFailed(true);
+      toast.error(data.error);
+      trackComposerEvent("composer_publish_failed", { source: "poll" });
     }
   }, [fetcher.state, fetcher.data]);
 

@@ -17,6 +17,7 @@ import {
   startTransition,
 } from "react";
 
+import { fetchRemixLoader } from "~/lib/remix/single-fetch";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   flowLoaderDataSchema,
@@ -55,6 +56,12 @@ export const flowKeys = {
 
 /** Remix route ID for dashboard index (flow data); useRouteLoaderData(id) returns this route's loader data. */
 const DASHBOARD_INDEX_ROUTE_ID = "routes/dashboard._index";
+
+async function loadFlowPage(url: string): Promise<FlowLoaderData | null> {
+  const result = await fetchRemixLoader(url, DASHBOARD_INDEX_ROUTE_ID);
+  if (!result.ok) throw new Error(String(result.status));
+  return safeValidateLoaderResponse(result.data, flowLoaderDataSchema);
+}
 
 export interface UseFlowDataResult {
   flowItems: CombinedContent[];
@@ -207,16 +214,16 @@ export function useFlowData(): UseFlowDataResult {
     });
   }, [loaderDataRaw, queueType, contentTab]);
 
-  /** Build URL for dashboard index loader so we get flow JSON; use raw fetch() so Remix cannot overwrite _data */
+  /** Dashboard index loader. Single fetch turns this into `/dashboard.data`. */
   const buildFlowLoadMoreUrl = useCallback(
     (params: { before?: string; after?: string }) => {
       const search = new URLSearchParams();
-      search.set("_data", "routes/dashboard._index");
       if (queueType !== "all") search.set("queueType", queueType);
       if (contentTab !== "all") search.set("tab", contentTab);
       if (params.before != null) search.set("before", params.before);
       if (params.after != null) search.set("after", params.after);
-      return `/dashboard?${search.toString()}`;
+      const query = search.toString();
+      return query.length > 0 ? `/dashboard?${query}` : "/dashboard";
     },
     [queueType, contentTab]
   );
@@ -231,10 +238,7 @@ export function useFlowData(): UseFlowDataResult {
 
     const run = async () => {
       try {
-        const r = await fetch(url, { credentials: "same-origin" });
-        if (!r.ok) throw new Error(String(r.status));
-        const raw: unknown = await r.json();
-        const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
+        const data = await loadFlowPage(url);
         if (!data) {
           pastSentinelInFlightRef.current = null;
           return;
@@ -277,10 +281,7 @@ export function useFlowData(): UseFlowDataResult {
 
     const run = async () => {
       try {
-        const r = await fetch(url, { credentials: "same-origin" });
-        if (!r.ok) throw new Error(String(r.status));
-        const raw: unknown = await r.json();
-        const data = safeValidateLoaderResponse(raw, flowLoaderDataSchema);
+        const data = await loadFlowPage(url);
         if (!data) {
           futureSentinelInFlightRef.current = null;
           return;
