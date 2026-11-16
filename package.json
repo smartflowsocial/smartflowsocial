@@ -187,7 +187,7 @@
     "@react-router/fs-routes": "7.18.5",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/cypress": "^10.1.0",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/compression": "^1.8.1",
@@ -204,12 +204,12 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.60.1",
     "@typescript-eslint/parser": "^8.60.1",
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
+    "@vitest/coverage-v8": "^5.1.0",
+    "@vitest/ui": "^5.1.0",
     "autoprefixer": "^10.4.23",
     "chokidar": "^5.0.0",
     "cookie": "^1.1.1",
-    "cypress": "^15.8.2",
+    "cypress": "^16.3.0",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -245,7 +245,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.0.3",
-    "vitest": "^4.0.16"
+    "vitest": "^5.1.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
