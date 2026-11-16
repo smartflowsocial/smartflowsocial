@@ -33,6 +33,8 @@ describe("payout-state-mapper", () => {
     expect(mapPayoutItemPhase("paid")).toBe("Paid via wallet");
     expect(mapPayoutItemPhase("marked_paid")).toBe("Paid manually");
     expect(mapPayoutItemPhase("claim_needed")).toBe("Needs review");
+    expect(mapPayoutItemPhase("unknown")).toBe("Needs review");
+    expect(mapPayoutItemPhase("paying")).toBe("Paying");
     expect(mapPayoutItemPhase("failed")).toBe("Failed");
   });
 

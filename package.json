@@ -1,6 +1,6 @@
 {
   "name": "smartflow-social",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "A scheduler for Nostr. Sign with your own signer. The same code runs hosted or self-hosted.",
   "author": "SmartFlowSocial Team",
   "license": "Unlicense",
@@ -23,7 +23,7 @@
   "keywords": [
     "nostr",
     "social-media",
-    "remix",
+    "react-router",
     "typescript",
     "lightning",
     "bitcoin",

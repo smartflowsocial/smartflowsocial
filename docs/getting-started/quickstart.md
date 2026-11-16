@@ -75,8 +75,8 @@ See [Environment Setup](./installation.md#environment-configuration) for detaile
 # Generate Prisma client
 pnpm exec prisma generate
 
-# Push schema to database
-pnpm exec prisma db push
+# Apply migrations
+pnpm exec prisma migrate deploy
 
 # Seed initial data (optional)
 pnpm db:seed

@@ -455,6 +455,8 @@ Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can op
 
 **Payouts from the UI** use the same logic as the cron job:
 
+- **`REFERRAL_PAYOUTS_ENABLED`** must be `true`, `1`, or `yes`. A configured wallet does not enable
+  payouts by itself.
 - **`OWNER_NWC`** must be set; otherwise payout buttons stay disabled.
 - **Batch payout** processes referrers with **≥ 1000 sats** pending commission, **https/http LNURL**
   payout destination, and valid invoice fetch - see `runReferralPayoutBatch` in the codebase

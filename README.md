@@ -9,17 +9,17 @@ signing key stays in the signer.
 
 The same code is the hosted service and a self-hosted install. There is no private edition of the
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
-[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.1`. Release notes are in
-[docs/releases/v0.1.0-alpha.1.md](./docs/releases/v0.1.0-alpha.1.md). This repository starts at that
-version. `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository.
-Neither is a supported version.
+[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.2`. Release notes are in
+[docs/releases/v0.1.0-alpha.2.md](./docs/releases/v0.1.0-alpha.2.md). The tag is not published.
+`v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository. Neither is a
+supported version.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
 [![CI](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![Remix](https://img.shields.io/badge/Remix-app-121212?logo=remix&logoColor=white)](https://remix.run/)
+[![React Router](https://img.shields.io/badge/React%20Router-8-CA4245?logo=react-router&logoColor=white)](https://reactrouter.com/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-primary-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/redis-jobs-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
@@ -72,7 +72,7 @@ pnpm install
 cp example.env .env
 pnpm docker
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 pnpm db:seed
 pnpm dev
 ```
@@ -83,8 +83,9 @@ Open `http://localhost:3000`.
 Postgres is published on **127.0.0.1:5433** (container port `5432`). Redis is on **127.0.0.1:6379**.
 Those ports are not bound on every interface. The database name in that compose file is `postgres`,
 and the password there is for local development. Point `DATABASE_URL` and `REDIS_URL` at `127.0.0.1`
-before `prisma db push` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited by
-hosted plan caps. That does not include hosted Blossom or hosted Blastr.
+before `prisma migrate deploy` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited
+by hosted plan caps. That does not include hosted Blossom or hosted Blastr. `pnpm db:seed` replaces
+plan rows. A database that already has subscriptions should not be seeded.
 
 `pnpm dev` starts the web server and the worker, and restarts the worker when its files change.
 `pnpm worker:local` runs the worker without the web server. Running it next to `pnpm dev` starts a
@@ -141,7 +142,7 @@ Full index: [docs/README.md](./docs/README.md)
 
 ## How it is built
 
-- [Remix](https://remix.run) and TypeScript for the web app
+- [React Router](https://reactrouter.com) 8 and TypeScript for the web app
 - PostgreSQL and Prisma for stored data
 - Redis and BullMQ for the worker's jobs
 - NIP-07 and NIP-46 for signing
@@ -153,7 +154,7 @@ Deeper map: [Architecture](./docs/getting-started/architecture.md). Threat bound
 
 ## Repository
 
-- `app/` — Remix routes, features, and server modules
+- `app/` — React Router routes, features, and server modules
 - `prisma/` — schema, migrations, and seed
 - `docs/` — guides, reference, and operations
 - `tests/` — unit, integration, Cypress, security, and performance

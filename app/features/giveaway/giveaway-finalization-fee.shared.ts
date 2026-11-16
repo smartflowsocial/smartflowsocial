@@ -2,17 +2,12 @@
  * Pure finalization fee math (client + server). UI: "Finalization fee".
  */
 
+import { campaignFinalizationFeeRateBps } from "~/features/payments/plan-policy";
 import type { PlanType } from "~/features/payments/types";
 
-/** Free 10%, Creator 5%; Pro, Founder, Teams: 0%. */
+/** Rates live on the plan policy. Free is 10%, Creator is 5%, other known plans are 0%. */
 export function getFinalizationFeeRateBps(planType: PlanType): number {
-  if (planType === "free") {
-    return 1000;
-  }
-  if (planType === "creator") {
-    return 500;
-  }
-  return 0;
+  return campaignFinalizationFeeRateBps(planType);
 }
 
 export function computeFinalizationFeeSats(

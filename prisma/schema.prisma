@@ -1958,12 +1958,18 @@ enum PayoutItemStatus {
   failed
   claim_needed
   skipped
+  /// Invoice is stored and a wallet call may already be in flight.
+  paying
+  /// The wallet may have paid. Automatic retry is blocked.
+  unknown
 }
 
 enum PayoutAttemptStatus {
   started
   succeeded
   failed
+  /// The pay request was sent and the result was not confirmed.
+  unknown
 }
 
 model PayoutRun {
@@ -2030,7 +2036,9 @@ model PayoutItem {
   /** Wallet execution artifacts (if available) */
   walletRequestId String?
   paymentPreimage String?
-  paymentHash     String?
+  /// BOLT11 payment hash. Unique so the same invoice cannot be claimed twice.
+  /// Nulls are allowed on items that have not reached a wallet call.
+  paymentHash     String? @unique
 
   status       PayoutItemStatus @default(pending)
   errorCode    String?

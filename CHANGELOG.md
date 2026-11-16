@@ -9,6 +9,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-11-16
+
+Prepared locally. The tag and GitHub release are not published. Notes:
+[docs/releases/v0.1.0-alpha.2.md](docs/releases/v0.1.0-alpha.2.md).
+
+### Security
+
+- Campaign Lightning payouts pay a BOLT11 invoice only when the decoded amount is the exact
+  authorized whole-sat amount, on Bitcoin mainnet, unexpired, and carrying a payment hash. An LNURL
+  callback that returns any other invoice is refused before the wallet is called.
+- A campaign payout is claimed in the database before `pay_invoice`. A timeout, crash, or missing
+  acknowledgement leaves that claim `paying` or `unknown`. Automatic retries do not send another
+  payment. `lookup_invoice` can confirm a payment that already settled. When lookup cannot prove the
+  outcome, the payout stays blocked for an operator. See
+  [Payout reconciliation](docs/security/payout-reconciliation.md).
+- `paying` and `unknown` amounts stay inside the campaign budget, so a second worker cannot spend
+  them again.
+- Referral payouts no longer turn on because `OWNER_NWC` is set. Set `REFERRAL_PAYOUTS_ENABLED` to
+  `true`, `1`, or `yes` to keep them on. A timed-out referral claim is held instead of being
+  released for another invoice.
+
+### Changed
+
+- Operators who relied on the previous production compatibility path must set
+  `REFERRAL_PAYOUTS_ENABLED=true` before upgrading, or referral payouts stop.
+- A fresh `prisma migrate deploy` inserts the legacy plan rows the pricing migration expected.
+  `prisma db push` is no longer the documented install path.
+- In-app campaign commission copy matches the invoice: Free 10%, Creator 5%, and 0% on Starter, Pro,
+  Teams, and Founder. The public marketing pages still describe Starter as 7.5% and omit the Free
+  fee. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+
 ## [0.1.0-alpha.1] - 2026-11-15
 
 Prepared on `main`. The tag and GitHub release are not published. Notes:

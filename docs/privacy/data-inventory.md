@@ -4,8 +4,10 @@ This is an engineering inventory of what the application stores and where it goe
 privacy notice and it does not name a legal controller. The owner has to approve any text that is
 published to users.
 
-Reviewed against the Prisma schema and the payment, draft, media, and wallet code on 14
-November 2026.
+Reviewed against the Prisma schema, the account export and deletion routes, and the campaign fee
+code on 16 November 2026. The live pages at https://smartflow.social/privacy,
+https://smartflow.social/terms, and https://smartflow.social/pricing were read the same day. This
+repository does not contain that website, so those pages were not changed here.
 
 ## What is not stored
 
@@ -42,6 +44,8 @@ signs it.
 | Referral ledger and payout audit     | Postgres                              | Commission balance and operator history               |
 | Encrypted NWC connection             | Postgres (`encryptedNwc` and related) | Optional auto-renew and creator payouts               |
 | Owner NWC connection string          | Server environment (`OWNER_NWC`)      | Operator wallet for referral payouts. Not a user key. |
+| Campaign payout rows                 | Postgres (`PayoutItem`)               | Winner pubkey, amount, invoice, payment hash, status  |
+| Public-stats rate limit              | Redis, about 60 seconds               | Caller IP, not written to Postgres                    |
 
 An NWC connection string is a credential. The app encrypts the user connection at rest. Anyone who
 can read both the database and the encryption key can use that connection within the permissions the
@@ -120,7 +124,15 @@ Sessions and the encrypted NWC connection are on the user row and go with it.
 `ENABLE_NOSTR_DELETE_EVENTS`, when set, lets the server publish a kind 5 deletion signed by the
 operator key in `NOSTR_NSEC`. That key is not the user's Nostr key. Relays may ignore the deletion.
 
+The JSON export at `/dashboard/account/export` requires a signed-in session. It omits the encrypted
+wallet connection, session secrets, and Lightning preimages. Deletion is
+`POST /dashboard/account/delete` with CSRF, the phrase `delete my account`, and the relay
+acknowledgement.
+
 A GDPR Article 13 notice has to say who the controller is, the purposes, the legal bases, the
 recipients, the retention periods, and the rights to access, rectify, erase, restrict, and complain
 to a supervisory authority. Those sentences need the owner's legal identity. They are not in this
-repository.
+repository. The live privacy page, updated 15 November 2026, also leaves that identity blank.
+
+Hosted pricing claims that do not match the fee code are listed in
+[hosted service disclosures](../legal/hosted-service-disclosures.md).

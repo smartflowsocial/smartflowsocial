@@ -414,22 +414,23 @@ Optional caps, blank for no software cap and `0` or non-numeric for a closed cap
 
 ### REFERRAL_PAYOUTS_ENABLED
 
-`true`, `1`, or `yes` allow cron, admin, and manual referral payouts to call the wallet. Any other
-value, including `false` or an empty string, keeps those routes from paying. `example.env` sets
-`false` so a new self-host does not pay anyone. A missing `OWNER_NWC` never enables payouts.
+`true`, `1`, or `yes` (case-insensitive, surrounding spaces ignored) allow cron, admin, and manual
+referral payouts to call the wallet. Any other value, including `false`, an empty string, or an
+unset variable, keeps those routes from paying. `example.env` sets `false` so a new self-host does
+not pay anyone. `OWNER_NWC` does not enable payouts.
 
-An existing production process that already has `OWNER_NWC` and leaves the flag unset still pays,
-and logs a one-time warning. That path exists so a hosted deploy is not interrupted. Set `false` on
-that process to turn payouts off. New installs and every non-production process stay off until the
-flag is explicitly on. Production boot requires `REFERRAL_MANUAL_PAYOUT_SECRET` only when the flag
-is exactly `true`.
+A deployment that previously paid because `OWNER_NWC` was set and this flag was unset must set
+`REFERRAL_PAYOUTS_ENABLED=true` before upgrading. Otherwise referral payouts stop. Production boot
+requires `REFERRAL_MANUAL_PAYOUT_SECRET` when the flag is `true`, `1`, or `yes`. Uncertain payouts
+stay claimed until reconciliation. See
+[Payout reconciliation](../security/payout-reconciliation.md).
 
 ### REFERRAL_MANUAL_PAYOUT_SECRET
 
 Not required merely to boot. `POST /api/referral/manual-payout` returns 401 when this is unset or
 wrong, and 404 when `REFERRAL_PAYOUTS_ENABLED=false`. Send it as `X-Referral-Payout-Secret`.
-Generate one with `openssl rand -base64 32`. Production requires it only when
-`REFERRAL_PAYOUTS_ENABLED=true`.
+Generate one with `openssl rand -base64 32`. Production requires it when `REFERRAL_PAYOUTS_ENABLED`
+is `true`, `1`, or `yes`.
 
 The invoice amount must equal `amount_sats`. Amountless invoices and invoices larger than the
 declared amount are rejected before the wallet is called. Successful payouts are capped at

@@ -326,7 +326,9 @@ export default function AdminReferralsPage() {
           <h2 className="text-lg font-semibold">Payout actions</h2>
           {!payoutAvailable ? (
             <p className="text-text-secondary text-sm">
-              Set <code className="text-xs">OWNER_NWC</code> to enable payouts.
+              Set <code className="text-xs">REFERRAL_PAYOUTS_ENABLED=true</code>{" "}
+              and <code className="text-xs">OWNER_NWC</code> before payouts can
+              run. A wallet secret alone does not enable them.
             </p>
           ) : null}
 

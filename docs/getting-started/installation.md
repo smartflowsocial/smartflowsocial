@@ -75,7 +75,7 @@ cp example.env .env
 
 # 4. Set up database
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 # 5. Start services
 pnpm docker  # Starts PostgreSQL and Redis
@@ -213,7 +213,7 @@ Use a managed service:
 pnpm exec prisma generate
 
 # Push schema to database
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 # Or use migrations (production)
 pnpm exec prisma migrate deploy

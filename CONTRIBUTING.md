@@ -67,8 +67,8 @@ The name SmartFlowSocial and the logo are not part of the Unlicense grant. See
 
 ## Project Setup
 
-SmartFlowSocial is built with **Remix**, a full-stack web framework. Follow these steps to set up
-the development environment:
+SmartFlowSocial is built with React Router 8. Follow these steps to set up the development
+environment:
 
 ### Prerequisites
 
@@ -112,7 +112,7 @@ STORAGE_BUCKET=your_s3_bucket
 pnpm exec prisma generate
 
 # Run database push command
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 ```
 
@@ -585,7 +585,7 @@ Use appropriate labels to categorize issues:
 
    ```bash
    pnpm exec prisma generate
-   pnpm exec prisma db push
+   pnpm exec prisma migrate deploy
    pnpm db:seed
    ```
 

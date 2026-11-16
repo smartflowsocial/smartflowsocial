@@ -8,10 +8,11 @@ import {
 describe("giveaway-finalization-fee.shared", () => {
   it("maps plan types to bps", () => {
     expect(getFinalizationFeeRateBps("free")).toBe(1000);
+    expect(getFinalizationFeeRateBps("starter")).toBe(0);
     expect(getFinalizationFeeRateBps("creator")).toBe(500);
     expect(getFinalizationFeeRateBps("pro")).toBe(0);
+    expect(getFinalizationFeeRateBps("teams")).toBe(0);
     expect(getFinalizationFeeRateBps("founder")).toBe(0);
-    expect(getFinalizationFeeRateBps("pro")).toBe(0);
   });
 
   it("charges no fee when payout is zero", () => {

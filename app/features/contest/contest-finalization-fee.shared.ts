@@ -1,3 +1,4 @@
+import { campaignFinalizationFeeRateBps } from "~/features/payments/plan-policy";
 import type { PlanType } from "~/features/payments/types";
 
 import type { ContestPrizeMode, ContestRankReward } from "./types";
@@ -27,9 +28,7 @@ export function computePlannedPayoutSats(input: {
 }
 
 export function getContestFinalizationFeeRateBps(planType: PlanType): number {
-  if (planType === "free") return 1000;
-  if (planType === "creator") return 500;
-  return 0;
+  return campaignFinalizationFeeRateBps(planType);
 }
 
 export function computeContestFinalizationFeeSats(

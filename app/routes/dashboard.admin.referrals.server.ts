@@ -111,7 +111,9 @@ export async function loader({ request, url }: LoaderFunctionArgs) {
   return {
     section,
     rangePreset,
-    payoutAvailable: Boolean(env.OWNER_NWC?.trim()),
+    payoutAvailable:
+      referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED) &&
+      Boolean(env.OWNER_NWC?.trim()),
     stats,
     batchPreview,
     monetization,

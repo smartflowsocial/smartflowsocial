@@ -48,7 +48,7 @@ cp example.env .env
 
 # Set up database
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 # Start development server
 pnpm dev
