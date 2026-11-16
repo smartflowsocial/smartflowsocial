@@ -100,7 +100,7 @@
     "@getalby/sdk": "^7.0.0",
     "@hookform/resolvers": "^5.2.2",
     "@js-temporal/polyfill": "^0.5.1",
-    "@nostr-dev-kit/ndk": "^2.18.1",
+    "@nostr-dev-kit/ndk": "^3.0.3",
     "@nostrify/nostrify": "^0.55.1",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
