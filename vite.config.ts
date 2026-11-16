@@ -164,14 +164,19 @@ function stubServerModulesInClient(): Plugin {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
-    externalNonceContext(),
+    // Vite's dev module runner cannot load a bare #import marked external.
+    // Production Node can, and that is what keeps one copy in the image.
+    ...(command === "build" ? [externalNonceContext()] : []),
     stubServerModulesInClient(),
     reactRouter(),
     tsconfigPaths(),
   ],
-  ssr: {
-    external: ["#nonce-context"],
-  },
-});
+  ssr:
+    command === "build"
+      ? {
+          external: ["#nonce-context"],
+        }
+      : undefined,
+}));

@@ -1,6 +1,10 @@
 import { createContext } from "react-router";
 
-// One module instance shared by the Express server and the route server build.
-// A bundled copy would be a different context key, and get() would throw.
+const nonceKey = Symbol.for("smartflow.nonceContext");
+
+// Dev serves this module twice: Node loads it for Express, and Vite bundles
+// another copy for the server build. The symbol keeps those copies on one key.
+// A second key makes context.get() throw.
 /** @type {import("react-router").RouterContext<string | null>} */
-export const nonceContext = createContext(null);
+export const nonceContext =
+  globalThis[nonceKey] ?? (globalThis[nonceKey] = createContext(null));
