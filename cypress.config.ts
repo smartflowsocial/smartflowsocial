@@ -4,7 +4,7 @@ import { defineConfig } from "cypress";
 import { config } from "dotenv";
 
 // Load environment variables from .env file
-config({ path: resolve(__dirname, ".env") });
+config({ path: resolve(import.meta.dirname, ".env") });
 
 export default defineConfig({
   retries: {

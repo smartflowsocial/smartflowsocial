@@ -36,7 +36,7 @@ import "~/features/auth/signer/remote-signer-sessions-migration.client";
 import { BRAND_NAME } from "~/lib/brand";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
-import { nonceContext } from "~/lib/nonce-context";
+import { readRequestNonce } from "~/lib/nonce.server";
 import { QueryProvider } from "~/lib/query/QueryProvider";
 import { isDev } from "~/lib/runtime-env";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
@@ -120,7 +120,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
           SIGNING_MULTI_SLOT: env.SIGNING_MULTI_SLOT ?? null,
         },
         // Pass CSP nonce to client for inline scripts
-        nonce: context.get(nonceContext),
+        nonce: readRequestNonce(context),
       },
       {
         // Prevent caching of authentication state

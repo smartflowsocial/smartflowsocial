@@ -15,8 +15,8 @@ import {
   type RouterContextProvider,
 } from "react-router";
 
+import { nonceContext } from "#nonce-context";
 import { logError } from "~/lib/error-logger.server";
-import { nonceContext } from "~/lib/nonce-context";
 import { initSentry } from "~/lib/sentry.server";
 
 // Initialize Sentry early for server-side error tracking
@@ -38,7 +38,8 @@ export default function handleRequest(
   reactRouterContext: EntryContext,
   loadContext: RouterContextProvider
 ) {
-  const nonce = loadContext.get(nonceContext);
+  const nonceValue = loadContext.get(nonceContext);
+  const nonce = typeof nonceValue === "string" ? nonceValue : undefined;
   return isbot(request.headers.get("user-agent"))
     ? handleBotRequest(
         request,

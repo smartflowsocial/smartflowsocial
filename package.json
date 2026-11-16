@@ -5,6 +5,10 @@
   "author": "SmartFlowSocial Team",
   "license": "Unlicense",
   "private": true,
+  "type": "module",
+  "imports": {
+    "#nonce-context": "./scripts/nonce-context.mjs"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/smartflowsocial/smartflowsocial.git"
@@ -61,8 +65,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:report": "pnpm test:coverage && node scripts/coverage-trend.js record",
-    "test:coverage:trend": "node scripts/coverage-trend.js report",
+    "test:coverage:report": "pnpm test:coverage && node scripts/coverage-trend.cjs record",
+    "test:coverage:trend": "node scripts/coverage-trend.cjs report",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:property": "vitest run tests/property",
@@ -89,7 +93,7 @@
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
     "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
     "clean": "rm -rf build .react-router node_modules/.cache coverage .tsbuildinfo",
-    "lint:fix": "node scripts/fix-eslint-errors.js",
+    "lint:fix": "node scripts/fix-eslint-errors.cjs",
     "generate-icons": "tsx scripts/generate-pwa-icons.ts",
     "db:reseed-and-backfill-free": "tsx scripts/reseed-and-backfill-free.ts",
     "db:reseed-and-backfill-free:with-seed": "tsx scripts/reseed-and-backfill-free.ts --seed"

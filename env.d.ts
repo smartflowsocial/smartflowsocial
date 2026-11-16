@@ -1,6 +1,12 @@
 /// <reference types="vite/client" />
 /// <reference types="@react-router/node" />
 
+declare module "#nonce-context" {
+  import type { RouterContext } from "react-router";
+
+  export const nonceContext: RouterContext<string | null>;
+}
+
 declare global {
   interface Window {
     nostr?: {

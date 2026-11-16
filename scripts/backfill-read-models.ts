@@ -13,13 +13,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
+import { error as logError, log } from "./logger.cjs";
 
 // Script logger (avoids console.*)
-
-const { log, error: logError } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });

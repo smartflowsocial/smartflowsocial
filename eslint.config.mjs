@@ -335,7 +335,7 @@ export default (async () => {
 
     // Base: React & JSX for all files
     {
-      files: ["**/*.{js,jsx,ts,tsx}"],
+      files: ["**/*.{js,cjs,mjs,jsx,ts,tsx}"],
       plugins: {
         react: reactPlugin,
         "react-hooks": reactHooks,
