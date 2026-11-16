@@ -151,7 +151,10 @@ describe("Dashboard Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "posts" },
-      } as unknown as LoaderFunctionArgs;
+        context: new RouterContextProvider(),
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
