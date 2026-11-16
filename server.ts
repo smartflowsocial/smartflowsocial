@@ -1,15 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { webcrypto as nodeWebcrypto } from "node:crypto";
-import fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
 
-import { createRequestHandler } from "@remix-run/express";
-import type { ServerBuild } from "@remix-run/node";
-import { broadcastDevReady } from "@remix-run/node";
+import { createRequestHandler } from "@react-router/express";
+import type { ServerBuild } from "react-router";
 import compression from "compression";
 import { config } from "dotenv";
-import type { RequestHandler } from "express";
 import express from "express";
 import helmet from "helmet";
 import * as ipaddr from "ipaddr.js";
@@ -133,25 +130,31 @@ if (!globalWithCrypto.crypto?.getRandomValues) {
 void run();
 
 async function run() {
-  const BUILD_PATH = path.resolve("build/index.js");
-  const VERSION_PATH = path.resolve("build/version.txt");
+  const isDevelopment = env.NODE_ENV === "development";
+  const viteDevServer = isDevelopment
+    ? await (
+        await import("vite")
+      ).createServer({
+        server: { middlewareMode: true },
+      })
+    : undefined;
 
-  const initialBuild = await reimportServer();
-  const remixHandler =
-    env.NODE_ENV === "development"
-      ? await createDevRequestHandler(initialBuild)
-      : createRequestHandler({
-          build: initialBuild,
-          mode: initialBuild.mode,
-          getLoadContext: (req, res) => {
-            // Pass nonce to Remix loaders via context
-            return {
-              nonce: (res.locals as Record<string, unknown>)["nonce"] as
-                | string
-                | undefined,
-            };
-          },
-        });
+  const buildPath = url.pathToFileURL(
+    path.resolve("build/server/index.js")
+  ).href;
+  const requestHandler = createRequestHandler({
+    build: viteDevServer
+      ? () =>
+          viteDevServer.ssrLoadModule(
+            "virtual:react-router/server-build"
+          ) as Promise<ServerBuild>
+      : ((await import(buildPath)) as ServerBuild),
+    getLoadContext: (_req, res) => ({
+      nonce: (res.locals as Record<string, unknown>)["nonce"] as
+        | string
+        | undefined,
+    }),
+  });
 
   const app = express();
   const metricsApp = express();
@@ -381,8 +384,6 @@ async function run() {
   // Configure CSP to work with Remix (which uses inline scripts/styles)
   // Remix doesn't support nonces natively, so we use 'unsafe-inline' for Remix's generated content
   // Nonces are still generated and used for our custom inline scripts (e.g., window.ENV)
-  const isDevelopment = env.NODE_ENV === "development";
-
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -406,7 +407,12 @@ async function run() {
             "wss:", // WebSocket connections for Nostr
             "https:", // External API calls
             "http://127.0.0.1:7242", // Debug logging server
-            ...(isDevelopment ? ["ws://localhost:3001"] : []), // Remix dev server WebSocket
+            ...(env.NODE_ENV === "development"
+              ? [
+                  `ws://localhost:${env.PORT ?? "3000"}`,
+                  `ws://127.0.0.1:${env.PORT ?? "3000"}`,
+                ]
+              : []),
           ],
           workerSrc: [
             "'self'",
@@ -481,25 +487,26 @@ async function run() {
     next();
   });
 
-  // Remix fingerprints its assets so we can cache forever.
-  const buildPath = path.resolve("public/build");
-  app.use(
-    "/build",
-    express.static(buildPath, {
-      immutable: true,
-      maxAge: "1y",
-    })
-  );
-
-  // PWA: never cache the service worker script so updates (e.g. cache version bumps) reach clients.
+  // PWA: never cache the service worker script so updates reach clients.
   app.get("/sw.js", (_req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.type("application/javascript");
     res.sendFile(path.join(process.cwd(), "public", "sw.js"));
   });
 
-  // Everything else (like favicon.ico) is cached for an hour.
-  app.use(express.static(path.resolve("public"), { maxAge: "1h" }));
+  if (viteDevServer) {
+    app.use(viteDevServer.middlewares);
+  } else {
+    const clientBuild = path.resolve("build/client");
+    app.use(
+      "/assets",
+      express.static(path.join(clientBuild, "assets"), {
+        immutable: true,
+        maxAge: "1y",
+      })
+    );
+    app.use(express.static(clientBuild, { maxAge: "1h" }));
+  }
 
   app.use(morgan("tiny"));
 
@@ -585,7 +592,7 @@ async function run() {
   });
 
   // Express 5: Use app.use() without path for catch-all route handler
-  app.use(remixHandler);
+  app.use(requestHandler);
 
   const port = parseInt(env.PORT ?? "3000", 10);
   const host = env.HOST ?? "0.0.0.0"; // Listen on all interfaces for Docker
@@ -803,10 +810,6 @@ async function run() {
 
   app.listen(port, host, () => {
     logInfo("App ready", { host, port });
-
-    if (env.NODE_ENV === "development") {
-      void broadcastDevReady(initialBuild);
-    }
   });
 
   const metricsPort = parseInt(env.METRICS_PORT ?? "3010", 10);
@@ -814,63 +817,4 @@ async function run() {
   metricsApp.listen(metricsPort, host, () => {
     logInfo("Metrics ready", { host, metricsPort });
   });
-
-  async function reimportServer(): Promise<ServerBuild> {
-    // cjs: manually remove the server build from the require cache
-    Object.keys(require.cache).forEach((key) => {
-      if (key.startsWith(BUILD_PATH)) {
-        delete require.cache[key];
-      }
-    });
-
-    const stat = fs.statSync(BUILD_PATH);
-
-    // convert build path to URL for Windows compatibility with dynamic `import`
-    const BUILD_URL = url.pathToFileURL(BUILD_PATH).href;
-
-    // use a timestamp query parameter to bust the import cache
-    return import(BUILD_URL + "?t=" + stat.mtimeMs);
-  }
-
-  async function createDevRequestHandler(
-    initialBuild: ServerBuild
-  ): Promise<RequestHandler> {
-    let build = initialBuild;
-    async function handleServerUpdate() {
-      // 1. re-import the server build
-      build = await reimportServer();
-      // 2. tell Remix that this app server is now up-to-date and ready
-      void broadcastDevReady(build);
-    }
-    const chokidar = await import("chokidar");
-    chokidar
-      .watch(VERSION_PATH, { ignoreInitial: true })
-      .on("add", () => {
-        void handleServerUpdate();
-      })
-      .on("change", () => {
-        void handleServerUpdate();
-      });
-
-    // wrap request handler to make sure its recreated with the latest build for every request
-    return (req, res, next) => {
-      try {
-        const handler = createRequestHandler({
-          build,
-          mode: "development",
-          getLoadContext: () => {
-            // Pass nonce to Remix loaders via context
-            return {
-              nonce: (res.locals as Record<string, unknown>)["nonce"] as
-                | string
-                | undefined,
-            };
-          },
-        });
-        void handler(req, res, next);
-      } catch (error) {
-        next(error);
-      }
-    };
-  }
 }

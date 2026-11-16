@@ -3,7 +3,7 @@
  * Handles template editing operations
  */
 
-import { data as routeData } from "@remix-run/node";
+import { data as routeData } from "react-router";
 
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";

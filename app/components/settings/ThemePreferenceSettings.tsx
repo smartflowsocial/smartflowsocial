@@ -3,8 +3,8 @@
  * Header toggle can override for this browser only until you save here again.
  */
 
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useEffect, useMemo, useRef } from "react";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { Label } from "~/components/ui/label";
 import {
@@ -67,7 +67,7 @@ export function ThemePreferenceSettings({
     const d = fetcher.data;
     if (d?.success && d.themePreference) {
       pendingClearExpectedRef.current = d.themePreference;
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     }
   }, [fetcher.state, fetcher.data]);
 
@@ -102,7 +102,10 @@ export function ThemePreferenceSettings({
     const formData = new FormData();
     formData.append("_action", "update_theme_preference");
     formData.append("themePreference", next);
-    fetcher.submit(formData, { method: "post", action: "/dashboard/settings" });
+    void fetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
   };
 
   const isSubmitting = fetcher.state === "submitting";

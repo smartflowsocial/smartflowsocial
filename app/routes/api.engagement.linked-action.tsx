@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { upsertLinkedActionForEngagementItem } from "~/features/engagement/repositories/engagement-item-state.server";
 import { jsonResponse } from "~/lib/http/json-response";
 

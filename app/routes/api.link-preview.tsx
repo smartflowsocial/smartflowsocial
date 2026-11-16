@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 import { jsonResponse } from "~/lib/http/json-response";

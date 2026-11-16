@@ -1,5 +1,5 @@
-import type { FetcherWithComponents } from "@remix-run/react";
 import { useEffect } from "react";
+import type { FetcherWithComponents } from "react-router";
 
 export function useUnifiedComposerDraftStateLabelEffect(
   fetcher: FetcherWithComponents<unknown>,
@@ -14,7 +14,7 @@ export function useUnifiedComposerDraftStateLabelEffect(
   initialDraftId: string | null,
   skipLocalDraftRestore: boolean,
   draftPickerNavigateBase: string,
-  navigate: (to: string, opts?: { replace?: boolean }) => void
+  navigate: (to: string, opts?: { replace?: boolean }) => void | Promise<void>
 ) {
   /* Refs and setState are stable; deps match the previous inline effect in UnifiedComposer. */
   useEffect(() => {
@@ -58,7 +58,7 @@ export function useUnifiedComposerDraftStateLabelEffect(
           if (!initialDraftId && savedDraftId) {
             const base = draftPickerNavigateBase;
             const sep = base.includes("?") ? "&" : "?";
-            navigate(
+            void navigate(
               `${base}${sep}draftId=${encodeURIComponent(savedDraftId)}`,
               { replace: true }
             );

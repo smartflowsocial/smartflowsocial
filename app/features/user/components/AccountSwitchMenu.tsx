@@ -1,6 +1,6 @@
-import { Link, useFetcher } from "@remix-run/react";
 import { RefreshCw } from "lucide-react";
 import * as React from "react";
+import { Link, useFetcher } from "react-router";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -118,7 +118,7 @@ export default function AccountSwitchMenu() {
       fetcher.state === "idle" &&
       !fetcher.data
     ) {
-      fetcher.load("/api/children");
+      void fetcher.load("/api/children");
     }
   }, [open, hasAccountsAccess, fetcher.state, fetcher]);
 
@@ -130,7 +130,7 @@ export default function AccountSwitchMenu() {
       parentFetcher.state === "idle" &&
       !parentFetcher.data
     ) {
-      parentFetcher.load("/api/parent");
+      void parentFetcher.load("/api/parent");
     }
   }, [open, isChild, parentNpub, parentFetcher.state, parentFetcher]);
 

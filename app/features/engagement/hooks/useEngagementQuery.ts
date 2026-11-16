@@ -3,9 +3,9 @@
  * Provides caching and background refetching for engagement feed page
  */
 
-import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useFetcher, useLoaderData, useSearchParams } from "react-router";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -77,7 +77,7 @@ export function useEngagementQuery() {
   const [searchParams] = useSearchParams();
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   // Validate initial loader data
@@ -91,7 +91,7 @@ export function useEngagementQuery() {
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = `/dashboard/engagement/feed?page=${page}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       return new Promise<EngagementLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -129,7 +129,7 @@ export function useEngagementQuery() {
  */
 export function useEngagementInfiniteQuery() {
   const resolvedFromDefer = useEngagementResolvedLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined) {

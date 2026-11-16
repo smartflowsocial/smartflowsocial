@@ -1,18 +1,15 @@
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { lazy, Suspense } from "react";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 import {
   useLoaderData,
   useLocation,
   useNavigate,
   useNavigation,
-} from "@remix-run/react";
-import { lazy, Suspense } from "react";
+} from "react-router";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Skeleton } from "~/components/ui/skeleton";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   parseComposerContext,
   CreateComposerShell,
@@ -115,10 +112,10 @@ function ComposeSkeletonLayout() {
       onContentTypeChange={(next) => {
         if (navigation.state !== "idle") return;
         if (next === "article") {
-          navigate("/dashboard/compose?type=article");
+          void navigate("/dashboard/compose?type=article");
           return;
         }
-        navigate(
+        void navigate(
           `/dashboard/compose?type=${encodeURIComponent(next === "post" ? "post" : next)}`
         );
       }}

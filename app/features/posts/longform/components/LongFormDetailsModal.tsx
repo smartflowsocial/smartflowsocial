@@ -1,7 +1,7 @@
-import { Link } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";

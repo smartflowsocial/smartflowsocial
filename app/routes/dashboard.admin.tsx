@@ -1,9 +1,9 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { type LoaderFunctionArgs } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 
 import { AdminCurrencyProvider, AdminTabNav } from "~/features/admin";
 import { getAdminBtcSpotRates } from "~/features/admin/admin-fx-rates.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { FileText, Pencil, Trash2, X } from "lucide-react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";

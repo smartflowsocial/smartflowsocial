@@ -1,15 +1,20 @@
-/// <reference types="@remix-run/dev" />
-/// <reference types="@remix-run/node" />
+/// <reference types="vite/client" />
+/// <reference types="@react-router/node" />
 
-// Single fetch is on in remix.config.js. This makes loader and action types
-// describe the turbo-stream payload (Date stays Date) instead of JSON text.
-declare module "@remix-run/node" {
-  interface Future {
-    v3_singleFetch: true;
+declare module "react-router" {
+  interface AppLoadContext {
+    nonce?: string;
+  }
+
+  interface LoaderFunctionArgs {
+    context: AppLoadContext;
+  }
+
+  interface ActionFunctionArgs {
+    context: AppLoadContext;
   }
 }
 
-// Ensure Window.nostr type is available globally
 declare global {
   interface Window {
     nostr?: {

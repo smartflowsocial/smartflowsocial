@@ -2,7 +2,7 @@
  * Thread post action: create N posts (one per segment) with delay, optional threadGroupId.
  */
 
-import { redirect, data } from "@remix-run/node";
+import { redirect, data } from "react-router";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { resolveQueueTypeId } from "~/features/posts/server";

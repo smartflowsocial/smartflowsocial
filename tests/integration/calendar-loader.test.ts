@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 interface LoaderData {
@@ -157,6 +157,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -199,6 +201,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -244,6 +248,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -284,6 +290,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -328,6 +336,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -370,6 +380,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -401,6 +413,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -433,6 +447,8 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);

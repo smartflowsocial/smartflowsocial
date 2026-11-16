@@ -1,6 +1,6 @@
-import { Link } from "@remix-run/react";
 import { ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import {

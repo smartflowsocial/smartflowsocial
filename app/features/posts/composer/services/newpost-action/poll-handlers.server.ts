@@ -2,7 +2,7 @@
  * NIP-88 poll actions: post-poll, schedule-poll (kind 1068).
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { KIND_POLL, parsePollFromSignedEvent } from "~/features/polls";

@@ -1,35 +1,23 @@
+import { Suspense } from "react";
 import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   data,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
-import { Suspense } from "react";
+} from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   TemplatesPage,
   handleTemplatesAction,
-  loadTemplatesData,
   TemplatesPageSkeleton,
 } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  templatesLoaderDataSchema,
-  type TemplatesLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { TemplatesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-export async function loadTemplatesValidated(
-  userId: string
-): Promise<TemplatesLoaderData> {
-  await requireAnySubscription(userId);
-  const data = await loadTemplatesData(userId);
-  return validateLoaderResponse(data, templatesLoaderDataSchema);
-}
+import { loadTemplatesValidated } from "./dashboard.templates.loader.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

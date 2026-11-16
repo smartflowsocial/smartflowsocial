@@ -1,11 +1,11 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
   useFetcher,
   useNavigate,
   useNavigation,
   useRevalidator,
-} from "@remix-run/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from "react-router";
 
 import { NativeCheckbox } from "~/components/ui/native-checkbox";
 import { NativeRadio } from "~/components/ui/native-radio";
@@ -78,7 +78,7 @@ export function GiveawayNewBuilder({
   useEffect(() => {
     const d = saveFetcher.data;
     if (d?.ok === true && typeof d.giveawayId === "string") {
-      navigate(`/dashboard/giveaway/detail/${d.giveawayId}`, {
+      void navigate(`/dashboard/giveaway/detail/${d.giveawayId}`, {
         replace: true,
       });
     }
@@ -115,7 +115,7 @@ export function GiveawayNewBuilder({
     if (!formRef.current) return;
     const fd = new FormData(formRef.current);
     fd.set("responseMode", "json");
-    saveFetcher.submit(fd, { method: "post" });
+    void saveFetcher.submit(fd, { method: "post" });
   };
 
   const [scopeType, setScopeType] = useState<
@@ -226,9 +226,9 @@ export function GiveawayNewBuilder({
         fd.set("postId", payload.postId);
         fd.set("intent", "create");
         fd.delete("responseMode");
-        createAfterPublishFetcher.submit(fd, { method: "post" });
+        void createAfterPublishFetcher.submit(fd, { method: "post" });
       }
-      revalidator.revalidate();
+      void revalidator.revalidate();
     },
     [createAfterPublishFetcher, revalidator]
   );

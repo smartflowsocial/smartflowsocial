@@ -1,9 +1,4 @@
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 
 import { PageContent } from "~/components/layout/PageContent";
 import { Label } from "~/components/ui/label";
@@ -79,7 +74,7 @@ export function SettingsShell({
                 next.delete("billing");
               }
               const search = next.toString();
-              navigate(
+              void navigate(
                 {
                   pathname: location.pathname,
                   search: search ? `?${search}` : "",

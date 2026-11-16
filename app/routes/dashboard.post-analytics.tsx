@@ -1,10 +1,10 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 
 import { loadPostAnalyticsPage } from "~/features/analytics/load-post-analytics.server";
 import { PostAnalyticsPage } from "~/features/analytics/PostAnalyticsPage";
 import { collectViewerPostAnalytics } from "~/features/analytics/run-sweep.server";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   isSubscriptionActiveForGating,
   requireAnySubscription,

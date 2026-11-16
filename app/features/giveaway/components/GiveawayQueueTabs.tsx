@@ -1,4 +1,4 @@
-import { Link, useRevalidator } from "@remix-run/react";
+import { Link, useRevalidator } from "react-router";
 
 import {
   getQueueAccentHex,
@@ -30,7 +30,11 @@ export function GiveawayQueueTabs({
         <Link
           to="/dashboard/giveaway"
           prefetch="intent"
-          onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+          onClick={() => {
+            setTimeout(() => {
+              void revalidator.revalidate();
+            }, 0);
+          }}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             !currentQueueType
               ? "border-selection-border text-selection-foreground"
@@ -61,7 +65,11 @@ export function GiveawayQueueTabs({
                 key={typeof queueType === "object" ? queueType.id : queueName}
                 to={`/dashboard/giveaway/${queueName}`}
                 prefetch="intent"
-                onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+                onClick={() => {
+                  setTimeout(() => {
+                    void revalidator.revalidate();
+                  }, 0);
+                }}
                 className={`${baseClasses} border-b-2`}
                 style={{
                   borderBottomColor: accentHex,
@@ -78,7 +86,11 @@ export function GiveawayQueueTabs({
               key={typeof queueType === "object" ? queueType.id : queueName}
               to={`/dashboard/giveaway/${queueName}`}
               prefetch="intent"
-              onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+              onClick={() => {
+                setTimeout(() => {
+                  void revalidator.revalidate();
+                }, 0);
+              }}
               className={`${baseClasses} ${
                 isSelected
                   ? `border-selection-border text-selection-foreground ${colors.text}`

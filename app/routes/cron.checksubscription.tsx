@@ -1,11 +1,8 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { checkAndRenewSubscriptions } from "~/features/payments";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 import { jsonResponse } from "~/lib/http/json-response";
-import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
-
-ensureServerWebSocket();
 
 /**
  * Manual trigger for the subscription renewal sweep. The worker runs the same

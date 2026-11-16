@@ -2,9 +2,12 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   type MetaFunction,
-} from "@remix-run/node";
+} from "react-router";
 
-import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
+import {
+  refreshUserProfileIfEmpty,
+  requireUser,
+} from "~/features/auth/auth.server";
 import {
   requireDashboardSubscriptionContext,
   ensureUserHasFreePlan,

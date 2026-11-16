@@ -6,7 +6,7 @@
 
 import { parse } from "cookie";
 
-import { createUserSession } from "~/features/auth";
+import { createUserSession } from "~/features/auth/auth.server";
 import { createUser } from "~/features/user";
 
 async function createAndLogin(email: string) {

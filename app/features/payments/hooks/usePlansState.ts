@@ -1,5 +1,5 @@
-import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 
 import {
   clearBtcpayConfirmationWatch,
@@ -127,7 +127,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
         }, 0);
         processedPaymentIdRef.current = null;
         setTimeout(() => {
-          navigate("/dashboard", { replace: true });
+          void navigate("/dashboard", { replace: true });
         }, 2000);
         return;
       }
@@ -225,7 +225,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
     if (!user) {
       // Prevent form submission and redirect to login if not authenticated
       event.preventDefault();
-      navigate("/login", { replace: true });
+      void navigate("/login", { replace: true });
       return false;
     }
     setSelectedPlan(planId);
@@ -264,7 +264,7 @@ export function usePlansState({ user, actionData }: UsePlansStateProps) {
   const handleOpenCheckout = useCallback(
     (planId: string) => {
       if (!user) {
-        navigate("/login", { replace: true });
+        void navigate("/login", { replace: true });
         return;
       }
       setSelectedPlan(planId);

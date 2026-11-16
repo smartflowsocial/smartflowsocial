@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { purgeRetainedRecords } from "~/features/user/data/account-data.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";

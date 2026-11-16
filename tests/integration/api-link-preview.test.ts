@@ -40,7 +40,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -89,7 +95,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -135,7 +147,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -176,7 +194,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -224,7 +248,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -252,7 +282,13 @@ describe("API: Link Preview", () => {
     it("should return validation error when url parameter is missing", async () => {
       const request = new Request("http://localhost:3000/api/link-preview");
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -274,7 +310,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=not-a-url"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -295,7 +337,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=ftp://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -320,7 +368,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -346,7 +400,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -373,7 +433,13 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com/404"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -404,8 +470,16 @@ describe("API: Link Preview", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -442,8 +516,16 @@ describe("API: Link Preview", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();

@@ -1,10 +1,10 @@
+import { useEffect, useState } from "react";
 import {
   Link,
   useFetcher,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { useEffect, useState } from "react";
+} from "react-router";
 
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import { Button } from "~/components/ui/button";
@@ -106,7 +106,7 @@ export function AdminOperationsPageInner() {
       queueMicrotask(() => {
         setReplayError(null);
         setReplayTarget(null);
-        revalidator.revalidate();
+        void revalidator.revalidate();
       });
     }
   }, [fetcher.state, fetcher.data, revalidator, replayTarget]);
@@ -132,7 +132,7 @@ export function AdminOperationsPageInner() {
             .map(([q, n]) => `${q}: ${n}`)
             .join(" · ")}).`
         );
-        revalidator.revalidate();
+        void revalidator.revalidate();
       });
     }
   }, [cleanFetcher.state, cleanFetcher.data, revalidator]);
@@ -154,7 +154,7 @@ export function AdminOperationsPageInner() {
         setMaintenanceNotice(
           `Deleted ${pr.deletedCount} relay ACK row(s) with createdAt before ${pr.cutoffIso} (older than ${pr.olderThanDays}d).`
         );
-        revalidator.revalidate();
+        void revalidator.revalidate();
       });
     }
   }, [purgeFetcher.state, purgeFetcher.data, revalidator]);

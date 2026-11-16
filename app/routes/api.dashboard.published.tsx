@@ -1,10 +1,8 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { jsonAction, jsonLoader } from "~/lib/remix/json-response.server";
-import {
-  action as publishedAction,
-  loadPublishedData,
-} from "~/routes/dashboard.published";
+import { action as publishedAction } from "~/routes/dashboard.published";
+import { loadPublishedData } from "~/routes/dashboard.published.loader.server";
 
 export const loader = jsonLoader(({ request, params }: LoaderFunctionArgs) =>
   loadPublishedData(request, params)

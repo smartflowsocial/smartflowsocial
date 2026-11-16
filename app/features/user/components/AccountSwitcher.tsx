@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import * as React from "react";
+import { useFetcher } from "react-router";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import {
@@ -52,7 +52,7 @@ export default function AccountSwitcher() {
       fetcher.state === "idle" &&
       !fetcher.data
     ) {
-      fetcher.load("/api/children");
+      void fetcher.load("/api/children");
     }
   }, [isChild, hasAccountsAccess, fetcher.state, fetcher]);
 

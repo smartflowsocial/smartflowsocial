@@ -3,7 +3,7 @@
  * `~/lib/csrf` stays free of server imports so the browser build can see it.
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import { jsonResponse } from "~/lib/http/json-response";
 import { isStateChangingMethod, validateOrigin } from "~/lib/security.server";

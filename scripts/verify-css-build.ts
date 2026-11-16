@@ -14,7 +14,7 @@ const { log, error } = require("./logger") as {
   error: (..._args: unknown[]) => void;
 };
 
-const buildAssetsDir = path.join(process.cwd(), "public", "build", "_assets");
+const buildAssetsDir = path.join(process.cwd(), "build", "client", "assets");
 
 if (!fs.existsSync(buildAssetsDir)) {
   error("ERROR: Build assets directory not found:", buildAssetsDir);

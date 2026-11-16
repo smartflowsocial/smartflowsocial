@@ -4,7 +4,7 @@
     "**/*.cy.ts",
     "**/*.config.ts",
     "support/**/*",
-    "../../remix.env.d.ts",
+    "../../env.d.ts",
     "../../app/types/**/*.d.ts"
   ],
   "compilerOptions": {

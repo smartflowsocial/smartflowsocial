@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireSession: vi.fn(),
   requireUserId: vi.fn(),
 }));
@@ -57,7 +57,7 @@ import {
 } from "../utils/nostr-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { requireSession } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { KIND_RELAY_LIST_NIP65 } from "~/features/nostr/nostr-event-kinds";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import { buildPollTags, KIND_VOTE } from "~/features/polls";
@@ -109,7 +109,15 @@ describe("API: Publish", () => {
         request: Request;
         params: Record<string, string>;
         context: Record<string, unknown>;
-      } = { request, params: {}, context: {} };
+        url: URL;
+        pattern: string;
+      } = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data =
@@ -155,6 +163,8 @@ describe("API: Publish", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const dataRaw: unknown = await response.json();
       const data =
@@ -182,7 +192,15 @@ describe("API: Publish", () => {
         request: Request;
         params: Record<string, string>;
         context: Record<string, unknown>;
-      } = { request, params: {}, context: {} };
+        url: URL;
+        pattern: string;
+      } = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data =
@@ -251,7 +269,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -305,7 +329,13 @@ describe("API: Publish", () => {
         body: JSON.stringify({ event: voteEvent, pollEvent }),
       });
 
-      await action({ request, params: {}, context: {} });
+      await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
 
       expect(publishSignedEventToRelays).toHaveBeenCalled();
       const publishDedupedInput = vi.mocked(publishSignedEventToRelays).mock
@@ -339,6 +369,8 @@ describe("API: Publish", () => {
         request: buildRequest(),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
       });
       const firstRaw: unknown = await firstResponse.json();
       const firstBody =
@@ -350,6 +382,8 @@ describe("API: Publish", () => {
         request: buildRequest(),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
       });
       const secondRaw: unknown = await secondResponse.json();
       const secondBody =
@@ -381,8 +415,20 @@ describe("API: Publish", () => {
         body: JSON.stringify({ event: mockEvent, attemptId: "attempt-B" }),
       });
 
-      await action({ request: requestA, params: {}, context: {} });
-      await action({ request: requestB, params: {}, context: {} });
+      await action({
+        request: requestA,
+        params: {},
+        context: {},
+        url: new URL(requestA.url),
+        pattern: "*",
+      });
+      await action({
+        request: requestB,
+        params: {},
+        context: {},
+        url: new URL(requestB.url),
+        pattern: "*",
+      });
 
       expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
     });
@@ -400,8 +446,20 @@ describe("API: Publish", () => {
           body: JSON.stringify({ event: mockEvent }),
         });
 
-      await action({ request: buildRequest(), params: {}, context: {} });
-      await action({ request: buildRequest(), params: {}, context: {} });
+      await action({
+        request: buildRequest(),
+        params: {},
+        context: {},
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
+      });
+      await action({
+        request: buildRequest(),
+        params: {},
+        context: {},
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
+      });
 
       expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
     });
@@ -429,8 +487,20 @@ describe("API: Publish", () => {
         }
       );
 
-      await action({ request: requestEmpty, params: {}, context: {} });
-      await action({ request: requestOversized, params: {}, context: {} });
+      await action({
+        request: requestEmpty,
+        params: {},
+        context: {},
+        url: new URL(requestEmpty.url),
+        pattern: "*",
+      });
+      await action({
+        request: requestOversized,
+        params: {},
+        context: {},
+        url: new URL(requestOversized.url),
+        pattern: "*",
+      });
 
       expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
     });
@@ -446,7 +516,15 @@ describe("API: Publish", () => {
         request: Request;
         params: Record<string, string>;
         context: Record<string, unknown>;
-      } = { request, params: {}, context: {} };
+        url: URL;
+        pattern: string;
+      } = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data =
@@ -485,7 +563,13 @@ describe("API: Publish", () => {
         }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       // Response should be rethrown by error handler, so we should get a redirect
       expect(response.status).toBe(302);
       expect(response.headers.get("Location")).toBe("/login");
@@ -502,7 +586,15 @@ describe("API: Publish", () => {
         request: Request;
         params: Record<string, string>;
         context: Record<string, unknown>;
-      } = { request, params: {}, context: {} };
+        url: URL;
+        pattern: string;
+      } = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data =
@@ -535,7 +627,15 @@ describe("API: Publish", () => {
         request: Request;
         params: Record<string, string>;
         context: Record<string, unknown>;
-      } = { request, params: {}, context: {} };
+        url: URL;
+        pattern: string;
+      } = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionParams);
       const dataRaw: unknown = await response.json();
       const data =
@@ -585,7 +685,13 @@ describe("API: Publish", () => {
         body: JSON.stringify({ event: voteEvent }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       expect(response.status).toBe(400);
     });
   });

@@ -1,5 +1,5 @@
-import type { FetcherWithComponents } from "@remix-run/react";
 import { useEffect } from "react";
+import type { FetcherWithComponents } from "react-router";
 
 export function useLongFormPostDraftStateLabelEffect(
   fetcher: FetcherWithComponents<unknown>,

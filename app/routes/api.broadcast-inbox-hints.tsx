@@ -1,7 +1,7 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 
-import { requireSession } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { jsonResponse } from "~/lib/http/json-response";
 import { resolveCachedKind10050InboxRelays } from "~/lib/nostr.messenger.server";

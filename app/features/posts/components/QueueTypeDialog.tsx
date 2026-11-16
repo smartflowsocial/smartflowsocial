@@ -1,9 +1,9 @@
-import type { FetcherWithComponents } from "@remix-run/react";
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Check, Loader2, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
+import type { FetcherWithComponents } from "react-router";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
@@ -447,7 +447,7 @@ export function QueueTypeDialog({
           if (data.queueType && onQueueCreatedOrUpdated) {
             onQueueCreatedOrUpdated(data);
           }
-          revalidator.revalidate();
+          void revalidator.revalidate();
           const action = isEditing ? "updated" : "created";
           toast.success(`Queue type ${action} successfully!`);
           onOpenChange(false);
@@ -504,7 +504,7 @@ export function QueueTypeDialog({
       formData.set("id", queueType.id);
     }
 
-    fetcher.submit(
+    void fetcher.submit(
       formData,
       submitAction
         ? { method: "post", action: submitAction }

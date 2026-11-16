@@ -2,9 +2,9 @@ import {
   redirect,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
-} from "@remix-run/node";
+} from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { NewLongFormPostPage } from "~/features/posts/longform";
 import { handleNewLongFormAction } from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf.server";

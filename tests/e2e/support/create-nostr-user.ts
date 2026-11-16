@@ -81,7 +81,8 @@ async function createNostrUserAndLogin(npub: string) {
   });
 
   // Import createUserSession lazily to keep env bootstrap ordering predictable.
-  const { createUserSession } = await import("../../../app/features/auth");
+  const { createUserSession } =
+    await import("../../../app/features/auth/auth.server");
 
   // Create or find the user
   let user = await prisma.user.findUnique({

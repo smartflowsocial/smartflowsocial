@@ -1,10 +1,8 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { jsonAction, jsonLoader } from "~/lib/remix/json-response.server";
-import {
-  action as draftsAction,
-  loadDraftsValidated,
-} from "~/routes/dashboard.drafts";
+import { action as draftsAction } from "~/routes/dashboard.drafts";
+import { loadDraftsValidated } from "~/routes/dashboard.drafts.loader.server";
 
 export const loader = jsonLoader(({ request, params }: LoaderFunctionArgs) =>
   loadDraftsValidated(request, params)

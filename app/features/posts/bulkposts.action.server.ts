@@ -2,10 +2,10 @@
  * Server-side action handlers for bulk posts
  * Extracted from dashboard.bulkposts.tsx
  */
-import { redirect, data } from "@remix-run/node";
+import { redirect, data } from "react-router";
 import { z } from "zod";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
 import { capMessage } from "~/features/payments/entitlements/deployment-mode";

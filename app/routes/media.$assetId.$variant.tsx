@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 
 import { getMediaAssetStatus, resolveMediaVariantUrl } from "~/features/upload";
 import { jsonResponse } from "~/lib/http/json-response";

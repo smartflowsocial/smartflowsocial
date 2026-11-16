@@ -1,69 +1,21 @@
-import {
-  type LoaderFunctionArgs,
-  type ActionFunctionArgs,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
-import { SCHEDULED_DATE_RANGE_QUERY_LIMIT } from "~/features/posts/deferred-loader-limits";
+import { requireUserId } from "~/features/auth/auth.server";
 import { ScheduledPostsPage } from "~/features/posts/scheduling";
 import { ScheduledPostsPageSkeleton } from "~/features/posts/scheduling/ScheduledPostsPageSkeleton";
 import type {
   LongFormPostType as _LongFormPostType,
   UserData as _UserData,
 } from "~/features/posts/server";
-import {
-  handleScheduledAction,
-  loadScheduledData,
-} from "~/features/posts/server/scheduling";
+import { handleScheduledAction } from "~/features/posts/server/scheduling";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  scheduledPostsLoaderDataSchema,
-  type ScheduledPostsLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { ScheduledPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-export async function loadScheduledValidated(
-  request: Request,
-  params: LoaderFunctionArgs["params"]
-): Promise<ScheduledPostsLoaderData> {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  const queueType =
-    params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
-  const dateFrom = url.searchParams.get("dateFrom") ?? undefined;
-  const dateTo = url.searchParams.get("dateTo") ?? undefined;
-  const hasDateRange = Boolean(dateFrom ?? dateTo);
-  const page = hasDateRange
-    ? 1
-    : parseInt(url.searchParams.get("page") ?? "1", 10);
-  const limit = hasDateRange ? SCHEDULED_DATE_RANGE_QUERY_LIMIT : 20;
-
-  const data = await loadScheduledData(
-    userId,
-    queueType,
-    page,
-    limit,
-    dateFrom,
-    dateTo
-  );
-
-  const outData = hasDateRange
-    ? {
-        ...data,
-        pagination: { ...data.pagination, pages: 1 },
-        longformPagination: { ...data.longformPagination, pages: 1 },
-      }
-    : data;
-
-  return validateLoaderResponse(outData, scheduledPostsLoaderDataSchema);
-}
+import { loadScheduledValidated } from "./dashboard.scheduled.loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

@@ -3,7 +3,7 @@
  * redirecting to /dashboard/compose so the host page stays mounted.
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { getPostById } from "~/features/posts/server";
 

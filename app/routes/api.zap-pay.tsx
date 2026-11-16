@@ -1,10 +1,7 @@
 import { NWCClient } from "@getalby/sdk";
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { getUserId } from "~/features/auth";
+import { getUserId } from "~/features/auth/auth.server";
 import { getDecryptedUserNWC, touchUserNwcLastUsed } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { jsonResponse } from "~/lib/http/json-response";

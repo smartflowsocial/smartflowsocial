@@ -5,9 +5,9 @@
  * prefetches the previous period so Back is already cached.
  */
 
-import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
+import { useParams, useSearchParams } from "react-router";
 
 import type { CalendarPost } from "~/features/posts/calendar/Calendar/PostBlock.types";
 import {

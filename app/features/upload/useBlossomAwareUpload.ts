@@ -1,6 +1,6 @@
-import { useNavigate } from "@remix-run/react";
 import { useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router";
 
 import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
 import { logClientError } from "~/lib/error-handler.client";
@@ -305,7 +305,7 @@ export function useBlossomAwareUpload() {
           // Check if this was a redirect response
           if (fetchResponse.redirected || result["redirect"]) {
             const redirectUrl = result["redirect"] ?? fetchResponse.url;
-            navigate(redirectUrl);
+            void navigate(redirectUrl);
           }
         }
 

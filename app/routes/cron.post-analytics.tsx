@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { runPaidPostAnalyticsSweep } from "~/features/analytics/run-sweep.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";

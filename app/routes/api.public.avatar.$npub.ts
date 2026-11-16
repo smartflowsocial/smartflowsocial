@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { renderAvatar } from "~/features/public-stats/avatar.server";
 import { publicStatsEnabled } from "~/features/public-stats/public-stats.server";

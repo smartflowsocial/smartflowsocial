@@ -4,7 +4,7 @@
  * Handles scheduled posts data loading and actions
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";

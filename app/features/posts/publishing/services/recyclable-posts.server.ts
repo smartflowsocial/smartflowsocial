@@ -4,7 +4,7 @@
  * Handles recyclable posts data loading and actions (repost, quote, delete)
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import { shouldShowQueueInUi } from "~/features/posts/queue-status";

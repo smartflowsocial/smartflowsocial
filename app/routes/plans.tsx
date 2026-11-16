@@ -1,5 +1,5 @@
-import { redirect, data } from "@remix-run/node";
-import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
+import { redirect, data } from "react-router";
+import type { ActionFunctionArgs, MetaFunction } from "react-router";
 
 import {
   PlansPage,

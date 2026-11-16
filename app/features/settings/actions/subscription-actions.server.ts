@@ -3,7 +3,7 @@
  */
 
 import { NWCClient } from "@getalby/sdk";
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import {
   createPlanInvoice,

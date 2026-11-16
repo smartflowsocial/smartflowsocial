@@ -1,4 +1,3 @@
-import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 import {
@@ -8,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { Link, useFetcher } from "react-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button, type ButtonProps } from "~/components/ui/button";
@@ -304,7 +304,7 @@ export default function UserMenu() {
       fetcher.state === "idle" &&
       !fetcher.data
     ) {
-      fetcher.load("/api/children");
+      void fetcher.load("/api/children");
     }
   }, [open, hasAccountsAccess, fetcher.state, fetcher]);
 
@@ -316,7 +316,7 @@ export default function UserMenu() {
       parentFetcher.state === "idle" &&
       !parentFetcher.data
     ) {
-      parentFetcher.load("/api/parent");
+      void parentFetcher.load("/api/parent");
     }
   }, [open, isChild, parentNpub, parentFetcher.state, parentFetcher]);
 

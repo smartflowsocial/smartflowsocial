@@ -7,10 +7,10 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   data,
-} from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+} from "react-router";
+import { Link, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { LongFormPost } from "~/features/posts/longform";
 import {

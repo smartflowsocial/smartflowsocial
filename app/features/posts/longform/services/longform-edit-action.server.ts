@@ -4,7 +4,7 @@
  */
 
 import { parseFormData } from "@remix-run/form-data-parser";
-import { data, redirect } from "@remix-run/node";
+import { data, redirect } from "react-router";
 
 import {
   assertScheduleCapacity,

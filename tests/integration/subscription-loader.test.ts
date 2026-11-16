@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -103,6 +103,8 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -165,6 +167,8 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -217,6 +221,8 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -276,6 +282,8 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -333,6 +341,8 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -371,6 +381,8 @@ describe("Subscription/Billing Loader Integration", () => {
           request,
           params: {},
           context: {},
+          url: new URL(request.url),
+          pattern: "*",
         })
       );
       expect(response).toBeInstanceOf(Response);
@@ -399,6 +411,8 @@ describe("Subscription/Billing Loader Integration", () => {
           request,
           params: {},
           context: {},
+          url: new URL(request.url),
+          pattern: "*",
         })
       );
       expect(response).toBeInstanceOf(Response);
@@ -426,6 +440,8 @@ describe("Subscription/Billing Loader Integration", () => {
           request,
           params: {},
           context: {},
+          url: new URL(request.url),
+          pattern: "*",
         })
       );
       expect(response).toBeInstanceOf(Response);
@@ -444,6 +460,8 @@ describe("Subscription/Billing Loader Integration", () => {
           request,
           params: {},
           context: {},
+          url: new URL(request.url),
+          pattern: "*",
         })
       );
       expect(response).toBeInstanceOf(Response);

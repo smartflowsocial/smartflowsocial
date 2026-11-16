@@ -2,7 +2,7 @@
  * Storage settings action handlers
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { isSubscriptionActiveForGating } from "~/features/payments/subscriptions.server";
 import {

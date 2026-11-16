@@ -2,8 +2,7 @@
  * Admin Overview: KPI strip, alerts, publishing & user summaries, system health.
  */
 
-import type { SerializeFrom } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "react-router";
 
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
@@ -17,6 +16,7 @@ import {
   useAdminCurrency,
 } from "~/features/admin";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 import type { loader } from "./dashboard.admin._index.server";
 

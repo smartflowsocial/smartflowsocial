@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useFetcher } from "react-router";
 
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -329,7 +329,7 @@ export function useDraftEditState({
         }
 
         inFlightAttemptIdRef.current = submissionId;
-        fetcher.submit(formData, { method: "post" });
+        void fetcher.submit(formData, { method: "post" });
         setShowResumeModal(false);
         // The fetcher.data effect promotes the attempt to `completed` /
         // `failed` once the server response settles.

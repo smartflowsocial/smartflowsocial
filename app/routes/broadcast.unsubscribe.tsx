@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { data } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { data, useLoaderData } from "react-router";
 
 import { applyUnsubscribeFromRawToken } from "~/features/broadcast/broadcast-unsubscribe.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";

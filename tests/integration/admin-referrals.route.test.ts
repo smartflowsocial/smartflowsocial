@@ -2,7 +2,7 @@
  * Action tests for referral payouts on dashboard.admin.referrals.
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const envState = vi.hoisted(() => ({
@@ -41,7 +41,7 @@ const mockIsReferralAdmin = vi.fn();
 const mockRunReferralPayoutBatch = vi.fn();
 const mockPayReferrerWithInvoice = vi.fn();
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUser: (...args: unknown[]) => mockRequireUser(...args),
 }));
 
@@ -138,6 +138,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
@@ -156,6 +158,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
@@ -175,6 +179,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
@@ -194,6 +200,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(400);
@@ -209,6 +217,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(400);
@@ -226,6 +236,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(200);
@@ -251,6 +263,8 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
     const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(200);

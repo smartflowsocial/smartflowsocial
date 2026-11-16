@@ -3,8 +3,8 @@
  * Extracted from DraftBulkResume to keep the component under 400 LOC.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { signBatchWithRecovery } from "~/features/auth/signing/sign-batch-with-recovery.client";
 import {
@@ -147,7 +147,7 @@ export function useDraftBulkResumeState({
   };
 
   useEffect(() => {
-    const dataRaw = fetcher.data;
+    const dataRaw: unknown = fetcher.data;
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
         ? (dataRaw as { success?: unknown })
@@ -420,7 +420,10 @@ export function useDraftBulkResumeState({
       // Hand off to the route action; the foreground attempt remains in
       // `submitting` until the route round-trip completes successfully.
       signingAttempts.markCompleted(result.attemptId);
-      fetcher.submit(formData, { method: "post", action: "/dashboard/drafts" });
+      void fetcher.submit(formData, {
+        method: "post",
+        action: "/dashboard/drafts",
+      });
     } catch (error) {
       logClientError(
         error instanceof Error ? error : new Error(String(error)),

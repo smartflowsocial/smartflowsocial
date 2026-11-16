@@ -79,8 +79,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -141,8 +149,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -193,7 +209,13 @@ describe("API: Queue Schedule", () => {
         body: JSON.stringify({ queueTypeName: "Morning" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -223,8 +245,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -272,7 +302,13 @@ describe("API: Queue Schedule", () => {
         body: JSON.stringify({ queueTypeId: "queue-1" }),
       });
 
-      await action({ request, params: {}, context: {} });
+      await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
 
       expect(calculateNextScheduleTime).toHaveBeenCalledWith({
         queueType: mockQueueType,
@@ -315,7 +351,13 @@ describe("API: Queue Schedule", () => {
         }),
       });
 
-      await action({ request, params: {}, context: {} });
+      await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
 
       expect(getQueueTypeByIdForUser).toHaveBeenCalled();
       expect(getQueueTypes).not.toHaveBeenCalled();
@@ -332,8 +374,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -371,7 +421,13 @@ describe("API: Queue Schedule", () => {
         body: JSON.stringify({ queueTypeName: "posts" }),
       });
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       // Response should be rethrown by error handler, so we should get a redirect
       const responseObj = await asRouteResponse(response);
       expect(responseObj.status).toBe(302);
@@ -389,8 +445,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -426,8 +490,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -470,8 +542,16 @@ describe("API: Queue Schedule", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();

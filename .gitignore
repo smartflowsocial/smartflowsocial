@@ -7,7 +7,7 @@ yarn.lock
 node_modules
 
 /build
-/public/build
+/.react-router
 .env
 
 /tests/e2e/screenshots

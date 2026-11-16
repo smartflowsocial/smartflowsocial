@@ -27,7 +27,7 @@ interface PageData {
  * @example
  * ```tsx
  * import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
- * const loaderData = useLoaderData();
+ * const loaderData = useLoaderData<unknown>();
  * const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteRemixQuery({
  *   queryKey: ["recyclables"],
  *   initialData: loaderData,

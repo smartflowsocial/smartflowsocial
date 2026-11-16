@@ -1,7 +1,7 @@
-import { useFetcher } from "@remix-run/react";
 import { Info, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -356,7 +356,7 @@ export function EditPostModal({
         setIsSigningEvent(false);
         setIsUploadingImages(false);
         inFlightAttemptIdRef.current = submissionId;
-        fetcher.submit(formData, { method: "post" });
+        void fetcher.submit(formData, { method: "post" });
         // The fetcher.data effect promotes the attempt to `completed`
         // (or `failed`) once the server response settles. Returning
         // here parks the store state in `submitting`.

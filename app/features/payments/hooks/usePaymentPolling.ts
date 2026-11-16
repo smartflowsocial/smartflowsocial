@@ -1,5 +1,5 @@
-import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 const PAYMENT_ID_FIELD = "paymentId";
 
 /** Lightning: fast; 5 minutes is plenty. */
@@ -92,7 +92,7 @@ export function usePaymentPolling({
         onPaymentComplete();
         if (!skipSuccessNavigation) {
           setTimeout(() => {
-            navigate("/dashboard", { replace: true });
+            void navigate("/dashboard", { replace: true });
           }, 2000);
         }
       }
@@ -166,7 +166,7 @@ export function usePaymentPolling({
 
               if (!skipSuccessNavigation) {
                 setTimeout(() => {
-                  navigate("/dashboard", { replace: true });
+                  void navigate("/dashboard", { replace: true });
                 }, 2000);
               }
             }

@@ -1,5 +1,5 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import * as React from "react";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -101,7 +101,7 @@ export function AccountsSettings({
 
     const i = setTimeout(() => {
       lastSubmittedRef.current = value;
-      fetcher.submit(
+      void fetcher.submit(
         { _action: "search_accounts", q: value },
         { method: "post" }
       );
@@ -112,7 +112,7 @@ export function AccountsSettings({
 
   const onRequestChild = (childNpub: string) => {
     const np = childNpub.trim();
-    fetcher.submit(
+    void fetcher.submit(
       { _action: ACTION_REQUEST_CHILD, childNpub: np },
       { method: "post", action: DASHBOARD_SETTINGS_ACTION }
     );
@@ -135,7 +135,7 @@ export function AccountsSettings({
       fetcher.state === "idle" &&
       (fetcher.data as { success?: boolean } | undefined)?.success
     ) {
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     }
     // Do not depend on `revalidator`: its identity changes after each revalidate and would loop forever.
   }, [fetcher.state, fetcher.data, submittingAction]);
@@ -207,12 +207,12 @@ export function AccountsSettings({
             size="sm"
             variant="destructive"
             disabled={isUnlinking}
-            onClick={() =>
-              fetcher.submit(
+            onClick={() => {
+              void fetcher.submit(
                 { _action: "unlink_parent" },
                 { method: "post", action: DASHBOARD_SETTINGS_ACTION }
-              )
-            }
+              );
+            }}
           >
             {isUnlinking ? "Unlinking..." : "Unlink from Parent"}
           </Button>
@@ -268,8 +268,8 @@ export function AccountsSettings({
                     variant="secondary"
                     disabled={isRespondingIncoming}
                     type="button"
-                    onClick={() =>
-                      fetcher.submit(
+                    onClick={() => {
+                      void fetcher.submit(
                         {
                           _action: ACTION_RESPOND_CHILD_REQUEST,
                           parentNpub: p.npub,
@@ -279,8 +279,8 @@ export function AccountsSettings({
                           method: "post",
                           action: DASHBOARD_SETTINGS_ACTION,
                         }
-                      )
-                    }
+                      );
+                    }}
                   >
                     {isRespondingIncoming && incomingDecision === "reject"
                       ? "Rejecting..."
@@ -291,8 +291,8 @@ export function AccountsSettings({
                     variant="default"
                     disabled={isRespondingIncoming}
                     type="button"
-                    onClick={() =>
-                      fetcher.submit(
+                    onClick={() => {
+                      void fetcher.submit(
                         {
                           _action: ACTION_RESPOND_CHILD_REQUEST,
                           parentNpub: p.npub,
@@ -302,8 +302,8 @@ export function AccountsSettings({
                           method: "post",
                           action: DASHBOARD_SETTINGS_ACTION,
                         }
-                      )
-                    }
+                      );
+                    }}
                   >
                     {isRespondingIncoming && incomingDecision === "accept"
                       ? "Approving..."
@@ -447,12 +447,12 @@ export function AccountsSettings({
                       size="sm"
                       variant="destructive"
                       disabled={removingThis}
-                      onClick={() =>
-                        fetcher.submit(
+                      onClick={() => {
+                        void fetcher.submit(
                           { _action: "unlink_child", childNpub: u.npub },
                           { method: "post", action: DASHBOARD_SETTINGS_ACTION }
-                        )
-                      }
+                        );
+                      }}
                     >
                       {removingThis ? "Removing..." : "Remove"}
                     </Button>
@@ -503,15 +503,15 @@ export function AccountsSettings({
                       size="sm"
                       variant="secondary"
                       disabled={cancelingThis}
-                      onClick={() =>
-                        fetcher.submit(
+                      onClick={() => {
+                        void fetcher.submit(
                           {
                             _action: "cancel_child_request",
                             childNpub: u.npub,
                           },
                           { method: "post", action: DASHBOARD_SETTINGS_ACTION }
-                        )
-                      }
+                        );
+                      }}
                     >
                       {cancelingThis ? "Canceling..." : "Cancel"}
                     </Button>

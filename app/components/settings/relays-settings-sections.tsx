@@ -1,7 +1,7 @@
-import type { FetcherWithComponents } from "@remix-run/react";
-import { Link } from "@remix-run/react";
 import { Check, Lock, Plus, Settings2, X } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
+import type { FetcherWithComponents } from "react-router";
+import { Link } from "react-router";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
@@ -131,7 +131,7 @@ export function RelayDeliverySection({
                           "blastrRelayEnabled",
                           checked ? "true" : "false"
                         );
-                        blastrFetcher.submit(fd, { method: "post" });
+                        void blastrFetcher.submit(fd, { method: "post" });
                       }}
                       disabled={blastrFetcher.state === "submitting"}
                     />
@@ -327,7 +327,6 @@ export function RelayListSection({
           </Button>
         }
       />
-
       <div className="mt-4 space-y-3">
         {tabValue === "profile" ? (
           <>
@@ -490,7 +489,6 @@ export function RelayListSection({
           </>
         )}
       </div>
-
       <div className="border-border/60 mt-6 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-[1.25rem] text-xs">
           {tabValue === "profile" && profileDirty ? (
@@ -539,7 +537,6 @@ export function RelayListSection({
           )}
         </div>
       </div>
-
       {fetcher.data?.success ? (
         <p className="text-success mt-3 text-sm">
           Relay preferences updated successfully.

@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { ChevronRight } from "lucide-react";
+import { Link } from "react-router";
 
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";

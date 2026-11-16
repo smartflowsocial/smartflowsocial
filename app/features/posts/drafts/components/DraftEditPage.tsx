@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "react-router";
 
 import { ResumeModal } from "~/features/posts/components/ResumeModal";
 import { fromPostDTO, type PostDTO } from "~/features/posts/dtos";

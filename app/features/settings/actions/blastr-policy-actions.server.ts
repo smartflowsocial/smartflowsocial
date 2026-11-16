@@ -3,7 +3,7 @@
  * Only for users with Blastr access (ACTIVE subscription + plan.enableRelayBlast).
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { getUserSubscription } from "~/features/payments/data";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";

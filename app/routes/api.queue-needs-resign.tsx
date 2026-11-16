@@ -1,6 +1,6 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { loadNeedsResignItemsForQueue } from "~/features/posts/data/queue-needs-resign.server";
 import { handleActionError } from "~/lib/error-handler.server";

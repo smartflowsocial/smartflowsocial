@@ -1,12 +1,12 @@
-import { type LoaderFunctionArgs, data } from "@remix-run/node";
+import { Suspense, useMemo, useState } from "react";
+import { type LoaderFunctionArgs, data } from "react-router";
 import {
   Await,
   Form,
   Link,
   useLoaderData,
   useSearchParams,
-} from "@remix-run/react";
-import { Suspense, useMemo, useState } from "react";
+} from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
@@ -31,7 +31,7 @@ import {
 } from "~/features/admin";
 import type { AdminUserSegment } from "~/features/admin/repositories/admin-users-queries.server";
 import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { cn } from "~/lib/utils";

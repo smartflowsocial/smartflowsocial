@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getSuppressionFlagsForPubkeys } from "~/features/broadcast";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { jsonResponse } from "~/lib/http/json-response";

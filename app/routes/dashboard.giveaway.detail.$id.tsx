@@ -1,10 +1,9 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { redirect, data } from "@remix-run/node";
-import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { redirect, data, Await, useLoaderData, useParams } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
   GiveawayDetailPage,

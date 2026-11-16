@@ -1,9 +1,3 @@
-import {
-  useFetcher,
-  useLocation,
-  useNavigate,
-  useNavigation,
-} from "@remix-run/react";
 import { Loader2, Search, X } from "lucide-react";
 import {
   useEffect,
@@ -12,6 +6,12 @@ import {
   useCallback,
   startTransition,
 } from "react";
+import {
+  useFetcher,
+  useLocation,
+  useNavigate,
+  useNavigation,
+} from "react-router";
 
 import { Badge } from "~/components/ui/badge";
 import {
@@ -97,7 +97,9 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
     const extracted = extractNostrIdentifier(trimmedQuery);
     if (extracted !== null) {
       // Redirect straight to post viewer with clean identifier (handles Primal/Coracle URLs)
-      navigate(`/dashboard/search/posts?q=${encodeURIComponent(extracted)}`);
+      void navigate(
+        `/dashboard/search/posts?q=${encodeURIComponent(extracted)}`
+      );
       startTransition(() => {
         setQuery("");
         setResults([]);
@@ -114,7 +116,7 @@ export function GlobalSearchBar({ className = "" }: GlobalSearchBarProps) {
       ) {
         const params = new URLSearchParams({ q: trimmedQuery });
         if (priorityContext) params.set("context", priorityContext);
-        fetcher.load(`/api/global-search?${params.toString()}`);
+        void fetcher.load(`/api/global-search?${params.toString()}`);
       }
     }, 500);
 

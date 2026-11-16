@@ -1,6 +1,6 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getBroadcastEligiblePoolPubkeys } from "~/features/broadcast/broadcast-recipient-picker.server";
 import { jsonResponse } from "~/lib/http/json-response";
 

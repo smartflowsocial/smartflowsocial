@@ -1,7 +1,7 @@
-import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Quote, Repeat } from "lucide-react";
 import { useMemo, useRef, useState, type Key } from "react";
+import { Link } from "react-router";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -793,7 +793,7 @@ export default function PublishedPostsTable({
                                         const fd = new FormData();
                                         fd.set("postId", child.id);
                                         fd.set("_action", "delete");
-                                        deleteFetcher.submit(fd, {
+                                        void deleteFetcher.submit(fd, {
                                           method: "post",
                                         });
                                       }}
@@ -820,7 +820,9 @@ export default function PublishedPostsTable({
                                 const fd = new FormData();
                                 fd.set("postId", post.id);
                                 fd.set("_action", "delete");
-                                deleteFetcher.submit(fd, { method: "post" });
+                                void deleteFetcher.submit(fd, {
+                                  method: "post",
+                                });
                               }}
                             >
                               {deleteFetcher.state !== "idle" &&

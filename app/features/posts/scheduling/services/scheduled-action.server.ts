@@ -3,7 +3,7 @@
  * Centralized action processing for scheduled posts page
  */
 
-import { data as routeData } from "@remix-run/node";
+import { data as routeData } from "react-router";
 
 import {
   assertScheduleCapacity,

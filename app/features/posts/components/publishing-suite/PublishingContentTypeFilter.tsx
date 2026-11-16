@@ -1,4 +1,4 @@
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 
 import {
   Select,
@@ -57,7 +57,7 @@ export function PublishingContentTypeFilter({
           return;
         }
         const target = items.find((i) => i.id === next);
-        if (target) navigate(target.to);
+        if (target) void navigate(target.to);
       }}
     >
       <SelectTrigger

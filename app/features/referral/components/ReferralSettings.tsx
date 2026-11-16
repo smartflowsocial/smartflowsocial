@@ -1,6 +1,6 @@
-import { Form, useFetcher } from "@remix-run/react";
 import { Copy, Loader2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { Form, useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

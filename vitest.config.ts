@@ -14,7 +14,7 @@ export default defineConfig({
       "**/property/**/*.test.ts",
     ],
     // Exclude patterns
-    exclude: ["node_modules", "build", "tests/e2e", ".next", ".remix"],
+    exclude: ["node_modules", "build", "tests/e2e", ".next", ".react-router"],
     // Setup files
     setupFiles: ["./tests/setup.ts"],
     // Coverage configuration

@@ -3,7 +3,7 @@
  * Requires REFERRAL_MANUAL_PAYOUT_SECRET. A missing secret rejects the request.
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import {
   payReferrerWithInvoice,

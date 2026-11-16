@@ -1,21 +1,22 @@
 import { BroadcastSuppressionReasonCode } from "@prisma/client";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { redirect, data } from "@remix-run/node";
+import { Suspense, useEffect, useState } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
+  redirect,
+  data,
   Await,
   Form,
   Link,
   useLoaderData,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { Suspense, useEffect, useState } from "react";
+} from "react-router";
 
 import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   addBroadcastSuppression,
   cancelBroadcastCampaign,
@@ -293,7 +294,7 @@ function BroadcastDetailRouteLoaded({
       campaign.status === "SCHEDULED"
     ) {
       const t = setInterval(() => {
-        revalidator.revalidate();
+        void revalidator.revalidate();
       }, 5000);
       return () => clearInterval(t);
     }

@@ -1,8 +1,8 @@
 import { randomBytes } from "crypto";
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { issueLoginChallenge } from "~/features/auth";
+import { issueLoginChallenge } from "~/features/auth/auth.server";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { jsonResponse } from "~/lib/http/json-response";

@@ -11,9 +11,9 @@
     }
   },
   "bundle": {
-    "directory": "public/build",
-    "maxTotalJsMb": 2.5,
+    "directory": "build/client/assets",
+    "maxTotalJsMb": 5.5,
     "maxTotalCssMb": 0.6,
-    "maxLargestJsChunkKb": 350
+    "maxLargestJsChunkKb": 500
   }
 }

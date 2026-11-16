@@ -3,7 +3,7 @@ import {
   useParams,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
+} from "react-router";
 
 import {
   Select,
@@ -43,14 +43,16 @@ export default function QueueSelectionTabs({
     next.set("tab", currentTab);
     if (value === "all") {
       next.delete("queueType");
-      navigate(`${basePath}?${next.toString()}`);
+      void navigate(`${basePath}?${next.toString()}`);
     } else if (useQueryParams) {
       next.set("queueType", value);
-      navigate(`${basePath}?${next.toString()}`);
+      void navigate(`${basePath}?${next.toString()}`);
     } else {
-      navigate(`${basePath}/${value}?${next.toString()}`);
+      void navigate(`${basePath}/${value}?${next.toString()}`);
     }
-    setTimeout(() => revalidator.revalidate(), 0);
+    setTimeout(() => {
+      void revalidator.revalidate();
+    }, 0);
   };
 
   return (

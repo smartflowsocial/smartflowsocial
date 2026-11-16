@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getScheduleOverlapWarning } from "~/features/posts/server/scheduling";
 import { getUserTimezone } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf.server";

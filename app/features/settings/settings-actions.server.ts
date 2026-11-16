@@ -5,7 +5,7 @@
  * Individual action handlers are split by domain in the actions/ directory
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { handleAccountsAction } from "./actions/accounts-actions.server";
 import { handleBlastrPolicyAction } from "./actions/blastr-policy-actions.server";

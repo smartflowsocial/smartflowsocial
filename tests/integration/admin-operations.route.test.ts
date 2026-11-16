@@ -2,7 +2,7 @@
  * Action tests for app/routes/dashboard.admin.operations (dead-letter replay).
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockRequireUser = vi.fn();
@@ -11,7 +11,7 @@ const mockRetryDeadLetterJob = vi.fn();
 const mockCleanFailedJobsInAllQueues = vi.fn();
 const mockPurgePublishRelayAcksAdmin = vi.fn();
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUser: (...args: unknown[]) => mockRequireUser(...args),
 }));
 
@@ -50,6 +50,8 @@ function postForm(body: FormData): ActionFunctionArgs {
     }),
     params: {},
     context: {},
+    url: new URL("http://localhost:3000/"),
+    pattern: "*",
   };
 }
 

@@ -1,13 +1,13 @@
 import { ProductSessionDeviceCoarse } from "@prisma/client";
-import { data } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import { data } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 
 import {
   endProductSession,
   touchProductSessionHeartbeat,
   upsertProductSessionStart,
 } from "~/features/admin/repositories/admin-telemetry.server";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseDeviceCoarse(v: unknown): ProductSessionDeviceCoarse | undefined {

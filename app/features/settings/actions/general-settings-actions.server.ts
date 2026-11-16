@@ -2,7 +2,7 @@
  * General settings action handlers
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { getUserSubscription } from "~/features/payments/data";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";

@@ -1,11 +1,6 @@
-import {
-  Link,
-  useFetcher,
-  useSearchParams,
-  useNavigate,
-} from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useFetcher, useSearchParams, useNavigate } from "react-router";
 
 import MediaModal from "~/components/ui/MediaModal";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
@@ -248,7 +243,7 @@ export default function ScheduledPostsPage() {
     const formData = new FormData();
     formData.append("_action", "bulkScheduledRepost");
     formData.append("postIds", JSON.stringify(postIds));
-    repostFetcher.submit(formData, {
+    void repostFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/published",
     });
@@ -262,7 +257,7 @@ export default function ScheduledPostsPage() {
     const formData = new FormData();
     formData.append("_action", "bulkQuote");
     formData.append("postIds", JSON.stringify(postIds));
-    repostFetcher.submit(formData, {
+    void repostFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/published",
     });
@@ -270,8 +265,7 @@ export default function ScheduledPostsPage() {
 
   useEffect(() => {
     if (repostFetcher.data?.scheduledRepostData) {
-      const data = repostFetcher.data
-        .scheduledRepostData as unknown as PostData[];
+      const data = repostFetcher.data.scheduledRepostData;
       if (data.length === 0) return;
       const tz = user?.timezone ?? "UTC";
       const scheduledRepostData = data.map((post, index: number) => {
@@ -791,7 +785,7 @@ export default function ScheduledPostsPage() {
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
-            navigate(getNewPostUrl(postType));
+            void navigate(getNewPostUrl(postType));
           }}
           onViewPage={() => {
             setShowPublishModal(false);

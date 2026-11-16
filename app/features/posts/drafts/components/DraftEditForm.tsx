@@ -2,8 +2,8 @@
  * Draft edit form component
  */
 
-import { useFetcher } from "@remix-run/react";
 import { AlertTriangle } from "lucide-react";
+import { useFetcher } from "react-router";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
 import { Button } from "~/components/ui/button";

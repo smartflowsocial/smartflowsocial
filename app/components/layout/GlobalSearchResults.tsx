@@ -1,4 +1,3 @@
-import { Link } from "@remix-run/react";
 import {
   FileText,
   Check,
@@ -10,6 +9,7 @@ import {
   Ban,
   Sparkles,
 } from "lucide-react";
+import { Link } from "react-router";
 
 import { EmptyState } from "~/components/ui/empty-state";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";

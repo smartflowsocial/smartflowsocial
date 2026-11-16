@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(),
 }));
 
@@ -28,7 +28,7 @@ vi.mock("@remix-run/form-data-parser", () => ({
 
 import { asRouteResponse } from "../utils/action-test-helpers";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   processImageForWeb,
   validateImageBuffer,
@@ -74,7 +74,13 @@ describe("API: Upload EditorJS Image", () => {
       }
     );
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: number;
@@ -112,7 +118,13 @@ describe("API: Upload EditorJS Image", () => {
       }
     );
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(400);
@@ -142,7 +154,13 @@ describe("API: Upload EditorJS Image", () => {
       }
     );
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: number;

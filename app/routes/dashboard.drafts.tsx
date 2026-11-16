@@ -1,45 +1,22 @@
+import { Suspense } from "react";
 import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   data,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
-import { Suspense } from "react";
+} from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
+import { requireUserId } from "~/features/auth/auth.server";
 import { DraftsPage } from "~/features/posts/drafts";
 import { DraftsPageSkeleton } from "~/features/posts/drafts/DraftsPageSkeleton";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
-import {
-  handleDraftsAction,
-  loadDraftsData,
-} from "~/features/posts/server/drafts";
+import { handleDraftsAction } from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  draftsLoaderDataSchema,
-  type DraftsLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { DraftsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-export async function loadDraftsValidated(
-  request: Request,
-  params: LoaderFunctionArgs["params"]
-): Promise<DraftsLoaderData> {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  const queueType =
-    url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
-  const page = parseInt(url.searchParams.get("page") ?? "1", 10);
-  const limit = 20;
-
-  const data = await loadDraftsData(userId, queueType, page, limit);
-  return validateLoaderResponse(data, draftsLoaderDataSchema);
-}
+import { loadDraftsValidated } from "./dashboard.drafts.loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

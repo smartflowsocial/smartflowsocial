@@ -1,9 +1,6 @@
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { LongFormDraftEditPage } from "~/features/posts/longform";
 import {
   handleLongFormEditAction,

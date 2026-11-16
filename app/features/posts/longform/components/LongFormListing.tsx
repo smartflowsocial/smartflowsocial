@@ -1,7 +1,7 @@
-import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
+import { useFetcher } from "react-router";
 
 import { longFormPostToCombinedContent } from "~/features/posts/combined";
 import {
@@ -167,7 +167,7 @@ export default function LongFormListing({
     formData.append("_action", "bulkDeleteLongForm");
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-    bulkDeleteFetcher.submit(formData, { method: "post" });
+    void bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
   const handleOpenPost = (post: LongFormPostType | LongFormPostData) => {

@@ -2,7 +2,7 @@
  * Referral settings actions: save payout destination.
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { upsertReferrerPayoutConfig } from "~/features/referral/repositories/referral-data.server";
 import { getUserById } from "~/features/user";

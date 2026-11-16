@@ -1,4 +1,3 @@
-import { Form, Link, useFetcher } from "@remix-run/react";
 import {
   Crown,
   Calendar,
@@ -8,6 +7,7 @@ import {
   Copy,
 } from "lucide-react";
 import React from "react";
+import { Form, Link, useFetcher } from "react-router";
 
 import { useDeployment } from "~/features/payments/types";
 import {
@@ -240,7 +240,7 @@ export function SubscriptionSettings({
     fd.set("paymentId", invoicePaymentId);
 
     const interval = setInterval(() => {
-      pollFetcher.submit(fd, { method: "post", action: "/plans" });
+      void pollFetcher.submit(fd, { method: "post", action: "/plans" });
     }, 2000);
 
     return () => clearInterval(interval);
@@ -284,7 +284,6 @@ export function SubscriptionSettings({
           Your plan, renewal status, and next steps.
         </p>
       </div>
-
       {subscription ? (
         <div className="space-y-6">
           {/* Current plan summary */}

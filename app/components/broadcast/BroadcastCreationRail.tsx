@@ -1,6 +1,6 @@
 import type { BroadcastDeliveryMode } from "@prisma/client";
-import { Link } from "@remix-run/react";
 import { ArrowRight, Clock } from "lucide-react";
+import { Link } from "react-router";
 
 import {
   ActionRail,

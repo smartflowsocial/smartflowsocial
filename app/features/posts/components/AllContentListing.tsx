@@ -1,4 +1,3 @@
-import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -9,6 +8,7 @@ import {
   useState,
   type Key,
 } from "react";
+import { Link, useFetcher, useNavigate } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -192,7 +192,7 @@ export default function AllContentListing({
       draftsListActionFetcher.data.newPostId
     ) {
       void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
-      navigate(
+      void navigate(
         getShortDraftEditRedirectPath(draftsListActionFetcher.data.newPostId)
       );
     }

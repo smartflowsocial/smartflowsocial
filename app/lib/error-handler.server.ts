@@ -8,10 +8,7 @@
  * defined immediately to avoid timing issues.
  */
 
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
 import { jsonResponse } from "~/lib/http/json-response";
 

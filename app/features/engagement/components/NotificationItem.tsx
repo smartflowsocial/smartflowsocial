@@ -1,6 +1,6 @@
-import { Link } from "@remix-run/react";
 import { AtSign, MessageCircle, Quote } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 
 import ZapButton from "~/components/dashboard/ZapButton";
 import {
@@ -822,7 +822,6 @@ export function NotificationItem({
           ) : null}
         </div>
       </div>
-
       <Dialog
         open={!!zapModalNpub}
         onOpenChange={(open) => !open && setZapModalNpub(null)}

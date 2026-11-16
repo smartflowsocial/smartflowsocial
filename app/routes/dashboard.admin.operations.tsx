@@ -1,6 +1,6 @@
-import { type LoaderFunctionArgs, data } from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs, data } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import {
@@ -15,7 +15,7 @@ import {
 } from "~/features/admin/metrics/date-range";
 import { getAdminOperationsPageData } from "~/features/admin/repositories/admin-operations-queries.server";
 import type { AdminOperationsPageDTO } from "~/features/admin/repositories/admin-operations-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
 

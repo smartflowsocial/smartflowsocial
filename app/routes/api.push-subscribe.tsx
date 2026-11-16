@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { upsertPushSubscription } from "~/features/notifications";
 import { getVapidPublicKey } from "~/infra/notifications/web-push-config.server";
 import { jsonResponse } from "~/lib/http/json-response";

@@ -1,5 +1,5 @@
-import type { ShouldRevalidateFunctionArgs } from "@remix-run/react";
 import { toPng } from "html-to-image";
+import type { ShouldRevalidateFunctionArgs } from "react-router";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { brandLineProofCaption } from "~/lib/brand";

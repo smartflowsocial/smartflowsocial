@@ -1,7 +1,7 @@
 import { parseFormData } from "@remix-run/form-data-parser";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import { MAX_FILE_SIZE } from "~/features/upload/validation.server";
 import { loadUploadProviderSettings } from "~/features/user";

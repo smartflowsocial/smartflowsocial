@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(),
 }));
 
@@ -42,7 +42,7 @@ vi.mock("@remix-run/form-data-parser", () => ({
 import { asRouteResponse } from "../utils/action-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { loadUploadProviderSettings } from "~/features/user";
 import { action, loader } from "~/routes/api.upload";
 
@@ -71,7 +71,15 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
@@ -109,7 +117,13 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
+        const response = await action({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        });
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
@@ -135,7 +149,13 @@ describe("API: Upload", () => {
         });
 
         // requireUserId throws a Response (redirect), not an Error
-        const response = await action({ request, params: {}, context: {} });
+        const response = await action({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        });
         const responseObj = await asRouteResponse(response);
         expect(responseObj.status).toBeGreaterThanOrEqual(400);
       });
@@ -152,7 +172,15 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
@@ -191,7 +219,15 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
@@ -225,7 +261,15 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
@@ -259,7 +303,15 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();

@@ -3,11 +3,11 @@
  * User picks time (and optional quote caption), client builds event, signs, submits to /dashboard/scheduled.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { FormControl, FormField, FormLabel } from "~/components/ui/form-field";
@@ -149,7 +149,10 @@ async function signAndSubmitRepost(
     if (repostConditions.minSats != null)
       formData.set("minSats", String(repostConditions.minSats));
   }
-  fetcher.submit(formData, { method: "post", action: "/dashboard/scheduled" });
+  void fetcher.submit(formData, {
+    method: "post",
+    action: "/dashboard/scheduled",
+  });
 }
 
 async function signAndSubmitQuote(
@@ -190,7 +193,10 @@ async function signAndSubmitQuote(
   if (quoteCaption) {
     formData.set("quoteCaption", quoteCaption);
   }
-  fetcher.submit(formData, { method: "post", action: "/dashboard/scheduled" });
+  void fetcher.submit(formData, {
+    method: "post",
+    action: "/dashboard/scheduled",
+  });
 }
 
 function getConfirmButtonLabel(

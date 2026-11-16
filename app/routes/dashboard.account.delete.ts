@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { logout, requireUserId } from "~/features/auth";
+import { logout, requireUserId } from "~/features/auth/auth.server";
 import {
   deletionRequestIsConfirmed,
   deleteAccountData,

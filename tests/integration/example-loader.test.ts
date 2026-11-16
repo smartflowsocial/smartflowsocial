@@ -2,7 +2,7 @@
  * Example integration test for Remix loaders using Vitest
  *
  * This demonstrates how to test Remix loaders without a browser.
- * You can use @remix-run/testing utilities or test the loader functions directly.
+ * Call the loader with a Request, or render the route with createRoutesStub.
  *
  * For more complex integration tests, you may need to:
  * - Set up a test database
@@ -90,7 +90,7 @@ describe("Example Loader Integration Tests", () => {
  * 1. **Direct Function Testing**: Test loader functions directly by calling them
  *    with mock Request objects. This is fast and doesn't require a browser.
  *
- * 2. **Remix Testing Utilities**: Use @remix-run/testing for more complex scenarios
+ * 2. **Route stubs**: Use `createRoutesStub` from `react-router` for more complex scenarios
  *    where you need to test the full request/response cycle.
  *
  * 3. **Database Testing**: For loaders that interact with the database:

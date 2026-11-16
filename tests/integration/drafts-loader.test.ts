@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -77,6 +77,8 @@ describe("Drafts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -127,6 +129,8 @@ describe("Drafts Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -173,6 +177,8 @@ describe("Drafts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -210,6 +216,8 @@ describe("Drafts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -250,6 +258,8 @@ describe("Drafts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -290,6 +300,8 @@ describe("Drafts Loader Integration", () => {
         request: _request,
         params: {},
         context: {},
+        url: new URL(_request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);

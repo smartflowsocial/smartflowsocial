@@ -1,7 +1,7 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
 import { useCallback } from "react";
 import { toast } from "react-hot-toast";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { Link, useLoaderData } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { getContestPublicPageData } from "~/features/contest";

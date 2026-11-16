@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import { logInfo, logWarning } from "~/lib/error-logger.server";
 import { jsonResponse } from "~/lib/http/json-response";

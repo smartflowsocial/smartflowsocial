@@ -1,4 +1,4 @@
-import type { MetaDescriptor } from "@remix-run/node";
+import type { MetaDescriptor } from "react-router";
 
 import { BRAND_APP_TITLE, BRAND_DESCRIPTION, BRAND_NAME } from "~/lib/brand";
 import { absoluteUrl } from "~/lib/site-url";

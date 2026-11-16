@@ -1,6 +1,6 @@
-import { Link } from "@remix-run/react";
 import { MoreHorizontal, Quote, Share2 } from "lucide-react";
 import { useMemo } from "react";
+import { Link } from "react-router";
 
 import {
   DropdownMenu,

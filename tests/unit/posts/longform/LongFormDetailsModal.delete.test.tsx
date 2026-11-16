@@ -2,9 +2,9 @@
  * @vitest-environment jsdom
  */
 
-import type * as RemixReact from "@remix-run/react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
+import type * as RemixReact from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@tanstack/react-query", () => ({
@@ -15,8 +15,8 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("@remix-run/react", async () => {
-  const actual = await vi.importActual<typeof RemixReact>("@remix-run/react");
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual<typeof RemixReact>("react-router");
   return {
     ...actual,
     Link: ({
@@ -198,12 +198,13 @@ describe("LongFormDetailsModal delete behavior", () => {
       />
     );
 
+    window.history.pushState({}, "", "/dashboard/published");
     const deleteButton = screen.getByText("Delete Article");
     fireEvent.click(deleteButton);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain(".data");
+    expect(url).toBe("/api/dashboard/published");
     expect(options.method).toBe("POST");
     const body = options.body as FormData;
     expect(body.get("_action")).toBe("deleteLongForm");

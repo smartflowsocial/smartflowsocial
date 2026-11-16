@@ -1,7 +1,6 @@
-import type { SerializeFrom } from "@remix-run/node";
-import { Form, Link, useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Form, Link, useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -14,6 +13,7 @@ import {
 import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { BRAND_NAME } from "~/lib/brand";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 import { cn } from "~/lib/utils";
 
 import { contestCopy } from "../contest-copy";
@@ -441,7 +441,7 @@ export function ContestDetailFormsSection({
     const fd = new FormData();
     fd.set("intent", "runBatchPayout");
     fd.set("stepIndex", String(d.nextStep));
-    batchPayoutFetcher.submit(fd, { method: "post" });
+    void batchPayoutFetcher.submit(fd, { method: "post" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chained batch steps; deps are state/data only
   }, [batchPayoutFetcher.state, batchPayoutFetcher.data]);
 
@@ -543,7 +543,7 @@ export function ContestDetailFormsSection({
                   const fd = new FormData();
                   fd.set("intent", "runBatchPayout");
                   fd.set("stepIndex", "0");
-                  batchPayoutFetcher.submit(fd, { method: "post" });
+                  void batchPayoutFetcher.submit(fd, { method: "post" });
                 }}
                 title={
                   data.nwc.usable

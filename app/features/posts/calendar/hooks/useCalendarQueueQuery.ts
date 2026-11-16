@@ -3,14 +3,14 @@
  * Provides caching and background refetching for calendar queue page
  */
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+} from "react-router";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -54,7 +54,7 @@ export function useCalendarQueueQuery() {
   );
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   const validatedLoaderData = useMemo(() => {
@@ -88,7 +88,7 @@ export function useCalendarQueueQuery() {
             ? `/dashboard/calendar/${queueType}`
             : `/dashboard/calendar?queueType=${queueType}`
           : `/dashboard/calendar`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       return new Promise<CalendarQueueLoaderData>((resolve, reject) => {
         const checkFetcher = () => {

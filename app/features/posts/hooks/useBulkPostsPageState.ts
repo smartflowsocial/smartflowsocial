@@ -3,8 +3,8 @@
  * Extracted from BulkPostsPage to keep the page component under 400 LOC.
  */
 
-import { useFetcher, useNavigate, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFetcher, useNavigate, useSearchParams } from "react-router";
 
 import { type ToastMessage } from "~/components/types";
 import type {
@@ -847,7 +847,7 @@ export function useBulkPostsPageState({
     }
     const currentUrl = new URL(window.location.href);
     const actionUrl = `/dashboard/bulkposts${currentUrl.search}`;
-    fetcher.submit(formData, {
+    void fetcher.submit(formData, {
       method: "post",
       encType: "multipart/form-data",
       action: actionUrl,

@@ -3,7 +3,7 @@
  * Handles dashboard loader and action logic
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import { updateUserSubscription } from "~/features/payments/data";
 import { getUsersByNpubs } from "~/features/user/queries/user-queries.server";

@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";

@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getUserSubscription } from "~/features/payments/data";
 import { getEffectiveGiveawayPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
@@ -10,6 +10,7 @@ import { getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import { getUserById } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 import { getContestPresetById } from "./contest-presets.server";
 import { findContestCreationDraftByUserId } from "./repositories/contest-creation-draft.server";

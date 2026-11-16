@@ -1,5 +1,5 @@
-import type { FetcherWithComponents } from "@remix-run/react";
 import type { UseFormReturn } from "react-hook-form";
+import type { FetcherWithComponents } from "react-router";
 import type { z } from "zod";
 
 import type { textPostClientSchema } from "~/lib/validation";

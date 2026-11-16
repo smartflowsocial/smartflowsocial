@@ -3,8 +3,8 @@
  */
 
 import "~/lib/websocket-polyfill.server";
-import { data } from "@remix-run/node";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { data } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import {
   defaultRangeForAdminPath,
@@ -13,7 +13,7 @@ import {
 } from "~/features/admin/metrics/date-range";
 import { getMonetizationBundle } from "~/features/admin/repositories/admin-monetization-bundle.server";
 import { getAdminOverviewStats } from "~/features/admin/repositories/admin-overview-stats-data.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import {
   earningsToCsv,
   getEarningsAdmin,

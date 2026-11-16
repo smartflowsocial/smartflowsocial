@@ -1,5 +1,5 @@
-import { useLoaderData, Link } from "@remix-run/react";
 import { CalendarDays, Check, Clock, Plus } from "lucide-react";
+import { useLoaderData, Link } from "react-router";
 
 import { Card, CardContent } from "~/components/ui/card";
 import type { PostStatistics } from "~/features/posts/server";

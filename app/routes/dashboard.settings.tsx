@@ -1,14 +1,14 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
+import { Suspense } from "react";
 import {
+  type LoaderFunctionArgs,
   Await,
   Outlet,
   useLoaderData,
   useLocation,
   type ShouldRevalidateFunctionArgs,
-} from "@remix-run/react";
-import { Suspense } from "react";
+} from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { ProfileData as _ProfileData } from "~/features/nostr/types";
 import { requireAnySubscription } from "~/features/payments";
 import {

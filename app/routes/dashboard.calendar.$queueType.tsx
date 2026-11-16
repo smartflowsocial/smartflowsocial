@@ -1,39 +1,21 @@
-import {
-  type LoaderFunctionArgs,
-  type ActionFunctionArgs,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireSession, requireUserId } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { CalendarQueuePage } from "~/features/posts/calendar";
 import { CalendarQueuePageSkeleton } from "~/features/posts/calendar/CalendarQueuePageSkeleton";
 import type {
   UserData as _UserData,
   QueueType as _QueueType,
 } from "~/features/posts/server";
-import {
-  handleCalendarAction,
-  loadCalendarQueueData,
-} from "~/features/posts/server/calendar";
+import { handleCalendarAction } from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  calendarQueueLoaderDataSchema,
-  type CalendarQueueLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { CalendarQueueLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-export async function loadCalendarQueueValidated(
-  request: Request,
-  params: LoaderFunctionArgs["params"]
-): Promise<CalendarQueueLoaderData> {
-  const userId = await requireUserId(request);
-  const queueType = params["queueType"] ?? "all";
-  const data = await loadCalendarQueueData(userId, queueType);
-  return validateLoaderResponse(data, calendarQueueLoaderDataSchema);
-}
+import { loadCalendarQueueValidated } from "./dashboard.calendar.queue.loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

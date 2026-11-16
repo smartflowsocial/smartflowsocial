@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { checkPaymentStatusById, getPaymentUserId } from "~/features/payments";

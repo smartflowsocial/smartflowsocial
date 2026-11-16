@@ -1,8 +1,8 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { useFetcher, useNavigate } from "@remix-run/react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher, useNavigate } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -421,7 +421,7 @@ export function RescheduleScheduledPostModal({
         }
 
         inFlightAttemptIdRef.current = submissionId;
-        fetcher.submit(formData, {
+        void fetcher.submit(formData, {
           method: "post",
           action: "/dashboard/calendar",
         });
@@ -466,7 +466,7 @@ export function RescheduleScheduledPostModal({
   });
 
   const submitRepostQuote = (formData: FormData) => {
-    scheduleRepostQuoteFetcher.submit(formData, {
+    void scheduleRepostQuoteFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/scheduled",
     });
@@ -636,7 +636,7 @@ export function RescheduleScheduledPostModal({
             scheduledActionId: post.id,
           });
     onClose();
-    navigate(editUrl);
+    void navigate(editUrl);
   };
 
   return (

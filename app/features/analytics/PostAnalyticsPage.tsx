@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { BarChart3 } from "lucide-react";
+import { Link } from "react-router";
 
 import { PageHeader } from "~/components/layout/PageHeader";
 import { Badge } from "~/components/ui/badge";

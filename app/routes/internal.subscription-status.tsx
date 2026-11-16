@@ -9,7 +9,7 @@
  * (or lifetime access).
  */
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { isSubscriptionActiveForGating } from "~/features/payments";
 import { getUserByNpub } from "~/features/user";

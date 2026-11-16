@@ -2,7 +2,7 @@
  * Right rail for template create/edit: blueprint summary and actions (no publish flow).
  */
 
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { ActionRail } from "~/components/action-rail/ActionRail";
 import { ActionRailActions } from "~/components/action-rail/ActionRailActions";
@@ -59,7 +59,7 @@ export function TemplateSettingsRail({
   onDeleteTemplate,
   deleteDisabled,
 }: TemplateSettingsRailProps) {
-  void _variant;
+  _variant;
   const displayName = templateName.trim() || "Untitled template";
 
   return (

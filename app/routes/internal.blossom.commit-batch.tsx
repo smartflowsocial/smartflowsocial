@@ -2,7 +2,7 @@ import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
+} from "react-router";
 
 import { commitBlossomBatch, type CommitItem } from "~/features/upload";
 import { env } from "~/lib/env.server";

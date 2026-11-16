@@ -1,7 +1,7 @@
-import { useLocation, useRouteLoaderData } from "@remix-run/react";
 import { Bug } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useLocation, useRouteLoaderData } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {

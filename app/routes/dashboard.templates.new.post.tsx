@@ -3,13 +3,10 @@
  * Template-only composer: only "Save as template" and Cancel.
  */
 
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { UnifiedComposer } from "~/features/posts/composer";
 import { loadNewPostData } from "~/features/posts/server/composer";

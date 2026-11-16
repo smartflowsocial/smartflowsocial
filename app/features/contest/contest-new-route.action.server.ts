@@ -1,7 +1,7 @@
-import type { ActionFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { redirect, data } from "@remix-run/node";
+import { data, redirect } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   createContest,
   launchContest,
@@ -13,6 +13,7 @@ import type { ContestRankingMetric } from "~/features/contest/types";
 import { requireAnySubscription } from "~/features/payments";
 import { getPostById } from "~/features/posts/server";
 import { featureFlags } from "~/lib/feature-flags.server";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 function parseContestFairness(formData: FormData) {
   return {

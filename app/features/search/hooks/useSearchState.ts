@@ -1,5 +1,5 @@
-import { useFetcher, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { useFetcher, useNavigate } from "react-router";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import type { PostData } from "~/features/posts/types";
@@ -153,7 +153,7 @@ export function useSearchState({
 
   const handleSearch = form.handleSubmit((data) => {
     const formData = formDataToFormData(data, "searchEvent");
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   });
 
   const handleScheduleQuote = () => {
@@ -176,7 +176,7 @@ export function useSearchState({
 
   const clearSearch = () => {
     form.reset({ eventInput: "" });
-    navigate("/dashboard/search/posts", { replace: true });
+    void navigate("/dashboard/search/posts", { replace: true });
   };
 
   return {

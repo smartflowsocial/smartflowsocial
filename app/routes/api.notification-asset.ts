@@ -8,7 +8,7 @@
  * - Fetches the image and streams it back with appropriate headers.
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { ValidationError } from "~/lib/errors";
 

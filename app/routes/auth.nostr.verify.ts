@@ -1,10 +1,10 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
 import { validateEvent } from "nostr-tools";
+import type { ActionFunctionArgs } from "react-router";
 
 import {
   consumeLoginChallengeAndCreateSession,
   getLoginChallengeForVerify,
-} from "~/features/auth";
+} from "~/features/auth/auth.server";
 import {
   getCompleteProfile,
   LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,

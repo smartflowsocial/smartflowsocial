@@ -1,6 +1,6 @@
-import { Link, useLocation, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import { Link, useLocation, useFetcher } from "react-router";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";

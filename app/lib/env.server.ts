@@ -337,7 +337,6 @@ function addOptionalConfig(config: EnvConfig): void {
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime safety: process.env.NODE_ENV may be undefined in some environments
   config.NODE_ENV = process.env["NODE_ENV"] ?? "development";
 }
 

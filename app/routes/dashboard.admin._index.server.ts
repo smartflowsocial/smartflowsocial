@@ -2,15 +2,15 @@
  * Server-only loader for Admin Overview tab.
  */
 
-import { data as routeData } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import { data as routeData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 
 import {
   defaultRangeForAdminPath,
   parseRangePreset,
 } from "~/features/admin/metrics/date-range";
 import { getAdminOverviewPageData } from "~/features/admin/repositories/admin-overview-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 export type AdminOverviewIndexLoaderSuccess = Awaited<

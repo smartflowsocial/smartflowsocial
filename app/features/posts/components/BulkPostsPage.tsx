@@ -1,7 +1,7 @@
-import { useLoaderData, type FetcherWithComponents } from "@remix-run/react";
-import { Link } from "@remix-run/react";
 import { Inbox } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { useLoaderData, type FetcherWithComponents } from "react-router";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -51,7 +51,7 @@ function getPageTitle(mode: string | null): string {
 
 export default function BulkPostsPage() {
   const deferredData = useDeferredRouteLoaderData();
-  const loaderData = useLoaderData();
+  const loaderData = useLoaderData<unknown>();
   const data = deferredData ?? loaderData;
   const {
     tags,
@@ -287,7 +287,9 @@ export default function BulkPostsPage() {
               open={bulkDraftPickerOpen}
               onClose={() => setBulkDraftPickerOpen(false)}
               type="bulk"
-              onSelect={(id) => navigate(`/dashboard/bulkposts?groupId=${id}`)}
+              onSelect={(id) => {
+                void navigate(`/dashboard/bulkposts?groupId=${id}`);
+              }}
             />
 
             {bulkComposerStage === "build" && showActions ? (
@@ -506,19 +508,22 @@ export default function BulkPostsPage() {
           onCreateNew={() => {
             dismissBulkSuccessModal();
             handlers.clearBulkComposerWorkspace();
-            navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`, {
-              replace: true,
-            });
+            void navigate(
+              `/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`,
+              {
+                replace: true,
+              }
+            );
           }}
           onViewPage={() => {
             dismissBulkSuccessModal();
             handlers.clearBulkComposerWorkspace();
-            navigate("/dashboard/scheduled");
+            void navigate("/dashboard/scheduled");
           }}
           onGoToDashboard={() => {
             dismissBulkSuccessModal();
             handlers.clearBulkComposerWorkspace();
-            navigate("/dashboard");
+            void navigate("/dashboard");
           }}
         />
       ) : null}

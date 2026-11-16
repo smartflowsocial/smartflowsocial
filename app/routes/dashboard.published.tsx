@@ -1,33 +1,17 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
 import { PublishedPostsPage } from "~/features/posts/publishing";
 import { PublishedPostsPageSkeleton } from "~/features/posts/publishing/PublishedPostsPageSkeleton";
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
-import { getPublishedDashboardData } from "~/features/posts/server/publishing";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  publishedPostsLoaderDataSchema,
-  type PublishedPostsLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { PublishedPostsLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
+
+import { loadPublishedData } from "./dashboard.published.loader.server";
 
 export { publishedPostsAction as action } from "~/features/posts/published.action.server";
-
-export async function loadPublishedData(
-  request: Request,
-  params: { queueType?: string }
-): Promise<PublishedPostsLoaderData> {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-  const url = new URL(request.url);
-  const data = await getPublishedDashboardData({ userId, params, url });
-  return validateLoaderResponse(data, publishedPostsLoaderDataSchema);
-}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

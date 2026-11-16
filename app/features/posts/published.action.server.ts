@@ -2,8 +2,8 @@
  * Server-side action handlers for published posts
  * Extracted from dashboard.published.tsx
  */
-import { data } from "@remix-run/node";
 import { nip19 } from "nostr-tools";
+import { data } from "react-router";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { cascadeDeleteScheduledDependentsForSourcePost } from "~/features/posts/repositories/published-scheduled-dependents-cascade.server";

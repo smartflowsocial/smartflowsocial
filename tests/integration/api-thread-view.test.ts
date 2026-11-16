@@ -44,7 +44,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -81,7 +87,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -114,7 +126,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -138,7 +156,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -166,7 +190,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -190,7 +220,13 @@ describe("API: Thread View", () => {
     it("should return validation error when event_id is missing", async () => {
       const request = new Request("http://localhost:3000/api/thread-view");
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -216,7 +252,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
@@ -244,7 +286,13 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =

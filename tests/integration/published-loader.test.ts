@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Posted Queue Loader section)
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -96,6 +96,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -152,6 +154,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       });
       const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
@@ -204,6 +208,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -231,6 +237,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       await loader(loaderArgs);
 
@@ -257,6 +265,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -297,6 +307,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);
@@ -337,6 +349,8 @@ describe("Posted Posts Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await loader(loaderArgs);
       const responseObj = await asRouteResponse(response);

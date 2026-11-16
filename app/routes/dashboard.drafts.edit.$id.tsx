@@ -3,9 +3,9 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   data,
-} from "@remix-run/node";
+} from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { isPollDraftPost, isThreadDraftPost } from "~/features/posts/drafts";
 import {
   handleDraftEditAction,

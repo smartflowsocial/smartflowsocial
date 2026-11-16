@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { cleanupPublishRelayAcks } from "~/features/relays/publish-relay-ack-retention.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";

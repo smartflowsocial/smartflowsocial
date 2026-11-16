@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireSession } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { assertValidKind10002RelayListEvent } from "~/features/nostr/kind10002-nip65.server";
 import { KIND_RELAY_LIST_NIP65 } from "~/features/nostr/nostr-event-kinds";
 import { publishSignedEventToRelays } from "~/features/nostr/server";

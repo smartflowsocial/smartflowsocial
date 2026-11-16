@@ -1,38 +1,17 @@
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
+import { requireUserId } from "~/features/auth/auth.server";
 import { RecyclablesPage } from "~/features/posts/publishing";
 import { RecyclablesPageSkeleton } from "~/features/posts/publishing/RecyclablesPageSkeleton";
-import {
-  getRecyclableDashboardData,
-  handleRecyclablePostAction,
-} from "~/features/posts/server/publishing";
+import { handleRecyclablePostAction } from "~/features/posts/server/publishing";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  recyclablesLoaderDataSchema,
-  type RecyclablesLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { RecyclablesLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-export async function loadRecyclablesValidated(
-  request: Request,
-  params: LoaderFunctionArgs["params"]
-): Promise<RecyclablesLoaderData> {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  const data = await getRecyclableDashboardData({ userId, params, url });
-  return validateLoaderResponse(data, recyclablesLoaderDataSchema);
-}
+import { loadRecyclablesValidated } from "./dashboard.recyclables.loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

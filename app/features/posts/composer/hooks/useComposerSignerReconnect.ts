@@ -83,5 +83,5 @@ export function useComposerSignerReconnect(
     // future debugging code can dispatch on it without a contract churn.
   }, [clearSigningState, onHealthyWhileSigning]);
   // Mark `isSigning` as referenced so TS doesn't drop the unused-arg warning.
-  void isSigning;
+  isSigning;
 }

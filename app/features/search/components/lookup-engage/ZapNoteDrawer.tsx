@@ -1,6 +1,6 @@
-import { Link } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

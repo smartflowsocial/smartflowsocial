@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireSession } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
 import type { SignedEvent } from "~/features/nostr/types";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";

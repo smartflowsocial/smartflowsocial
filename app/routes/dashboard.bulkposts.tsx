@@ -1,8 +1,8 @@
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPageSkeleton, BulkPostsPage } from "~/features/posts/ui";

@@ -2,7 +2,7 @@
  * Split handlers for engagement settings actions (keeps router complexity low).
  */
 
-import { data } from "@remix-run/node";
+import { data } from "react-router";
 
 import {
   createReplyTemplate,

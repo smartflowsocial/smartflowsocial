@@ -1,5 +1,5 @@
-import type { useFetcher } from "@remix-run/react";
 import { Repeat } from "lucide-react";
+import type { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { PublishingBatchSelectionBar } from "~/features/posts/components/publishing-suite";

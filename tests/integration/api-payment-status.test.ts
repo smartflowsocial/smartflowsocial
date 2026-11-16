@@ -69,7 +69,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -119,7 +127,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -166,7 +182,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -202,7 +226,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -241,7 +273,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -281,7 +321,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -320,7 +368,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -362,7 +418,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -395,7 +459,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =

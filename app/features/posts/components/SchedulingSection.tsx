@@ -44,7 +44,7 @@ export function SchedulingSection({
   className = "",
   userTimezone = "UTC",
 }: SchedulingSectionProps) {
-  void _scheduleIntervals;
+  _scheduleIntervals;
   // Find the currently selected queue type
   const selectedQueueType = queueTypes.find((qt) =>
     typeof qt === "string" ? qt === selectedQueue : qt.name === selectedQueue

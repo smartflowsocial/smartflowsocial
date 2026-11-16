@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { ExternalLink, User } from "lucide-react";
+import { Link } from "react-router";
 
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {

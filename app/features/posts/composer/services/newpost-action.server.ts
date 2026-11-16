@@ -5,7 +5,7 @@
 /* eslint-disable sonarjs/cognitive-complexity -- action router branches by _action */
 
 import { parseFormData } from "@remix-run/form-data-parser";
-import { data, redirect } from "@remix-run/node";
+import { data, redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";

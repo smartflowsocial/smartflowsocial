@@ -1,5 +1,5 @@
-import { type FetcherWithComponents } from "@remix-run/react";
 import { useEffect, useRef, useCallback, type FormEvent } from "react";
+import { type FetcherWithComponents } from "react-router";
 
 import { type ToastMessage } from "~/components/types";
 import type { BulkComposerStage } from "~/features/posts/bulk-composer/types";

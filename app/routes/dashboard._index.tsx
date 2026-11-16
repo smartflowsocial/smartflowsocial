@@ -2,11 +2,11 @@ import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   data,
-} from "@remix-run/node";
-import { useLocation, useNavigation } from "@remix-run/react";
+} from "react-router";
+import { useLocation, useNavigation } from "react-router";
 
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import {
   deriveDashboardActivitySummary,

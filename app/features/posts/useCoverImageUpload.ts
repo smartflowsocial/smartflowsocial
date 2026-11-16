@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useState, useCallback } from "react";
+import { useFetcher } from "react-router";
 
 import { resizeImage } from "~/features/upload/image-resize";
 import { preflightMediaUpload } from "~/features/upload/upload-preflight.client";
@@ -80,7 +80,7 @@ export function useCoverImageUpload({
           formData.append("imageFile", processedFile);
           formData.append("_action", "upload-image");
 
-          uploadFetcher.submit(formData, {
+          void uploadFetcher.submit(formData, {
             method: "post",
             encType: "multipart/form-data",
           });

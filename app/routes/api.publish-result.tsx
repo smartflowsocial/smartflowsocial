@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getPostDataForModal } from "~/features/posts/server";
 import { getPublishRelayAcksByAttemptId } from "~/features/relays/publish-relay-acks.server";
 import { jsonResponse } from "~/lib/http/json-response";

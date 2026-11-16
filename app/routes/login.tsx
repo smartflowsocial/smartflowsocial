@@ -1,5 +1,5 @@
-import { redirect } from "@remix-run/node";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { redirect } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 

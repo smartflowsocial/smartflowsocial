@@ -3,14 +3,14 @@
  * Provides caching and background refetching for scheduled posts page
  */
 
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+} from "react-router";
 
 import { combineContent } from "~/features/posts/combined";
 import type { PostDTO, LongFormPostDTO } from "~/features/posts/dtos";
@@ -107,7 +107,7 @@ export function useScheduledPostsQuery() {
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   const validatedLoaderData = useMemo(() => {
@@ -139,7 +139,7 @@ export function useScheduledPostsQuery() {
             ? `/dashboard/scheduled/${queueType}?tab=${currentTab}`
             : `/dashboard/scheduled?tab=${currentTab}&queueType=${queueType}`
           : `/dashboard/scheduled?tab=${currentTab}`;
-      fetcher.load(base + dateParams);
+      void fetcher.load(base + dateParams);
 
       return new Promise<ScheduledPostsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -189,7 +189,7 @@ export function useScheduledPostsInfiniteQuery() {
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

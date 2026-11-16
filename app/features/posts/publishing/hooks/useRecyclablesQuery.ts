@@ -3,14 +3,14 @@
  * Provides caching and background refetching for recyclables page
  */
 
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+} from "react-router";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -66,7 +66,7 @@ export function useRecyclablesQuery() {
   const olderThan = searchParams.get("olderThan") ?? "";
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   const validatedLoaderData = useMemo(() => {
@@ -100,7 +100,7 @@ export function useRecyclablesQuery() {
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = `/dashboard/recyclables${queueType !== "all" ? `/${queueType}` : ""}?${queryParams.toString()}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       // Wait for fetcher to complete
       return new Promise<RecyclablesLoaderData>((resolve, reject) => {
@@ -146,7 +146,7 @@ export function useRecyclablesInfiniteQuery() {
   const olderThan = searchParams.get("olderThan") ?? "";
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

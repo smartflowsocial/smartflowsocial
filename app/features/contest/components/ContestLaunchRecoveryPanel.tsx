@@ -1,5 +1,5 @@
-import { Form, Link, useSubmit } from "@remix-run/react";
 import { useMemo, useState } from "react";
+import { Form, Link, useSubmit } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { campaignFieldClassNames } from "~/features/campaign-ui";
@@ -34,7 +34,7 @@ export function ContestLaunchRecoveryPanel({
     const d = new Date(local);
     if (!Number.isFinite(d.getTime())) return;
     fd.set("scheduledFor", d.toISOString());
-    submit(fd, { method: "post" });
+    void submit(fd, { method: "post" });
   }
 
   const scheduledLabel = useMemo(() => {

@@ -3,8 +3,8 @@
  * Handles route-level prefetching on idle and hover
  */
 
-import { useFetcher, useLocation } from "@remix-run/react";
 import { useEffect, useRef } from "react";
+import { useFetcher, useLocation } from "react-router";
 
 import { useOptionalUser } from "~/lib/remix-utils";
 
@@ -48,7 +48,7 @@ export function PrefetchManager() {
       PREFETCH_ROUTES.forEach((route) => {
         if (!prefetchedRoutesRef.current.has(route)) {
           prefetchedRoutesRef.current.add(route);
-          currentFetcher.load(route);
+          void currentFetcher.load(route);
         }
       });
     };

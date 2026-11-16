@@ -40,7 +40,7 @@ import { TEST_USER_ID } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { loadParentData } from "~/features/user";
-import { createLoader } from "~/routes/api.parent";
+import { createLoader } from "~/routes/api.parent.loader.server";
 
 describe("API: Parent", () => {
   // Create loader with injected error handler for testing
@@ -75,8 +75,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -121,8 +129,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -160,8 +176,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -196,8 +220,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -225,8 +257,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -254,8 +294,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -298,7 +346,13 @@ describe("API: Parent", () => {
       // Loader throws Response, so we need to catch it
       let response: Response;
       try {
-        response = await loader({ request, params: {}, context: {} });
+        response = await loader({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        });
       } catch (error) {
         if (error instanceof Response) {
           response = error;
@@ -319,7 +373,13 @@ describe("API: Parent", () => {
       mockHandleParentApiError.mockReturnValue(Response.json({ parent: null }));
 
       const request = new Request("http://localhost:3000/api/parent");
-      const loaderArgs = { request, params: {}, context: {} };
+      const loaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
 
       // The loader should catch the error and return a graceful response
       const response = await loader(loaderArgs);
@@ -352,8 +412,16 @@ describe("API: Parent", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
       const dataRaw: unknown = await response.json();
       const data =

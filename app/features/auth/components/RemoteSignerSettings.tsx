@@ -1,7 +1,7 @@
-import { useFetcher } from "@remix-run/react";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
@@ -265,7 +265,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
         activeConnectionSupportsPrimarySave.config.relays.join("\n")
       );
     }
-    primarySignerFetcher.submit(formData, {
+    void primarySignerFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/settings",
     });
@@ -274,7 +274,7 @@ export function RemoteSignerSettings(props: RemoteSignerSettingsProps) {
   const handleClearPrimaryProfile = useCallback(() => {
     const formData = new FormData();
     formData.set("_action", "clear_primary_signer_profile");
-    primarySignerFetcher.submit(formData, {
+    void primarySignerFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/settings",
     });

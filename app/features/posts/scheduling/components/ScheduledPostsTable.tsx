@@ -2,8 +2,6 @@
  * Scheduled posts table component
  */
 
-import type { FetcherWithComponents } from "@remix-run/react";
-import { useFetcher } from "@remix-run/react";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -17,6 +15,8 @@ import {
   type Key,
   type MutableRefObject,
 } from "react";
+import { useFetcher } from "react-router";
+import type { FetcherWithComponents } from "react-router";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -332,7 +332,7 @@ function ScheduledPostTableRowActions({
                     fd.set("postId", child.id);
                     fd.set("_action", "moveToDraft");
                     fd.set("type", "post");
-                    moveToDraftFetcher.submit(fd, { method: "post" });
+                    void moveToDraftFetcher.submit(fd, { method: "post" });
                   }}
                 >
                   {moveToDraftFetcher.state !== "idle" &&
@@ -377,7 +377,7 @@ function ScheduledPostTableRowActions({
             fd.set("postId", post.id);
             fd.set("_action", "moveToDraft");
             fd.set("type", "post");
-            moveToDraftFetcher.submit(fd, { method: "post" });
+            void moveToDraftFetcher.submit(fd, { method: "post" });
           }}
         >
           {moveToDraftFetcher.state !== "idle" &&

@@ -10,10 +10,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- Example file, variables may be unused for demonstration */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Example file, unsafe assignments for demonstration */
 
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
 import { jsonResponse } from "~/lib/http/json-response";
 

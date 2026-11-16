@@ -3,9 +3,9 @@
  * Provides caching and background refetching for templates page
  */
 
-import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import { useFetcher, useLoaderData } from "react-router";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
@@ -33,7 +33,7 @@ export const templatesKeys = {
  */
 export function useTemplatesQuery() {
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
   const queryClient = useQueryClient();
 
@@ -60,7 +60,7 @@ export function useTemplatesQuery() {
   return useQuery({
     queryKey: templatesKeys.list(),
     queryFn: async () => {
-      fetcher.load("/dashboard/templates");
+      void fetcher.load("/dashboard/templates");
 
       return new Promise<TemplatesLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -97,7 +97,7 @@ export function useTemplatesQuery() {
  */
 export function useTemplatesInfiniteQuery() {
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

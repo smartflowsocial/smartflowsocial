@@ -2,7 +2,7 @@
  * Action branch handlers for new longform compose (draft, publish, schedule, upload).
  */
 
-import { redirect, data } from "@remix-run/node";
+import { redirect, data } from "react-router";
 
 import {
   assertScheduleCapacity,

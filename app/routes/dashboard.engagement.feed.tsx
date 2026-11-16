@@ -1,8 +1,8 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   ENGAGEMENT_FEED_PAGE_SIZE,
   ENGAGEMENT_LOADER_FALLBACK,
@@ -10,36 +10,12 @@ import {
   EngagementFeedPage,
   EngagementFeedSkeleton,
   EngagementResolvedLoaderProvider,
-  loadEngagementFeedData,
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
 import { logError } from "~/lib/error-logger.server";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
-import {
-  engagementLoaderDataSchema,
-  type EngagementLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
+import type { EngagementLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadEngagementValidatedOrThrow(
-  userId: string,
-  page: number,
-  limit: number
-): Promise<EngagementLoaderData> {
-  const data = await loadEngagementFeedData(userId, page, limit);
-  return validateLoaderResponse(data, engagementLoaderDataSchema);
-}
-
-export async function loadEngagementJson(request: Request) {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-  const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") ?? "1", 10);
-  return loadEngagementValidatedOrThrow(
-    userId,
-    page,
-    ENGAGEMENT_FEED_PAGE_SIZE
-  );
-}
+import { loadEngagementValidatedOrThrow } from "./dashboard.engagement.loader.server";
 
 async function loaderImpl({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

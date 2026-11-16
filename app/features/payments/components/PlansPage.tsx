@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { useCallback, useState } from "react";
 import {
   Link,
   useActionData,
@@ -5,9 +7,7 @@ import {
   useNavigate,
   useNavigation,
   useSubmit,
-} from "@remix-run/react";
-import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+} from "react-router";
 
 import Footer from "~/components/layout/FrontendFooter";
 import Header from "~/components/layout/FrontendHeader";
@@ -173,7 +173,7 @@ export function PlansPage(): ReactNode {
     btcpayYearlyOnChainEnabled,
   } = useLoaderData<typeof plansLoader>();
   const deployment = useDeployment();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix action data type is complex, validated at runtime
+
   const actionData = useActionData<typeof plansAction>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -424,7 +424,7 @@ export function PlansPage(): ReactNode {
                   if (subscriptionCheckoutV2Enabled) {
                     if (planId === "free") {
                       if (!user) {
-                        navigate("/login", { replace: true });
+                        void navigate("/login", { replace: true });
                         return;
                       }
                       setSelectedPlan(planId);
@@ -434,7 +434,7 @@ export function PlansPage(): ReactNode {
                       formData.set("paymentMode", "manual");
                       formData.set("billingCadence", "monthly");
                       formData.set("accessDurationMonths", "1");
-                      submit(formData, { method: "post" });
+                      void submit(formData, { method: "post" });
                       return;
                     }
                     openCheckoutForPlan(planId);
@@ -499,7 +499,7 @@ export function PlansPage(): ReactNode {
                         disabled={isLoading}
                         onClick={() => {
                           if (!user) {
-                            navigate("/login", { replace: true });
+                            void navigate("/login", { replace: true });
                             return;
                           }
                           openCheckoutForPlan(founderOffering.id);
@@ -659,7 +659,7 @@ export function PlansPage(): ReactNode {
           formData.set("paymentMode", "manual");
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
-          submit(formData, { method: "post" });
+          void submit(formData, { method: "post" });
           closeCheckout();
         }}
         onSelectBtcOnchain={() => {
@@ -676,7 +676,7 @@ export function PlansPage(): ReactNode {
           formData.set("paymentMode", "btc_onchain");
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
-          submit(formData, { method: "post" });
+          void submit(formData, { method: "post" });
           closeCheckout();
         }}
         onClose={closeCheckout}
@@ -739,7 +739,7 @@ export function PlansPage(): ReactNode {
             "accessDurationMonths",
             String(billingCadence === "yearly" ? 12 : manualDurationMonths)
           );
-          submit(formData, { method: "post" });
+          void submit(formData, { method: "post" });
           closeCheckout();
         }}
         onSelectAutoRenew={() => {
@@ -756,7 +756,7 @@ export function PlansPage(): ReactNode {
           if (nwcString.trim().length > 0) {
             formData.set("nwcString", nwcString.trim());
           }
-          submit(formData, { method: "post" });
+          void submit(formData, { method: "post" });
           closeCheckout();
         }}
         onClose={closeCheckout}
@@ -776,7 +776,7 @@ export function PlansPage(): ReactNode {
           formData.set("paymentMode", "btc_onchain");
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
-          submit(formData, { method: "post" });
+          void submit(formData, { method: "post" });
           closeCheckout();
         }}
         paymentMethod={checkoutPaymentMethod}

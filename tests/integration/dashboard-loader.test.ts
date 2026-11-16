@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/loaders/dashboard-loader.cy.ts
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Prisma to prevent $use errors
@@ -120,6 +120,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -188,6 +190,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -212,6 +216,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -257,6 +263,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
@@ -285,6 +293,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
 
@@ -305,6 +315,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
 
@@ -325,6 +337,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
 
@@ -349,6 +363,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
 
       const response = await asRouteResponse(await loader(loaderArgs));
@@ -365,6 +381,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
 
       const response = await asRouteResponse(await loader(loaderArgs));
@@ -382,6 +400,8 @@ describe("Dashboard Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
       const response = await asRouteResponse(await loader(loaderArgs));
       expect(response.status).toBe(500);

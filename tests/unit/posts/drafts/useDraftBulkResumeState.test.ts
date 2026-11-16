@@ -16,7 +16,7 @@ vi.mock("~/features/posts/drafts/utils/draft-bulk-resume.utils", () => ({
 
 const mockUseFetcher = vi.fn();
 const mockUseOptionalUser = vi.fn();
-vi.mock("@remix-run/react", () => ({
+vi.mock("react-router", () => ({
   useFetcher: () => mockUseFetcher(),
 }));
 vi.mock("~/lib/remix-utils", () => ({

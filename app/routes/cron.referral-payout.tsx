@@ -3,7 +3,7 @@
  * POST is preferred. GET remains accepted when the cron secret matches.
  */
 
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import {
   referralPayoutsEnabled,

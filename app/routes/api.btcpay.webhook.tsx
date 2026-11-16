@@ -1,4 +1,4 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import { verifyBtcpayWebhookSignature } from "~/features/payments/btcpay.server";
 import { processBtcpayWebhookPayload } from "~/features/payments/data/btcpay-webhook.server";

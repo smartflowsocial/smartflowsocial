@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 
 import ZapButton from "~/components/dashboard/ZapButton";
 import {
@@ -112,7 +112,7 @@ export function GiveawayDetailBatchZapFlow({
     const fd = new FormData();
     fd.set("intent", "runBatchPayout");
     fd.set("stepIndex", String(d.nextStep));
-    batchPayoutFetcher.submit(fd, { method: "post" });
+    void batchPayoutFetcher.submit(fd, { method: "post" });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chained batch steps; deps are state/data only
   }, [batchPayoutFetcher.state, batchPayoutFetcher.data]);
 
@@ -146,7 +146,7 @@ export function GiveawayDetailBatchZapFlow({
     if (note && note.trim() !== "") {
       fd.set("payoutNote", note.trim());
     }
-    payoutFetcher.submit(fd, { method: "post" });
+    void payoutFetcher.submit(fd, { method: "post" });
   };
 
   return (
@@ -166,7 +166,7 @@ export function GiveawayDetailBatchZapFlow({
               const fd = new FormData();
               fd.set("intent", "runBatchPayout");
               fd.set("stepIndex", "0");
-              batchPayoutFetcher.submit(fd, { method: "post" });
+              void batchPayoutFetcher.submit(fd, { method: "post" });
             }}
             className="bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 disabled:bg-surface-hover disabled:text-text-secondary inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
             title={
@@ -364,7 +364,7 @@ export function GiveawayDetailBatchZapFlow({
             if (allSettled) {
               const fd = new FormData();
               fd.set("intent", "markPaidOut");
-              paidFetcher.submit(fd, { method: "post" });
+              void paidFetcher.submit(fd, { method: "post" });
             } else {
               setOverrideReason("");
               setShowCompleteDialog(true);
@@ -421,7 +421,7 @@ export function GiveawayDetailBatchZapFlow({
                 const fd = new FormData();
                 fd.set("intent", "markPaidOut");
                 fd.set("completeOverrideReason", overrideReason.trim());
-                paidFetcher.submit(fd, { method: "post" });
+                void paidFetcher.submit(fd, { method: "post" });
                 setShowCompleteDialog(false);
               }}
             >

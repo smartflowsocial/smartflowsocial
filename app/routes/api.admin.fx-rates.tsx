@@ -1,7 +1,7 @@
-import { type LoaderFunctionArgs, data } from "@remix-run/node";
+import { type LoaderFunctionArgs, data } from "react-router";
 
 import { getAdminBtcSpotRates } from "~/features/admin/admin-fx-rates.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 /**

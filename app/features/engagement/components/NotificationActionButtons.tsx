@@ -1,4 +1,3 @@
-import { Link } from "@remix-run/react";
 import {
   ChevronDown,
   ChevronUp,
@@ -10,6 +9,7 @@ import {
   Repeat,
   Zap,
 } from "lucide-react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {

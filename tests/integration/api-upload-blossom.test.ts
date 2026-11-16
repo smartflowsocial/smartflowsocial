@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(),
 }));
 
@@ -15,7 +15,7 @@ vi.mock("~/features/upload", () => ({
 
 import { asRouteResponse } from "../utils/action-test-helpers";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   createMediaIfMissing,
   recordBlossomCompatUsage,
@@ -56,7 +56,13 @@ describe("API: Upload Blossom", () => {
       }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: boolean;
@@ -86,7 +92,13 @@ describe("API: Upload Blossom", () => {
       }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(403);
@@ -103,7 +115,13 @@ describe("API: Upload Blossom", () => {
       }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as {
       success?: boolean;
@@ -135,7 +153,13 @@ describe("API: Upload Blossom", () => {
       }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const responseObj = await asRouteResponse(response);
     expect(responseObj.status).toBe(200);
     expect(createMediaIfMissing).toHaveBeenCalled();

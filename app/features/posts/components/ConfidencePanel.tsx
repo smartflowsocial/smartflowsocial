@@ -254,7 +254,7 @@ function PublishSummarySection({
   pristineHint?: string;
   idleStatusLabel?: string;
 }) {
-  void _idleStatusLabel;
+  _idleStatusLabel;
   const compactIssues = compactLines(issues, ISSUE_LINE_LIMIT);
   const compactWarnings = compactLines(warnings, ISSUE_LINE_LIMIT);
   const fallbackInline =

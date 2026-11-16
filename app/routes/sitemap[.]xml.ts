@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { absoluteUrl } from "~/lib/site-url";
 import { getSiteOrigin } from "~/lib/site-url.server";

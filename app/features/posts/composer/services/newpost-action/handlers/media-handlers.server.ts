@@ -3,7 +3,7 @@
  * Handles draft, post, and schedule actions for image/video posts
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { PublishNowUseCase } from "~/features/posts/server/publishing";

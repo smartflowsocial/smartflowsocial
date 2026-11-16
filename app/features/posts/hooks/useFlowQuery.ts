@@ -5,17 +5,17 @@
  */
 
 import {
-  useLoaderData,
-  useRouteLoaderData,
-  useSearchParams,
-} from "@remix-run/react";
-import {
   useCallback,
   useEffect,
   useRef,
   useState,
   startTransition,
 } from "react";
+import {
+  useLoaderData,
+  useRouteLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { fetchJson, toDashboardJsonUrl } from "~/lib/remix/fetch-json";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -100,8 +100,8 @@ export function useFlowData(): UseFlowDataResult {
   const contentTab = searchParams.get("tab") ?? "all";
 
   // Prefer index route loader data so we get flowItems/pastCursor/hasMorePast (layout may not expose them)
-  const indexLoaderData = useRouteLoaderData(DASHBOARD_INDEX_ROUTE_ID);
-  const fallbackLoaderData = useLoaderData();
+  const indexLoaderData = useRouteLoaderData<unknown>(DASHBOARD_INDEX_ROUTE_ID);
+  const fallbackLoaderData = useLoaderData<unknown>();
   const loaderDataRaw = indexLoaderData ?? fallbackLoaderData;
   const validatedLoaderData = safeValidateLoaderResponse(
     loaderDataRaw,

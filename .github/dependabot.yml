@@ -60,9 +60,10 @@ updates:
           - "postcss"
           - "autoprefixer"
       # Group all Remix-related packages
-      remix:
+      react-router:
         patterns:
-          - "@remix-run/*"
+          - "react-router"
+          - "@react-router/*"
       # Group all Radix UI packages
       radix-ui:
         patterns:

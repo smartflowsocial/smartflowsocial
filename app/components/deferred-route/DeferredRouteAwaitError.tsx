@@ -1,4 +1,4 @@
-import { Link, useAsyncError } from "@remix-run/react";
+import { Link, useAsyncError } from "react-router";
 
 export function DeferredRouteAwaitError({ retryTo }: { retryTo: string }) {
   const err = useAsyncError();

@@ -1,6 +1,6 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { createDeferredEngagementAction } from "~/features/engagement";
 import type { SignedEvent } from "~/features/nostr/types";
 import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
