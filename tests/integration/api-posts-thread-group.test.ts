@@ -21,9 +21,16 @@ import { loader } from "~/routes/api.posts.thread-group";
 const loaderArgs = {
   params: {},
   context: new RouterContextProvider(),
-  url: new URL("http://localhost:3000/"),
   pattern: "*",
 } as const;
+
+function callLoader(request: Request) {
+  return loader({
+    request,
+    ...loaderArgs,
+    url: new URL(request.url),
+  });
+}
 
 describe("API: posts thread-group", () => {
   beforeEach(() => {
@@ -34,7 +41,7 @@ describe("API: posts thread-group", () => {
     const request = new Request(
       "http://localhost:3000/api/posts/thread-group?postId=p1"
     );
-    const response = await loader({ request, ...loaderArgs });
+    const response = await callLoader(request);
     expect(response.status).toBe(400);
   });
 
@@ -42,7 +49,7 @@ describe("API: posts thread-group", () => {
     const request = new Request(
       "http://localhost:3000/api/posts/thread-group?groupId=g1"
     );
-    const response = await loader({ request, ...loaderArgs });
+    const response = await callLoader(request);
     expect(response.status).toBe(400);
   });
 
@@ -62,7 +69,7 @@ describe("API: posts thread-group", () => {
     const request = new Request(
       "http://localhost:3000/api/posts/thread-group?groupId=g1&postId=p1"
     );
-    const response = await loader({ request, ...loaderArgs });
+    const response = await callLoader(request);
     expect(requireUserId).toHaveBeenCalled();
     expect(mockGetSegments).toHaveBeenCalledWith("user-1", "g1", "p1");
     expect(response.status).toBe(200);
