@@ -130,11 +130,14 @@ if (!globalWithCrypto.crypto?.getRandomValues) {
 void run();
 
 async function run() {
-  const isDevelopment = env.NODE_ENV === "development";
-  const viteDevServer = isDevelopment
+  // Cypress starts this server with NODE_ENV=test. Only production should
+  // load the prebuilt server bundle; dev and test go through Vite.
+  const serveWithVite = env.NODE_ENV !== "production";
+  const viteDevServer = serveWithVite
     ? await (
         await import("vite")
       ).createServer({
+        mode: "development",
         server: { middlewareMode: true },
       })
     : undefined;
@@ -407,7 +410,7 @@ async function run() {
             "wss:", // WebSocket connections for Nostr
             "https:", // External API calls
             "http://127.0.0.1:7242", // Debug logging server
-            ...(env.NODE_ENV === "development"
+            ...(serveWithVite
               ? [
                   `ws://localhost:${env.PORT ?? "3000"}`,
                   `ws://127.0.0.1:${env.PORT ?? "3000"}`,
@@ -429,7 +432,7 @@ async function run() {
           frameSrc: ["'none'"],
           baseUri: ["'self'"],
           formAction: ["'self'"],
-          upgradeInsecureRequests: !isDevelopment ? [] : null,
+          upgradeInsecureRequests: serveWithVite ? null : [],
         },
       },
       hsts: {

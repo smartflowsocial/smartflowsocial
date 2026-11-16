@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@react-router/node", () => ({
+vi.mock("react-router", () => ({
   createCookie: vi.fn(() => ({
     parse: vi.fn(),
     serialize: vi.fn(),

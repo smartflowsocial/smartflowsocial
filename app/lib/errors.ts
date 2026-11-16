@@ -1,4 +1,4 @@
-import { isDev, isProd, isTest } from "~/lib/runtime-env";
+import { isDev, isProd, isTest, readProcessEnv } from "~/lib/runtime-env";
 
 /**
  * Centralized Error Handling System
@@ -327,16 +327,27 @@ export function normalizeError(error: unknown): AppError {
 /**
  * Get user-friendly error message
  */
+function friendlyMessageMode(): string | undefined {
+  // Tests flip NODE_ENV after import. The frozen flags stay for the browser,
+  // where `process` is missing and the mode was captured from Vite.
+  const fromProcess = readProcessEnv("NODE_ENV");
+  if (fromProcess) return fromProcess;
+  if (isProd) return "production";
+  if (isDev) return "development";
+  if (isTest) return "test";
+  return undefined;
+}
+
 export function getUserFriendlyMessage(error: AppError): string {
-  // Always return the actual message in test/development mode
-  const isTestOrDev = isTest || isDev;
+  const mode = friendlyMessageMode();
+  const isTestOrDev = mode === "test" || mode === "development" || mode == null;
 
   if (isTestOrDev) {
     return error.message;
   }
 
   // Don't expose internal errors to users in production
-  if (!error.isOperational && isProd) {
+  if (!error.isOperational && mode === "production") {
     return "An unexpected error occurred. Please try again later.";
   }
 
