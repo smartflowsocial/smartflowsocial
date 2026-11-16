@@ -5,6 +5,7 @@
     "**/*.config.ts",
     "support/**/*",
     "../../env.d.ts",
+    "../../scripts/nonce-context.d.ts",
     "../../app/types/**/*.d.ts"
   ],
   "compilerOptions": {

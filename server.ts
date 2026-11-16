@@ -32,7 +32,7 @@ import {
   broadcastUnsubscribeLimiter,
 } from "./app/lib/rate-limit.server";
 import { TRUSTED_PROXIES } from "./app/lib/trusted-proxies.server";
-import { nonceContext } from "./app/lib/nonce-context";
+import { nonceContext } from "#nonce-context";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
 if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {

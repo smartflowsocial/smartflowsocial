@@ -6,17 +6,14 @@
 // The user will be created with an ACTIVE subscription if they don't already exist.
 // Each test creates a fresh user, and afterEach cleans it up.
 
-// Load environment variables FIRST using require to ensure it runs before any imports
-// This is critical because PrismaClient reads DATABASE_URL when the module is first loaded
-// Using .js file ensures require() executes synchronously before imports
-require("./load-env.js");
+// Load environment variables before Prisma initializes.
+import path from "node:path";
 
-// Import PrismaClient and adapter AFTER env is loaded
-// This ensures PrismaClient reads DATABASE_URL from process.env correctly
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-// Import these AFTER dotenv has loaded to ensure env vars are available
 import { parse } from "cookie";
+import { config as loadDotenv } from "dotenv";
 import { Pool } from "pg";
 
 async function createNostrUserAndLogin(npub: string) {
@@ -27,17 +24,10 @@ async function createNostrUserAndLogin(npub: string) {
   // Verify DATABASE_URL is set before doing anything
   let dbUrl = process.env["DATABASE_URL"];
   if (!dbUrl || dbUrl.trim() === "") {
-    // Try to reload from .env file if not set
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required for dynamic env loading, require() returns any
-    const dotenv = require("dotenv");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Required for dynamic env loading, require() returns any
-    const path = require("path");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any, dotenv.config() returns any
-    const result = dotenv.config({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- require() returns any
+    const result = loadDotenv({
       path: path.resolve(process.cwd(), ".env"),
       override: true,
-    }) as { parsed?: Record<string, string>; error?: Error };
+    });
 
     if (result.parsed) {
       Object.assign(process.env, result.parsed);

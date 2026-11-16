@@ -15,8 +15,8 @@ import {
   type RouterContextProvider,
 } from "react-router";
 
+import { nonceContext } from "#nonce-context";
 import { logError } from "~/lib/error-logger.server";
-import { nonceContext } from "~/lib/nonce-context";
 import { initSentry } from "~/lib/sentry.server";
 
 // Initialize Sentry early for server-side error tracking
