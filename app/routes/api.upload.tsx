@@ -5,7 +5,7 @@ import { requireUserId } from "~/features/auth";
 import { createUploadHandler } from "~/features/upload/s3.server";
 import { MAX_FILE_SIZE } from "~/features/upload/validation.server";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { env } from "~/lib/env.server";
 import { ExternalServiceError } from "~/lib/errors";
 import { jsonResponse } from "~/lib/http/json-response";

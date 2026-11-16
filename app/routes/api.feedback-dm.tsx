@@ -9,7 +9,7 @@ import {
   validateUserSignedFeedbackDm,
   validateUserSignedFeedbackGiftWrap,
 } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { jsonResponse } from "~/lib/http/json-response";

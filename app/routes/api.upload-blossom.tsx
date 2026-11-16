@@ -6,7 +6,7 @@ import {
   recordBlossomCompatUsage,
 } from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
 import { jsonResponse } from "~/lib/http/json-response";
 

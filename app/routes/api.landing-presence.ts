@@ -11,7 +11,7 @@ import {
   markLandingNoticeSeen,
   setLandingVisibility,
 } from "~/features/public-stats/repositories/public-stats-data.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { jsonResponse } from "~/lib/http/json-response";
 
 export async function loader({ request }: LoaderFunctionArgs) {

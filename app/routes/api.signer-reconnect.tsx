@@ -4,7 +4,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { insertSignerReconnectEvent } from "~/features/admin/repositories/admin-telemetry.server";
 import { requireUserId } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseFailureBucket(
   v: unknown

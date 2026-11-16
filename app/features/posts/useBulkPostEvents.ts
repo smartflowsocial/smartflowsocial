@@ -5,6 +5,7 @@ import { type ToastMessage } from "~/components/types";
 import type { BulkComposerStage } from "~/features/posts/bulk-composer/types";
 import { bulkPostMissingRequiredCaption } from "~/features/posts/components/bulk-composer/bulk-composer-post-card-utils";
 import type { User } from "~/features/user";
+import { isDev } from "~/lib/runtime-env";
 import { safeConsoleInfo } from "~/lib/safe-console.client";
 import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
@@ -34,7 +35,7 @@ import {
 /**
  * Check if we're in development mode for conditional logging
  */
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = isDev;
 
 /**
  * Development-only logging helper

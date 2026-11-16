@@ -6,7 +6,7 @@ import {
   finalizeBroadcastCampaign,
 } from "~/features/broadcast/broadcast-actions.server";
 import { finalizeBroadcastSchema } from "~/features/broadcast/broadcast-types";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { jsonResponse } from "~/lib/http/json-response";
 
 export const action = withCSRFProtection(

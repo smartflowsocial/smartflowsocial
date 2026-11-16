@@ -13,7 +13,7 @@ import {
   getUploadPolicy,
 } from "~/features/upload/upload-policy";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
 import { jsonResponse } from "~/lib/http/json-response";
 

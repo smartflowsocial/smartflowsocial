@@ -3,21 +3,8 @@
  * fetch kind-1 notes that tag the user via relay `#p` filters.
  */
 
-import { env } from "~/lib/env.server";
+import "~/lib/websocket-polyfill.server";
 
-// Polyfill WebSocket for nostr-tools in Node (same pattern as nostr.messenger.server.ts)
-if (
-  env.NODE_ENV !== "development" &&
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime polyfill check for Node.js environment
-  globalThis.WebSocket === undefined
-) {
-  const { WebSocket } = require("ws") as {
-    WebSocket: typeof globalThis.WebSocket;
-  };
-  globalThis.WebSocket = WebSocket;
-}
-
-// eslint-disable-next-line import/order -- polyfill must run before nostr-tools loads
 import { SimplePool, type Event } from "nostr-tools";
 
 import { logError } from "~/lib/error-logger.server";

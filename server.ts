@@ -6,7 +6,7 @@ import url from "node:url";
 
 import { createRequestHandler } from "@remix-run/express";
 import type { ServerBuild } from "@remix-run/node";
-import { broadcastDevReady, installGlobals } from "@remix-run/node";
+import { broadcastDevReady } from "@remix-run/node";
 import compression from "compression";
 import { config } from "dotenv";
 import type { RequestHandler } from "express";
@@ -57,8 +57,6 @@ if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
     });
   }
 }
-installGlobals();
-
 // Handle uncaught exceptions from stream cancellation errors
 // These can occur when aborting fetch requests whose response streams are already locked
 process.on(

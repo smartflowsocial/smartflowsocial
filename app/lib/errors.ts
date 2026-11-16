@@ -1,3 +1,5 @@
+import { isDev, isProd, isTest } from "~/lib/runtime-env";
+
 /**
  * Centralized Error Handling System
  *
@@ -327,15 +329,14 @@ export function normalizeError(error: unknown): AppError {
  */
 export function getUserFriendlyMessage(error: AppError): string {
   // Always return the actual message in test/development mode
-  const isTestOrDev =
-    process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development";
+  const isTestOrDev = isTest || isDev;
 
   if (isTestOrDev) {
     return error.message;
   }
 
   // Don't expose internal errors to users in production
-  if (!error.isOperational && process.env.NODE_ENV === "production") {
+  if (!error.isOperational && isProd) {
     return "An unexpected error occurred. Please try again later.";
   }
 

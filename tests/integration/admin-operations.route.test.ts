@@ -33,7 +33,7 @@ vi.mock(
   })
 );
 
-vi.mock("~/lib/csrf", () => ({
+vi.mock("~/lib/csrf.server", () => ({
   withCSRFProtection: (fn: (args: ActionFunctionArgs) => Promise<unknown>) =>
     fn,
 }));

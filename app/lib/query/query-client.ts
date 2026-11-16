@@ -5,6 +5,8 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
+import { isDev } from "~/lib/runtime-env";
+
 /**
  * Default query client configuration
  * Optimized for Remix SSR and client-side data fetching
@@ -20,7 +22,7 @@ export function createQueryClient() {
         // Retry failed requests 1 time
         retry: 1,
         // Refetch on window focus in development, but not in production
-        refetchOnWindowFocus: process.env.NODE_ENV === "development",
+        refetchOnWindowFocus: isDev,
         // Don't refetch on mount if data is fresh
         refetchOnMount: false,
         // Don't refetch on reconnect if data is fresh

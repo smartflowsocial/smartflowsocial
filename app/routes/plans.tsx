@@ -6,7 +6,7 @@ import {
   handlePlansAction,
   loadPlansData,
 } from "~/features/payments";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import {
   buildSeoMeta,
   SEO_PLANS_DESCRIPTION,

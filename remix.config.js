@@ -11,11 +11,6 @@ module.exports = {
   tailwind: true,
   postcss: true,
   future: {
-    // Remix v2 future flags
-    v2_errorBoundary: true,
-    v2_meta: true,
-    v2_normalizeFormMethod: true,
-    v2_routeConvention: true,
     // React Router v7 behavior, still on Remix 2.17. The package swap is separate.
     v3_fetcherPersist: true,
     v3_relativeSplatPath: true,

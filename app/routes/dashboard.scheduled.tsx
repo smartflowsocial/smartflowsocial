@@ -19,7 +19,7 @@ import {
   handleScheduledAction,
   loadScheduledData,
 } from "~/features/posts/server/scheduling";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {

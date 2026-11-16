@@ -7,7 +7,7 @@ import {
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { retryDeadLetterJob } from "~/infra/queue/dead-letter-queue.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export const adminOperationsAction = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {

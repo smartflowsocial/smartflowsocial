@@ -5,10 +5,8 @@
 
 // @ts-expect-error - PrismaClientKnownRequestError is available at runtime but types may not be fully exported
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { installGlobals } from "@remix-run/node";
 
 import { prisma } from "~/lib/prisma.server";
-installGlobals();
 
 async function deleteUser(npub: string) {
   if (!npub) {

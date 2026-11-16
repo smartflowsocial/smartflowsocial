@@ -16,11 +16,8 @@ require("./load-env.js");
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 // Import these AFTER dotenv has loaded to ensure env vars are available
-import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 import { Pool } from "pg";
-
-installGlobals();
 
 async function createNostrUserAndLogin(npub: string) {
   if (!npub) {

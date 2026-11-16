@@ -11,7 +11,7 @@ import {
   loadSearchData,
   serializeLookupLoaderError,
 } from "~/features/search";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import {
   searchActionSchema,
   validateFormDataOrRespond,

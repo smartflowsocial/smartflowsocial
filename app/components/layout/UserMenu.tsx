@@ -25,6 +25,7 @@ import type { ProfileData } from "~/features/nostr/types";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
@@ -355,12 +356,6 @@ export default function UserMenu() {
         `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
-        handleErrorSafely: (
-          error: unknown,
-          context: { component: string; action: string }
-        ) => void;
-      };
       handleErrorSafely(e, {
         component: "UserMenu",
         action: "onSwitchAccount",
@@ -376,12 +371,6 @@ export default function UserMenu() {
         `/login?expectedPubkey=${encodeURIComponent(parentNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
-        handleErrorSafely: (
-          error: unknown,
-          context: { component: string; action: string }
-        ) => void;
-      };
       handleErrorSafely(e, {
         component: "UserMenu",
         action: "onSwitchParent",

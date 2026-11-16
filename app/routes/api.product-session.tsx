@@ -8,7 +8,7 @@ import {
   upsertProductSessionStart,
 } from "~/features/admin/repositories/admin-telemetry.server";
 import { requireUserId } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseDeviceCoarse(v: unknown): ProductSessionDeviceCoarse | undefined {
   if (v === "mobile") return ProductSessionDeviceCoarse.mobile;

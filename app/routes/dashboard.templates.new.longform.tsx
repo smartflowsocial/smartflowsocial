@@ -21,7 +21,7 @@ import {
 import { loadNewLongFormData } from "~/features/posts/server/longform";
 import { getQueueAccentHex } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

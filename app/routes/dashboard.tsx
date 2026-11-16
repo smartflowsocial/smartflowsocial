@@ -26,7 +26,7 @@ import {
   getFeedbackInboxPubkeyHex,
   loadFeedbackInboxKind10050Relays,
 } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 import { NOINDEX, resolveDashboardPageLabel } from "~/lib/seo-dashboard-routes";

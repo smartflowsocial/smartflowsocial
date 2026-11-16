@@ -16,7 +16,7 @@ import {
   referralContextCookie,
 } from "~/features/referral/referral-context.server";
 import { brandLoginChallengeTitle } from "~/lib/brand";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { jsonResponse } from "~/lib/http/json-response";

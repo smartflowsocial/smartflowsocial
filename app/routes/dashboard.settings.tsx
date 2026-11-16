@@ -23,7 +23,7 @@ import {
   loadSettingsData,
   type SettingsLoaderData,
 } from "~/features/settings/settings-loader.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logError } from "~/lib/error-logger.server";
 
 async function loadSettingsOrThrow(

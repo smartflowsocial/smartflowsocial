@@ -2,7 +2,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { getBatchPosts, parseBatchPostsRequest } from "~/features/posts/server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 
 type AssertFunction = (

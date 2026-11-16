@@ -7,7 +7,7 @@ import {
 import { requireUserId } from "~/features/auth";
 import { NewPostPage } from "~/features/posts/composer";
 import { handleNewPostAction } from "~/features/posts/server/composer";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);

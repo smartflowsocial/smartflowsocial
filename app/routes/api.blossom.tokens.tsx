@@ -2,7 +2,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { issueBlossomBulkTokens } from "~/features/upload";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { jsonResponse } from "~/lib/http/json-response";
 
 interface TokenRequestFile {

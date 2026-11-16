@@ -43,7 +43,7 @@ import {
   listMediaForUser,
 } from "~/features/upload";
 import { BRAND_BLOSSOM_LABEL } from "~/lib/brand";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,

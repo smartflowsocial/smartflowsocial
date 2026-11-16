@@ -5,7 +5,7 @@ import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
 } from "~/features/posts/server/scheduling";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 
 type AssertFunction = (

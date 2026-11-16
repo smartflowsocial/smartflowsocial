@@ -29,7 +29,7 @@ import {
   handleNewLongFormAction,
   loadNewLongFormData,
 } from "~/features/posts/server/longform";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 /** When pending search drops `type` but we are still on article (or other) compose mode, keep discriminator so loader vs URL mode stay aligned. */
 function mergeComposeTypeFromLocation(

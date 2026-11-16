@@ -6,7 +6,7 @@ import type {
 } from "@remix-run/node";
 
 import { logout } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
 export const meta: MetaFunction = ({ matches }) =>

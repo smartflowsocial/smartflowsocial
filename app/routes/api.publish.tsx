@@ -14,7 +14,7 @@ import { recordReplyPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { invalidateRelayIntentCache } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { jsonResponse } from "~/lib/http/json-response";

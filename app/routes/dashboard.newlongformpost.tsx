@@ -7,7 +7,7 @@ import {
 import { requireUserId } from "~/features/auth";
 import { NewLongFormPostPage } from "~/features/posts/longform";
 import { handleNewLongFormAction } from "~/features/posts/server/longform";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);

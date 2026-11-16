@@ -2,6 +2,7 @@
  * Referrals tab: loader (tables + audit) and payout actions (NWC / ws polyfill server-only).
  */
 
+import "~/lib/websocket-polyfill.server";
 import { data } from "@remix-run/node";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
@@ -29,19 +30,8 @@ import {
   runReferralPayoutBatch,
 } from "~/features/referral/referral-payout.server";
 import { countReferralEarningsPaidInRange } from "~/features/referral/repositories/referral-data.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { env } from "~/lib/env.server";
-
-if (
-  env.NODE_ENV !== "development" &&
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Node may lack WebSocket until polyfilled
-  globalThis.WebSocket === undefined
-) {
-  const { WebSocket } = require("ws") as {
-    WebSocket: typeof globalThis.WebSocket;
-  };
-  globalThis.WebSocket = WebSocket;
-}
 
 export type ReferralPayoutBatchResult = Awaited<
   ReturnType<typeof runReferralPayoutBatch>

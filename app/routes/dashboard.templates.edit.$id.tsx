@@ -6,7 +6,7 @@ import {
   loadTemplateEditData,
   handleTemplateEditAction,
 } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

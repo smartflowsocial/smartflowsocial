@@ -20,7 +20,7 @@ import {
 } from "~/features/posts/server";
 import { DashboardIndexPage } from "~/features/posts/ui";
 import { getRunwaySettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logWarning } from "~/lib/error-logger.server";
 import { ValidationError } from "~/lib/errors";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";

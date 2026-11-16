@@ -9,7 +9,7 @@ import {
   handleLongFormEditAction,
   loadLongFormEditData,
 } from "~/features/posts/server/longform";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

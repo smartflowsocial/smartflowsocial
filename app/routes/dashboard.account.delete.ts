@@ -9,7 +9,7 @@ import {
   deletePlannedAccountObjects,
   planUnsharedOwnedObjects,
 } from "~/features/user/data/account-object-cleanup.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logError } from "~/lib/error-logger.server";
 import { jsonResponse } from "~/lib/http/json-response";
 

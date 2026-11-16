@@ -20,7 +20,7 @@ import {
 } from "~/features/posts/types";
 import { NewPostHeader } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchPost } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseQueueType(qt: unknown): string | QueueType {
   if (typeof qt === "string") return qt;

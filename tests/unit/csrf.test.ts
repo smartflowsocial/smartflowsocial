@@ -1,6 +1,6 @@
 /**
  * Unit tests for CSRF protection middleware
- * Tests app/lib/csrf.ts
+ * Tests app/lib/csrf.server.ts
  */
 
 import type { ActionFunctionArgs } from "@remix-run/node";
@@ -24,7 +24,7 @@ vi.mock("~/lib/security.server", () => {
   };
 });
 
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { validateOrigin, CSRFValidationError } from "~/lib/security.server";
 
 describe("CSRF Protection Middleware", () => {

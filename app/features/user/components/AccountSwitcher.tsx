@@ -13,6 +13,7 @@ import { allowsMultipleAccounts } from "~/features/payments/entitlements/deploym
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useDeployment, useSubscription } from "~/features/payments/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 interface ChildAccount {
@@ -72,13 +73,6 @@ export default function AccountSwitcher() {
         `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } =
-        require("~/lib/error-handler.client") as unknown as {
-          handleErrorSafely: (
-            error: unknown,
-            context: { component: string; action: string }
-          ) => void;
-        };
       handleErrorSafely(e, {
         component: "AccountSwitcher",
         action: "handleAccountSwitch",

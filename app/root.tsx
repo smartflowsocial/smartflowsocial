@@ -36,6 +36,7 @@ import { BRAND_NAME } from "~/lib/brand";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";
+import { isDev } from "~/lib/runtime-env";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
 import { getSiteOrigin } from "~/lib/site-url.server";
 import { THEME_COLOR_HEX } from "~/lib/theme-color";
@@ -353,7 +354,7 @@ export function ErrorBoundary() {
   let statusCode = 500;
   let errorMessage = "An unexpected error occurred";
   let errorTitle = pageTitle("Error");
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = isDev;
 
   if (isRouteErrorResponse(error)) {
     statusCode = error.status;
