@@ -31,7 +31,6 @@ import { getEffectiveBroadcastPlanLimits } from "~/features/payments/entitlement
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
 import { dateLikeToIsoString } from "~/lib/date";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 interface BroadcastCampaignPreview {
   id: string;
@@ -151,10 +150,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       unsubscribePreviewBaseUrl,
     };
   })();
-
-  if (isRemixResourceRequest(request)) {
-    return await dataPromise;
-  }
 
   return {
     data: dataPromise,

@@ -16,14 +16,13 @@ import {
 } from "~/features/posts/server/publishing";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   recyclablesLoaderDataSchema,
   type RecyclablesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadRecyclablesValidated(
+export async function loadRecyclablesValidated(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ): Promise<RecyclablesLoaderData> {
@@ -37,9 +36,6 @@ async function loadRecyclablesValidated(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    if (isRemixResourceRequest(request)) {
-      return await loadRecyclablesValidated(request, params);
-    }
     return {
       recyclables: loadRecyclablesValidated(request, params),
     };

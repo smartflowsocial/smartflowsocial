@@ -17,7 +17,7 @@ import {
   startTransition,
 } from "react";
 
-import { fetchRemixLoader } from "~/lib/remix/single-fetch";
+import { fetchJson, toDashboardJsonUrl } from "~/lib/remix/fetch-json";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
   flowLoaderDataSchema,
@@ -58,7 +58,7 @@ export const flowKeys = {
 const DASHBOARD_INDEX_ROUTE_ID = "routes/dashboard._index";
 
 async function loadFlowPage(url: string): Promise<FlowLoaderData | null> {
-  const result = await fetchRemixLoader(url, DASHBOARD_INDEX_ROUTE_ID);
+  const result = await fetchJson(toDashboardJsonUrl(url));
   if (!result.ok) throw new Error(String(result.status));
   return safeValidateLoaderResponse(result.data, flowLoaderDataSchema);
 }
@@ -214,7 +214,7 @@ export function useFlowData(): UseFlowDataResult {
     });
   }, [loaderDataRaw, queueType, contentTab]);
 
-  /** Dashboard index loader. Single fetch turns this into `/dashboard.data`. */
+  /** Dashboard index JSON route. Load-more reads `/api/dashboard`. */
   const buildFlowLoadMoreUrl = useCallback(
     (params: { before?: string; after?: string }) => {
       const search = new URLSearchParams();

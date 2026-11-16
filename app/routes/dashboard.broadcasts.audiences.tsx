@@ -31,7 +31,6 @@ import {
 import { requireAnySubscription } from "~/features/payments";
 import { PublishingPageHeader } from "~/features/posts/ui";
 import { dateLikeToIsoString } from "~/lib/date";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
@@ -77,10 +76,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : null;
     return { rows, notice, editingRow };
   })();
-
-  if (isRemixResourceRequest(request)) {
-    return await audiencesPromise;
-  }
 
   return {
     audiences: audiencesPromise,

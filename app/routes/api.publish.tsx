@@ -17,6 +17,7 @@ import { invalidateRelayIntentCache } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   claimPublishAttempt,
@@ -258,7 +259,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
     });
   }
 
-  return Response.json({
+  return jsonResponse({
     success: true,
     ...(deduped ? { deduped: true } : {}),
   });

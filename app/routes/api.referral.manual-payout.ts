@@ -10,20 +10,21 @@ import {
   referralPayoutsEnabled,
 } from "~/features/referral/referral-payout.server";
 import { env } from "~/lib/env.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { secretsMatch } from "~/lib/secret-match.server";
 
 const SECRET_HEADER = "X-Referral-Payout-Secret";
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json(
+    return jsonResponse(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );
   }
 
   if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
-    return Response.json(
+    return jsonResponse(
       { error: "Referral payouts are disabled" },
       { status: 404, headers: { "Cache-Control": "no-store" } }
     );
@@ -35,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
       env.REFERRAL_MANUAL_PAYOUT_SECRET
     )
   ) {
-    return Response.json(
+    return jsonResponse(
       { error: "Unauthorized" },
       { status: 401, headers: { "Cache-Control": "no-store" } }
     );
@@ -45,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const o =
@@ -64,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
     !Number.isFinite(amountSats) ||
     amountSats < 1
   ) {
-    return Response.json(
+    return jsonResponse(
       { error: "Missing or invalid referrer_npub, bolt11, or amount_sats" },
       { status: 400 }
     );
@@ -73,11 +74,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await payReferrerWithInvoice(referrerNpub, bolt11, amountSats);
 
   if (!result.success) {
-    return Response.json(
+    return jsonResponse(
       { success: false, error: result.error },
       { status: 422 }
     );
   }
 
-  return Response.json({ success: true });
+  return jsonResponse({ success: true });
 }

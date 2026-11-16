@@ -7,7 +7,6 @@ import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPageSkeleton, BulkPostsPage } from "~/features/posts/ui";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
 
@@ -27,9 +26,7 @@ export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
     const shouldAvoidDeferredFallback =
       url.searchParams.get("bulkScheduled") === "true";
-    if (isRemixResourceRequest(request)) {
-      return await loadBulkPostsData(request);
-    }
+
     if (shouldAvoidDeferredFallback) {
       return await loadBulkPostsData(request);
     }

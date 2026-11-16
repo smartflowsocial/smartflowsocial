@@ -5,6 +5,7 @@ import {
   LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
   processPrimalData,
 } from "~/features/auth/profile.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 /**
@@ -16,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const raw = url.searchParams.get("pubkey")?.trim();
   if (!raw) {
-    return Response.json({ displayName: null });
+    return jsonResponse({ displayName: null });
   }
 
   const npub =
@@ -26,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ? raw
         : null;
   if (!npub) {
-    return Response.json({ displayName: null });
+    return jsonResponse({ displayName: null });
   }
 
   try {
@@ -40,8 +41,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : "";
     const n = typeof profile.name === "string" ? profile.name.trim() : "";
     const displayName = d || n || null;
-    return Response.json({ displayName });
+    return jsonResponse({ displayName });
   } catch {
-    return Response.json({ displayName: null });
+    return jsonResponse({ displayName: null });
   }
 }

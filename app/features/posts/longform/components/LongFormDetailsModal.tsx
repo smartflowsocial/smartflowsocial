@@ -39,7 +39,7 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
-import { readRemixActionData } from "~/lib/remix/single-fetch";
+import { readJsonActionData } from "~/lib/remix/fetch-json";
 import { useOptionalUser } from "~/lib/remix-utils";
 import {
   formatForDisplay,
@@ -536,7 +536,7 @@ export default function LongFormDetailsModal({
           body: formData,
           credentials: "same-origin",
         });
-        const json = (await readRemixActionData(resp)) as {
+        const json = (await readJsonActionData(resp)) as {
           cascadeDeletedIds?: string[];
         } | null;
         const cascadeIds = json?.cascadeDeletedIds;

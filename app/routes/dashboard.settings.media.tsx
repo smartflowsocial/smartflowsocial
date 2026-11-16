@@ -48,7 +48,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const PAGE_SIZE = 50;
@@ -91,9 +90,6 @@ async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(args.request)) {
-    return await loadSettingsMediaData(args);
-  }
   return {
     mediaSettings: loadSettingsMediaData(args),
   };

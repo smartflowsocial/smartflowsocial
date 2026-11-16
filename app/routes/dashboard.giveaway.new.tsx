@@ -30,7 +30,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 function parseScopeReference(
   formData: FormData,
@@ -297,9 +296,6 @@ async function loadGiveawayNewData(request: Request) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(request)) {
-    return await loadGiveawayNewData(request);
-  }
   return {
     giveawayNew: loadGiveawayNewData(request),
   };

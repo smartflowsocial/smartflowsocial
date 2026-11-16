@@ -41,7 +41,7 @@ import {
 } from "~/features/posts/utils/thread-list-grouping";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
-import { readRemixActionData } from "~/lib/remix/single-fetch";
+import { readJsonActionData } from "~/lib/remix/fetch-json";
 import { fromISOString } from "~/lib/temporal";
 
 import type {
@@ -243,7 +243,7 @@ export default function AllContentListing({
             body: formData,
             credentials: "same-origin",
           });
-          const json = (await readRemixActionData(resp)) as {
+          const json = (await readJsonActionData(resp)) as {
             cascadeDeletedIds?: string[];
           } | null;
           const cascadeIds = json?.cascadeDeletedIds;
@@ -509,7 +509,7 @@ export default function AllContentListing({
                           onResumeDraft ? () => onResumeDraft(item) : undefined
                         }
                         draftsActionFetcher={draftsListActionFetcher}
-                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                        deleteFetcher={deleteFetcher}
                       />
                     ))
                   : filteredRows.map((row) => (
@@ -526,7 +526,7 @@ export default function AllContentListing({
                         onPostSelect={onPostSelect}
                         onEditPost={onEditPost}
                         onReschedulePost={onReschedulePost}
-                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                        deleteFetcher={deleteFetcher}
                         individualRepostFetcher={individualRepostFetcher}
                         longformRepostFetcher={longformRepostFetcher}
                         longformQuoteFetcher={longformQuoteFetcher}
@@ -638,9 +638,7 @@ export default function AllContentListing({
                             }
                             onEditPost={onEditPost}
                             onReschedulePost={onReschedulePost}
-                            deleteFetcher={
-                              deleteFetcher as unknown as PostFetcher
-                            }
+                            deleteFetcher={deleteFetcher}
                             individualRepostFetcher={individualRepostFetcher}
                             longformRepostFetcher={longformRepostFetcher}
                             longformQuoteFetcher={longformQuoteFetcher}
@@ -724,7 +722,7 @@ export default function AllContentListing({
                       }
                       onEditPost={onEditPost}
                       onReschedulePost={onReschedulePost}
-                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                      deleteFetcher={deleteFetcher}
                       individualRepostFetcher={individualRepostFetcher}
                       longformRepostFetcher={longformRepostFetcher}
                       longformQuoteFetcher={longformQuoteFetcher}

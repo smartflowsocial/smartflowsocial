@@ -3,6 +3,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { issueBlossomBulkTokens } from "~/features/upload";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 
 interface TokenRequestFile {
   sha256: string;
@@ -35,7 +36,7 @@ export const action = withCSRFProtection(
 
       const files = Array.isArray(body.files) ? body.files : [];
       if (!files.every((file) => isTokenRequestFile(file))) {
-        return Response.json({ error: "invalid_request" }, { status: 400 });
+        return jsonResponse({ error: "invalid_request" }, { status: 400 });
       }
       const intentId =
         typeof body.intentId === "string" ? body.intentId : undefined;
@@ -44,7 +45,7 @@ export const action = withCSRFProtection(
           ? body.requestedProvider
           : undefined;
       if (!intentId || !requestedProvider) {
-        return Response.json({ error: "invalid_request" }, { status: 400 });
+        return jsonResponse({ error: "invalid_request" }, { status: 400 });
       }
 
       const result = await issueBlossomBulkTokens(userId, files, {
@@ -52,7 +53,7 @@ export const action = withCSRFProtection(
         requestedProvider,
         requestId: request.headers.get("x-request-id") ?? undefined,
       });
-      return Response.json(result);
+      return jsonResponse(result);
     } catch (error) {
       if (error instanceof Response) {
         return error;
@@ -62,7 +63,7 @@ export const action = withCSRFProtection(
         message.includes("MEDIA_PROVIDER_MISMATCH") ||
         message.includes("media_intent_")
       ) {
-        return Response.json(
+        return jsonResponse(
           {
             error: "MEDIA_PROVIDER_MISMATCH",
             message:
@@ -75,7 +76,7 @@ export const action = withCSRFProtection(
         message.includes("batch size exceeds") ||
         message.includes("files array is required")
       ) {
-        return Response.json({ error: "invalid_request" }, { status: 400 });
+        return jsonResponse({ error: "invalid_request" }, { status: 400 });
       }
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);
@@ -84,5 +85,5 @@ export const action = withCSRFProtection(
 );
 
 export async function loader() {
-  return Response.json({ message: "Blossom bulk token endpoint" });
+  return jsonResponse({ message: "Blossom bulk token endpoint" });
 }

@@ -19,6 +19,7 @@ import { brandLoginChallengeTitle } from "~/lib/brand";
 import { withCSRFProtection } from "~/lib/csrf";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const PURPOSE_LOGIN = "login";
 const LOGIN_EVENT_KIND = 27235;
@@ -46,11 +47,11 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return Response.json({ error: "Method not allowed" }, { status: 405 });
+        return jsonResponse({ error: "Method not allowed" }, { status: 405 });
       }
 
       if (!featureFlags.nostrAuthV2Enabled) {
-        return Response.json(
+        return jsonResponse(
           {
             success: false,
             error: {
@@ -200,7 +201,7 @@ export const action = withCSRFProtection(
       headers.append("Set-Cookie", sessionCookie);
       headers.append("Set-Cookie", clearReferralCookie);
 
-      return Response.json(
+      return jsonResponse(
         {
           success: true,
           redirectTo: "/dashboard",

@@ -21,14 +21,13 @@ import {
 } from "~/features/posts/server/scheduling";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   scheduledPostsLoaderDataSchema,
   type ScheduledPostsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadScheduledValidated(
+export async function loadScheduledValidated(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ): Promise<ScheduledPostsLoaderData> {
@@ -68,9 +67,6 @@ async function loadScheduledValidated(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    if (isRemixResourceRequest(request)) {
-      return await loadScheduledValidated(request, params);
-    }
     return {
       scheduled: loadScheduledValidated(request, params),
     };

@@ -12,6 +12,7 @@ import {
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   giftWrapRecipientPubkeyHex,
@@ -69,7 +70,7 @@ async function validateOptionalFeedbackGiftWraps(params: {
   if (giftWrapsRaw.length === 0) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonResponse(
         { error: "Invalid giftWraps payload." },
         { status: 400 }
       ),
@@ -79,7 +80,7 @@ async function validateOptionalFeedbackGiftWraps(params: {
   if (!featureFlags.nostrDmNip17Enabled) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonResponse(
         { error: "NIP-17 gift wraps are disabled on this server." },
         { status: 400 }
       ),
@@ -91,7 +92,7 @@ async function validateOptionalFeedbackGiftWraps(params: {
   if (feedbackInbox10050Relays.length === 0) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonResponse(
         {
           error:
             "Feedback inbox has no kind:10050 inbox relays; omit giftWraps.",
@@ -104,7 +105,7 @@ async function validateOptionalFeedbackGiftWraps(params: {
   if (giftWrapsRaw.length !== 2) {
     return {
       ok: false,
-      response: Response.json(
+      response: jsonResponse(
         { error: "Expected exactly two NIP-17 gift wraps." },
         { status: 400 }
       ),
@@ -122,7 +123,7 @@ async function validateOptionalFeedbackGiftWraps(params: {
     if (!wrapCheck.ok) {
       return {
         ok: false,
-        response: Response.json({ error: wrapCheck.error }, { status: 400 }),
+        response: jsonResponse({ error: wrapCheck.error }, { status: 400 }),
       };
     }
     giftWraps.push(gw);
@@ -135,12 +136,12 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return Response.json({ error: "Method not allowed" }, { status: 405 });
+        return jsonResponse({ error: "Method not allowed" }, { status: 405 });
       }
 
       const inboxHex = getFeedbackInboxPubkeyHex();
       if (!inboxHex) {
-        return Response.json(
+        return jsonResponse(
           { error: "Feedback is not configured." },
           { status: 503 }
         );
@@ -150,7 +151,7 @@ export const action = withCSRFProtection(
       try {
         bodyRaw = await request.json();
       } catch {
-        return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+        return jsonResponse({ error: "Invalid JSON body." }, { status: 400 });
       }
 
       const body =
@@ -161,7 +162,7 @@ export const action = withCSRFProtection(
       const giftWrapsRaw = parseGiftWrapsFromBody(body);
 
       if (eventUnknown === null || eventUnknown === undefined) {
-        return Response.json(
+        return jsonResponse(
           { error: "Signed event is required." },
           { status: 400 }
         );
@@ -171,7 +172,7 @@ export const action = withCSRFProtection(
 
       const rate = await checkProductFeedbackRateLimit(session.userId);
       if (!rate.allowed) {
-        return Response.json(
+        return jsonResponse(
           { error: rate.error ?? "Too many submissions. Try again later." },
           { status: 429 }
         );
@@ -191,7 +192,7 @@ export const action = withCSRFProtection(
         sessionPubkey: session.pubkey,
       });
       if (!dmCheck.ok) {
-        return Response.json({ error: dmCheck.error }, { status: 400 });
+        return jsonResponse({ error: dmCheck.error }, { status: 400 });
       }
 
       const giftWrapOutcome = await validateOptionalFeedbackGiftWraps({
@@ -224,7 +225,7 @@ export const action = withCSRFProtection(
       for (const gw of giftWrapsValidated) {
         const pTag = giftWrapRecipientPubkeyHex(gw);
         if (!pTag) {
-          return Response.json(
+          return jsonResponse(
             { error: "Gift wrap missing p tag." },
             { status: 400 }
           );
@@ -242,13 +243,13 @@ export const action = withCSRFProtection(
         });
       }
 
-      return Response.json({ success: true });
+      return jsonResponse({ success: true });
     } catch (error) {
       if (error instanceof Response) {
         return error;
       }
       if (error instanceof ValidationError) {
-        return Response.json({ error: error.message }, { status: 400 });
+        return jsonResponse({ error: error.message }, { status: 400 });
       }
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

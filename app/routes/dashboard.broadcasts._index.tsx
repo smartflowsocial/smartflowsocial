@@ -42,7 +42,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const BROADCAST_FILTER_NARROW_FIELD_CLASS = "w-auto min-w-[9rem]";
@@ -134,9 +133,6 @@ async function loadBroadcastsIndexData(request: Request) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(request)) {
-    return await loadBroadcastsIndexData(request);
-  }
   return {
     broadcastsIndex: loadBroadcastsIndexData(request),
   };

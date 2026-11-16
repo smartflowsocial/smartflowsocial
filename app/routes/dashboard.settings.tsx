@@ -25,7 +25,6 @@ import {
 } from "~/features/settings/settings-loader.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { logError } from "~/lib/error-logger.server";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 async function loadSettingsOrThrow(
   userId: string
@@ -36,21 +35,6 @@ async function loadSettingsOrThrow(
 async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  // Direct loader tests still pass `?_data=`. Remix strips that before a real
-  // request. Raw single-fetch calls send `_loader=json`, which is not stripped.
-  const isDataRequest =
-    url.searchParams.has("_data") || isRemixResourceRequest(request);
-
-  if (isDataRequest) {
-    try {
-      return await loadSettingsOrThrow(userId);
-    } catch (error) {
-      const { handleLoaderError } = await import("~/lib/error-handler.server");
-      return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
-    }
-  }
 
   const settingsPromise = (async (): Promise<SettingsLoaderData> => {
     try {

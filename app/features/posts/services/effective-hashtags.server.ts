@@ -5,6 +5,7 @@
 
 import { getQueueTypes } from "~/features/user";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 /**
  * Get effective hashtags for a queue type
  * Returns the hashtag preset assigned to the queue type, or empty if none assigned
@@ -16,7 +17,7 @@ export async function getEffectiveHashtags(
 ) {
   // If explicitly "unassigned", return empty hashtags (valid case)
   if (queueTypeName === "unassigned") {
-    return Response.json({ hashtags: "" });
+    return jsonResponse({ hashtags: "" });
   }
 
   // If no queue type specified at all, return validation error
@@ -43,12 +44,12 @@ export async function getEffectiveHashtags(
     !("hashTagPreset" in queueType) ||
     !queueType.hashTagPreset
   ) {
-    return Response.json({ hashtags: "" });
+    return jsonResponse({ hashtags: "" });
   }
 
   // Return the hashtag preset tags assigned to this queue type
   // Use consistent unwrapped format to match other return statements
-  return Response.json({
+  return jsonResponse({
     hashtags: (queueType.hashTagPreset as { tags: string | null }).tags ?? "",
   });
 }

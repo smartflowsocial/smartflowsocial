@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { purgeRetainedRecords } from "~/features/user/data/account-data.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 import { logError, logWarning } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * Cron job to delete retained payment rows and referral payout audit rows
@@ -38,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json(
+    return jsonResponse(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );

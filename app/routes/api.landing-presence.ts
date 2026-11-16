@@ -12,12 +12,13 @@ import {
   setLandingVisibility,
 } from "~/features/public-stats/repositories/public-stats-data.server";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await findLandingPresence(userId);
-  if (!user) return Response.json({ error: "Not found" }, { status: 404 });
-  return Response.json({
+  if (!user) return jsonResponse({ error: "Not found" }, { status: 404 });
+  return jsonResponse({
     hideFromLanding: user.hideFromLanding,
     showNotice: !user.hideFromLanding && user.landingNoticeSeenAt == null,
   });
@@ -26,11 +27,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 async function apply(userId: string, formData: FormData): Promise<Response> {
   const intent = formData.get("intent");
   const user = await findLandingPresence(userId);
-  if (!user) return Response.json({ error: "Not found" }, { status: 404 });
+  if (!user) return jsonResponse({ error: "Not found" }, { status: 404 });
 
   if (intent === "dismiss") {
     await markLandingNoticeSeen(userId);
-    return Response.json({ ok: true });
+    return jsonResponse({ ok: true });
   }
 
   if (intent === "visibility") {
@@ -38,10 +39,10 @@ async function apply(userId: string, formData: FormData): Promise<Response> {
     await setLandingVisibility(userId, hide);
     await dropAvatarCache(user.npub);
     await bustPublicStatsCache();
-    return Response.json({ ok: true, hideFromLanding: hide });
+    return jsonResponse({ ok: true, hideFromLanding: hide });
   }
 
-  return Response.json({ error: "Unknown intent" }, { status: 400 });
+  return jsonResponse({ error: "Unknown intent" }, { status: 400 });
 }
 
 export const action = withCSRFProtection(

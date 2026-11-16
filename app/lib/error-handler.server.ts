@@ -13,6 +13,8 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 
+import { jsonResponse } from "~/lib/http/json-response";
+
 import { env } from "./env.server";
 import { logError } from "./error-logger.server";
 import {
@@ -142,7 +144,7 @@ export function withErrorHandling<T>(
       if (result instanceof Response) {
         return result;
       }
-      return Response.json(result);
+      return jsonResponse(result);
     } catch (error) {
       rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
@@ -152,7 +154,7 @@ export function withErrorHandling<T>(
         return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
-      return Response.json(errorResponse, { status: statusCode });
+      return jsonResponse(errorResponse, { status: statusCode });
     }
   };
 }
@@ -172,7 +174,7 @@ export function withActionErrorHandling<T>(
       if (result instanceof Response) {
         return result;
       }
-      return Response.json(result);
+      return jsonResponse(result);
     } catch (error) {
       rethrowIfAbortReason(error);
       // If error is a Response (e.g., redirect from requireUserId), return it
@@ -182,7 +184,7 @@ export function withActionErrorHandling<T>(
         return error;
       }
       const [errorResponse, statusCode] = createErrorResponse(error);
-      return Response.json(errorResponse, { status: statusCode });
+      return jsonResponse(errorResponse, { status: statusCode });
     }
   };
 }
@@ -198,7 +200,7 @@ export function handleLoaderError(
   const [errorResponse, statusCode] = createErrorResponse(error);
   const defaultDataObj =
     defaultData && typeof defaultData === "object" ? defaultData : {};
-  return Response.json(
+  return jsonResponse(
     {
       ...defaultDataObj,
       error: errorResponse.error,
@@ -213,7 +215,7 @@ export function handleLoaderError(
 export function handleActionError(error: unknown): Response {
   rethrowIfAbortReason(error);
   const [errorResponse, statusCode] = createErrorResponse(error);
-  return Response.json(errorResponse, { status: statusCode });
+  return jsonResponse(errorResponse, { status: statusCode });
 }
 
 /**

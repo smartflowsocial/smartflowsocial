@@ -56,7 +56,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -258,9 +257,6 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(args.request)) {
-    return await loadGiveawayDetailData(args);
-  }
   return {
     giveawayDetail: loadGiveawayDetailData(args),
   };

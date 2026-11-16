@@ -34,7 +34,6 @@ import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -53,9 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sort,
     search,
   });
-  if (isRemixResourceRequest(request)) {
-    return await usersPagePromise;
-  }
+
   return { usersPage: usersPagePromise };
 }
 

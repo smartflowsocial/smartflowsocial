@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireSession } from "~/features/auth";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 import { resolveCachedKind10050InboxRelays } from "~/lib/nostr.messenger.server";
 
 const bodySchema = z.object({
@@ -12,7 +13,7 @@ const bodySchema = z.object({
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return jsonResponse({ error: "Method not allowed" }, { status: 405 });
     }
 
     await requireSession(request);
@@ -21,12 +22,12 @@ export const action = withCSRFProtection(
     try {
       raw = await request.json();
     } catch {
-      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+      return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
     }
 
     const parsed = bodySchema.safeParse(raw);
     if (!parsed.success) {
-      return Response.json({ error: "Invalid body" }, { status: 400 });
+      return jsonResponse({ error: "Invalid body" }, { status: 400 });
     }
 
     const hints: Record<string, string> = {};
@@ -38,6 +39,6 @@ export const action = withCSRFProtection(
       if (first) hints[lower] = first;
     }
 
-    return Response.json({ hints });
+    return jsonResponse({ hints });
   }
 );

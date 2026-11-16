@@ -15,6 +15,8 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 
+import { jsonResponse } from "~/lib/http/json-response";
+
 import {
   withErrorHandling,
   withActionErrorHandling,
@@ -74,7 +76,7 @@ export async function manualLoaderExample({
 
     // Your loader logic here
     const data = { userId };
-    return Response.json(data);
+    return jsonResponse(data);
   } catch (error) {
     return handleLoaderError(error, { userId: null, data: [] });
   }
@@ -102,7 +104,7 @@ export async function manualActionExample({
     }
 
     // Your action logic here
-    return Response.json(createSuccessResponse({ email }));
+    return jsonResponse(createSuccessResponse({ email }));
   } catch (error) {
     return handleActionError(error);
   }
@@ -137,7 +139,7 @@ export async function assertionExample({
     { userId, resourceId }
   );
 
-  return Response.json({ resource });
+  return jsonResponse({ resource });
 }
 
 // ============================================================================
@@ -178,7 +180,7 @@ export async function specificErrorsExample({
   }
 
   // Your logic here
-  return Response.json(createSuccessResponse({ post }));
+  return jsonResponse(createSuccessResponse({ post }));
 }
 
 // ============================================================================
@@ -196,7 +198,7 @@ export async function externalServiceExample({ request }: ActionFunctionArgs) {
       );
     }
     const data = await response.json();
-    return Response.json(createSuccessResponse(data));
+    return jsonResponse(createSuccessResponse(data));
   } catch (error) {
     if (error instanceof ExternalServiceError) {
       throw error; // Re-throw our custom error

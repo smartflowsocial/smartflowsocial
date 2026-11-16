@@ -17,14 +17,13 @@ import {
 } from "~/features/templates";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   templatesLoaderDataSchema,
   type TemplatesLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadTemplatesValidated(
+export async function loadTemplatesValidated(
   userId: string
 ): Promise<TemplatesLoaderData> {
   await requireAnySubscription(userId);
@@ -34,10 +33,6 @@ async function loadTemplatesValidated(
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-
-  if (isRemixResourceRequest(request)) {
-    return await loadTemplatesValidated(userId);
-  }
 
   return {
     templates: loadTemplatesValidated(userId),

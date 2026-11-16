@@ -18,7 +18,6 @@ import type { AdminOperationsPageDTO } from "~/features/admin/repositories/admin
 import { requireUser } from "~/features/auth";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
@@ -30,9 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)
   );
-  if (isRemixResourceRequest(request)) {
-    return await getAdminOperationsPageData(preset);
-  }
+
   return {
     operations: getAdminOperationsPageData(preset),
   };

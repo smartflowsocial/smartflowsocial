@@ -18,14 +18,13 @@ import {
 } from "~/features/posts/server/drafts";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   draftsLoaderDataSchema,
   type DraftsLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadDraftsValidated(
+export async function loadDraftsValidated(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ): Promise<DraftsLoaderData> {
@@ -44,9 +43,6 @@ async function loadDraftsValidated(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    if (isRemixResourceRequest(request)) {
-      return await loadDraftsValidated(request, params);
-    }
     return {
       drafts: loadDraftsValidated(request, params),
     };

@@ -264,7 +264,34 @@ export const actionScenarios = {
  * Loaders and actions may return a Response, a single-fetch `data()` result,
  * or a plain object. Tests still assert on status and JSON.
  */
+async function unwrapDeferred(result: unknown): Promise<unknown> {
+  if (
+    result instanceof Response ||
+    result == null ||
+    typeof result !== "object"
+  ) {
+    return result;
+  }
+  if (
+    "type" in result &&
+    (result as { type?: unknown }).type === "DataWithResponseInit" &&
+    "data" in result
+  ) {
+    return {
+      ...result,
+      data: await unwrapDeferred((result as { data: unknown }).data),
+    };
+  }
+  const keys = Object.keys(result);
+  if (keys.length === 1) {
+    const value = (result as Record<string, unknown>)[keys[0] ?? ""];
+    if (value instanceof Promise) return await value;
+  }
+  return result;
+}
+
 export async function asRouteResponse(result: unknown): Promise<Response> {
+  result = await unwrapDeferred(result);
   if (result instanceof Response) return result;
   if (
     result !== null &&

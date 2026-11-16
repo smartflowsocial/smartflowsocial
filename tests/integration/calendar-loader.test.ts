@@ -121,7 +121,7 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments";
-import { loader } from "~/routes/dashboard.calendar.$queueType";
+import { loader } from "~/routes/api.dashboard.calendar.$queueType";
 
 const CALENDAR_QUEUE_DATA = (queueSegment: string) =>
   `http://localhost:3000/dashboard/calendar/${queueSegment}?_data=routes/dashboard.calendar.$queueType&_loader=json`;

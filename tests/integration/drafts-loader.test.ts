@@ -44,7 +44,7 @@ import { createValidPostDTOMock } from "../utils/test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { loader } from "~/routes/dashboard.drafts";
+import { loader } from "~/routes/api.dashboard.drafts";
 
 const DRAFTS_DATA_URL =
   "http://localhost:3000/dashboard/drafts?_data=routes/dashboard.drafts&_loader=json";

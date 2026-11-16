@@ -3,6 +3,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { fetchBroadcastRecipientProfiles } from "~/features/broadcast/broadcast-recipient-picker.server";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 
 function parsePubkeys(body: unknown): string[] {
   if (body === null || typeof body !== "object") return [];
@@ -19,21 +20,21 @@ function parsePubkeys(body: unknown): string[] {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return jsonResponse({ error: "Method not allowed" }, { status: 405 });
     }
     await requireUserId(request);
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+      return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
     }
     const pubkeys = parsePubkeys(body);
     if (pubkeys.length === 0) {
-      return Response.json({ profiles: [] as const });
+      return jsonResponse({ profiles: [] as const });
     }
     const capped = pubkeys.slice(0, 500);
     const profiles = await fetchBroadcastRecipientProfiles(capped);
-    return Response.json({ profiles });
+    return jsonResponse({ profiles });
   }
 );

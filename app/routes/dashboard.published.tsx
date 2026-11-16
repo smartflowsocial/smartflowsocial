@@ -10,7 +10,6 @@ import { PublishedPostsPageSkeleton } from "~/features/posts/publishing/Publishe
 import type { LongFormPostType as _LongFormPostType } from "~/features/posts/server";
 import { getPublishedDashboardData } from "~/features/posts/server/publishing";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   publishedPostsLoaderDataSchema,
@@ -19,7 +18,7 @@ import {
 
 export { publishedPostsAction as action } from "~/features/posts/published.action.server";
 
-async function loadPublishedData(
+export async function loadPublishedData(
   request: Request,
   params: { queueType?: string }
 ): Promise<PublishedPostsLoaderData> {
@@ -33,9 +32,7 @@ async function loadPublishedData(
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const p = params as { queueType?: string };
-    if (isRemixResourceRequest(request)) {
-      return await loadPublishedData(request, p);
-    }
+
     return {
       published: loadPublishedData(request, p),
     };

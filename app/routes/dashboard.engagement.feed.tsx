@@ -14,7 +14,6 @@ import {
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
 import { logError } from "~/lib/error-logger.server";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   engagementLoaderDataSchema,
@@ -30,6 +29,18 @@ async function loadEngagementValidatedOrThrow(
   return validateLoaderResponse(data, engagementLoaderDataSchema);
 }
 
+export async function loadEngagementJson(request: Request) {
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  const url = new URL(request.url);
+  const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+  return loadEngagementValidatedOrThrow(
+    userId,
+    page,
+    ENGAGEMENT_FEED_PAGE_SIZE
+  );
+}
+
 async function loaderImpl({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
@@ -37,19 +48,6 @@ async function loaderImpl({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
   const limit = ENGAGEMENT_FEED_PAGE_SIZE;
-  // Direct loader tests still pass `?_data=`. Remix strips that before a real
-  // request. Raw single-fetch calls send `_loader=json`, which is not stripped.
-  const isDataRequest =
-    url.searchParams.has("_data") || isRemixResourceRequest(request);
-
-  if (isDataRequest) {
-    try {
-      return await loadEngagementValidatedOrThrow(userId, page, limit);
-    } catch (error) {
-      const { handleLoaderError } = await import("~/lib/error-handler.server");
-      return handleLoaderError(error, ENGAGEMENT_LOADER_FALLBACK);
-    }
-  }
 
   const engagementPromise = (async (): Promise<EngagementLoaderData> => {
     try {

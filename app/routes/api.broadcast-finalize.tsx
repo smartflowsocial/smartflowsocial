@@ -7,11 +7,12 @@ import {
 } from "~/features/broadcast/broadcast-actions.server";
 import { finalizeBroadcastSchema } from "~/features/broadcast/broadcast-types";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return jsonResponse({ error: "Method not allowed" }, { status: 405 });
     }
 
     const session = await requireSession(request);
@@ -20,12 +21,12 @@ export const action = withCSRFProtection(
     try {
       bodyRaw = await request.json();
     } catch {
-      return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+      return jsonResponse({ error: "Invalid JSON body." }, { status: 400 });
     }
 
     const parsed = finalizeBroadcastSchema.safeParse(bodyRaw);
     if (!parsed.success) {
-      return Response.json(
+      return jsonResponse(
         {
           error: "Validation failed",
           details: parsed.error.flatten(),
@@ -40,10 +41,10 @@ export const action = withCSRFProtection(
         session.pubkey,
         parsed.data
       );
-      return Response.json({ success: true as const, ...result });
+      return jsonResponse({ success: true as const, ...result });
     } catch (error) {
       if (error instanceof BroadcastActionError) {
-        return Response.json(
+        return jsonResponse(
           { error: error.message, code: error.code },
           { status: 400 }
         );

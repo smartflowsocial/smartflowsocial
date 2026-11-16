@@ -41,7 +41,7 @@ import { createValidPostDTOMock } from "../utils/test-helpers";
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import { loadScheduledData } from "~/features/posts/server/scheduling";
-import { loader } from "~/routes/dashboard.scheduled";
+import { loader } from "~/routes/api.dashboard.scheduled";
 
 /** Remix resource `fetch()` so the loader returns JSON (not deferred). */
 const SCHEDULED_DATA_URL =

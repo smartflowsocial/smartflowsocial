@@ -9,6 +9,7 @@ import {
   manuallyVerifyPayment,
 } from "~/features/payments/data";
 import { DatabaseError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export { getPaymentUserId };
 /**
@@ -48,7 +49,7 @@ export async function checkPaymentStatusById(paymentId: string) {
   }
 
   if (paymentStatus.paid) {
-    return Response.json(
+    return jsonResponse(
       {
         success: true,
         paid: true,
@@ -64,7 +65,7 @@ export async function checkPaymentStatusById(paymentId: string) {
     );
   }
 
-  return Response.json(
+  return jsonResponse(
     {
       success: true,
       paid: false,

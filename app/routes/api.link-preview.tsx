@@ -1,6 +1,7 @@
 import { type LoaderFunctionArgs } from "@remix-run/node";
 
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
 
 type AssertFunction = (
@@ -135,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Use dynamic import to avoid bundling issues
     const { createErrorResponse } = await import("~/lib/error-handler.server");
     const [errorResponse, statusCode] = createErrorResponse(error);
-    return Response.json(
+    return jsonResponse(
       { success: false, error: errorResponse.error },
       { status: statusCode }
     );

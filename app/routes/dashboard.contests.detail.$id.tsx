@@ -32,7 +32,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 type ContestIntentResponse = Response | ReturnType<typeof routeData> | object;
 
@@ -265,9 +264,6 @@ async function loadContestDetailData({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(args.request)) {
-    return await loadContestDetailData(args);
-  }
   return {
     contestDetail: loadContestDetailData(args),
   };

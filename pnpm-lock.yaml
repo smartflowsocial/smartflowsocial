@@ -8,7 +8,6 @@ overrides:
   '@remix-run/router': 1.23.4
   react-router: 6.30.6
   react-router-dom: 6.30.6
-  turbo-stream: 3.2.1
   esbuild@<=0.24.2: 0.25.12
   '@vanilla-extract/integration>esbuild': 0.25.12
   esbuild@>=0.27.3 <0.28.1: 0.28.2
@@ -275,9 +274,6 @@ importers:
       tiny-invariant:
         specifier: ^1.3.3
         version: 1.3.3
-      turbo-stream:
-        specifier: 3.2.1
-        version: 3.2.1
       turndown:
         specifier: ^7.2.2
         version: 7.2.4
@@ -7738,8 +7734,8 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  turbo-stream@3.2.1:
-    resolution: {integrity: sha512-BaX0eWz3IrypOVDFqPv3VGD6uZZW8y3oFAOJqZQ+oopmOyQ8/xNm7IMwAJFvxax2DBa8zSk+/AeqA6D6b1PXGg==}
+  turbo-stream@2.4.1:
+    resolution: {integrity: sha512-v8kOJXpG3WoTN/+at8vK7erSzo6nW6CIaeOvNOkHQVDajfz1ZVeSxCbc6tOH4hrGZW7VUCV0TOXd8CPzYnYkrw==}
 
   turndown@7.2.4:
     resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
@@ -10214,7 +10210,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-router: 6.30.6(react@18.3.1)
       react-router-dom: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      turbo-stream: 3.2.1
+      turbo-stream: 2.4.1
     optionalDependencies:
       typescript: 5.9.3
 
@@ -10228,7 +10224,7 @@ snapshots:
       cookie: 0.7.2
       set-cookie-parser: 2.7.2
       source-map: 0.7.6
-      turbo-stream: 3.2.1
+      turbo-stream: 2.4.1
     optionalDependencies:
       typescript: 5.9.3
 
@@ -16374,7 +16370,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  turbo-stream@3.2.1: {}
+  turbo-stream@2.4.1: {}
 
   turndown@7.2.4:
     dependencies:

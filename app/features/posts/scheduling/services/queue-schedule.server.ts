@@ -9,6 +9,7 @@ import {
   getQueueTypeByNameForUser,
 } from "~/features/user";
 import { NotFoundError, ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 import {
   calculateNextScheduleTime,
@@ -49,7 +50,7 @@ export async function calculateQueueScheduleTime(
   const queueTypeId = await resolveQueueTypeIdForSchedule(userId, input);
 
   if (!queueTypeId) {
-    return Response.json({ scheduledTime: "" });
+    return jsonResponse({ scheduledTime: "" });
   }
 
   const userTimezone = await getUserTimezone(userId);
@@ -75,7 +76,7 @@ export async function calculateQueueScheduleTime(
     userTimezone ?? "UTC"
   );
 
-  return Response.json({ scheduledTime: formattedTime });
+  return jsonResponse({ scheduledTime: formattedTime });
 }
 
 /**

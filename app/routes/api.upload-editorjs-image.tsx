@@ -19,6 +19,7 @@ import {
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
 const CONTENT_TYPE_APPLICATION_JSON = "application/json";
@@ -35,7 +36,7 @@ type AssertFunction = (
 ) => asserts condition;
 
 function createEditorJsUrlResponse(url: string) {
-  return Response.json({
+  return jsonResponse({
     success: 1,
     file: {
       url,
@@ -207,7 +208,7 @@ export const action = withCSRFProtection(
         }
 
         // Return EditorJS compatible response
-        return Response.json({
+        return jsonResponse({
           success: 1,
           file: {
             url: imageUrl,
@@ -247,5 +248,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return Response.json({ message: "EditorJS Image Upload API" });
+  return jsonResponse({ message: "EditorJS Image Upload API" });
 }

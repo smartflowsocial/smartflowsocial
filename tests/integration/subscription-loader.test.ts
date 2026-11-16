@@ -447,24 +447,16 @@ describe("Subscription/Billing Loader Integration", () => {
         })
       );
       expect(response).toBeInstanceOf(Response);
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(200);
 
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as { error?: { message?: string } })
+          ? (dataRaw as { subscription?: unknown; timezone?: unknown })
           : {};
 
-      expect(data.error).toBeDefined();
-      const error =
-        data.error &&
-        typeof data.error === "object" &&
-        !Array.isArray(data.error)
-          ? data.error
-          : {};
-      const errorMessage =
-        typeof error.message === "string" ? error.message : "";
-      expect(errorMessage).toContain("Database error");
+      expect(data.subscription).toBeNull();
+      expect(data.timezone).toBe("Etc/GMT");
     });
   });
 });

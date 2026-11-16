@@ -34,7 +34,6 @@ import {
 } from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 async function getBroadcastDetailData({
@@ -102,10 +101,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     skip,
     page,
   });
-
-  if (isRemixResourceRequest(request)) {
-    return await detailPromise;
-  }
 
   return {
     detail: detailPromise,

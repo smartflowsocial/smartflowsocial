@@ -11,6 +11,7 @@ import {
 } from "~/features/referral/referral-payout.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 import { env } from "~/lib/env.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 async function runReferralCron(request: Request) {
   const denied = denyCronUnlessAuthorized(request);
@@ -28,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json(
+    return jsonResponse(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );

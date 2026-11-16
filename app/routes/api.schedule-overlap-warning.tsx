@@ -5,6 +5,7 @@ import { getScheduleOverlapWarning } from "~/features/posts/server/scheduling";
 import { getUserTimezone } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 import { parseDateTimeLocal } from "~/lib/temporal";
 
 interface RequestBody {
@@ -78,7 +79,7 @@ export const action = withCSRFProtection(
         excludeContentId,
       });
 
-      return Response.json({ warning });
+      return jsonResponse({ warning });
     } catch (error) {
       if (error instanceof Response) {
         return error;

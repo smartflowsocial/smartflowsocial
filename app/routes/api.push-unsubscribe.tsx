@@ -5,13 +5,14 @@ import {
   deletePushSubscription,
   getUserPushSubscriptions,
 } from "~/features/notifications";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * POST /api/push-unsubscribe - Unsubscribe from push notifications
  */
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
 
   try {
@@ -21,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { endpoint } = body;
 
     if (!endpoint) {
-      return Response.json({ error: "Missing endpoint" }, { status: 400 });
+      return jsonResponse({ error: "Missing endpoint" }, { status: 400 });
     }
 
     // Verify the subscription belongs to the user
@@ -29,15 +30,12 @@ export async function action({ request }: ActionFunctionArgs) {
     const subscription = subscriptions.find((sub) => sub.endpoint === endpoint);
 
     if (!subscription) {
-      return Response.json(
-        { error: "Subscription not found" },
-        { status: 404 }
-      );
+      return jsonResponse({ error: "Subscription not found" }, { status: 404 });
     }
 
     await deletePushSubscription(endpoint);
 
-    return Response.json({ success: true });
+    return jsonResponse({ success: true });
   } catch (error) {
     if (error instanceof Response) {
       return error;

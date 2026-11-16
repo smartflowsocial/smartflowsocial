@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 
 import { requireUserId } from "~/features/auth";
 import { getPostDataForModal } from "~/features/posts/server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * API route to fetch a single post by ID
@@ -13,16 +14,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const postId = params["id"];
 
     if (!postId) {
-      return Response.json({ error: "Post ID is required" }, { status: 400 });
+      return jsonResponse({ error: "Post ID is required" }, { status: 400 });
     }
 
     const result = await getPostDataForModal(postId, userId);
 
     if (!result) {
-      return Response.json({ error: "Post not found" }, { status: 404 });
+      return jsonResponse({ error: "Post not found" }, { status: 404 });
     }
 
-    return Response.json(result);
+    return jsonResponse(result);
   } catch (error) {
     // If error is a Response (e.g., redirect from requireUserId), return it
     if (error instanceof Response) {

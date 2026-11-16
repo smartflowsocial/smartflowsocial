@@ -27,7 +27,6 @@ import { getUserPlanType, requireAnySubscription } from "~/features/payments";
 import { getEffectiveBroadcastPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 function audienceResolvedMetadata(
@@ -175,10 +174,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const reviewPromise = getBroadcastReviewData({ campaignId, userId, request });
-
-  if (isRemixResourceRequest(request)) {
-    return await reviewPromise;
-  }
 
   return {
     review: reviewPromise,

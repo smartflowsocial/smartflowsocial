@@ -3,6 +3,7 @@ import type { ActionFunctionArgs } from "@remix-run/node";
 import { requireUserId } from "~/features/auth";
 import { getSuppressionFlagsForPubkeys } from "~/features/broadcast";
 import { withCSRFProtection } from "~/lib/csrf";
+import { jsonResponse } from "~/lib/http/json-response";
 
 function parsePubkeysFromJson(body: unknown): string[] {
   if (body === null || typeof body !== "object") {
@@ -23,21 +24,21 @@ function parsePubkeysFromJson(body: unknown): string[] {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return jsonResponse({ error: "Method not allowed" }, { status: 405 });
     }
     const userId = await requireUserId(request);
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+      return jsonResponse({ error: "Invalid JSON" }, { status: 400 });
     }
     const normalized = parsePubkeysFromJson(body);
     if (normalized.length === 0) {
       const empty: Record<string, boolean> = {};
-      return Response.json({ suppressed: empty });
+      return jsonResponse({ suppressed: empty });
     }
     const suppressed = await getSuppressionFlagsForPubkeys(userId, normalized);
-    return Response.json({ suppressed });
+    return jsonResponse({ suppressed });
   }
 );

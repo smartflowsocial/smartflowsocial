@@ -4,6 +4,7 @@ import { requireUserId } from "~/features/auth/session.server";
 import { checkPaymentStatusById, getPaymentUserId } from "~/features/payments";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const CONTENT_TYPE_JSON = "application/json";
 
@@ -62,13 +63,13 @@ export const action = withCSRFProtection(
 
       const paymentUserId = await getPaymentUserId(paymentId);
       if (!paymentUserId) {
-        return Response.json(
+        return jsonResponse(
           { success: false, error: "Payment not found" },
           { status: 404, headers: { "Content-Type": CONTENT_TYPE_JSON } }
         );
       }
       if (paymentUserId !== userId) {
-        return Response.json(
+        return jsonResponse(
           { success: false, error: "Forbidden" },
           { status: 403, headers: { "Content-Type": CONTENT_TYPE_JSON } }
         );
@@ -89,7 +90,7 @@ export const action = withCSRFProtection(
 
 // Handle GET requests with a proper error response
 export async function loader() {
-  return Response.json(
+  return jsonResponse(
     { success: false, error: "GET method not allowed. Use POST." },
     {
       status: 405,

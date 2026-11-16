@@ -8,6 +8,7 @@ import {
 import { loadUploadProviderSettings } from "~/features/user";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 type AssertFunction = (
   condition: boolean,
@@ -217,5 +218,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return Response.json({ message: "Blossom Upload API" });
+  return jsonResponse({ message: "Blossom Upload API" });
 }

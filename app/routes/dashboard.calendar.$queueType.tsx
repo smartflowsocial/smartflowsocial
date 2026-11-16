@@ -19,14 +19,13 @@ import {
 } from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   calendarQueueLoaderDataSchema,
   type CalendarQueueLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadCalendarQueueValidated(
+export async function loadCalendarQueueValidated(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ): Promise<CalendarQueueLoaderData> {
@@ -38,9 +37,6 @@ async function loadCalendarQueueValidated(
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
-    if (isRemixResourceRequest(request)) {
-      return await loadCalendarQueueValidated(request, params);
-    }
     return {
       calendarQueue: loadCalendarQueueValidated(request, params),
     };

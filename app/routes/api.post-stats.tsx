@@ -4,6 +4,7 @@ import { requireUserId } from "~/features/auth";
 import { getPostStats } from "~/features/posts/stats.server";
 import { withCSRFProtection } from "~/lib/csrf";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 type AssertFunction = (
   condition: boolean,
@@ -72,7 +73,7 @@ export const action = withCSRFProtection(
       // Fetch stats using the optimized function
       const stats = await getPostStats(eventIdsArray);
 
-      return Response.json({ stats });
+      return jsonResponse({ stats });
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

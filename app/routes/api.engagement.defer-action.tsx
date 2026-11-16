@@ -4,6 +4,7 @@ import { requireUserId } from "~/features/auth";
 import { createDeferredEngagementAction } from "~/features/engagement";
 import type { SignedEvent } from "~/features/nostr/types";
 import { ScheduleCapExceededError } from "~/features/payments/entitlements/schedule-cap-policy.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 function parseBody(value: unknown): {
   eventId: string;
@@ -54,7 +55,7 @@ function parseBody(value: unknown): {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json(
+    return jsonResponse(
       { success: false, error: "Method not allowed" },
       { status: 405 }
     );
@@ -68,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
       !Array.isArray(raw) &&
       (raw as Record<string, unknown>)["mode"] === "queue"
     ) {
-      return Response.json(
+      return jsonResponse(
         {
           success: false,
           error: "Queue is not supported for engagement actions",
@@ -78,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const body = parseBody(raw);
     if (!body) {
-      return Response.json(
+      return jsonResponse(
         { success: false, error: "eventId, actionType, and mode are required" },
         { status: 400 }
       );
@@ -93,11 +94,11 @@ export async function action({ request }: ActionFunctionArgs) {
       queueTypeId: body.queueTypeId,
       signedEvent: body.signedEvent,
     });
-    return Response.json({ success: true, ...result });
+    return jsonResponse({ success: true, ...result });
   } catch (error) {
     if (error instanceof Response) return error;
     if (error instanceof ScheduleCapExceededError) {
-      return Response.json(
+      return jsonResponse(
         { success: false, error: error.message },
         { status: 403 }
       );

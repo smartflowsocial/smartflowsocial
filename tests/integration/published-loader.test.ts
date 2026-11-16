@@ -55,7 +55,7 @@ import {
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
-import { loader } from "~/routes/dashboard.published";
+import { loader } from "~/routes/api.dashboard.published";
 
 const PUBLISHED_DATA_URL =
   "http://localhost:3000/dashboard/published?_data=routes/dashboard.published&_loader=json";

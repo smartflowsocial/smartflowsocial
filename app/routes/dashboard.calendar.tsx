@@ -19,7 +19,6 @@ import {
 } from "~/features/posts/server/calendar";
 import { withCSRFProtection } from "~/lib/csrf";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   calendarLoaderDataSchema,
@@ -27,7 +26,7 @@ import {
   type CalendarLoaderData,
 } from "~/lib/validation/schemas/loader-responses.schemas";
 
-async function loadCalendarValidated(
+export async function loadCalendarValidated(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ): Promise<CalendarLoaderData> {
@@ -42,41 +41,49 @@ async function loadCalendarValidated(
   return validateLoaderResponse(data, calendarLoaderDataSchema);
 }
 
+export async function loadCalendarRange(
+  request: Request,
+  params: LoaderFunctionArgs["params"]
+) {
+  const url = new URL(request.url);
+  const search = new URLSearchParams(url.searchParams);
+  if (!search.has("pastRange")) search.set("pastRange", "1");
+  const parsedRange = parseCalendarPastRangeSearch(search);
+  const userId = await requireUserId(request);
+  await requireAnySubscription(userId);
+  if (parsedRange.kind !== "range") {
+    return routeData(
+      { ok: false, error: "Invalid calendar range" },
+      { status: 400 }
+    );
+  }
+  const queueType =
+    params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
+  const data = await loadCalendarPublishedRange(
+    userId,
+    queueType,
+    parsedRange.start,
+    parsedRange.end
+  );
+  return validateLoaderResponse(
+    {
+      pastPosts: data.pastPosts,
+      pastLongFormPosts: data.pastLongFormPosts,
+      from: parsedRange.start.toISOString(),
+      to: parsedRange.end.toISOString(),
+    },
+    calendarPastRangeLoaderDataSchema
+  );
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const url = new URL(request.url);
     const parsedRange = parseCalendarPastRangeSearch(url.searchParams);
     if (parsedRange.kind !== "full") {
-      const userId = await requireUserId(request);
-      await requireAnySubscription(userId);
-      if (parsedRange.kind === "invalid") {
-        return routeData(
-          { ok: false, error: "Invalid calendar range" },
-          { status: 400 }
-        );
-      }
-      const queueType =
-        params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
-      const data = await loadCalendarPublishedRange(
-        userId,
-        queueType,
-        parsedRange.start,
-        parsedRange.end
-      );
-      return validateLoaderResponse(
-        {
-          pastPosts: data.pastPosts,
-          pastLongFormPosts: data.pastLongFormPosts,
-          from: parsedRange.start.toISOString(),
-          to: parsedRange.end.toISOString(),
-        },
-        calendarPastRangeLoaderDataSchema
-      );
+      return await loadCalendarRange(request, params);
     }
 
-    if (isRemixResourceRequest(request)) {
-      return await loadCalendarValidated(request, params);
-    }
     return {
       calendar: loadCalendarValidated(request, params),
     };

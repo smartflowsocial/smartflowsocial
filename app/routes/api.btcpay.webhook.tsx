@@ -4,15 +4,16 @@ import { verifyBtcpayWebhookSignature } from "~/features/payments/btcpay.server"
 import { processBtcpayWebhookPayload } from "~/features/payments/data/btcpay-webhook.server";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return Response.json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
 
   const secret = env.BTCPAY_WEBHOOK_SECRET?.trim();
   if (!secret) {
-    return Response.json({ error: "Webhooks not configured" }, { status: 503 });
+    return jsonResponse({ error: "Webhooks not configured" }, { status: 503 });
   }
 
   const raw = await request.text();
@@ -22,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
     request.headers.get("Btcpay-Sig");
 
   if (!verifyBtcpayWebhookSignature(raw, sig, secret)) {
-    return Response.json({ error: "Invalid signature" }, { status: 401 });
+    return jsonResponse({ error: "Invalid signature" }, { status: 401 });
   }
 
   try {
@@ -32,11 +33,11 @@ export async function action({ request }: ActionFunctionArgs) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "BTCPay webhook handler error",
     });
-    return Response.json({ error: "Bad payload" }, { status: 400 });
+    return jsonResponse({ error: "Bad payload" }, { status: 400 });
   }
 
-  return Response.json({ ok: true });
+  return jsonResponse({ ok: true });
 }
 
 export const loader = async () =>
-  Response.json({ error: "Method not allowed" }, { status: 405 });
+  jsonResponse({ error: "Method not allowed" }, { status: 405 });

@@ -7,6 +7,7 @@ import {
   getTopErrorCodes,
   isErrorRateHigh,
 } from "~/lib/error-metrics.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * API endpoint to get error metrics
@@ -31,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const errorRate = getErrorRate();
     const rateHigh = isErrorRateHigh(10); // 10 errors per minute threshold
 
-    return Response.json({
+    return jsonResponse({
       summary: metrics,
       errorRate: {
         perMinute: errorRate,
@@ -43,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (topErrors) {
     const limit = parseInt(topErrors, 10) || 10;
-    return Response.json({
+    return jsonResponse({
       topErrors: getTopErrorCodes(limit),
     });
   }
@@ -51,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (checkRate) {
     const rate = getErrorRate();
     const threshold = 10;
-    return Response.json({
+    return jsonResponse({
       errorRate: rate,
       isHigh: rate > threshold,
       threshold,
@@ -59,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Return full metrics by default
-  return Response.json({
+  return jsonResponse({
     metrics: getErrorMetrics(),
     errorRate: getErrorRate(),
   });

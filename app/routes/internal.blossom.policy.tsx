@@ -6,6 +6,7 @@ import {
 } from "~/features/payments";
 import { getUserByNpub } from "~/features/user";
 import { env } from "~/lib/env.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
@@ -24,7 +25,7 @@ function authorizeInternalRequest(request: Request): boolean {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!authorizeInternalRequest(request)) {
-    return Response.json({ error: "unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "unauthorized" }, { status: 401 });
   }
 
   const url = new URL(request.url);
@@ -33,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const pubkeyHex = pubkeyParam.trim().toLowerCase();
 
   if (!pubkeyHex || pubkeyHex.length < 32) {
-    return Response.json({
+    return jsonResponse({
       active: false,
       planId: null,
       allowCompatUpload: false,
@@ -47,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (npub) user = await getUserByNpub(npub);
   }
   if (!user?.isEnabled) {
-    return Response.json({
+    return jsonResponse({
       active: false,
       planId: null,
       allowCompatUpload: false,
@@ -65,7 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const isFreePlan = planId === "free";
   const allowCompatUpload = active && !isFreePlan;
 
-  return Response.json({
+  return jsonResponse({
     active,
     planId,
     allowCompatUpload,

@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const VALIDATION_FAILED_MESSAGE = "Validation failed";
 
@@ -208,12 +209,12 @@ export function validateFormDataOrRespond<T extends z.ZodTypeAny>(
         : error.message;
       return {
         success: false,
-        response: Response.json({ error: errorMessage }, { status: 400 }),
+        response: jsonResponse({ error: errorMessage }, { status: 400 }),
       };
     }
     return {
       success: false,
-      response: Response.json(
+      response: jsonResponse(
         { error: VALIDATION_FAILED_MESSAGE },
         { status: 400 }
       ),
