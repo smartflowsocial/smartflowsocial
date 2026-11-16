@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.upload.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/auth/auth.server", () => ({
@@ -70,13 +71,13 @@ describe("API: Upload", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -120,7 +121,7 @@ describe("API: Upload", () => {
         const response = await action({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         });
@@ -152,7 +153,7 @@ describe("API: Upload", () => {
         const response = await action({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         });
@@ -171,13 +172,13 @@ describe("API: Upload", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -218,13 +219,13 @@ describe("API: Upload", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -260,13 +261,13 @@ describe("API: Upload", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -302,13 +303,13 @@ describe("API: Upload", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };

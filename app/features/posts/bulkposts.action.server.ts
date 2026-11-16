@@ -29,6 +29,7 @@ import {
   getOrCreateDraftGroup,
   type BulkDraftSnapshotRow,
 } from "~/features/posts/server/drafts";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { getCorrelationId } from "~/lib/correlation-context.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { RateLimitError } from "~/lib/errors";
@@ -835,7 +836,13 @@ async function markOriginalPostsAsNonRecyclable(
 /**
  * Main action handler for bulk posts
  */
-export async function bulkPostsAction({ request }: { request: Request }) {
+export async function bulkPostsAction({
+  request,
+  url = appUrlFromRequest(request),
+}: {
+  request: Request;
+  url?: URL;
+}) {
   try {
     const userId = await requireUserId(request);
     if (!userId) {
@@ -843,7 +850,6 @@ export async function bulkPostsAction({ request }: { request: Request }) {
       throw new AuthenticationError("User not authenticated");
     }
 
-    const url = new URL(request.url);
     const mode = url.searchParams.get("mode");
 
     const formData = await request.formData();

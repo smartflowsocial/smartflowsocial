@@ -5,6 +5,8 @@
  * against CSRF attacks.
  */
 
+import { appUrlFromRequest } from "~/lib/app-url";
+
 import { env } from "./env.server";
 import { logWarning } from "./error-logger.server";
 
@@ -170,7 +172,7 @@ export function validateOrigin(request: Request): void {
   // hostname/subdomain is dynamic (e.g., preview URLs) while still preventing
   // cross-site POSTs because Origin/Referer must match this host.
   try {
-    allowedOrigins.push(new URL(request.url).origin);
+    allowedOrigins.push(appUrlFromRequest(request).origin);
   } catch {
     // ignore
   }

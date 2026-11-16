@@ -1,3 +1,4 @@
+import { RouterContextProvider } from "react-router";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const pay = vi.hoisted(() =>
@@ -71,7 +72,7 @@ describe("manual referral payout route", () => {
         SECRET
       ),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -92,7 +93,7 @@ describe("manual referral payout route", () => {
         SECRET
       ),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -110,7 +111,7 @@ describe("manual referral payout route", () => {
         amount_sats: 10,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -132,7 +133,7 @@ describe("manual referral payout route", () => {
         "nope"
       ),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -154,7 +155,7 @@ describe("manual referral payout route", () => {
         SECRET
       ),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -176,7 +177,7 @@ describe("manual referral payout route", () => {
         SECRET
       ),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });

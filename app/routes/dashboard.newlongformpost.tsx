@@ -9,8 +9,7 @@ import { NewLongFormPostPage } from "~/features/posts/longform";
 import { handleNewLongFormAction } from "~/features/posts/server/longform";
 import { withCSRFProtection } from "~/lib/csrf.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+export async function loader({ url }: LoaderFunctionArgs) {
   return redirect(`/dashboard/compose${url.search}`);
 }
 

@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.children.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
@@ -84,14 +85,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -139,14 +140,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -178,14 +179,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -226,14 +227,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -281,14 +282,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -324,14 +325,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -363,14 +364,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -402,14 +403,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -441,14 +442,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -497,7 +498,7 @@ describe("API: Children", () => {
         response = await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         });
@@ -526,7 +527,7 @@ describe("API: Children", () => {
       const loaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -564,14 +565,14 @@ describe("API: Children", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

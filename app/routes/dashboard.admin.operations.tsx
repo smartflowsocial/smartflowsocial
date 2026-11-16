@@ -19,12 +19,11 @@ import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
     return data({ error: "Forbidden" }, { status: 403 });
   }
-  const url = new URL(request.url);
   const preset = parseRangePreset(
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)

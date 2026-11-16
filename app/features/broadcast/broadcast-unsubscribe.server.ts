@@ -9,6 +9,7 @@ import {
   BroadcastSuppressionReasonCode,
 } from "@prisma/client";
 
+import { appUrlFromRequest } from "~/lib/app-url";
 import { env } from "~/lib/env.server";
 import { logInfo } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
@@ -31,7 +32,7 @@ export function getBroadcastUnsubscribeBaseUrl(request: Request): string {
   if (fromEnv) {
     return fromEnv.replace(/\/$/, "");
   }
-  const u = new URL(request.url);
+  const u = appUrlFromRequest(request);
   return `${u.protocol}//${u.host}`;
 }
 

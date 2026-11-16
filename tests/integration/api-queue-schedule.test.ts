@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.queue-schedule.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
 vi.mock("~/features/auth/session.server", () => ({
@@ -78,14 +79,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -148,14 +149,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -212,7 +213,7 @@ describe("API: Queue Schedule", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -244,14 +245,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -305,7 +306,7 @@ describe("API: Queue Schedule", () => {
       await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -354,7 +355,7 @@ describe("API: Queue Schedule", () => {
       await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -373,14 +374,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -424,7 +425,7 @@ describe("API: Queue Schedule", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -444,14 +445,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -489,14 +490,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -541,14 +542,14 @@ describe("API: Queue Schedule", () => {
       interface ActionArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const actionArgs: ActionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

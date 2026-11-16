@@ -2,6 +2,7 @@
  * Action tests for app/routes/dashboard.admin.operations (dead-letter replay).
  */
 
+import { RouterContextProvider } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -49,7 +50,7 @@ function postForm(body: FormData): ActionFunctionArgs {
       body,
     }),
     params: {},
-    context: {},
+    context: new RouterContextProvider(),
     url: new URL("http://localhost:3000/"),
     pattern: "*",
   };

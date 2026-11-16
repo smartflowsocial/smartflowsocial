@@ -1,20 +1,6 @@
 /// <reference types="vite/client" />
 /// <reference types="@react-router/node" />
 
-declare module "react-router" {
-  interface AppLoadContext {
-    nonce?: string;
-  }
-
-  interface LoaderFunctionArgs {
-    context: AppLoadContext;
-  }
-
-  interface ActionFunctionArgs {
-    context: AppLoadContext;
-  }
-}
-
 declare global {
   interface Window {
     nostr?: {

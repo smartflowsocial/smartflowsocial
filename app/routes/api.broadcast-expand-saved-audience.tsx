@@ -2,6 +2,7 @@ import { type LoaderFunctionArgs } from "react-router";
 
 import { requireUserId } from "~/features/auth/auth.server";
 import { expandSavedAudienceEligiblePubkeys } from "~/features/broadcast/broadcast-recipient-picker.server";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { jsonResponse } from "~/lib/http/json-response";
 
 /**
@@ -9,7 +10,9 @@ import { jsonResponse } from "~/lib/http/json-response";
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const id = new URL(request.url).searchParams.get("savedAudienceId")?.trim();
+  const id = appUrlFromRequest(request)
+    .searchParams.get("savedAudienceId")
+    ?.trim();
   if (!id) {
     return jsonResponse({ error: "Missing savedAudienceId" }, { status: 400 });
   }

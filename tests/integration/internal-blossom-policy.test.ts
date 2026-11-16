@@ -1,3 +1,4 @@
+import { RouterContextProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("~/lib/env.server", () => ({
@@ -48,7 +49,7 @@ describe("GET /internal/blossom/policy", () => {
     const response = await loader({
       request,
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL(request.url),
       pattern: "*",
     });
@@ -68,7 +69,7 @@ describe("GET /internal/blossom/policy", () => {
     const response = await loader({
       request,
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL(request.url),
       pattern: "*",
     });
@@ -90,7 +91,7 @@ describe("GET /internal/blossom/policy", () => {
     const response = await loader({
       request,
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL(request.url),
       pattern: "*",
     });

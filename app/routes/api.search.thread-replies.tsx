@@ -10,9 +10,8 @@ const EVENT_ID_HEX = /^[a-f0-9]{64}$/i;
  * Lazy nested replies for search post viewer: direct children of `parent_event_id`.
  * GET /api/search/thread-replies?parent_event_id=<64-char hex>
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   await requireUserId(request);
-  const url = new URL(request.url);
   const parentId = url.searchParams.get("parent_event_id")?.trim() ?? "";
   const parentNorm = parentId.toLowerCase();
   if (!EVENT_ID_HEX.test(parentNorm)) {

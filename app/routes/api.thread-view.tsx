@@ -13,11 +13,10 @@ type AssertFunction = (
   context?: Record<string, unknown>
 ) => asserts condition;
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ url }: LoaderFunctionArgs) {
   try {
     const errorHandler = await import("~/lib/error-handler.server");
     const assert: AssertFunction = errorHandler.assert;
-    const url = new URL(request.url);
     const eventIdParam = url.searchParams.get("event_id");
 
     assert(eventIdParam !== null, "Missing event_id parameter", {

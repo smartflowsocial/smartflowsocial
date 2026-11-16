@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { loadDraftsData } from "~/features/posts/server/drafts";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   draftsLoaderDataSchema,
@@ -15,8 +16,8 @@ export async function loadDraftsValidated(
 ): Promise<DraftsLoaderData> {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
+  const url = appUrlFromRequest(request);
 
-  const url = new URL(request.url);
   const queueType =
     url.searchParams.get("queueType") ?? params["queueType"] ?? "all";
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);

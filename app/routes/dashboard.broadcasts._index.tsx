@@ -39,6 +39,7 @@ import {
 } from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
 import { PublishingPageHeader } from "~/features/posts/ui";
+import { appUrlFromRequest } from "~/lib/app-url";
 import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
@@ -123,7 +124,7 @@ async function loadBroadcastsIndexData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const filters = parseIndexFilters(url);
   const [summary, campaigns] = await Promise.all([
     getBroadcastDashboardSummary(userId),

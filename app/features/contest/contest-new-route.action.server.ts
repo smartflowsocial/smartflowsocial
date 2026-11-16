@@ -13,7 +13,8 @@ import type { ContestRankingMetric } from "~/features/contest/types";
 import { requireAnySubscription } from "~/features/payments";
 import { getPostById } from "~/features/posts/server";
 import { featureFlags } from "~/lib/feature-flags.server";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
+
+import type { Route } from "../../routes/+types/dashboard.contests.new";
 
 function parseContestFairness(formData: FormData) {
   return {
@@ -271,4 +272,4 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   return redirect(`/dashboard/contests/detail/${contest.id}`);
 }
 
-export type ContestNewActionData = SerializeFrom<typeof contestNewAction>;
+export type ContestNewActionData = Route.ComponentProps["actionData"];

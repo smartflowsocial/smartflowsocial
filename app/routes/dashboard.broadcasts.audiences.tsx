@@ -61,11 +61,10 @@ function audienceTypeBadgeClass(t: string): string {
   }
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const notice = url.searchParams.get("notice");
   const editId = url.searchParams.get("edit");
 

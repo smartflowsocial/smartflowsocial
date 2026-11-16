@@ -1,3 +1,4 @@
+import { RouterContextProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("~/features/auth/auth.server", () => ({
@@ -46,7 +47,7 @@ describe("API: Media Intents", () => {
     const response = await action({
       request,
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL(request.url),
       pattern: "*",
     });
@@ -71,7 +72,7 @@ describe("API: Media Intents", () => {
     const response = await action({
       request,
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL(request.url),
       pattern: "*",
     });

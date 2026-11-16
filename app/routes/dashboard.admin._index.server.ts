@@ -17,13 +17,12 @@ export type AdminOverviewIndexLoaderSuccess = Awaited<
   ReturnType<typeof getAdminOverviewPageData>
 >;
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
     return routeData({ error: "Forbidden" }, { status: 403 });
   }
 
-  const url = new URL(request.url);
   const preset = parseRangePreset(
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)

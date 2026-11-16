@@ -8,10 +8,9 @@ import { jsonResponse } from "~/lib/http/json-response";
  * GET /api/posts/thread-group?groupId=&postId=
  * Returns ordered thread segments for the post detail modal (same user only).
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const url = new URL(request.url);
     const groupId = url.searchParams.get("groupId");
     const postId = url.searchParams.get("postId");
 

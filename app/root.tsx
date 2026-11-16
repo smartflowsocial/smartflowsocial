@@ -36,6 +36,7 @@ import "~/features/auth/signer/remote-signer-sessions-migration.client";
 import { BRAND_NAME } from "~/lib/brand";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
+import { nonceContext } from "~/lib/nonce-context";
 import { QueryProvider } from "~/lib/query/QueryProvider";
 import { isDev } from "~/lib/runtime-env";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
@@ -119,10 +120,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
           SIGNING_MULTI_SLOT: env.SIGNING_MULTI_SLOT ?? null,
         },
         // Pass CSP nonce to client for inline scripts
-        nonce:
-          typeof context === "object" && "nonce" in context
-            ? (context["nonce"] as string)
-            : undefined,
+        nonce: context.get(nonceContext),
       },
       {
         // Prevent caching of authentication state
@@ -151,13 +149,13 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   }
 };
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
+export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const siteOrigin =
-    data &&
-    typeof data === "object" &&
-    "siteOrigin" in data &&
-    typeof (data as { siteOrigin: unknown }).siteOrigin === "string"
-      ? (data as { siteOrigin: string }).siteOrigin
+    loaderData &&
+    typeof loaderData === "object" &&
+    "siteOrigin" in loaderData &&
+    typeof (loaderData as { siteOrigin: unknown }).siteOrigin === "string"
+      ? (loaderData as { siteOrigin: string }).siteOrigin
       : "http://localhost";
   return [
     ...buildRootDefaultMeta(siteOrigin),
