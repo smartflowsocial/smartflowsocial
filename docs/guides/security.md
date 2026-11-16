@@ -260,31 +260,34 @@ React automatically escapes content:
 
 ## CSRF Protection
 
-### Remix CSRF Protection
+### Form posts
 
-Remix provides built-in CSRF protection for forms:
+Use `Form` from `react-router` for document posts. Actions that change state go through
+`withCSRFProtection` in `~/lib/csrf.server`, which checks `Origin` and `Referer` on POST, PUT,
+PATCH, and DELETE.
 
 ```tsx
-// ✅ Good: Use Remix Form
-<Form method="post">
-  <input name="content" />
-  <button type="submit">Submit</button>
-</Form>
+import { Form } from "react-router";
+
+export function Composer() {
+  return (
+    <Form method="post">
+      <input name="content" />
+      <button type="submit">Submit</button>
+    </Form>
+  );
+}
 ```
 
-### API Endpoints
-
-For API endpoints, use CSRF tokens:
-
 ```typescript
-// Generate CSRF token
-const csrfToken = generateCSRFToken();
+import type { ActionFunctionArgs } from "react-router";
 
-// Validate in action
-const formToken = formData.get("csrfToken");
-if (formToken !== csrfToken) {
-  throw new UnauthorizedError("Invalid CSRF token");
-}
+import { withCSRFProtection } from "~/lib/csrf.server";
+
+export const action = withCSRFProtection(async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  return { ok: true, content: formData.get("content") };
+});
 ```
 
 ---
@@ -542,7 +545,7 @@ throw new Error(`Database error: ${dbError.message}`);
 ## Additional Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Remix Security](https://remix.run/docs/en/main/guides/security)
+- [React Router](https://reactrouter.com/start/framework/routing)
 - [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
 - [Deployment Guide](./deployment.md)
 - [Troubleshooting Guide](../troubleshooting/errors.md)

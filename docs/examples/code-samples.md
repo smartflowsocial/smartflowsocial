@@ -49,8 +49,9 @@ See [Architecture Overview](../getting-started/architecture.md) for details.
 
 ```typescript
 // app/routes/dashboard.posts.tsx
+import type { LoaderFunctionArgs } from "react-router";
+
 import { requireUserId } from "~/features/auth";
-import type { LoaderFunctionArgs } from "@remix-run/node";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // Throws if not authenticated
@@ -58,7 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Use userId for data fetching
   const posts = await getPostsByUserId(userId);
-  return json({ posts });
+  return { posts };
 }
 ```
 
@@ -74,11 +75,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (user) {
     // Authenticated user
     const posts = await getPostsByUserId(user.id);
-    return json({ posts });
+    return { posts };
   } else {
     // Public content
     const posts = await getPublicPosts();
-    return json({ posts });
+    return { posts };
   }
 }
 ```
@@ -169,7 +170,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Use feature public API, not models directly
   const data = await loadDashboardData(userId, queueType);
-  return json(data);
+  return data;
 }
 ```
 
@@ -181,8 +182,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ```typescript
 // app/routes/api.posts.tsx
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 import { loadDashboardData } from "~/features/posts";
 
@@ -196,7 +198,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Use feature loader (handles data fetching, business logic)
   const data = await loadDashboardData(userId, queueType);
 
-  return json(data);
+  return jsonResponse(data);
 }
 ```
 
@@ -204,8 +206,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ```typescript
 // app/routes/api.posts.tsx
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 import { ValidationError } from "~/lib/errors";
 import { handleNewPostAction } from "~/features/posts";
@@ -214,7 +217,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
 
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
 
   // Use feature action handler (handles validation, business logic, etc.)
@@ -351,8 +354,9 @@ export async function uploadFile(file: File, userId: string) {
 
 ```typescript
 // app/routes/api.upload.tsx
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 import { uploadFile } from "~/features/upload/services/storage.server";
 
@@ -362,11 +366,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const file = formData.get("file") as File;
 
   if (!file) {
-    return json({ error: "File required" }, { status: 400 });
+    return jsonResponse({ error: "File required" }, { status: 400 });
   }
 
   const url = await uploadFile(file, userId);
-  return json({ url });
+  return jsonResponse({ url });
 }
 ```
 

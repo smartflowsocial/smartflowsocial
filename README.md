@@ -17,9 +17,9 @@ Neither is a supported version.
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
 [![CI](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml)
-[![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 22.22+](https://img.shields.io/badge/node-22.22%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![Remix](https://img.shields.io/badge/Remix-app-121212?logo=remix&logoColor=white)](https://remix.run/)
+[![React Router 8.5](https://img.shields.io/badge/React_Router-8.5.1-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-primary-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/redis-jobs-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
@@ -59,8 +59,8 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 
 ## Run it yourself
 
-You need Node.js 20+, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs a running
-[HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads need
+You need Node.js 22.22 or newer, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs a
+running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads need
 S3-compatible storage. First-time setup is about 30–60 minutes.
 [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
 signed event reaches a publisher.
@@ -141,7 +141,7 @@ Full index: [docs/README.md](./docs/README.md)
 
 ## How it is built
 
-- [Remix](https://remix.run) and TypeScript for the web app
+- [React Router](https://reactrouter.com/) 8.5.1 and TypeScript for the web app (React 19.2.7)
 - PostgreSQL and Prisma for stored data
 - Redis and BullMQ for the worker's jobs
 - NIP-07 and NIP-46 for signing
@@ -153,7 +153,7 @@ Deeper map: [Architecture](./docs/getting-started/architecture.md). Threat bound
 
 ## Repository
 
-- `app/` — Remix routes, features, and server modules
+- `app/` — React Router routes, features, and server modules
 - `prisma/` — schema, migrations, and seed
 - `docs/` — guides, reference, and operations
 - `tests/` — unit, integration, Cypress, security, and performance
