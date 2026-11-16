@@ -3,7 +3,7 @@
  * Centralized action processing for calendar pages
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import {
   SchedulePostUseCase,
@@ -48,7 +48,7 @@ export async function handleCalendarReschedule(
   // Get the original post
   const originalPost = await getPostById({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: "Post not found" }, { status: 404 });
+    return data({ error: "Post not found" }, { status: 404 });
   }
 
   // Parse signed events if provided (from client-side re-signing)
@@ -123,7 +123,7 @@ export async function handleCalendarReschedule(
       parentPredictedEventId: parsedSignedEvent.id,
     });
 
-    return json({ success: true, post: updatedPost, signed: true });
+    return { success: true, post: updatedPost, signed: true };
   }
 
   await resyncAttachedChildrenAfterParentMutation({
@@ -133,7 +133,7 @@ export async function handleCalendarReschedule(
   });
 
   // Return success but indicate signing is needed
-  return json({ success: true, post: updatedPost, needsSigning: true });
+  return { success: true, post: updatedPost, needsSigning: true };
 }
 
 /**
@@ -157,7 +157,7 @@ export async function handleCalendarRescheduleLongform(
   // Get the original longform post
   const originalPost = await getLongFormPost({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: "Article not found" }, { status: 404 });
+    return data({ error: "Article not found" }, { status: 404 });
   }
 
   // Parse signed events if provided (from client-side re-signing)
@@ -219,11 +219,11 @@ export async function handleCalendarRescheduleLongform(
     });
   }
 
-  return json({
+  return {
     success: true,
     post: updatedPost,
     signed: !!parsedSignedEvent,
-  });
+  };
 }
 
 /**
@@ -248,21 +248,21 @@ export async function handleCalendarAction(
   if (legacyActionType === "delete") {
     const postId = formData.get("postId");
     if (typeof postId !== "string" || postId.length === 0) {
-      return json({ error: "Missing postId" }, { status: 400 });
+      return data({ error: "Missing postId" }, { status: 400 });
     }
     await cascadeDeleteAttachedFollowups({ rootPostId: postId, userId });
     const deletedPost = await deletePost({ id: postId, userId });
-    return json({ success: true, deleted: deletedPost !== null });
+    return { success: true, deleted: deletedPost !== null };
   }
 
   if (legacyActionType === "deleteLongForm") {
     const postId = formData.get("postId");
     if (typeof postId !== "string" || postId.length === 0) {
-      return json({ error: "Missing postId" }, { status: 400 });
+      return data({ error: "Missing postId" }, { status: 400 });
     }
     const deletedPost = await deleteLongFormPost({ id: postId, userId });
-    return json({ success: true, deleted: deletedPost !== null });
+    return { success: true, deleted: deletedPost !== null };
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+  return data({ error: "Invalid action" }, { status: 400 });
 }

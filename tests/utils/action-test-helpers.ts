@@ -31,73 +31,37 @@ export class FormDataStore {
   }
 }
 
-/**
- * Create mock Remix upload handlers
- */
-export function createMockRemixUploadHandlers(formDataStore: FormDataStore) {
-  return {
-    unstable_composeUploadHandlers: vi.fn((...handlers) => {
-      return async (part: {
-        filename?: string;
-        name?: string;
-        data: AsyncIterable<Uint8Array>;
-      }) => {
-        if (part.filename) {
-          // It's a file - process through the first handler (S3 upload handler)
-          const firstHandler = handlers[0] as
-            | ((part: {
-                filename?: string;
-                name?: string;
-                data: AsyncIterable<Uint8Array>;
-              }) => Promise<unknown>)
-            | undefined;
-          if (firstHandler) {
-            return await firstHandler(part);
-          }
-        }
-        // For non-file parts, return the value as-is
-        return part.data;
-      };
-    }),
-    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(
-      async (
-        request: { url?: string; formData?: () => Promise<FormData> },
-        _uploadHandler: unknown
-      ) => {
-        // Try to get FormData from store first (set by test using request URL as key)
-        const url =
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for request type
-          request &&
-          typeof request === "object" &&
-          "url" in request &&
-          typeof request.url === "string"
-            ? request.url
-            : String(request.url ?? "");
-        const storedFormData = formDataStore.get(url);
-        if (storedFormData) {
-          formDataStore.delete(url); // Clean up after use
-          return storedFormData;
-        }
+interface MockFormRequest {
+  url?: string;
+  formData?: () => Promise<FormData>;
+}
 
-        // Fallback: try to parse from request
-        try {
-          const formData =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for request type
-            request &&
-            typeof request === "object" &&
-            "formData" in request &&
-            typeof request.formData === "function"
-              ? await request.formData()
-              : new FormData();
-          return formData;
-        } catch (_error) {
-          // If parsing fails, return empty FormData
-          return new FormData();
-        }
-      }
-    ),
-  };
+/**
+ * Form body used by tests that mock `parseFormData`.
+ * Prefers a FormData stored under the request URL, then the request body.
+ */
+export async function readMockMultipartFormData(
+  store: {
+    get(url: string): FormData | undefined;
+    delete(url: string): unknown;
+  },
+  request: MockFormRequest
+): Promise<FormData> {
+  const url = typeof request.url === "string" ? request.url : "";
+  const storedFormData = store.get(url);
+  if (storedFormData) {
+    store.delete(url);
+    return storedFormData;
+  }
+
+  try {
+    if (typeof request.formData === "function") {
+      return await request.formData();
+    }
+  } catch {
+    // Request body was not form data.
+  }
+  return new FormData();
 }
 
 /**
@@ -259,3 +223,51 @@ export const actionScenarios = {
     },
   },
 };
+
+/**
+ * Loaders and actions may return a Response, a single-fetch `data()` result,
+ * or a plain object. Tests still assert on status and JSON.
+ */
+async function unwrapDeferred(result: unknown): Promise<unknown> {
+  if (
+    result instanceof Response ||
+    result == null ||
+    typeof result !== "object"
+  ) {
+    return result;
+  }
+  if (
+    "type" in result &&
+    (result as { type?: unknown }).type === "DataWithResponseInit" &&
+    "data" in result
+  ) {
+    return {
+      ...result,
+      data: await unwrapDeferred((result as { data: unknown }).data),
+    };
+  }
+  const keys = Object.keys(result);
+  if (keys.length === 1) {
+    const value = (result as Record<string, unknown>)[keys[0] ?? ""];
+    if (value instanceof Promise) return await value;
+  }
+  return result;
+}
+
+export async function asRouteResponse(result: unknown): Promise<Response> {
+  result = await unwrapDeferred(result);
+  if (result instanceof Response) return result;
+  if (
+    result !== null &&
+    typeof result === "object" &&
+    "type" in result &&
+    (result as { type?: unknown }).type === "DataWithResponseInit" &&
+    "data" in result
+  ) {
+    const init = (result as { init?: number | ResponseInit | null }).init;
+    const responseInit =
+      typeof init === "number" ? { status: init } : (init ?? undefined);
+    return Response.json((result as { data: unknown }).data, responseInit);
+  }
+  return Response.json(result ?? null);
+}

@@ -100,7 +100,7 @@ export function LongFormPublishingOptions({
   hideQueueControls = false,
   layout = "page",
 }: LongFormPublishingOptionsProps) {
-  void _scheduleIntervals;
+  _scheduleIntervals;
   const isRail = layout === "rail";
 
   // Find the currently selected queue type

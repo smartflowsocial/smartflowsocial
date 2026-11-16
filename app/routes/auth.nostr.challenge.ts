@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
 
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { issueLoginChallenge } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { issueLoginChallenge } from "~/features/auth/auth.server";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const PURPOSE_LOGIN = "login";
 const CHALLENGE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -14,11 +14,11 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return json({ error: "Method not allowed" }, { status: 405 });
+        return jsonResponse({ error: "Method not allowed" }, { status: 405 });
       }
 
       if (!featureFlags.nostrAuthV2Enabled) {
-        return json(
+        return jsonResponse(
           {
             success: false,
             error: {
@@ -40,7 +40,7 @@ export const action = withCSRFProtection(
         expiresAt,
       });
 
-      return json({
+      return jsonResponse({
         challengeId: challenge.id,
         nonce: challenge.nonce,
         purpose: challenge.purpose,

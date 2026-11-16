@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 
 import type { MetricConfidence } from "~/features/admin/metrics/metric-types";
 import { cn } from "~/lib/utils";

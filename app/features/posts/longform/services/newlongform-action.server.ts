@@ -3,13 +3,10 @@
  * Centralized action processing for new longform post page
  */
 
-import {
-  json,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
+import { parseFormData } from "@remix-run/form-data-parser";
 
 import { resolveExecutionRelaysFromForm } from "~/features/relays/relay-resolution.server";
+import { DEFAULT_MEMORY_PART_BYTES } from "~/features/upload/validation.server";
 import { getUserById } from "~/features/user";
 import {
   newLongformPostActionSchema,
@@ -30,7 +27,7 @@ import {
 export async function handleNewLongFormAction(
   userId: string,
   request: Request
-): Promise<Response> {
+) {
   const user = await getUserById(userId);
   if (!user) {
     return new Response("User not found", { status: 404 });
@@ -41,8 +38,9 @@ export async function handleNewLongFormAction(
   let formData: FormData;
 
   if (contentType.includes("multipart/form-data")) {
-    const uploadHandler = createMemoryUploadHandler();
-    formData = await parseMultipartFormData(request, uploadHandler);
+    formData = await parseFormData(request, {
+      maxFileSize: DEFAULT_MEMORY_PART_BYTES,
+    });
   } else {
     formData = await request.formData();
   }
@@ -128,5 +126,5 @@ export async function handleNewLongFormAction(
     );
   }
 
-  return json({ success: false });
+  return { success: false };
 }

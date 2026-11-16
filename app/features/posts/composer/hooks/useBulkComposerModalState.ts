@@ -3,8 +3,8 @@
  * Extracted from BulkComposerModal to keep the modal shell under 350 LOC.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { type ToastMessage } from "~/components/types";
 import type {
@@ -295,7 +295,7 @@ export function useBulkComposerModalState({
       !contextFetcher.data
     ) {
       const query = mode === "reschedule" ? "" : `?mode=${mode}`;
-      contextFetcher.load(`/dashboard/bulkposts${query}`);
+      void contextFetcher.load(`/dashboard/bulkposts${query}`);
     }
   }, [open, mode]); // eslint-disable-line react-hooks/exhaustive-deps -- only reset when open/mode change
 
@@ -699,7 +699,7 @@ export function useBulkComposerModalState({
     });
     formData.append("_action", "save_as_draft");
     Object.entries(extraFormData).forEach(([k, v]) => formData.append(k, v));
-    submitFetcher.submit(formData, {
+    void submitFetcher.submit(formData, {
       method: "post",
       encType: "multipart/form-data",
       action: submitAction,

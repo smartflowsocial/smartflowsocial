@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from "@remix-run/react";
+import { useParams, useSearchParams } from "react-router";
 
 import { buildLibraryContentTypeFilterItems } from "./build-library-content-segment-links";
 import { PublishingContentTypeFilter } from "./PublishingContentTypeFilter";

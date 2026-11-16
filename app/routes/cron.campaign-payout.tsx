@@ -4,11 +4,11 @@
  * `X-Cron-Secret` or `Authorization: Bearer`.
  */
 
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { runCampaignPayoutAutorunCron } from "~/features/payments";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 async function runCampaignCron(request: Request) {
   const denied = denyCronUnlessAuthorized(request);
@@ -23,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return jsonResponse(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );

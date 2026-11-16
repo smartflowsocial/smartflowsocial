@@ -1,13 +1,13 @@
-import { json } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   getErrorMetrics,
   getErrorRate,
   getTopErrorCodes,
   isErrorRateHigh,
 } from "~/lib/error-metrics.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * API endpoint to get error metrics
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const errorRate = getErrorRate();
     const rateHigh = isErrorRateHigh(10); // 10 errors per minute threshold
 
-    return json({
+    return jsonResponse({
       summary: metrics,
       errorRate: {
         perMinute: errorRate,
@@ -44,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (topErrors) {
     const limit = parseInt(topErrors, 10) || 10;
-    return json({
+    return jsonResponse({
       topErrors: getTopErrorCodes(limit),
     });
   }
@@ -52,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (checkRate) {
     const rate = getErrorRate();
     const threshold = 10;
-    return json({
+    return jsonResponse({
       errorRate: rate,
       isHigh: rate > threshold,
       threshold,
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Return full metrics by default
-  return json({
+  return jsonResponse({
     metrics: getErrorMetrics(),
     errorRate: getErrorRate(),
   });

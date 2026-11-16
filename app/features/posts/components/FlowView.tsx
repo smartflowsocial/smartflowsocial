@@ -1,4 +1,3 @@
-import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Plus } from "lucide-react";
 import {
@@ -11,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Link } from "react-router";
 
 import { EmptyState } from "~/components/ui/empty-state";
 import { useIntersectionObserver } from "~/lib/hooks/useIntersectionObserver";

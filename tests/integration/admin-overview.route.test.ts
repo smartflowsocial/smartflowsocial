@@ -2,14 +2,14 @@
  * Loader tests for app/routes/dashboard.admin._index (Overview tab).
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockRequireUser = vi.fn();
 const mockIsReferralAdmin = vi.fn();
 const mockGetAdminOverviewPageData = vi.fn();
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUser: (...args: unknown[]) => mockRequireUser(...args),
 }));
 
@@ -21,6 +21,8 @@ vi.mock("~/features/admin/repositories/admin-overview-queries.server", () => ({
   getAdminOverviewPageData: (...args: unknown[]) =>
     mockGetAdminOverviewPageData(...args),
 }));
+
+import { asRouteResponse } from "../utils/action-test-helpers";
 
 import { loader } from "~/routes/dashboard.admin._index";
 
@@ -123,8 +125,10 @@ describe("dashboard.admin._index loader", () => {
       request: new Request("http://localhost/dashboard/admin"),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await loader(args);
+    const res = await asRouteResponse(await loader(args));
     expect(res.status).toBe(403);
   });
 
@@ -133,8 +137,10 @@ describe("dashboard.admin._index loader", () => {
       request: new Request("http://localhost/dashboard/admin"),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await loader(args);
+    const res = await asRouteResponse(await loader(args));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({
       rangePreset: "7d",

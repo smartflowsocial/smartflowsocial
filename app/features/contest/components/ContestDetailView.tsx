@@ -1,9 +1,9 @@
-import type { SerializeFrom } from "@remix-run/node";
-import { useRouteLoaderData } from "@remix-run/react";
 import { useCallback, useMemo } from "react";
+import { useRouteLoaderData } from "react-router";
 
 import { mapContestCampaignPhase } from "~/features/campaign-ui";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 import { contestCopy } from "../contest-copy";
 import type {
@@ -79,7 +79,7 @@ export function ContestDetailView({
 }: {
   data: SerializeFrom<ContestDetailPageData>;
 }) {
-  const root = useRouteLoaderData("root");
+  const root = useRouteLoaderData<unknown>("root");
   const nostr = useMemo(
     () => getNostrClientUrlsFromUser(rootUserFromData(root)),
     [root]

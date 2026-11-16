@@ -1,10 +1,6 @@
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { dropAvatarCache } from "~/features/public-stats/avatar.server";
 import { bustPublicStatsCache } from "~/features/public-stats/public-stats.server";
 import {
@@ -12,13 +8,14 @@ import {
   markLandingNoticeSeen,
   setLandingVisibility,
 } from "~/features/public-stats/repositories/public-stats-data.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const user = await findLandingPresence(userId);
-  if (!user) return json({ error: "Not found" }, { status: 404 });
-  return json({
+  if (!user) return jsonResponse({ error: "Not found" }, { status: 404 });
+  return jsonResponse({
     hideFromLanding: user.hideFromLanding,
     showNotice: !user.hideFromLanding && user.landingNoticeSeenAt == null,
   });
@@ -27,11 +24,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 async function apply(userId: string, formData: FormData): Promise<Response> {
   const intent = formData.get("intent");
   const user = await findLandingPresence(userId);
-  if (!user) return json({ error: "Not found" }, { status: 404 });
+  if (!user) return jsonResponse({ error: "Not found" }, { status: 404 });
 
   if (intent === "dismiss") {
     await markLandingNoticeSeen(userId);
-    return json({ ok: true });
+    return jsonResponse({ ok: true });
   }
 
   if (intent === "visibility") {
@@ -39,10 +36,10 @@ async function apply(userId: string, formData: FormData): Promise<Response> {
     await setLandingVisibility(userId, hide);
     await dropAvatarCache(user.npub);
     await bustPublicStatsCache();
-    return json({ ok: true, hideFromLanding: hide });
+    return jsonResponse({ ok: true, hideFromLanding: hide });
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return jsonResponse({ error: "Unknown intent" }, { status: 400 });
 }
 
 export const action = withCSRFProtection(

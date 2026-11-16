@@ -4,7 +4,7 @@
  * Handles recyclable posts data loading and actions (repost, quote, delete)
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import { toPostDTOArray, type PostDTO } from "~/features/posts/dtos";
 import { shouldShowQueueInUi } from "~/features/posts/queue-status";
@@ -109,42 +109,33 @@ export async function getRecyclableDashboardData({
 // Action Handler Helpers
 // ============================================================================
 
-async function handleDeleteAction(
-  postId: string,
-  userId: string
-): Promise<Response> {
+async function handleDeleteAction(postId: string, userId: string) {
   await deletePost({ id: postId, userId });
-  return json({ success: true });
+  return { success: true };
 }
 
-async function handleBulkDeleteAction(
-  postIds: string[],
-  userId: string
-): Promise<Response> {
+async function handleBulkDeleteAction(postIds: string[], userId: string) {
   await Promise.all(postIds.map((id: string) => deletePost({ id, userId })));
-  return json({ success: true });
+  return { success: true };
 }
 
-async function handleBulkRepostAction(
-  postIds: string[],
-  userId: string
-): Promise<Response> {
+async function handleBulkRepostAction(postIds: string[], userId: string) {
   const postsData = await getPostsByIds({
     ids: postIds,
     userId,
   });
-  return json({ repostData: postsData });
+  return { repostData: postsData };
 }
 
 async function handleBulkScheduledRepostAction(
   postIds: string[],
   userId: string
-): Promise<Response> {
+) {
   const postsData = await getPostsByIds({
     ids: postIds,
     userId,
   });
-  return json({ scheduledRepostData: postsData });
+  return { scheduledRepostData: postsData };
 }
 
 function extractEventData(signedEvent: unknown): {
@@ -215,10 +206,7 @@ function transformPostToQuoteFormat(post: PostData): {
   };
 }
 
-async function handleBulkQuoteAction(
-  postIds: string[],
-  userId: string
-): Promise<Response> {
+async function handleBulkQuoteAction(postIds: string[], userId: string) {
   const postsData = await getPostsByIds({
     ids: postIds,
     userId,
@@ -227,13 +215,13 @@ async function handleBulkQuoteAction(
   const quotePostsData = postsData.map((post) =>
     transformPostToQuoteFormat(post as PostData)
   );
-  return json({ quotePostData: quotePostsData });
+  return { quotePostData: quotePostsData };
 }
 
 async function handleSingleRepostAction(
   repostData: { postId: string },
   userId: string
-): Promise<Response> {
+) {
   try {
     const postsData = await getPostsByIds({
       ids: [repostData.postId],
@@ -249,7 +237,7 @@ async function handleSingleRepostAction(
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -259,7 +247,7 @@ async function handleSingleRepostAction(
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json({ error: "Invalid event data" }, { status: 400 });
+      return data({ error: "Invalid event data" }, { status: 400 });
     }
 
     const { eventId, eventPubkey } = extractEventData(originalEvent);
@@ -274,10 +262,10 @@ async function handleSingleRepostAction(
       created_at: nowSeconds(),
     };
 
-    return json({
+    return {
       repostEventData: kind6EventData,
       originalPost: originalPost,
-    });
+    };
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -315,7 +303,7 @@ function extractQuotePostData(originalPost: PostData): {
 async function handleSingleQuoteAction(
   quoteData: { postId: string },
   userId: string
-): Promise<Response> {
+) {
   try {
     const postsData = await getPostsByIds({
       ids: [quoteData.postId],
@@ -331,7 +319,7 @@ async function handleSingleQuoteAction(
 
     const originalPost = postsData[0];
     if (!originalPost) {
-      return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+      return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
     }
     const originalEvent = originalPost.signedEvent;
 
@@ -341,7 +329,7 @@ async function handleSingleQuoteAction(
       !("id" in originalEvent) ||
       !("pubkey" in originalEvent)
     ) {
-      return json({ error: "Invalid event data" }, { status: 400 });
+      return data({ error: "Invalid event data" }, { status: 400 });
     }
 
     const { eventId, eventPubkey } = extractEventData(originalEvent);
@@ -360,7 +348,7 @@ async function handleSingleQuoteAction(
       originalCaption: caption,
     };
 
-    return json({ quotePostData: [quotePostData] });
+    return { quotePostData: [quotePostData] };
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -437,7 +425,7 @@ async function handleRecycleAction(
     queueType?: string;
   },
   userId: string
-): Promise<Response> {
+) {
   try {
     const recycleUseCase = new RecyclePostUseCase();
     const scheduledFor = recycleData.scheduledFor
@@ -450,11 +438,11 @@ async function handleRecycleAction(
       queueTypeId: recycleData.queueTypeId,
       queueType: recycleData.queueType,
     });
-    return json({
+    return {
       success: true,
       newPostId: result.newPostId,
       scheduled: result.scheduled,
-    });
+    };
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);

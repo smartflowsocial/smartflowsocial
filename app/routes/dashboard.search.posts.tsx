@@ -1,11 +1,6 @@
-import {
-  defer,
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   SearchPostsPage,
   handleSearchAction,
@@ -13,7 +8,7 @@ import {
   loadSearchData,
   serializeLookupLoaderError,
 } from "~/features/search";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import {
   searchActionSchema,
   validateFormDataOrRespond,
@@ -25,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const q = url.searchParams.get("q")?.trim();
 
   if (!q) {
-    return json(data);
+    return data;
   }
 
   const searchResultPromise = (async () => {
@@ -49,10 +44,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   })();
 
-  return defer({
+  return {
     ...data,
     searchResultPromise,
-  });
+  };
 }
 
 export const action = withCSRFProtection(
@@ -74,7 +69,7 @@ export const action = withCSRFProtection(
         userId,
         searchResult.event.id
       );
-      return json({ ...searchResult, scheduleSourcePost });
+      return { ...searchResult, scheduleSourcePost };
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

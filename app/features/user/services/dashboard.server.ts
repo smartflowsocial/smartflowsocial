@@ -3,7 +3,7 @@
  * Handles dashboard loader and action logic
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import { updateUserSubscription } from "~/features/payments/data";
 import { getUsersByNpubs } from "~/features/user/queries/user-queries.server";
@@ -47,7 +47,7 @@ export async function handleDashboardAction(
     );
 
     if (!res.ok) {
-      return json({ error: res.reason }, { status: 400 });
+      return data({ error: res.reason }, { status: 400 });
     }
 
     // Promote child's subscription to creator on accept
@@ -66,8 +66,8 @@ export async function handleDashboardAction(
       }
     }
 
-    return json({ success: true });
+    return { success: true };
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+  return data({ error: "Invalid action" }, { status: 400 });
 }

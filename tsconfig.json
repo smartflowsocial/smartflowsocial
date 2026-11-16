@@ -1,7 +1,8 @@
 {
   "exclude": ["./tests/e2e", "node_modules", "**/node_modules/**", "**/.pnpm/**"],
   "include": [
-    "remix.env.d.ts",
+    "env.d.ts",
+    ".react-router/types/**/*",
     "app/**/*.ts",
     "app/**/*.tsx",
     "app/types/**/*.d.ts",
@@ -45,6 +46,7 @@
 
     // Path mappings
     "baseUrl": ".",
+    "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "~/*": ["./app/*"],
       "~/tests/*": ["./tests/*"]
@@ -59,7 +61,7 @@
     "skipLibCheck": true,
     "incremental": true, // Enable incremental compilation for faster builds and CI caching
 
-    // Remix takes care of building everything in `remix build`.
+    // React Router's Vite build emits the client and server bundles.
     "noEmit": true
   }
 }

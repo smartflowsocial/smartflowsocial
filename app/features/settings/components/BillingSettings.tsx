@@ -1,4 +1,4 @@
-import { useNavigation, useSearchParams } from "@remix-run/react";
+import { useNavigation, useSearchParams } from "react-router";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NWCSettings, SubscriptionSettings } from "~/features/payments";

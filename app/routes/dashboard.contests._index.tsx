@@ -1,14 +1,15 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { Trophy } from "lucide-react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
+  redirect,
+  data,
   Form,
   Link,
   useActionData,
   useLoaderData,
   useNavigate,
   useSearchParams,
-} from "@remix-run/react";
-import { Trophy } from "lucide-react";
+} from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -18,7 +19,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   campaignFieldClassNames,
   campaignSelectClassNames,
@@ -86,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sourcePostIds
   );
 
-  return json({
+  return {
     contests: filteredByQ.map((c) => ({
       id: c.id,
       title: c.title ?? `Contest ${c.id.slice(0, 8)}`,
@@ -105,7 +106,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totals: { totalSatsPlanned, totalEntries },
     kpiCounts,
     filters: { status, metric, sort, q },
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -120,29 +121,29 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "delete") {
     const contestId = formData.get("contestId");
     if (typeof contestId !== "string" || !contestId.trim()) {
-      return json({ error: "Missing contest id" }, { status: 400 });
+      return data({ error: "Missing contest id" }, { status: 400 });
     }
     const result = await deleteContest(userId, contestId);
     if (!result.success) {
-      return json({ error: result.error ?? "Delete failed" }, { status: 400 });
+      return data({ error: result.error ?? "Delete failed" }, { status: 400 });
     }
     return redirect("/dashboard/contests");
   }
   if (intent === "duplicate") {
     const contestId = formData.get("contestId");
     if (typeof contestId !== "string" || !contestId.trim()) {
-      return json({ error: "Missing contest id" }, { status: 400 });
+      return data({ error: "Missing contest id" }, { status: 400 });
     }
     const result = await duplicateContest(userId, contestId);
     if (!result.success || !result.newId) {
-      return json(
+      return data(
         { error: result.error ?? "Duplicate failed" },
         { status: 400 }
       );
     }
     return redirect(`/dashboard/contests/detail/${result.newId}`);
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function contestStatusPillClass(status: string): string {
@@ -202,7 +203,7 @@ export default function ContestsIndexRoute() {
     } else {
       next.set(key, value);
     }
-    navigate(`/dashboard/contests?${next.toString()}`);
+    void navigate(`/dashboard/contests?${next.toString()}`);
   };
   const k = data.kpiCounts;
   const draft = k["DRAFT"] ?? 0;
@@ -236,7 +237,6 @@ export default function ContestsIndexRoute() {
           </Button>
         }
       />
-
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card className="border-border rounded-xl">
           <CardHeader className="pb-2">
@@ -273,7 +273,6 @@ export default function ContestsIndexRoute() {
           </CardHeader>
         </Card>
       </div>
-
       <Form
         method="get"
         replace
@@ -297,7 +296,7 @@ export default function ContestsIndexRoute() {
                 const value = e.target.value.trim();
                 if (!value) next.delete("q");
                 else next.set("q", value);
-                navigate(`/dashboard/contests?${next.toString()}`);
+                void navigate(`/dashboard/contests?${next.toString()}`);
               }}
               placeholder="Search by title…"
               className={campaignFieldClassNames}
@@ -381,7 +380,6 @@ export default function ContestsIndexRoute() {
           </div>
         </div>
       </Form>
-
       {!hasAnyContests ? (
         <EmptyState
           className="border-border bg-surface shadow-1 rounded-xl border"
@@ -420,7 +418,9 @@ export default function ContestsIndexRoute() {
                       key={contest.id}
                       className="hover:bg-surface-hover/40 motion-fast cursor-pointer"
                       onClick={() => {
-                        navigate(`/dashboard/contests/detail/${contest.id}`);
+                        void navigate(
+                          `/dashboard/contests/detail/${contest.id}`
+                        );
                       }}
                     >
                       <td className="w-12 px-2 py-2 align-middle">
@@ -564,7 +564,7 @@ export default function ContestsIndexRoute() {
                   key={contest.id}
                   className="hover:bg-surface-hover/30 motion-fast cursor-pointer p-4"
                   onClick={() => {
-                    navigate(`/dashboard/contests/detail/${contest.id}`);
+                    void navigate(`/dashboard/contests/detail/${contest.id}`);
                   }}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">

@@ -1,13 +1,13 @@
-import { cssBundleHref } from "@remix-run/css-bundle";
-import { json } from "@remix-run/node";
+import { useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
+} from "react-router";
 import {
+  data,
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -16,14 +16,15 @@ import {
   useLoaderData,
   useLocation,
   useRouteError,
-} from "@remix-run/react";
-import { useEffect } from "react";
-import { Toaster } from "react-hot-toast";
+} from "react-router";
 
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
 import { PrefetchManager } from "~/components/prefetch/PrefetchManager";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import { getUser, refreshUserProfileIfChanged } from "~/features/auth";
+import {
+  getUser,
+  refreshUserProfileIfChanged,
+} from "~/features/auth/auth.server";
 import { RemoteSignerReconnectController } from "~/features/auth/components/RemoteSignerReconnectController";
 import { GlobalSigningResumeController } from "~/features/auth/signing/components/GlobalSigningResumeController";
 import { GlobalSignRecoveryBanner } from "~/features/auth/signing/components/GlobalSignRecoveryBanner";
@@ -36,11 +37,12 @@ import { BRAND_NAME } from "~/lib/brand";
 import { handleLoaderError } from "~/lib/error-handler.server";
 import { normalizeError } from "~/lib/errors";
 import { QueryProvider } from "~/lib/query/QueryProvider";
+import { isDev } from "~/lib/runtime-env";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
 import { getSiteOrigin } from "~/lib/site-url.server";
 import { THEME_COLOR_HEX } from "~/lib/theme-color";
 import { syncThemeColorMetaFromDocument } from "~/lib/theme.client";
-import stylesheet from "~/tailwind.css";
+import stylesheet from "~/tailwind.css?url";
 
 /** Re-apply `theme-color` after SPA navigations (Remix may re-inject media-based metas). */
 function ThemeColorMetaSync() {
@@ -76,7 +78,6 @@ export const links: LinksFunction = () => {
       href: "https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800;900&display=swap",
     },
     { rel: "stylesheet", href: stylesheet },
-    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
     // PWA manifest
     { rel: "manifest", href: "/manifest.json" },
     // Apple touch icons for iOS
@@ -102,7 +103,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
       user = await refreshUserProfileIfChanged(user);
     }
 
-    return json(
+    return data(
       {
         user,
         siteOrigin,
@@ -334,7 +335,6 @@ export default function App() {
                 }}
               />
             ) : null}
-            <LiveReload />
           </TooltipProvider>
         </QueryProvider>
       </body>
@@ -353,7 +353,7 @@ export function ErrorBoundary() {
   let statusCode = 500;
   let errorMessage = "An unexpected error occurred";
   let errorTitle = pageTitle("Error");
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = isDev;
 
   if (isRouteErrorResponse(error)) {
     statusCode = error.status;

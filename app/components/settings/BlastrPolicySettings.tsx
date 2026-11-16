@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { X } from "lucide-react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -58,7 +58,7 @@ export function BlastrPolicySettings({
     formData.set("_action", "update_blastr_policy");
     formData.set("mode", newMode);
     formData.set("enabled", newEnabled ? "true" : "false");
-    policyFetcher.submit(formData, { method: "post" });
+    void policyFetcher.submit(formData, { method: "post" });
   };
 
   const handleAddRelay = (relayUrl: string, action: "allow" | "block") => {
@@ -66,14 +66,14 @@ export function BlastrPolicySettings({
     formData.set("_action", "add_blastr_policy_relay");
     formData.set("relay_url", relayUrl);
     formData.set("action", action);
-    addFetcher.submit(formData, { method: "post" });
+    void addFetcher.submit(formData, { method: "post" });
   };
 
   const handleRemoveRelay = (relayUrl: string) => {
     const formData = new FormData();
     formData.set("_action", "remove_blastr_policy_relay");
     formData.set("relay_url", relayUrl);
-    removeFetcher.submit(formData, { method: "post" });
+    void removeFetcher.submit(formData, { method: "post" });
   };
 
   const existingUrls = new Set(relays.map((r) => r.relay_url));

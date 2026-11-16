@@ -1,3 +1,5 @@
+import { Search } from "lucide-react";
+import { Suspense } from "react";
 import {
   Await,
   useFetcher,
@@ -5,9 +7,7 @@ import {
   useNavigation,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { Search } from "lucide-react";
-import { Suspense } from "react";
+} from "react-router";
 
 import { Badge } from "~/components/ui/badge";
 import { ScheduleRepostQuoteModal } from "~/features/posts/scheduling/components/ScheduleRepostQuoteModal";
@@ -63,7 +63,7 @@ export default function SearchPostsPage() {
     new URLSearchParams(navigation.location.search).get("q") !== null;
 
   if (searchResultPromise) {
-    const deferred = searchResultPromise as Promise<DeferredSearchResult>;
+    const deferred = searchResultPromise;
     return (
       <Suspense fallback={<SearchPostSkeleton />}>
         <Await resolve={deferred}>
@@ -71,7 +71,7 @@ export default function SearchPostsPage() {
             <SearchPostsPageContent
               user={user}
               publishRelays={publishRelays}
-              fetcherData={fetcher.data}
+              fetcherData={fetcher.data as unknown}
               loaderSearchResult={resolvedSearchResult}
               forceShowSkeleton={isNavigatingToSearchResult}
             />
@@ -85,7 +85,7 @@ export default function SearchPostsPage() {
     <SearchPostsPageContent
       user={user}
       publishRelays={publishRelays}
-      fetcherData={fetcher.data}
+      fetcherData={fetcher.data as unknown}
       loaderSearchResult={loaderSearchResult ?? null}
       forceShowSkeleton={isNavigatingToSearchResult}
     />
@@ -166,7 +166,7 @@ function SearchPostsPageContent({
           error={searchLookupError}
           onNewLookup={clearSearch}
           onRetry={() => {
-            revalidator.revalidate();
+            void revalidator.revalidate();
           }}
         />
       ) : null}
@@ -195,7 +195,7 @@ function SearchPostsPageContent({
           onScheduleRepost={handleScheduleRepost}
           publishRelays={publishRelays}
           onRetryLookup={() => {
-            revalidator.revalidate();
+            void revalidator.revalidate();
           }}
         />
       ) : null}

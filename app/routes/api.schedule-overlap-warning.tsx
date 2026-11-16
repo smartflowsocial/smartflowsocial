@@ -1,11 +1,11 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getScheduleOverlapWarning } from "~/features/posts/server/scheduling";
 import { getUserTimezone } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 import { parseDateTimeLocal } from "~/lib/temporal";
 
 interface RequestBody {
@@ -79,7 +79,7 @@ export const action = withCSRFProtection(
         excludeContentId,
       });
 
-      return json({ warning });
+      return jsonResponse({ warning });
     } catch (error) {
       if (error instanceof Response) {
         return error;

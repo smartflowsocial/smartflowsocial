@@ -1,9 +1,9 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { cleanupPublishRelayAcks } from "~/features/relays/publish-relay-ack-retention.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 import { logError } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * Cron job to clean up PublishRelayAck rows older than the retention window.
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return jsonResponse(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
     );

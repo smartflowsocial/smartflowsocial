@@ -1,8 +1,8 @@
-import { Link } from "@remix-run/react";
-import type { FetcherWithComponents } from "@remix-run/react";
 import { formatDistanceToNow } from "date-fns";
 import { MoreHorizontal, Repeat } from "lucide-react";
 import { useMemo } from "react";
+import type { FetcherWithComponents } from "react-router";
+import { Link } from "react-router";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -650,7 +650,7 @@ export function ContentListCard({
                               const formData = new FormData();
                               formData.set(FORM_FIELD_POST_ID, child.id);
                               formData.set("_action", "delete");
-                              deleteFetcher.submit(formData, {
+                              void deleteFetcher.submit(formData, {
                                 method: "post",
                               });
                             }
@@ -787,7 +787,7 @@ export function ContentListCard({
                               const formData = new FormData();
                               formData.set(FORM_FIELD_POST_ID, child.id);
                               formData.set("_action", "delete");
-                              deleteFetcher.submit(formData, {
+                              void deleteFetcher.submit(formData, {
                                 method: "post",
                               });
                             }
@@ -831,7 +831,7 @@ export function ContentListCard({
                         const fd = new FormData();
                         fd.set("_action", "duplicateDraftPost");
                         fd.set(FORM_FIELD_POST_ID, item.id);
-                        draftsActionFetcher.submit(fd, {
+                        void draftsActionFetcher.submit(fd, {
                           method: "post",
                           action: "/dashboard/drafts",
                         });
@@ -850,7 +850,7 @@ export function ContentListCard({
                         fd.set("_action", "convertDraftToTemplate");
                         fd.set(FORM_FIELD_POST_ID, item.id);
                         fd.set("templateName", name);
-                        draftsActionFetcher.submit(fd, {
+                        void draftsActionFetcher.submit(fd, {
                           method: "post",
                           action: "/dashboard/drafts",
                         });
@@ -883,7 +883,7 @@ export function ContentListCard({
                     "_action",
                     postType === "post" ? "delete" : "deleteLongForm"
                   );
-                  deleteFetcher.submit(formData, { method: "post" });
+                  void deleteFetcher.submit(formData, { method: "post" });
                 }
               }}
             >

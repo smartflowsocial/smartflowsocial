@@ -1,12 +1,7 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import {
-  json,
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
+import { parseFormData } from "@remix-run/form-data-parser";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   processImageForWeb,
   validateImageBuffer,
@@ -18,8 +13,9 @@ import {
   getUploadPolicy,
 } from "~/features/upload/upload-policy";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError, ExternalServiceError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
 const CONTENT_TYPE_APPLICATION_JSON = "application/json";
@@ -36,7 +32,7 @@ type AssertFunction = (
 ) => asserts condition;
 
 function createEditorJsUrlResponse(url: string) {
-  return json({
+  return jsonResponse({
     success: 1,
     file: {
       url,
@@ -71,12 +67,9 @@ async function handleBlossomEditorJsRequest(
     );
   }
 
-  const uploadHandler = composeUploadHandlers(
-    createMemoryUploadHandler({
-      maxPartSize: EDITORJS_MAX_PART_SIZE,
-    })
-  );
-  const formData = await parseMultipartFormData(request, uploadHandler);
+  const formData = await parseFormData(request, {
+    maxFileSize: EDITORJS_MAX_PART_SIZE,
+  });
   const imageValue = formData.get("image") ?? formData.get("imageFile");
   assert(imageValue !== null, "No image file provided", {
     formDataKeys: Array.from(formData.keys()),
@@ -121,12 +114,9 @@ export const action = withCSRFProtection(
 
       let formData: FormData;
       try {
-        const uploadHandler = composeUploadHandlers(
-          createMemoryUploadHandler({
-            maxPartSize: EDITORJS_MAX_PART_SIZE,
-          })
-        );
-        formData = await parseMultipartFormData(request, uploadHandler);
+        formData = await parseFormData(request, {
+          maxFileSize: EDITORJS_MAX_PART_SIZE,
+        });
       } catch (error) {
         throw new ExternalServiceError(
           "Failed to parse multipart form data",
@@ -208,7 +198,7 @@ export const action = withCSRFProtection(
         }
 
         // Return EditorJS compatible response
-        return json({
+        return jsonResponse({
           success: 1,
           file: {
             url: imageUrl,
@@ -248,5 +238,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return json({ message: "EditorJS Image Upload API" });
+  return jsonResponse({ message: "EditorJS Image Upload API" });
 }

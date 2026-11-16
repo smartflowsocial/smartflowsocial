@@ -39,7 +39,7 @@ export interface RecipientPickerProps {
     name: string;
     audienceType: string;
     lastResolvedSize: number | null;
-    updatedAt: string;
+    updatedAt: Date | string;
   }>;
   selectedPubkeys: string[];
   onChangeSelected: (pubkeys: string[]) => void;

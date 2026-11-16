@@ -3,8 +3,8 @@
  * Submits _action: autosave-draft with content, attachmentMeta, queueType, etc.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import type { ComposerAttachment } from "../../types";
 
@@ -52,7 +52,7 @@ export function useComposerAutosave(payload: AutosavePayload) {
     if (attachmentMeta.length > 0) {
       formData.set("attachmentMeta", JSON.stringify(attachmentMeta));
     }
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   }, [payload, draftId, fetcher]);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function useComposerAutosave(payload: AutosavePayload) {
 
   useEffect(() => {
     if (fetcher.data && fetcher.state === "idle") {
-      const data = fetcher.data as { draftId?: string; saved?: boolean };
+      const data = fetcher.data;
       if (data.saved) {
         const nextDraftId = data.draftId ?? null;
         const timer = setTimeout(() => {

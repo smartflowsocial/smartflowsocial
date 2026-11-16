@@ -1,21 +1,21 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { type LoaderFunctionArgs } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 
 import { AdminCurrencyProvider, AdminTabNav } from "~/features/admin";
 import { getAdminBtcSpotRates } from "~/features/admin/admin-fx-rates.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ adminFx: null, adminFxError: false as const });
+    return { adminFx: null, adminFxError: false as const };
   }
   try {
     const rates = await getAdminBtcSpotRates();
-    return json({ adminFx: rates, adminFxError: false as const });
+    return { adminFx: rates, adminFxError: false as const };
   } catch {
-    return json({ adminFx: null, adminFxError: true as const });
+    return { adminFx: null, adminFxError: true as const };
   }
 }
 

@@ -21,13 +21,12 @@
  * forwards the parsed payload; a tiny client bridge on this route performs
  * the write and then triggers the redirect.
  */
-import { redirect } from "@remix-run/node";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect, useLoaderData, useNavigate } from "react-router";
 
 import { Logo } from "~/components/ui/Logo";
-import { getUser } from "~/features/auth";
+import { getUser } from "~/features/auth/auth.server";
 import { BRAND_NAME } from "~/lib/brand";
 
 const TARGET_COMPOSER_PATH = "/dashboard/compose?source=share-target";
@@ -150,7 +149,7 @@ export default function ShareTargetRoute() {
 
   useEffect(() => {
     if (!data?.hasContent) {
-      navigate(TARGET_COMPOSER_PATH, { replace: true });
+      void navigate(TARGET_COMPOSER_PATH, { replace: true });
       return;
     }
 
@@ -184,7 +183,7 @@ export default function ShareTargetRoute() {
     // Delay one microtask so the draft write commits before the composer's
     // mount effect reads it. Empirically 0ms is enough; 50ms gives a safety margin.
     const id = window.setTimeout(() => {
-      navigate(TARGET_COMPOSER_PATH, { replace: true });
+      void navigate(TARGET_COMPOSER_PATH, { replace: true });
     }, 50);
     return () => window.clearTimeout(id);
   }, [data, navigate]);

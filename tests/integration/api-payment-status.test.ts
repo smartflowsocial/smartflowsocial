@@ -4,7 +4,6 @@
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
-import { json } from "@remix-run/node";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const TEST_USER_ID = "test-user-123";
@@ -47,7 +46,7 @@ describe("API: Payment Status", () => {
       it("should return paid status for completed payment", async () => {
         const paidAt = new Date("2024-01-15T10:00:00Z");
         (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
-          json({
+          Response.json({
             success: true,
             paid: true,
             paidAt: paidAt.toISOString(),
@@ -70,7 +69,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -98,7 +105,7 @@ describe("API: Payment Status", () => {
 
       it("should return unpaid status for pending payment", async () => {
         (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
-          json({
+          Response.json({
             success: true,
             paid: false,
             status: "PENDING",
@@ -120,7 +127,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -145,7 +160,7 @@ describe("API: Payment Status", () => {
 
       it("should return unpaid status for failed payment", async () => {
         (checkPaymentStatusById as ReturnType<typeof vi.fn>).mockResolvedValue(
-          json({
+          Response.json({
             success: true,
             paid: false,
             status: "FAILED",
@@ -167,7 +182,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -203,7 +226,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -242,7 +273,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -282,7 +321,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -321,7 +368,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -363,7 +418,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =
@@ -396,7 +459,15 @@ describe("API: Payment Status", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
         const dataRaw: unknown = await response.json();
         const data =

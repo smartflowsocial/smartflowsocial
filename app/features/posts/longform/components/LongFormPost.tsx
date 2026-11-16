@@ -1,7 +1,7 @@
-import { useFetcher } from "@remix-run/react";
 import { Hash } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 
 import { HashtagPresetToggle } from "~/components/dashboard/HashtagPresetToggle";
@@ -563,7 +563,7 @@ export default function LongFormPost({
       formData.set("longFormPostId", serverLongFormPostId);
     }
     pendingLongformSaveDraftRef.current = true;
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const { handleSchedule, isSigning, signingError, cancelSigning } =
@@ -640,7 +640,7 @@ export default function LongFormPost({
       "useHashtagPresets",
       String(Boolean(values.useHashtagPresets))
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   // Word count from markdown (plain text)
@@ -948,8 +948,8 @@ export default function LongFormPost({
                   onSelect={
                     onHashtagPresetChange ??
                     ((_id, _tags) => {
-                      void _id;
-                      void _tags;
+                      _id;
+                      _tags;
                     })
                   }
                   useHashtagPresets={useHashtagPresets}

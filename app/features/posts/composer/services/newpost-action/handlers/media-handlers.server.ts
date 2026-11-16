@@ -3,7 +3,7 @@
  * Handles draft, post, and schedule actions for image/video posts
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { PublishNowUseCase } from "~/features/posts/server/publishing";
@@ -179,7 +179,7 @@ export async function handlePostImages({
   hashTagPresetId,
   sanitizedRelays = [],
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
@@ -269,7 +269,7 @@ export async function handleScheduleImages({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");
   const fileUrlValue = formData.get("fileUrl");
@@ -386,7 +386,7 @@ export async function handleDraftImages({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: MediaHandlerParams): Promise<Response> {
+}: MediaHandlerParams) {
   const fileUrlValue = formData.get("fileUrl");
   const fileUrl = fileUrlValue ? String(fileUrlValue) : "";
   const caption = formData.get("caption") as string;

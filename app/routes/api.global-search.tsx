@@ -1,11 +1,8 @@
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { performGlobalSearch } from "~/features/search";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -16,11 +13,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Require at least 2 characters to search (matches client-side requirement)
   if (!trimmedQuery || trimmedQuery.length < 2) {
-    return json({ results: [], total: 0 });
+    return jsonResponse({ results: [], total: 0 });
   }
 
   const results = await performGlobalSearch(userId, trimmedQuery, 5, context);
-  return json(results);
+  return jsonResponse(results);
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -32,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Require at least 2 characters to search (matches client-side requirement)
   if (!trimmedQuery || trimmedQuery.length < 2) {
-    return json({ results: [], total: 0 });
+    return jsonResponse({ results: [], total: 0 });
   }
 
   const context =
@@ -40,5 +37,5 @@ export async function action({ request }: ActionFunctionArgs) {
       ? (formData.get("context") as string)
       : undefined;
   const results = await performGlobalSearch(userId, trimmedQuery, 5, context);
-  return json(results);
+  return jsonResponse(results);
 }

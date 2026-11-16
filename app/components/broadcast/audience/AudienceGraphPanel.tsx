@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
+import { useFetcher } from "react-router";
 
 import { audienceRiskForSource } from "~/features/broadcast/audience/audience-risk";
 import { cn } from "~/lib/utils";
@@ -16,7 +16,7 @@ export function AudienceGraphPanel({
   const risk = audienceRiskForSource("MUTUALS");
 
   useEffect(() => {
-    fetcher.load("/api/broadcast-audience-estimate?type=MUTUALS");
+    void fetcher.load("/api/broadcast-audience-estimate?type=MUTUALS");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on mount
   }, []);
 

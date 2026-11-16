@@ -1,4 +1,4 @@
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 /**
  * Legacy URL: type picker moved to Templates list (Create template dialog).

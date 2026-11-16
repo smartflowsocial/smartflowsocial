@@ -1,6 +1,6 @@
-import { useLoaderData } from "@remix-run/react";
 import { Search, X } from "lucide-react";
 import { useState } from "react";
+import { useLoaderData } from "react-router";
 
 import type { PostData } from "~/features/posts/types";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
@@ -174,9 +174,7 @@ export default function ScheduledPosts() {
                       <td className="p-3 text-center">
                         <button
                           type="button"
-                          onClick={() =>
-                            setSelectedPost(post as unknown as PostData)
-                          }
+                          onClick={() => setSelectedPost(post)}
                           className="focus-ring bg-surface border-border text-text hover:border-border hover:text-text active:border-border hover:shadow-1 inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-1 text-sm leading-5 font-semibold active:shadow-none"
                         >
                           View

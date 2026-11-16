@@ -4,9 +4,9 @@
  */
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema types require any for generic constraints
@@ -88,7 +88,7 @@ export function useRemixForm<TSchema extends z.ZodType<any, any, any>>({
       }
     }
 
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   });
 
   return {

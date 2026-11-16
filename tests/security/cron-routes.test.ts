@@ -91,6 +91,8 @@ describe("cron route authentication", () => {
       request: request("/cron/referral-payout", "POST", SECRET),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(403);
     expect(jobs.referral).not.toHaveBeenCalled();
@@ -143,6 +145,8 @@ describe("cron route authentication", () => {
         request: request(path, "POST"),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/"),
+        pattern: "*",
       });
       expect(response.status).toBe(401);
       expect(job).not.toHaveBeenCalled();
@@ -158,6 +162,8 @@ describe("cron route authentication", () => {
         request: request(path, "POST", "wrong-secret"),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/"),
+        pattern: "*",
       });
       expect(response.status).toBe(401);
       expect(job).not.toHaveBeenCalled();
@@ -174,11 +180,15 @@ describe("cron route authentication", () => {
         request: request(path, "POST", SECRET),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/"),
+        pattern: "*",
       });
       const gotten = await route.loader({
         request: request(path, "GET", SECRET),
         params: {},
         context: {},
+        url: new URL("http://localhost:3000/"),
+        pattern: "*",
       });
       expect(posted.status).toBe(200);
       expect(gotten.status).toBe(200);
@@ -193,11 +203,15 @@ describe("cron route authentication", () => {
       request: request("/cron/purge-retained-records", "GET", SECRET),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     const posted = await route.action({
       request: request("/cron/purge-retained-records", "POST", SECRET),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(gotten.status).toBe(200);
     expect(gotten.headers.get("Deprecation")).toBe("true");

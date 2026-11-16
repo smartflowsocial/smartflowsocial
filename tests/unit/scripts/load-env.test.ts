@@ -69,6 +69,7 @@ describe("node bundle env order", () => {
       "sharp",
       "@prisma/client",
       "@prisma/engines",
+      "vite",
       "ioredis",
     ]);
     expect(bundleOptions("worker.ts", { watch: false }).external).not.toContain(

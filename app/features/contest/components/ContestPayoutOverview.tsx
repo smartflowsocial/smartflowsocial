@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import ZapButton from "~/components/dashboard/ZapButton";
 import { Button } from "~/components/ui/button";
@@ -126,7 +126,7 @@ export function ContestPayoutWinnerRow({
     if (note && note.trim() !== "") {
       fd.set("payoutNote", note.trim());
     }
-    payoutFetcher.submit(fd, { method: "post" });
+    void payoutFetcher.submit(fd, { method: "post" });
   };
 
   const noteTrimmed = payoutNote?.trim();

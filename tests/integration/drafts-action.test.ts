@@ -60,6 +60,7 @@ vi.mock("~/lib/prisma.server", () => ({
   prisma: mockPrisma,
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -403,7 +404,9 @@ describe("Drafts Action Handler", () => {
 
       // Zod validation fails because "invalidAction" is not in the enum
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
     });
 
@@ -496,7 +499,9 @@ describe("Drafts Action Handler", () => {
       // Zod transform will throw an error when parsing invalid JSON
       const result = await handleDraftsAction(formData, TEST_USER_ID);
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
     });
   });

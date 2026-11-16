@@ -1,7 +1,7 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 import type { z } from "zod";
 
 import { BlastrPolicySettings } from "~/components/settings/BlastrPolicySettings";
@@ -261,7 +261,7 @@ export function RelaysSettings({
       "update_relays"
     );
 
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   });
 
   const addProfileRow = () =>
@@ -308,7 +308,7 @@ export function RelaysSettings({
         entries.map((e) => ({ url: e.url.trim(), scope: e.scope }))
       );
       toast.success("Relay list published to Nostr.");
-      revalidator.revalidate();
+      void revalidator.revalidate();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to publish");
     } finally {

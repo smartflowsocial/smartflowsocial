@@ -4,6 +4,7 @@ import {
   maskNWCString,
   validateNWCString,
 } from "~/lib/encryption.server";
+import { safeConsoleError } from "~/lib/secrets-sanitizer.server";
 
 import type { User } from "../data/user-prisma-types.server";
 import {
@@ -101,10 +102,6 @@ export async function getDecryptedUserNWC(
   } catch (_error) {
     // Use safe logging to prevent NWC strings from appearing in logs
 
-    const { safeConsoleError } =
-      require("~/lib/secrets-sanitizer.server") as unknown as {
-        safeConsoleError: (message: string, userId: string) => void;
-      };
     safeConsoleError("Failed to decrypt NWC string for user", userId);
     return null;
   }

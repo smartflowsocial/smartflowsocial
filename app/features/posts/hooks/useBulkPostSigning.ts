@@ -1,5 +1,5 @@
-import { type FetcherWithComponents } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type FetcherWithComponents } from "react-router";
 
 import {
   cancelSignerInFlight,
@@ -213,7 +213,7 @@ export function useBulkPostSigning({
       const actionUrl =
         submitActionProp ??
         `/dashboard/bulkposts${new URL(window.location.href).search}`;
-      fetcher.submit(finalFormData, {
+      void fetcher.submit(finalFormData, {
         method: "post",
         encType: "multipart/form-data",
         action: actionUrl,
@@ -445,7 +445,7 @@ export function useBulkPostSigning({
       submitActionProp ??
       `/dashboard/bulkposts${new URL(window.location.href).search}`;
 
-    fetcher.submit(finalFormData, {
+    void fetcher.submit(finalFormData, {
       method: "post",
       encType: "multipart/form-data",
       action: actionUrl,

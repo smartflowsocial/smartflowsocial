@@ -1,9 +1,5 @@
-import {
-  useMatches,
-  useNavigation,
-  useRouteLoaderData,
-} from "@remix-run/react";
 import { useMemo, useState } from "react";
+import { useMatches, useNavigation, useRouteLoaderData } from "react-router";
 
 import type { User } from "~/features/user";
 import type { loader as rootLoader } from "~/root";
@@ -54,7 +50,7 @@ export function useMatchesData(
   return undefined;
 }
 
-/** Typed root route loader data (`useRouteLoaderData("root")`). */
+/** Typed root route loader data (`useRouteLoaderData<unknown>("root")`). */
 export function useRootRouteLoaderData() {
   return useRouteLoaderData<typeof rootLoader>("root");
 }

@@ -4,8 +4,6 @@
  * composer autosave flow (useComposerAutosave) for background saves.
  */
 
-import { json } from "@remix-run/node";
-
 import { resolveQueueTypeId } from "~/features/posts/server";
 import {
   createShortDraftVersion,
@@ -144,10 +142,7 @@ export async function persistShortDraft(
 }
 
 /** Save draft (explicit click): persist, create version snapshot, return JSON for the composer. */
-export async function handleSaveDraft(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+export async function handleSaveDraft(userId: string, formData: FormData) {
   const { draftId } = await persistShortDraft(userId, formData);
   const post = await findPostByIdAndUser(draftId, userId, {
     content: true,
@@ -173,21 +168,18 @@ export async function handleSaveDraft(
     );
   }
   if (isContestEmbedRequest(formData)) {
-    return json({
+    return {
       ok: true,
       embedContext: "contest" as const,
       draftSaved: true,
       draftId,
-    });
+    };
   }
-  return json({ ok: true, draftSaved: true, draftId });
+  return { ok: true, draftSaved: true, draftId };
 }
 
 /** Autosave-draft: persists draft and returns JSON; used by composer autosave (useComposerAutosave). */
-export async function handleAutosaveDraft(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+export async function handleAutosaveDraft(userId: string, formData: FormData) {
   const { draftId } = await persistShortDraft(userId, formData);
-  return json({ draftId, saved: true });
+  return { draftId, saved: true };
 }

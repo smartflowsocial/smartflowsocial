@@ -1,10 +1,9 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
-import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { redirect, data, Await, useLoaderData, useParams } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
 import {
   GiveawayDetailPage,
@@ -56,7 +55,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -258,12 +256,9 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(args.request)) {
-    return json(await loadGiveawayDetailData(args));
-  }
-  return defer({
+  return {
     giveawayDetail: loadGiveawayDetailData(args),
-  });
+  };
 }
 
 /* eslint-disable sonarjs/cognitive-complexity -- action handles multiple form actions */
@@ -273,7 +268,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const id = params["id"];
   if (!id) {
-    return json({ error: "Not found" }, { status: 404 });
+    return data({ error: "Not found" }, { status: 404 });
   }
 
   const formData = await request.formData();
@@ -285,24 +280,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   switch (intent) {
     case "preview": {
       const result = await previewGiveaway(userId, id);
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirectBack();
     }
     case "reroll": {
       const result = await rerollGiveaway(userId, id);
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirectBack();
     }
     case "exclude": {
       const winnerPubkey = formData.get("winnerPubkey");
       if (typeof winnerPubkey !== "string") {
-        return json(
+        return data(
           { winners: [], error: "Missing winnerPubkey" },
           { status: 400 }
         );
       }
       const result = await excludeWinnerAndRedraw(userId, id, winnerPubkey);
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirectBack();
     }
     case "lock": {
@@ -313,13 +308,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
             ? lockHashRaw.trim()
             : undefined,
       });
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirectBack();
     }
     case "createFinalizationInvoice": {
       const hashRaw = formData.get("lockConfigHash");
       if (typeof hashRaw !== "string" || !hashRaw.trim()) {
-        return json({ error: "Missing lock preview state" }, { status: 400 });
+        return data({ error: "Missing lock preview state" }, { status: 400 });
       }
       try {
         const inv = await createGiveawayFinalizationInvoice({
@@ -327,7 +322,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           userId,
           lockConfigHash: hashRaw.trim(),
         });
-        return json({
+        return {
           success: true,
           invoice: inv.invoice,
           paymentHash: inv.paymentHash,
@@ -335,40 +330,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
           paymentId: inv.paymentId,
           expiresAt: inv.expiresAt.toISOString(),
           lockConfigHash: inv.lockConfigHash,
-        });
+        };
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to create invoice";
         const status =
           error instanceof ExternalServiceError ? error.statusCode : 500;
-        return json({ error: message }, { status });
+        return data({ error: message }, { status });
       }
     }
     case "logActivity": {
       const typeRaw = formData.get("activityType");
       if (typeRaw !== "csv_exported" && typeRaw !== "proof_summary_copied") {
-        return json({ error: "Invalid activity type" }, { status: 400 });
+        return data({ error: "Invalid activity type" }, { status: 400 });
       }
       const result = await appendGiveawayAuditActivity(userId, id, typeRaw);
       if (!result.success) {
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
       return redirectBack();
     }
     case "cancel": {
       const result = await cancelGiveaway(userId, id);
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirectBack();
     }
     case "delete": {
       const result = await deleteGiveaway(userId, id);
-      if (result.error) return json(result);
+      if (result.error) return result;
       return redirect("/dashboard/giveaway");
     }
     case "runBatchPayout": {
       const usableNwc = await hasUsableNwc(userId);
       if (!usableNwc) {
-        return json(
+        return data(
           {
             success: false,
             error: "Skipped — wallet not connected",
@@ -388,7 +383,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (hasStep) {
         const stepIndex = Math.floor(Number(stepRaw));
         if (!Number.isFinite(stepIndex) || stepIndex < 0) {
-          return json(
+          return data(
             { success: false, error: "Invalid step index" },
             { status: 400 }
           );
@@ -402,14 +397,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
             spendCapSats: capOpt,
           }
         );
-        if (!result.success) return json(result, { status: 400 });
-        return json(result);
+        if (!result.success) return data(result, { status: 400 });
+        return result;
       }
       const result = await runGiveawayPayoutBatchWithNwc(userId, id, {
         trigger: "manual_trigger",
         spendCapSats: capOpt,
       });
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return data(result, { status: 400 });
       return redirectBack();
     }
     case "markPaidOut": {
@@ -418,12 +413,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         completeOverrideReason:
           typeof overrideRaw === "string" ? overrideRaw : undefined,
       });
-      if (result.error) return json(result, { status: 400 });
+      if (result.error) return data(result, { status: 400 });
       return redirectBack();
     }
     case "resetDraft": {
       const result = await resetGiveawayToDraft(userId, id);
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return data(result, { status: 400 });
       return redirectBack();
     }
     case "updatePayout": {
@@ -434,7 +429,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         typeof winnerPubkey !== "string" ||
         typeof payoutStatus !== "string"
       ) {
-        return json(
+        return data(
           { error: "Missing winner or payout status" },
           { status: 400 }
         );
@@ -448,7 +443,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         "skipped",
       ] as const;
       if (!allowed.includes(payoutStatus as (typeof allowed)[number])) {
-        return json({ error: "Invalid payout status" }, { status: 400 });
+        return data({ error: "Invalid payout status" }, { status: 400 });
       }
       const result = await setGiveawayWinnerPayoutStatus(
         userId,
@@ -457,7 +452,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         payoutStatus as (typeof allowed)[number],
         typeof noteRaw === "string" ? noteRaw : null
       );
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return data(result, { status: 400 });
       return redirectBack();
     }
     case "updatePayoutSettings": {
@@ -478,16 +473,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         payoutAutoRunEnabled,
         payoutAutoRunSpendCapSats: cap,
       });
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return data(result, { status: 400 });
       return redirectBack();
     }
     case "savePreset": {
       const name = formData.get("presetName");
       if (typeof name !== "string" || !name.trim()) {
-        return json({ error: "Preset name required" }, { status: 400 });
+        return data({ error: "Preset name required" }, { status: 400 });
       }
       const g = await getGiveawayById(id, userId);
-      if (!g) return json({ error: "Giveaway not found" }, { status: 404 });
+      if (!g) return data({ error: "Giveaway not found" }, { status: 404 });
       await createGiveawayPreset(userId, {
         name: name.trim(),
         scopeType: g.scopeType,
@@ -525,11 +520,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
             ? selectionModeRaw
             : undefined,
       });
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return data(result, { status: 400 });
       return redirectBack();
     }
     default:
-      return json({ error: "Unknown intent" }, { status: 400 });
+      return data({ error: "Unknown intent" }, { status: 400 });
   }
 }
 
@@ -599,9 +594,9 @@ function DashboardGiveawayDetailPageInner() {
 export default function DashboardGiveawayDetailPage() {
   const params = useParams();
   const id = params["id"] ?? "";
-  const { giveawayDetail } = useLoaderData() as {
+  const { giveawayDetail } = useLoaderData<{
     giveawayDetail: Promise<GiveawayDetailLoaderPayload>;
-  };
+  }>();
   const retryTo =
     id !== "" ? `/dashboard/giveaway/detail/${id}` : "/dashboard/giveaway";
 

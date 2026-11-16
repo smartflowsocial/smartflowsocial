@@ -7,16 +7,12 @@
  * Compare this with the original api.upload.tsx to see the improvements.
  */
 
-import {
-  json,
-  type ActionFunctionArgs,
-  unstable_composeUploadHandlers as composeUploadHandlers,
-  unstable_createMemoryUploadHandler as createMemoryUploadHandler,
-  unstable_parseMultipartFormData as parseMultipartFormData,
-} from "@remix-run/node";
+import { parseFormData } from "@remix-run/form-data-parser";
+import { json, type ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { createUploadHandler } from "~/features/upload/s3.server";
+import { MAX_FILE_SIZE } from "~/features/upload/validation.server";
 import {
   withActionErrorHandling,
   createSuccessResponse,
@@ -43,13 +39,11 @@ export const action = withActionErrorHandling(
     // Parse the multipart form data
     let formData: FormData;
     try {
-      const uploadHandler = composeUploadHandlers(
-        createUploadHandler(userId),
-        createMemoryUploadHandler({
-          maxPartSize: 100 * 1024 * 1024, // 100MB max for videos
-        })
+      formData = await parseFormData(
+        request,
+        { maxFileSize: MAX_FILE_SIZE },
+        createUploadHandler(userId)
       );
-      formData = await parseMultipartFormData(request, uploadHandler);
     } catch (error) {
       throw new ExternalServiceError(
         "Failed to parse multipart form data",
@@ -96,16 +90,13 @@ export async function actionManual({ request }: ActionFunctionArgs) {
       });
     }
 
-    const uploadHandler = composeUploadHandlers(
-      createUploadHandler(userId),
-      createMemoryUploadHandler({
-        maxPartSize: 100 * 1024 * 1024,
-      })
-    );
-
     let formData: FormData;
     try {
-      formData = await parseMultipartFormData(request, uploadHandler);
+      formData = await parseFormData(
+        request,
+        { maxFileSize: MAX_FILE_SIZE },
+        createUploadHandler(userId)
+      );
     } catch (error) {
       throw new ExternalServiceError(
         "Failed to parse multipart form data",

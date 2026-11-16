@@ -1,7 +1,7 @@
-import { useRevalidator, useRouteLoaderData } from "@remix-run/react";
 import { Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useRevalidator, useRouteLoaderData } from "react-router";
 
 import {
   BTCPAY_CONFIRMATION_WATCH_STORAGE_KEY,
@@ -27,7 +27,7 @@ function syncWatchFromStorage(): ReturnType<
  * was detected; keeps polling until the first on-chain confirmation completes access.
  */
 export function BtcpayConfirmationWatchBar() {
-  const loaderData = useRouteLoaderData("root");
+  const loaderData = useRouteLoaderData<unknown>("root");
   const user =
     loaderData &&
     typeof loaderData === "object" &&
@@ -47,7 +47,7 @@ export function BtcpayConfirmationWatchBar() {
 
   const watch = useMemo(() => {
     if (!user) return null;
-    void storageEpoch;
+    storageEpoch;
     return syncWatchFromStorage();
   }, [user, storageEpoch]);
 
@@ -129,7 +129,7 @@ export function BtcpayConfirmationWatchBar() {
       if (data.success && data.paid) {
         clearBtcpayConfirmationWatch();
         toast.success("Bitcoin payment confirmed  -  your plan is active.");
-        revalidator.revalidate();
+        void revalidator.revalidate();
         return;
       }
 

@@ -1,7 +1,7 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { ListTree, Plus } from "lucide-react";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 
 import {
   AlertDialog,
@@ -165,7 +165,7 @@ export function QueueTypesSettings({
           setQueueTypesState((prev) => prev.filter((q) => q.id !== deletedId))
         );
       }
-      revalidator.revalidate();
+      void revalidator.revalidate();
       toast.success("Queue type deleted successfully!");
     }
     if (data?.error) {
@@ -179,7 +179,7 @@ export function QueueTypesSettings({
     if (data?.success && data.queueType) {
       if (lastRevalidatedFormRef.current !== data) {
         lastRevalidatedFormRef.current = data;
-        revalidator.revalidate();
+        void revalidator.revalidate();
       }
     }
     if (data?.error) {
@@ -228,7 +228,7 @@ export function QueueTypesSettings({
     formData.set("_action", "delete_queue_type");
     formData.set("id", queuePendingDelete.id);
     formData.set("deleteMode", deleteMode);
-    deleteFetcher.submit(formData, { method: "post" });
+    void deleteFetcher.submit(formData, { method: "post" });
     setQueuePendingDelete(null);
   };
 

@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 export interface ReplyTemplate {
   id: string;
@@ -28,7 +28,7 @@ export function useReplyTemplates(options?: { enabled?: boolean }) {
   const load = useCallback(() => {
     if (enabled) {
       didMutateRef.current = false;
-      fetcherRef.current.load(API);
+      void fetcherRef.current.load(API);
     }
   }, [enabled]);
 
@@ -42,14 +42,14 @@ export function useReplyTemplates(options?: { enabled?: boolean }) {
     }
     if (didMutateRef.current && fetcher.data.success) {
       didMutateRef.current = false;
-      fetcher.load(API);
+      void fetcher.load(API);
     }
   }, [fetcher.state, fetcher.data, fetcher]);
 
   const createTemplate = useCallback(
     (slug: string, body: string) => {
       didMutateRef.current = true;
-      fetcher.submit(
+      void fetcher.submit(
         { action: "create", slug, body },
         { method: "POST", action: API, encType: "application/json" }
       );
@@ -60,7 +60,7 @@ export function useReplyTemplates(options?: { enabled?: boolean }) {
   const deleteTemplate = useCallback(
     (id: string) => {
       didMutateRef.current = true;
-      fetcher.submit(
+      void fetcher.submit(
         { action: "delete", id },
         { method: "POST", action: API, encType: "application/json" }
       );

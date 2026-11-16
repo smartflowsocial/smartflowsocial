@@ -3,14 +3,10 @@
  * Template-only composer: only "Save as template" and Cancel.
  */
 
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { UnifiedComposer } from "~/features/posts/composer";
 import { loadNewPostData } from "~/features/posts/server/composer";
@@ -21,7 +17,7 @@ import {
 } from "~/features/posts/types";
 import { NewPostHeader } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchPost } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseQueueType(qt: unknown): string | QueueType {
   if (typeof qt === "string") return qt;
@@ -65,8 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const data = await loadNewPostData(userId, null);
-  return json(data);
+  return await loadNewPostData(userId, null);
 }
 
 export const action = withCSRFProtection(

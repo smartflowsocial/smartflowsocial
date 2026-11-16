@@ -10,6 +10,8 @@ vi.mock("~/features/cache/primalCache.server", () => ({
   connectToPrimalCache: vi.fn(),
 }));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { connectToPrimalCache } from "~/features/cache/primalCache.server";
 import { loader } from "~/routes/api.thread-view";
 
@@ -42,11 +44,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -82,11 +87,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -118,11 +126,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -145,11 +156,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -176,11 +190,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -203,11 +220,14 @@ describe("API: Thread View", () => {
     it("should return validation error when event_id is missing", async () => {
       const request = new Request("http://localhost:3000/api/thread-view");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -232,11 +252,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -263,11 +286,14 @@ describe("API: Thread View", () => {
         "http://localhost:3000/api/thread-view?event_id=event-123"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

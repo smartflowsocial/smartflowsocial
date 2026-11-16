@@ -220,7 +220,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           formData.set("attachmentMeta", JSON.stringify(draftAttachmentMeta));
         }
         if (embedContext) formData.set("_embedContext", embedContext);
-        fetcher.submit(formData, fetcherSubmitOptions);
+        void fetcher.submit(formData, fetcherSubmitOptions);
       }
 
       function submitDraftSave(): void {
@@ -253,7 +253,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         );
         if (embedContext) formData.set("_embedContext", embedContext);
         appendComposerContextFormData(formData);
-        fetcher.submit(formData, fetcherSubmitOptions);
+        void fetcher.submit(formData, fetcherSubmitOptions);
       }
 
       if (isTemplateMode && submitType === "save-as-template") {
@@ -442,7 +442,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
-          fetcher.submit(threadPayload, fetcherSubmitOptions);
+          void fetcher.submit(threadPayload, fetcherSubmitOptions);
         } catch (err) {
           // The pending-publish state machine owns whether this is a
           // resumable signer-unavailable error or a terminal failure;
@@ -657,7 +657,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
           appendComposerContextFormData(payload);
           setLastPublishFailed(false);
           setPublishSubmitInFlight(true);
-          fetcher.submit(payload, fetcherSubmitOptions);
+          void fetcher.submit(payload, fetcherSubmitOptions);
         } catch (error) {
           if (isAttemptStale(submissionId)) {
             // Stale attempts must not surface their late errors as a UI
@@ -862,7 +862,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
     setPartialThreadState(null);
     setLastPublishFailed(false);
     setPublishSubmitInFlight(true);
-    fetcher.submit(threadPayload, fetcherSubmitOptions);
+    void fetcher.submit(threadPayload, fetcherSubmitOptions);
   }, [
     partialThreadState,
     threadSegments,

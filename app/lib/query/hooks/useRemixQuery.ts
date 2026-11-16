@@ -6,8 +6,8 @@
  * or create custom hooks that combine Remix loaders with TanStack Query.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
+import { useFetcher } from "react-router";
 
 /**
  * Hook to use Remix loader data with TanStack Query
@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
  *
  * @example
  * ```tsx
- * const loaderData = useLoaderData();
+ * const loaderData = useLoaderData<unknown>();
  * const { data, refetch } = useRemixQuery({
  *   queryKey: ['dashboard-data'],
  *   initialData: loaderData,
@@ -40,7 +40,7 @@ export function useRemixQuery<TData = unknown>({
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = window.location.pathname + window.location.search;
-      fetcher.load(url);
+      void fetcher.load(url);
       // Wait for fetcher to complete
       return new Promise<TData>((resolve) => {
         const checkFetcher = () => {

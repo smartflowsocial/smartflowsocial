@@ -40,6 +40,7 @@ vi.mock("~/lib/validation", () => ({
 }));
 
 // CancelScheduleUseCase is mocked above
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { handleCalendarReschedule } from "~/features/posts/calendar/index.server";
@@ -105,10 +106,12 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(
-        formData,
-        TEST_USER_ID,
-        TEST_SESSION_PUBKEY
+      const result = await asRouteResponse(
+        await handleCalendarReschedule(
+          formData,
+          TEST_USER_ID,
+          TEST_SESSION_PUBKEY
+        )
       );
 
       expect(getPostById).toHaveBeenCalledWith({
@@ -118,10 +121,7 @@ describe("Calendar Action Reschedule", () => {
       expect(reschedulePost).toHaveBeenCalled();
       expect(mockSchedulePostExecute).toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -144,16 +144,15 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(
-        formData,
-        TEST_USER_ID,
-        TEST_SESSION_PUBKEY
+      const result = await asRouteResponse(
+        await handleCalendarReschedule(
+          formData,
+          TEST_USER_ID,
+          TEST_SESSION_PUBKEY
+        )
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -175,10 +174,12 @@ describe("Calendar Action Reschedule", () => {
       const formData = new FormData();
       // Missing required fields
 
-      const result = await handleCalendarReschedule(
-        formData,
-        TEST_USER_ID,
-        TEST_SESSION_PUBKEY
+      const result = await asRouteResponse(
+        await handleCalendarReschedule(
+          formData,
+          TEST_USER_ID,
+          TEST_SESSION_PUBKEY
+        )
       );
 
       expect(result).toBeInstanceOf(Response);
@@ -214,20 +215,19 @@ describe("Calendar Action Reschedule", () => {
       formData.append("postId", TEST_POST_ID);
       formData.append("newTime", "1704110400");
 
-      const result = await handleCalendarReschedule(
-        formData,
-        TEST_USER_ID,
-        TEST_SESSION_PUBKEY
+      const result = await asRouteResponse(
+        await handleCalendarReschedule(
+          formData,
+          TEST_USER_ID,
+          TEST_SESSION_PUBKEY
+        )
       );
 
       expect(mockSchedulePostExecute).not.toHaveBeenCalled();
       expect(reschedulePost).toHaveBeenCalled();
       expect(mockSchedulePostExecute).not.toHaveBeenCalled(); // No signed event, so no scheduling
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response

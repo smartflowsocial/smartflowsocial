@@ -2,7 +2,6 @@
  * Drafts table  -  resume-first layout (desktop table + mobile cards).
  */
 
-import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Repeat } from "lucide-react";
@@ -13,6 +12,7 @@ import {
   type Key,
   type KeyboardEvent,
 } from "react";
+import { Link, useFetcher, useNavigate } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -182,7 +182,7 @@ export function DraftsTable({
     }
     void queryClient.invalidateQueries({ queryKey: draftsKeys.all });
     if (draftsActionFetcher.data.newPostId) {
-      navigate(
+      void navigate(
         getShortDraftEditRedirectPath(draftsActionFetcher.data.newPostId)
       );
     }
@@ -473,7 +473,7 @@ export function DraftsTable({
                               const fd = new FormData();
                               fd.set("_action", "duplicateDraftPost");
                               fd.set("postId", post.id);
-                              draftsActionFetcher.submit(fd, {
+                              void draftsActionFetcher.submit(fd, {
                                 method: "post",
                                 action: "/dashboard/drafts",
                               });
@@ -492,7 +492,7 @@ export function DraftsTable({
                               fd.set("_action", "convertDraftToTemplate");
                               fd.set("postId", post.id);
                               fd.set("templateName", name);
-                              draftsActionFetcher.submit(fd, {
+                              void draftsActionFetcher.submit(fd, {
                                 method: "post",
                                 action: "/dashboard/drafts",
                               });

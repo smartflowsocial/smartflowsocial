@@ -3,9 +3,9 @@
  * Delete uses mixed action; queue assign / duplicate require post-only selection.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -80,7 +80,10 @@ export function MixedDraftsBulkActions({
     fd.set("_action", "bulkAssignQueue");
     fd.set("postIds", JSON.stringify(postOnlyIds));
     fd.set("queueType", queueTarget);
-    assignFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
+    void assignFetcher.submit(fd, {
+      method: "post",
+      action: "/dashboard/drafts",
+    });
   };
 
   const handleBulkDuplicate = () => {
@@ -88,7 +91,7 @@ export function MixedDraftsBulkActions({
     const fd = new FormData();
     fd.set("_action", "bulkDuplicateDrafts");
     fd.set("postIds", JSON.stringify(postOnlyIds));
-    dupFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
+    void dupFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
   };
 
   return (

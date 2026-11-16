@@ -13,6 +13,7 @@ const sharedExternal = [
   "sharp",
   "@prisma/client",
   "@prisma/engines",
+  "vite",
 ];
 
 export function bundleOptions(entry, { watch }) {

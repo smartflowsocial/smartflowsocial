@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFetcher } from "react-router";
 
 import {
   isAttachedFollowUpDraftPost,
@@ -164,7 +164,7 @@ export function useDraftsState({
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
     }
 
-    bulkDeleteFetcher.submit(formData, { method: "post" });
+    void bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
   // Clear selected posts after bulk operations

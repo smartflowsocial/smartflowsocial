@@ -1,5 +1,5 @@
-import { useFetcher, useLocation } from "@remix-run/react";
 import { useState } from "react";
+import { useFetcher, useLocation } from "react-router";
 
 import type { ScheduleData, TemplateFetcher, Template } from "../types";
 

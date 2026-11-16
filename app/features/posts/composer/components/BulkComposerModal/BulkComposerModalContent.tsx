@@ -2,9 +2,9 @@
  * Bulk composer modal: same V2 layout as the page (canvas + settings rail).
  */
 
-import type { FetcherWithComponents } from "@remix-run/react";
 import { Hash, Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import type { FetcherWithComponents } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {

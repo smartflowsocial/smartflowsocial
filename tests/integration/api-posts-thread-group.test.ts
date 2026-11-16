@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(() => Promise.resolve("user-1")),
 }));
 
@@ -14,12 +14,14 @@ vi.mock("~/features/posts/server", () => ({
     mockGetSegments(...args),
 }));
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { loader } from "~/routes/api.posts.thread-group";
 
 const loaderArgs = {
   params: {},
   context: {},
+  url: new URL("http://localhost:3000/"),
+  pattern: "*",
 } as const;
 
 describe("API: posts thread-group", () => {

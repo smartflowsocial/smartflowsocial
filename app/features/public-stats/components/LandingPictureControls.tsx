@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
+import { useFetcher } from "react-router";
 
 import { Switch } from "~/components/ui/switch";
 import { ToggleRowSection } from "~/features/settings/components/patterns";
@@ -16,7 +16,7 @@ export function LandingPictureSettings() {
   const fetcher = useFetcher<Presence>();
 
   useEffect(() => {
-    fetcher.load(ENDPOINT);
+    void fetcher.load(ENDPOINT);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes every render
   }, []);
 
@@ -36,7 +36,7 @@ export function LandingPictureSettings() {
             const formData = new FormData();
             formData.set("intent", "visibility");
             formData.set("hideFromLanding", next ? "false" : "true");
-            fetcher.submit(formData, { method: "post", action: ENDPOINT });
+            void fetcher.submit(formData, { method: "post", action: ENDPOINT });
           }}
         />
       }
@@ -49,7 +49,7 @@ export function LandingPictureNotice() {
   const dismiss = useFetcher<Presence>();
 
   useEffect(() => {
-    loader.load(ENDPOINT);
+    void loader.load(ENDPOINT);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes every render
   }, []);
 
@@ -68,7 +68,7 @@ export function LandingPictureNotice() {
           onClick={() => {
             const formData = new FormData();
             formData.set("intent", "dismiss");
-            dismiss.submit(formData, { method: "post", action: ENDPOINT });
+            void dismiss.submit(formData, { method: "post", action: ENDPOINT });
           }}
         >
           Got it

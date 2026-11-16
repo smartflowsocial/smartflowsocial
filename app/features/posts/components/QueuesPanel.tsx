@@ -1,4 +1,3 @@
-import { Link, useFetcher, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ListPlus,
@@ -10,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { Link, useFetcher, useRevalidator } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -228,7 +228,7 @@ export function QueuesPanel({
 
       if (!isQueueToggleSuccess(data)) return;
 
-      revalidator.revalidate();
+      void revalidator.revalidate();
 
       const meta = lastActionMetaRef.current;
       lastActionMetaRef.current = null;
@@ -270,7 +270,7 @@ export function QueuesPanel({
               toast.error(outcome.message);
             }
             invalidateDependentCaches(queryClient);
-            revalidator.revalidate();
+            void revalidator.revalidate();
           })();
         }
         return;
@@ -317,7 +317,10 @@ export function QueuesPanel({
     }
     setFeedback(null);
     setPendingIntent({ queueId: queue.id, action });
-    toggleFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
+    void toggleFetcher.submit(fd, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
   };
 
   return (

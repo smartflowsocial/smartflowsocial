@@ -1,7 +1,6 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { logout, requireUserId } from "~/features/auth";
+import { logout, requireUserId } from "~/features/auth/auth.server";
 import {
   deletionRequestIsConfirmed,
   deleteAccountData,
@@ -10,13 +9,14 @@ import {
   deletePlannedAccountObjects,
   planUnsharedOwnedObjects,
 } from "~/features/user/data/account-object-cleanup.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logError } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return jsonResponse({ error: "Method not allowed" }, { status: 405 });
     }
     const userId = await requireUserId(request);
     const form = await request.formData();
@@ -29,7 +29,7 @@ export const action = withCSRFProtection(
           typeof acknowledgeRelays === "string" ? acknowledgeRelays : null,
       })
     ) {
-      return json(
+      return jsonResponse(
         {
           error:
             'Type "delete my account" and confirm that relays keep published events.',
@@ -45,7 +45,7 @@ export const action = withCSRFProtection(
         message: "Account deletion stopped before removing the account",
         userId,
       });
-      return json(
+      return jsonResponse(
         {
           error: "Could not inspect stored media. The account was not deleted.",
         },
@@ -54,7 +54,7 @@ export const action = withCSRFProtection(
     }
     const deleted = await deleteAccountData(userId);
     if (!deleted) {
-      return json({ error: "Account not found" }, { status: 404 });
+      return jsonResponse({ error: "Account not found" }, { status: 404 });
     }
     try {
       await deletePlannedAccountObjects(userId, objectPlan);

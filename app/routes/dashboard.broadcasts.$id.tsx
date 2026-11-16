@@ -1,21 +1,22 @@
 import { BroadcastSuppressionReasonCode } from "@prisma/client";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { Suspense, useEffect, useState } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
+  redirect,
+  data,
   Await,
   Form,
   Link,
   useLoaderData,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { Suspense, useEffect, useState } from "react";
+} from "react-router";
 
 import { BroadcastDetailPageSkeleton } from "~/components/broadcast/BroadcastDetailPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   addBroadcastSuppression,
   cancelBroadcastCampaign,
@@ -34,7 +35,6 @@ import {
 } from "~/features/campaign-ui";
 import { requireAnySubscription } from "~/features/payments";
 import { formatNpubShort } from "~/lib/nostr-conversion";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 async function getBroadcastDetailData({
@@ -103,13 +103,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     page,
   });
 
-  if (isRemixResourceRequest(request)) {
-    return json(await detailPromise);
-  }
-
-  return defer<{ detail: Promise<BroadcastDetailLoaderData> }>({
+  return {
     detail: detailPromise,
-  });
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -117,7 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   await requireAnySubscription(userId);
 
   const id = params["id"];
-  if (!id) return json({ error: "Not found" }, { status: 404 });
+  if (!id) return data({ error: "Not found" }, { status: 404 });
 
   const form = await request.formData();
   const intent = form.get("intent");
@@ -153,7 +149,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId,
       { take: 5000, skip: 0 }
     );
-    if (!full) return json({ error: "Not found" }, { status: 404 });
+    if (!full) return data({ error: "Not found" }, { status: 404 });
     const header = [
       "status",
       "recipientPubkey",
@@ -191,7 +187,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId,
       { take: 5000, skip: 0 }
     );
-    if (!full) return json({ error: "Not found" }, { status: 404 });
+    if (!full) return data({ error: "Not found" }, { status: 404 });
     const c = full.campaign;
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -231,7 +227,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function badgeClass(kind: string) {
@@ -263,11 +259,7 @@ export default function BroadcastDetailRoute() {
           <DeferredRouteAwaitError retryTo="/dashboard/broadcasts" />
         }
       >
-        {(loaded) => (
-          <BroadcastDetailRouteLoaded
-            data={loaded as BroadcastDetailLoaderData}
-          />
-        )}
+        {(loaded) => <BroadcastDetailRouteLoaded data={loaded} />}
       </Await>
     </Suspense>
   );
@@ -302,7 +294,7 @@ function BroadcastDetailRouteLoaded({
       campaign.status === "SCHEDULED"
     ) {
       const t = setInterval(() => {
-        revalidator.revalidate();
+        void revalidator.revalidate();
       }, 5000);
       return () => clearInterval(t);
     }

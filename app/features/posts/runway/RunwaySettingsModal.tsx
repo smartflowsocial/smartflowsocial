@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -106,7 +106,7 @@ export function RunwaySettingsModal({
     formData.set("redThresholdDays", String(redThresholdDays));
     formData.set("orangeThresholdDays", String(orangeThresholdDays));
     selectedQueueNames.forEach((name) => formData.append("queueNames", name));
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const toggleQueue = (name: string) => {

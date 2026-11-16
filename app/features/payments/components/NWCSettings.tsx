@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -55,13 +55,13 @@ export function NWCSettings({
       },
       "update_nwc"
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   });
 
   const handleClear = () => {
     const formData = new FormData();
     formData.set("_action", "clear_nwc");
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const submitToggleOnly = (nextEnabled: boolean) => {
@@ -69,7 +69,7 @@ export function NWCSettings({
       { nwcEnabled: nextEnabled, nwcString: "" },
       "update_nwc"
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   useEffect(() => {

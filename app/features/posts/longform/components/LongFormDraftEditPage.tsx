@@ -1,10 +1,5 @@
-import {
-  Form,
-  useActionData,
-  useLoaderData,
-  useNavigate,
-} from "@remix-run/react";
 import { useState } from "react";
+import { Form, useActionData, useLoaderData, useNavigate } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { DraftPickerModal, DraftVersionHistory } from "~/features/posts/drafts";
@@ -250,7 +245,9 @@ export default function LongFormDraftEditPage() {
         open={draftPickerOpen}
         onClose={() => setDraftPickerOpen(false)}
         type="longform"
-        onSelect={(id) => navigate(`/dashboard/drafts/longform/edit/${id}`)}
+        onSelect={(id) => {
+          void navigate(`/dashboard/drafts/longform/edit/${id}`);
+        }}
       />
 
       <ErrorMessage

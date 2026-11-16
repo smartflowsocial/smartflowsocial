@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { Plus, Edit2, Trash2, Hash } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
+import { useFetcher } from "react-router";
 
 import {
   AlertDialog,
@@ -143,7 +143,7 @@ export function HashtagPresetsSettings({
       tags: normalizeHashtagPresetTags(data.tags),
     };
     const formData = formDataToFormData(normalized, "create_hashtag_preset");
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
     setIsCreateDialogOpen(false);
   });
 
@@ -154,7 +154,7 @@ export function HashtagPresetsSettings({
       tags: normalizeHashtagPresetTags(data.tags),
     };
     const formData = formDataToFormData(normalized, "update_hashtag_preset");
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
     setEditingPreset(null);
     setIsEditDialogOpen(false);
   });
@@ -163,7 +163,7 @@ export function HashtagPresetsSettings({
     const formData = new FormData();
     formData.set("_action", "delete_hashtag_preset");
     formData.set("id", id);
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const openEditDialog = (preset: HashTagPreset) => {

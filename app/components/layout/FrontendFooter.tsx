@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { Logo } from "~/components/ui/Logo";
 import { BRAND_MARKETING_URL, BRAND_NAME } from "~/lib/brand";

@@ -1,5 +1,5 @@
 // learn more: https://fly.io/docs/reference/configuration/#services-http_checks
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { performHealthCheck, handleHealthCheckError } from "~/features/infra";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";

@@ -1,4 +1,3 @@
-import { Link, useLocation, useNavigate } from "@remix-run/react";
 import {
   BarChart3,
   CalendarDays,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 import { useCallback, useState, useEffect } from "react";
 import type { MouseEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import {
   DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE,
@@ -258,7 +258,7 @@ function OperatorAdminNavItem({
     // Avoid Remix <Link prefetch="intent"> here: prefetching /dashboard/admin can look like a
     // full reload and may interact badly with loader responses; client navigate is stable.
     e.preventDefault();
-    navigate("/dashboard/admin");
+    void navigate("/dashboard/admin");
     onMobileNavActiveClick?.();
   };
 

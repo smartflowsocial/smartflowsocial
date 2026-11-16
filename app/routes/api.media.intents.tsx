@@ -1,10 +1,10 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { createMediaIngestIntent } from "~/features/upload";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 interface IntentFilePayload {
   fileName: string;
@@ -39,7 +39,7 @@ export const action = withCSRFProtection(
         files.length === 0 ||
         !files.every((file) => isIntentFilePayload(file))
       ) {
-        return json({ error: "invalid_request" }, { status: 400 });
+        return jsonResponse({ error: "invalid_request" }, { status: 400 });
       }
       const intent = await createMediaIngestIntent(userId, files, {
         composeSessionId:
@@ -65,7 +65,7 @@ export const action = withCSRFProtection(
             : null,
         requestId,
       });
-      return json(intent);
+      return jsonResponse(intent);
     } catch (error) {
       if (error instanceof Response) return error;
       const { handleActionError } = await import("~/lib/error-handler.server");
@@ -75,5 +75,5 @@ export const action = withCSRFProtection(
 );
 
 export async function loader() {
-  return json({ message: "Media intent endpoint" });
+  return jsonResponse({ message: "Media intent endpoint" });
 }

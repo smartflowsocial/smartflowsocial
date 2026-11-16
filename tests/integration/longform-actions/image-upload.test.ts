@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import "./shared-setup";
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   createMockUser,
@@ -50,7 +51,9 @@ describe("Image Upload Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -82,7 +85,9 @@ describe("Image Upload Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -121,7 +126,9 @@ describe("Image Upload Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

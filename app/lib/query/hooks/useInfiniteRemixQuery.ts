@@ -6,20 +6,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
-import { fetchRemixLoader } from "~/lib/remix/single-fetch";
-
-function loaderPathname(url: string): string {
-  try {
-    const base =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost";
-    return new URL(url, base).pathname;
-  } catch {
-    return url.split("?")[0] ?? url;
-  }
-}
+import { fetchJson, toDashboardJsonUrl } from "~/lib/remix/fetch-json";
 
 // PageData is a flexible type that allows any data structure
 // Some loaders have pagination, others don't - we make it optional
@@ -40,7 +27,7 @@ interface PageData {
  * @example
  * ```tsx
  * import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
- * const loaderData = useLoaderData();
+ * const loaderData = useLoaderData<unknown>();
  * const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteRemixQuery({
  *   queryKey: ["recyclables"],
  *   initialData: loaderData,
@@ -114,11 +101,7 @@ export function useInfiniteRemixQuery<TData extends PageData = PageData>({
         return Promise.reject(new Error("No URL provided"));
       }
 
-      // Single fetch returns turbo-stream at pathname.data. `_loader=json` makes
-      // the loader return plain data instead of defer(). The route id selects
-      // that loader via `_routes`.
-      const routeId = pathnameToRemixDataRouteId(loaderPathname(url));
-      const result = await fetchRemixLoader<TData>(url, routeId);
+      const result = await fetchJson<TData>(toDashboardJsonUrl(url));
       if (!result.ok || result.data == null) {
         throw new Error(`HTTP error! status: ${result.status}`);
       }

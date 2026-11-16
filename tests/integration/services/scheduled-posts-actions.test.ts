@@ -69,6 +69,7 @@ vi.mock("~/features/posts/longform/index.server", async (importOriginal) => {
 });
 
 // Use cases are mocked above; import handler from scheduling so it uses mocked use cases
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   TEST_POST_ID,
@@ -150,10 +151,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
       expect(mockScheduleExecute).toHaveBeenCalled();
       expect(mockResyncAttachedChildrenAfterParentMutation).toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -179,10 +177,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -202,10 +197,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -223,10 +215,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -289,10 +278,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
       expect(mockScheduleExecute).toHaveBeenCalled();
       expect(assertScheduleCapacity).toHaveBeenCalledWith(TEST_USER_ID, 0);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -329,10 +315,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
       expect(mockScheduleExecute).not.toHaveBeenCalled();
       expect(assertScheduleCapacity).not.toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -346,10 +329,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
 
       const result = await handleScheduledPostAction(formData, TEST_USER_ID);
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response
@@ -411,10 +391,7 @@ describe("Scheduled Posts Service Action Handlers", () => {
       expect(mockScheduleLongFormExecute).toHaveBeenCalled();
       expect(updateLongFormPost).toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Response.json() returns any
       const jsonResult = await responseObj.json();
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- Test assertion on any-typed response

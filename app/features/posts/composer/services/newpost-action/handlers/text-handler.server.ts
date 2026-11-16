@@ -2,7 +2,7 @@
  * Handler for text post actions
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";

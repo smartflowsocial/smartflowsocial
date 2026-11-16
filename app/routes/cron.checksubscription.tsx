@@ -1,11 +1,8 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
 import { checkAndRenewSubscriptions } from "~/features/payments";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
-import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
-
-ensureServerWebSocket();
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * Manual trigger for the subscription renewal sweep. The worker runs the same
@@ -26,7 +23,7 @@ export async function loader(args?: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
   return runSubscriptionCron(request);
 }

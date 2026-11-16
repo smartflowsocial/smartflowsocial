@@ -1,11 +1,13 @@
 import {
-  json,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
   type MetaFunction,
-} from "@remix-run/node";
+} from "react-router";
 
-import { refreshUserProfileIfEmpty, requireUser } from "~/features/auth";
+import {
+  refreshUserProfileIfEmpty,
+  requireUser,
+} from "~/features/auth/auth.server";
 import {
   requireDashboardSubscriptionContext,
   ensureUserHasFreePlan,
@@ -27,7 +29,7 @@ import {
   getFeedbackInboxPubkeyHex,
   loadFeedbackInboxKind10050Relays,
 } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 import { NOINDEX, resolveDashboardPageLabel } from "~/lib/seo-dashboard-routes";
@@ -87,7 +89,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     queueCountsByQueue,
   });
 
-  return json({
+  return {
     userId: user.id,
     user,
     currentSubscription: subscriptionData.currentSubscription,
@@ -101,7 +103,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     feedbackInboxKind10050Relays,
     nostrDmNip17Enabled: featureFlags.nostrDmNip17Enabled,
     nip88PollsEnabled: featureFlags.nip88PollsEnabled,
-  });
+  };
 };
 
 export const action = withCSRFProtection(

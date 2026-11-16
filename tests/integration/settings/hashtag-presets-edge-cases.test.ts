@@ -17,6 +17,7 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
   invalidateQueueTypesCache: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { handleHashtagPresetAction } from "~/features/settings/actions/hashtag-presets-actions.server";
@@ -44,10 +45,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "create_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -73,10 +71,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "create_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -107,10 +102,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "create_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -144,10 +136,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "create_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -179,10 +168,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "update_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -209,10 +195,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "update_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -239,10 +222,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "update_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -274,10 +254,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "update_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -308,10 +285,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "delete_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -340,10 +314,7 @@ describe("Hashtag Presets Action Handler - Edge Cases", () => {
         "delete_hashtag_preset",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&

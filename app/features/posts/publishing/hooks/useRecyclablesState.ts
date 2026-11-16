@@ -1,6 +1,6 @@
-import { useNavigate } from "@remix-run/react";
-import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router";
+import type { FetcherWithComponents, useFetcher } from "react-router";
 
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
 import {
@@ -370,7 +370,7 @@ export function useRecyclablesState({
     formData.append("_action", "bulkDelete");
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-    bulkDeleteFetcher.submit(formData, { method: "post" });
+    void bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
   const handleBulkRepost = () => {
@@ -380,7 +380,7 @@ export function useRecyclablesState({
     formData.append("_action", "bulkRepost");
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-    bulkRepostFetcher.submit(formData, { method: "post" });
+    void bulkRepostFetcher.submit(formData, { method: "post" });
   };
 
   const handleBulkScheduledRepost = () => {
@@ -390,7 +390,7 @@ export function useRecyclablesState({
     formData.append("_action", "bulkScheduledRepost");
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-    bulkRepostFetcher.submit(formData, { method: "post" });
+    void bulkRepostFetcher.submit(formData, { method: "post" });
   };
 
   const handleBulkQuote = () => {
@@ -400,7 +400,7 @@ export function useRecyclablesState({
     formData.append("_action", "bulkQuote");
     formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-    bulkRepostFetcher.submit(formData, { method: "post" });
+    void bulkRepostFetcher.submit(formData, { method: "post" });
   };
 
   // Handle bulk delete success
@@ -475,7 +475,7 @@ export function useRecyclablesState({
         setSelectedPosts(new Set());
       } else {
         sessionStorage.setItem("repostData", JSON.stringify(repostData));
-        navigate("/dashboard/bulkposts?mode=recycle", { replace: true });
+        void navigate("/dashboard/bulkposts?mode=recycle", { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -537,7 +537,7 @@ export function useRecyclablesState({
           "scheduledRepostData",
           JSON.stringify(scheduledRepostData)
         );
-        navigate("/dashboard/bulkposts?mode=repost", { replace: true });
+        void navigate("/dashboard/bulkposts?mode=repost", { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -556,7 +556,7 @@ export function useRecyclablesState({
         setSelectedPosts(new Set());
       } else {
         sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-        navigate("/dashboard/bulkposts?mode=quote", { replace: true });
+        void navigate("/dashboard/bulkposts?mode=quote", { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -723,7 +723,7 @@ export function useRecyclablesState({
           "quotePostData",
           JSON.stringify(data.quotePostData)
         );
-        navigate("/dashboard/bulkposts?mode=quote", { replace: true });
+        void navigate("/dashboard/bulkposts?mode=quote", { replace: true });
         return;
       }
 

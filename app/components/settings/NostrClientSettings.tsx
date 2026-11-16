@@ -2,8 +2,8 @@
  * Preferred Nostr Client  -  where "View note/article" links open.
  */
 
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -72,7 +72,7 @@ export function NostrClientSettings({
 
   useEffect(() => {
     if (fetcher.data?.success) {
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     }
     // Do not depend on `revalidator`: its identity changes after each revalidate and would loop forever.
   }, [fetcher.data?.success]);
@@ -94,7 +94,7 @@ export function NostrClientSettings({
       if (client === "CUSTOM" && url.trim()) {
         formData.append("customNostrClientBaseUrl", url.trim());
       }
-      fetcher.submit(formData, {
+      void fetcher.submit(formData, {
         method: "post",
         action: "/dashboard/settings",
       });

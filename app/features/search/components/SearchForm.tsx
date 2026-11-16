@@ -2,9 +2,9 @@
  * Search form component
  */
 
-import { useFetcher } from "@remix-run/react";
 import { Loader2, Search } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 
 import {

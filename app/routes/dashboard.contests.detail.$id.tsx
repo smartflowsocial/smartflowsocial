@@ -1,10 +1,15 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
-import { Await, useLoaderData, useParams } from "@remix-run/react";
 import { Suspense } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import {
+  redirect,
+  data as routeData,
+  Await,
+  useLoaderData,
+  useParams,
+} from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   ContestDetailView,
   appendContestEventLog,
@@ -32,9 +37,8 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
-type ContestIntentResponse = Response;
+type ContestIntentResponse = Response | ReturnType<typeof routeData> | object;
 
 function parseSpendCapSats(formData: FormData): number | undefined {
   const spendCapSatsRaw = String(formData.get("spendCapSats") ?? "").trim();
@@ -80,7 +84,7 @@ async function handleContestDetailIntent(args: {
   switch (intent) {
     case "exportCsv": {
       const data = await getContestDetailPageData(userId, contestId);
-      if (!data) return json({ error: "Not found" }, { status: 404 });
+      if (!data) return routeData({ error: "Not found" }, { status: 404 });
       await appendContestEventLog(
         userId,
         contestId,
@@ -102,20 +106,20 @@ async function handleContestDetailIntent(args: {
         formData
       );
       if (!result.success) {
-        return json({ error: result.error }, { status: result.status });
+        return routeData({ error: result.error }, { status: result.status });
       }
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "launch": {
       const result = await launchContest(userId, contestId);
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "freeze": {
       const result = await freezeContestAtDeadline(userId, contestId);
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "lock": {
@@ -123,7 +127,7 @@ async function handleContestDetailIntent(args: {
         lockConfigHash: String(formData.get("lockConfigHash") ?? ""),
       });
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "payout": {
@@ -145,13 +149,13 @@ async function handleContestDetailIntent(args: {
         payoutNote
       );
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "runBatchPayout": {
       const usableNwc = await hasUsableNwc(userId);
       if (!usableNwc) {
-        return json(
+        return routeData(
           {
             success: false,
             error: PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED,
@@ -165,7 +169,7 @@ async function handleContestDetailIntent(args: {
       if (hasStep) {
         const stepIndex = Math.floor(Number(stepRaw));
         if (!Number.isFinite(stepIndex) || stepIndex < 0) {
-          return json({ error: "Invalid step index" }, { status: 400 });
+          return routeData({ error: "Invalid step index" }, { status: 400 });
         }
         const result = await runContestPayoutBatchStepWithNwc(
           userId,
@@ -177,15 +181,15 @@ async function handleContestDetailIntent(args: {
           }
         );
         if (!result.success) {
-          return json(result, { status: 400 });
+          return routeData(result, { status: 400 });
         }
-        return json(result);
+        return result;
       }
       const result = await runContestPayoutBatchWithNwc(userId, contestId, {
         trigger: "manual_trigger",
         spendCapSats: parseSpendCapSats(formData),
       });
-      if (!result.success) return json(result, { status: 400 });
+      if (!result.success) return routeData(result, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "updatePayoutSettings": {
@@ -195,7 +199,7 @@ async function handleContestDetailIntent(args: {
         parsePayoutSettings(formData)
       );
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "complete": {
@@ -205,7 +209,7 @@ async function handleContestDetailIntent(args: {
         ),
       });
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "cancel": {
@@ -215,20 +219,23 @@ async function handleContestDetailIntent(args: {
         String(formData.get("reason") ?? "")
       );
       if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+        return routeData({ error: result.error }, { status: 400 });
       return redirect("/dashboard/contests");
     }
     case "retryLaunchOrchestration": {
       const result = await retryContestLaunchOrchestration(userId, contestId);
       if (!result.success)
-        return json({ error: result.error ?? "Retry failed" }, { status: 400 });
+        return routeData(
+          { error: result.error ?? "Retry failed" },
+          { status: 400 }
+        );
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "rescheduleLaunch": {
       const raw = String(formData.get("scheduledFor") ?? "").trim();
       const scheduledFor = new Date(raw);
       if (!Number.isFinite(scheduledFor.getTime())) {
-        return json({ error: "Invalid schedule time" }, { status: 400 });
+        return routeData({ error: "Invalid schedule time" }, { status: 400 });
       }
       const result = await rescheduleContestLaunchOrchestration(
         userId,
@@ -236,14 +243,14 @@ async function handleContestDetailIntent(args: {
         scheduledFor
       );
       if (!result.success)
-        return json(
+        return routeData(
           { error: result.error ?? "Reschedule failed" },
           { status: 400 }
         );
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     default:
-      return json({ error: "Unknown intent" }, { status: 400 });
+      return routeData({ error: "Unknown intent" }, { status: 400 });
   }
 }
 
@@ -262,12 +269,9 @@ async function loadContestDetailData({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function loader(args: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(args.request)) {
-    return json(await loadContestDetailData(args));
-  }
-  return defer({
+  return {
     contestDetail: loadContestDetailData(args),
-  });
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -277,7 +281,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   const id = params["id"];
-  if (!id) return json({ error: "Not found" }, { status: 404 });
+  if (!id) return routeData({ error: "Not found" }, { status: 404 });
   const formData = await request.formData();
   const intent = formData.get("intent");
   return handleContestDetailIntent({
@@ -300,9 +304,9 @@ function ContestDetailRouteInner() {
 export default function ContestDetailRoute() {
   const params = useParams();
   const id = params["id"] ?? "";
-  const { contestDetail } = useLoaderData() as {
+  const { contestDetail } = useLoaderData<{
     contestDetail: Promise<ContestDetailLoaderPayload>;
-  };
+  }>();
   const retryTo =
     id !== "" ? `/dashboard/contests/detail/${id}` : "/dashboard/contests";
 

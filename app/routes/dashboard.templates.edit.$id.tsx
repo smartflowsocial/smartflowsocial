@@ -1,12 +1,12 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   TemplateEditPage,
   loadTemplateEditData,
   handleTemplateEditAction,
 } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {

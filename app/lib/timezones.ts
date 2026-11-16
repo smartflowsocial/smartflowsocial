@@ -6,6 +6,7 @@
  * consistent with the rest of the codebase.
  */
 
+import { isDev } from "~/lib/runtime-env";
 import { nowInTimezone } from "~/lib/temporal";
 
 export interface TimezoneOption {
@@ -578,7 +579,7 @@ function getTimezoneOffset(timezone: string): {
     return { offset, offsetMinutes };
   } catch (error) {
     // Fallback - log error in development but don't break the UI
-    if (process.env.NODE_ENV === "development") {
+    if (isDev) {
       console.warn(`Failed to calculate offset for ${timezone}:`, error);
     }
     return { offset: "GMT+0", offsetMinutes: 0 };
@@ -628,7 +629,7 @@ export function getAllTimezoneOptions(): TimezoneOption[] {
         };
       } catch (error) {
         // Skip invalid timezones gracefully
-        if (process.env.NODE_ENV === "development") {
+        if (isDev) {
           console.warn(`Skipping invalid timezone ${tz}:`, error);
         }
         return null;

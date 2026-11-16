@@ -3,13 +3,13 @@
  * Provides caching and background refetching for giveaway pages
  */
 
+import { useQuery } from "@tanstack/react-query";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
+} from "react-router";
 
 import type { PostDTO } from "~/features/posts/dtos";
 import { fromPostDTOArray } from "~/features/posts/dtos";
@@ -46,7 +46,7 @@ export function useGiveawayQuery() {
   const queueType = params["queueType"] ?? "all";
   const days = parseInt(searchParams.get("days") ?? "7", 10);
 
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   // Validate initial loader data
@@ -60,7 +60,7 @@ export function useGiveawayQuery() {
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = `/dashboard/giveaway${queueType !== "all" ? `/${queueType}` : ""}?days=${days}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       return new Promise<GiveawayLoaderData>((resolve, reject) => {
         const checkFetcher = () => {

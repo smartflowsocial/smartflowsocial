@@ -1,7 +1,7 @@
-import { Link, useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link, useFetcher } from "react-router";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

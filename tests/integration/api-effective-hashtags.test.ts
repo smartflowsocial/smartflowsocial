@@ -56,8 +56,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -105,8 +113,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -163,8 +179,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -194,8 +218,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -237,8 +269,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -269,8 +309,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -314,8 +362,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -351,7 +407,13 @@ describe("API: Effective Hashtags", () => {
         }
       );
 
-      const response = await action({ request, params: {}, context: {} });
+      const response = await action({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
       // Response should be rethrown by error handler, so we should get a redirect
       expect(response.status).toBe(302);
       expect(response.headers.get("Location")).toBe("/login");
@@ -371,8 +433,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -407,8 +477,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =
@@ -447,8 +525,16 @@ describe("API: Effective Hashtags", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const actionArgs: ActionArgs = { request, params: {}, context: {} };
+      const actionArgs: ActionArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await action(actionArgs);
       const dataRaw: unknown = await response.json();
       const data =

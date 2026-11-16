@@ -1,17 +1,17 @@
 import {
-  json,
   redirect,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
-} from "@remix-run/node";
+  data,
+} from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { isPollDraftPost, isThreadDraftPost } from "~/features/posts/drafts";
 import {
   handleDraftEditAction,
   loadDraftEditData,
 } from "~/features/posts/server/drafts";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -57,7 +57,7 @@ export const action = withCSRFProtection(
         result.error
       ) {
         /* eslint-enable @typescript-eslint/no-unnecessary-condition */
-        return json(result, { status: 400 });
+        return data(result, { status: 400 });
       }
 
       // Type narrowing: check if result has redirect property
@@ -72,7 +72,7 @@ export const action = withCSRFProtection(
         return redirect(result.redirect);
       }
 
-      return json(result);
+      return result;
     } catch (error) {
       const { handleActionError } = await import("~/lib/error-handler.server");
       return handleActionError(error);

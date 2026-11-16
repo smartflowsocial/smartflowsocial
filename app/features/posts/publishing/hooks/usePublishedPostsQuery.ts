@@ -3,14 +3,14 @@
  * Provides caching, background refetching, and optimistic updates
  */
 
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+} from "react-router";
 
 import { combineContent } from "~/features/posts/combined";
 import type { PostDTO, LongFormPostDTO } from "~/features/posts/dtos";
@@ -72,7 +72,7 @@ export function usePublishedPostsQuery() {
   const page = parseInt(searchParams.get("page") ?? "1", 10);
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   const validatedLoaderData = useMemo(() => {
@@ -95,7 +95,7 @@ export function usePublishedPostsQuery() {
     queryFn: async () => {
       // Use fetcher to refetch data
       const url = `/dashboard/published${queueType !== "all" ? `/${queueType}` : ""}?tab=${currentTab}&page=${page}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       // Wait for fetcher to complete using a more efficient approach
       return new Promise<PublishedPostsLoaderData>((resolve, reject) => {
@@ -171,7 +171,7 @@ export function usePublishedPostsInfiniteQuery() {
   const dateTo = searchParams.get("dateTo") ?? undefined;
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

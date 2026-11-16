@@ -3,9 +3,9 @@
  * Provides caching and background refetching for drafts page
  */
 
-import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useFetcher, useLoaderData, useParams } from "react-router";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
@@ -48,7 +48,7 @@ export function useDraftsQuery() {
   const queueType = params["queueType"] ?? "all";
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   const validatedLoaderData = useMemo(() => {
@@ -65,7 +65,7 @@ export function useDraftsQuery() {
     queryKey: draftsKeys.list(queueType),
     queryFn: async () => {
       const url = `/dashboard/drafts${queueType !== "all" ? `/${queueType}` : ""}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       return new Promise<DraftsLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -110,7 +110,7 @@ export function useDraftsInfiniteQuery() {
   const queueType = params["queueType"] ?? "all";
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

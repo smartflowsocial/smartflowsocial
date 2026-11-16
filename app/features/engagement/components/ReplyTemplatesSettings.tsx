@@ -1,7 +1,7 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Pencil, Trash2 } from "lucide-react";
 import { startTransition, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 
 import {
   AlertDialog,
@@ -67,7 +67,7 @@ export function ReplyTemplatesSettings({
       (templateFetcher.state === "idle" && templateFetcher.data?.success) ||
       (deleteFetcher.state === "idle" && deleteFetcher.data?.success)
     ) {
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     }
   }, [
     templateFetcher.state,
@@ -133,7 +133,7 @@ export function ReplyTemplatesSettings({
       fd.set("slug", slug);
       fd.set("body", body);
     }
-    templateFetcher.submit(fd, {
+    void templateFetcher.submit(fd, {
       method: "post",
       action: "/dashboard/settings",
     });
@@ -144,7 +144,10 @@ export function ReplyTemplatesSettings({
     const fd = new FormData();
     fd.set("_action", "reply_template_delete");
     fd.set("id", deleteTarget.id);
-    deleteFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
+    void deleteFetcher.submit(fd, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
     setDeleteTarget(null);
   };
 

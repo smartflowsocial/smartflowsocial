@@ -1,7 +1,8 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 
 import { getMediaAssetStatus, resolveMediaVariantUrl } from "~/features/upload";
+import { jsonResponse } from "~/lib/http/json-response";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
 export const meta: MetaFunction = ({ matches }) =>
@@ -14,20 +15,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const assetId = params["assetId"] ?? "";
   const variant = params["variant"] ?? "original";
   if (!assetId) {
-    return json({ error: "missing_asset_id" }, { status: 400 });
+    return jsonResponse({ error: "missing_asset_id" }, { status: 400 });
   }
 
   const status = await getMediaAssetStatus(assetId);
   if (!status) {
-    return json({ error: "media_not_found" }, { status: 404 });
+    return jsonResponse({ error: "media_not_found" }, { status: 404 });
   }
   if (status !== "ready") {
-    return json({ error: "media_not_ready", status }, { status: 409 });
+    return jsonResponse({ error: "media_not_ready", status }, { status: 409 });
   }
 
   const resolved = await resolveMediaVariantUrl(assetId, variant);
   if (!resolved) {
-    return json({ error: "variant_not_found" }, { status: 404 });
+    return jsonResponse({ error: "variant_not_found" }, { status: 404 });
   }
 
   return redirect(resolved, {

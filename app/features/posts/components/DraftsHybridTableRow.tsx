@@ -1,6 +1,6 @@
-import type { FetcherWithComponents } from "@remix-run/react";
 import { formatDistanceToNow } from "date-fns";
 import { Repeat } from "lucide-react";
+import type { FetcherWithComponents } from "react-router";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";

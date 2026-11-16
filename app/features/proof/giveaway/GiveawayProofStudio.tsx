@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 
 import { Badge } from "~/components/ui/badge";
 import type { ProofRatio } from "~/lib/proof";

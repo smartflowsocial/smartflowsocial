@@ -1,10 +1,5 @@
-import {
-  Outlet,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "@remix-run/react";
 import { useMemo } from "react";
+import { Outlet, useNavigate, useParams, useSearchParams } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -118,11 +113,11 @@ export default function DraftsPage() {
       : "12h";
 
   const resumeShortDraft = (post: PostData) => {
-    navigate(getShortDraftComposeUrl(post.id, post));
+    void navigate(getShortDraftComposeUrl(post.id, post));
   };
 
   const resumeLongform = (post: LongFormPostData | LongFormPostType) => {
-    navigate(getLongFormDraftEditUrl(post.id));
+    void navigate(getLongFormDraftEditUrl(post.id));
   };
 
   const latestDraft = useMemo((): CombinedContent | null => {

@@ -3,9 +3,9 @@
  * Provides caching and background refetching for calendar page
  */
 
-import { useLoaderData, useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import { useLoaderData, useParams, useSearchParams } from "react-router";
 
 import { combineContent } from "~/features/posts/combined";
 import type { PostDTO, LongFormPostDTO } from "~/features/posts/dtos";
@@ -57,7 +57,7 @@ export function useCalendarQuery() {
   const queryKey = useMemo(() => calendarKeys.list(queueType), [queueType]);
 
   const resolvedFromDefer = useDeferredRouteLoaderData();
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   const validatedLoaderData = useMemo(() => {
     if (resolvedFromDefer !== undefined && resolvedFromDefer !== null) {

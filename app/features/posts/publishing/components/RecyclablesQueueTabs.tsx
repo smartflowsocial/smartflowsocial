@@ -1,4 +1,4 @@
-import { Link, useRevalidator, useSearchParams } from "@remix-run/react";
+import { Link, useRevalidator, useSearchParams } from "react-router";
 
 import {
   getQueueAccentHex,
@@ -35,7 +35,11 @@ export function RecyclablesQueueTabs({
         <Link
           to={`/dashboard/recyclables${searchSuffix}`}
           prefetch="intent"
-          onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+          onClick={() => {
+            setTimeout(() => {
+              void revalidator.revalidate();
+            }, 0);
+          }}
           className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
             !currentQueueType
               ? "border-border text-text dark:border-brand/50 dark:text-link"
@@ -66,7 +70,11 @@ export function RecyclablesQueueTabs({
                 key={queueName}
                 to={`/dashboard/recyclables/${queueName}${searchSuffix}`}
                 prefetch="intent"
-                onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+                onClick={() => {
+                  setTimeout(() => {
+                    void revalidator.revalidate();
+                  }, 0);
+                }}
                 className={`${baseClasses} border-b-2`}
                 style={{
                   borderBottomColor: accentHex,
@@ -83,7 +91,11 @@ export function RecyclablesQueueTabs({
               key={queueName}
               to={`/dashboard/recyclables/${queueName}${searchSuffix}`}
               prefetch="intent"
-              onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+              onClick={() => {
+                setTimeout(() => {
+                  void revalidator.revalidate();
+                }, 0);
+              }}
               className={`${baseClasses} ${
                 isSelected
                   ? `${colors.border.replace("border-", "border-b-")} ${colors.text}`

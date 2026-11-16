@@ -1,7 +1,7 @@
-import { Link } from "@remix-run/react";
 import { Copy, ExternalLink } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";

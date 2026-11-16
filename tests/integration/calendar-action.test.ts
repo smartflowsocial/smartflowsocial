@@ -67,6 +67,7 @@ vi.mock(
   })
 );
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createFormData,
   TEST_USER_ID,
@@ -113,10 +114,7 @@ describe("Calendar Action Handler", () => {
       );
 
       expect(getPostById).toHaveBeenCalled();
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -154,10 +152,7 @@ describe("Calendar Action Handler", () => {
       );
 
       expect(getLongFormPost).toHaveBeenCalled();
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -198,10 +193,7 @@ describe("Calendar Action Handler", () => {
         userId: TEST_USER_ID,
       });
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -234,10 +226,7 @@ describe("Calendar Action Handler", () => {
         userId: TEST_USER_ID,
       });
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -260,10 +249,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -313,10 +299,7 @@ describe("Calendar Action Handler", () => {
       });
       expect(mockCascadeAttachedReschedule).toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -381,10 +364,7 @@ describe("Calendar Action Handler", () => {
       expect(mockSchedulePostExecute).toHaveBeenCalled();
       expect(mockResyncAttachedChildrenAfterParentMutation).toHaveBeenCalled();
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -439,10 +419,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -473,10 +450,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -510,10 +484,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -551,10 +522,7 @@ describe("Calendar Action Handler", () => {
       );
 
       // Should still succeed but without signed events
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -608,10 +576,7 @@ describe("Calendar Action Handler", () => {
         nostrEvent: null,
       });
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -678,10 +643,7 @@ describe("Calendar Action Handler", () => {
         nostrEvent,
       });
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -710,10 +672,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -744,10 +703,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -781,10 +737,7 @@ describe("Calendar Action Handler", () => {
         TEST_SESSION_PUBKEY
       );
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -826,10 +779,7 @@ describe("Calendar Action Handler", () => {
       );
 
       // Should still succeed but without signed events
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&

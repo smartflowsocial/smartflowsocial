@@ -1,9 +1,10 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
 import {
   fetchPrimalProfileData,
   processPrimalData,
 } from "~/features/auth/profile.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 /**
@@ -15,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const raw = url.searchParams.get("npub")?.trim();
   if (!raw) {
-    return json({ error: "Missing npub" }, { status: 400 });
+    return jsonResponse({ error: "Missing npub" }, { status: 400 });
   }
 
   const npub =
@@ -25,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ? raw
         : null;
   if (!npub) {
-    return json({ error: "Invalid npub" }, { status: 400 });
+    return jsonResponse({ error: "Invalid npub" }, { status: 400 });
   }
 
   try {
@@ -35,8 +36,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       typeof profile.lud16 === "string" && profile.lud16.trim() !== ""
         ? profile.lud16.trim()
         : null;
-    return json({ lud16 });
+    return jsonResponse({ lud16 });
   } catch {
-    return json({ lud16: null });
+    return jsonResponse({ lud16: null });
   }
 }

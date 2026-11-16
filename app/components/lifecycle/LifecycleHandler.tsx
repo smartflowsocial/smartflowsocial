@@ -3,9 +3,9 @@
  * Integrates lifecycle management with Remix revalidation
  */
 
-import { useFetcher, useLocation, useRevalidator } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
+import { useFetcher, useLocation, useRevalidator } from "react-router";
 
 import {
   initLifecycleHandlers,
@@ -77,7 +77,7 @@ export function LifecycleHandler() {
     }
     lastRevalidateAtRef.current = now;
     void triggerForegroundSync(queryClient);
-    revalidatorRef.current.revalidate();
+    void revalidatorRef.current.revalidate();
   }, [location.pathname, queryClient]);
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export function LifecycleHandler() {
     formData.set("_action", "apply_locale_defaults");
     formData.set("timeFormat", detectedTime);
     formData.set("dateFormat", detectedDate);
-    localeDefaultsFetcher.submit(formData, {
+    void localeDefaultsFetcher.submit(formData, {
       method: "post",
       action: "/dashboard/settings",
     });
@@ -131,7 +131,7 @@ export function LifecycleHandler() {
       localeDefaultsFetcher.state === "idle" &&
       localeDefaultsFetcher.data?.success
     ) {
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     }
   }, [localeDefaultsFetcher.state, localeDefaultsFetcher.data]);
 
@@ -157,7 +157,7 @@ export function LifecycleHandler() {
       // Defer sync to avoid setState during render
       setTimeout(() => {
         void triggerForegroundSync(queryClient);
-        revalidatorRef.current.revalidate();
+        void revalidatorRef.current.revalidate();
       }, 0);
     }
 

@@ -2,7 +2,7 @@
  * Action branch handlers for new longform compose (draft, publish, schedule, upload).
  */
 
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "react-router";
 
 import {
   assertScheduleCapacity,
@@ -42,10 +42,7 @@ import {
 /**
  * Handle image upload action
  */
-export async function handleImageUpload(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+export async function handleImageUpload(userId: string, formData: FormData) {
   const imageFileRaw = formData.get("imageFile");
   const imageFile = imageFileRaw;
 
@@ -55,7 +52,7 @@ export async function handleImageUpload(
     typeof imageFile === "string" &&
     imageFile.startsWith("https://")
   ) {
-    return json({ success: true, imageUrl: imageFile });
+    return { success: true, imageUrl: imageFile };
   }
 
   // If it's a File object, process it using S3 upload
@@ -82,7 +79,7 @@ export async function handleImageUpload(
         undefined,
         file.type
       );
-      return json({ success: true, imageUrl });
+      return { success: true, imageUrl };
     } catch (error) {
       const { ExternalServiceError } = await import("~/lib/errors");
       const { handleActionError } = await import("~/lib/error-handler.server");
@@ -100,12 +97,12 @@ export async function handleImageUpload(
   }
 
   if (!imageFile) {
-    return json(
+    return data(
       { success: false, error: "No image file provided." },
       { status: 400 }
     );
   } else {
-    return json(
+    return data(
       {
         success: false,
         error: "Image upload failed. Please try again.",
@@ -124,7 +121,7 @@ async function persistDraft(
   formData: FormData,
   queueType: string,
   hashTagPresetId: string | null
-): Promise<Response | { longFormPostId: string }> {
+) {
   const longFormPostIdRaw = formData.get("longFormPostId");
   const existingId =
     longFormPostIdRaw != null && String(longFormPostIdRaw).trim() !== ""
@@ -144,11 +141,11 @@ async function persistDraft(
   );
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   const markdownContent = editorContent.trim();
@@ -158,10 +155,10 @@ async function persistDraft(
   if (existingId) {
     const existing = await getLongFormPost({ id: existingId, userId });
     if (!existing) {
-      return json({ error: "Draft not found" }, { status: 404 });
+      return data({ error: "Draft not found" }, { status: 404 });
     }
     if (existing.currentState !== "DRAFT") {
-      return json(
+      return data(
         { error: "Only draft articles can be updated from compose" },
         { status: 400 }
       );
@@ -206,14 +203,20 @@ export async function handleSaveDraft(
   queueType: string,
   hashTagPresetId: string | null,
   _correlationId?: string
-): Promise<Response> {
+) {
   const persistResult = await persistDraft(
     userId,
     formData,
     queueType,
     hashTagPresetId
   );
-  if (persistResult instanceof Response) return persistResult;
+  if (
+    typeof persistResult !== "object" ||
+    !("longFormPostId" in persistResult) ||
+    typeof persistResult.longFormPostId !== "string"
+  ) {
+    return persistResult;
+  }
   const { longFormPostId } = persistResult;
   const queueTypeId = await resolveQueueTypeId(
     userId,
@@ -240,11 +243,11 @@ export async function handleSaveDraft(
     },
     userId
   );
-  return json({
+  return {
     ok: true,
     draftSaved: true,
     longFormPostId,
-  });
+  };
 }
 
 /**
@@ -259,7 +262,7 @@ export async function handlePublish(
   showHashTagsinPosts: boolean,
   sanitizedRelays: string[],
   sessionPubkey: string
-): Promise<Response> {
+) {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -276,22 +279,22 @@ export async function handlePublish(
   );
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return json(
+    return data(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return json(
+    return data(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
@@ -299,7 +302,7 @@ export async function handlePublish(
   await assertMediaUrlsReady([image]);
 
   if (!signedEvent || !nostrEvent) {
-    return json(
+    return data(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -352,7 +355,7 @@ export async function handlePublish(
       await assertScheduleCapacity(userId, quoteSlots);
     } catch (e) {
       if (e instanceof ScheduleCapExceededError) {
-        return json({ error: e.message }, { status: 403 });
+        return data({ error: e.message }, { status: 403 });
       }
       throw e;
     }
@@ -446,7 +449,7 @@ export async function handleScheduleLongform(
   showHashTagsinPosts: boolean,
   sessionPubkey: string,
   _correlationId?: string
-): Promise<Response> {
+) {
   const title = formData.get("title")?.toString() ?? "";
   const editorContent = formData.get("content")?.toString() ?? "";
   const image = formData.get("image")?.toString() ?? undefined;
@@ -463,22 +466,22 @@ export async function handleScheduleLongform(
   );
 
   if (!title.trim()) {
-    return json({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_TITLE_REQUIRED }, { status: 400 });
   }
 
   if (!editorContent.trim()) {
-    return json({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
+    return data({ error: ERROR_CONTENT_REQUIRED }, { status: 400 });
   }
 
   if (!summary?.trim()) {
-    return json(
+    return data(
       { error: "Summary is required for publishing" },
       { status: 400 }
     );
   }
 
   if (!image?.trim()) {
-    return json(
+    return data(
       { error: "Cover image is required for publishing" },
       { status: 400 }
     );
@@ -486,7 +489,7 @@ export async function handleScheduleLongform(
   await assertMediaUrlsReady([image]);
 
   if (!signedEvent || !nostrEvent) {
-    return json(
+    return data(
       { error: "Missing Nostr event data for publishing" },
       { status: 400 }
     );
@@ -528,7 +531,7 @@ export async function handleScheduleLongform(
   });
 
   // Extract published_at from NOSTR event tags for scheduling
-  let scheduledForTimestamp: number | undefined = undefined;
+  let scheduledForTimestamp: number | undefined;
 
   const publishedAtTag = signedEventJson.tags.find(
     (tag: unknown) => Array.isArray(tag) && tag[0] === "published_at"
@@ -560,7 +563,7 @@ export async function handleScheduleLongform(
     await assertScheduleCapacity(userId, 1 + quoteSchedules.length);
   } catch (e) {
     if (e instanceof ScheduleCapExceededError) {
-      return json({ error: e.message }, { status: 403 });
+      return data({ error: e.message }, { status: 403 });
     }
     throw e;
   }

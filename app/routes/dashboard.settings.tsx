@@ -1,14 +1,14 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Suspense } from "react";
 import {
+  type LoaderFunctionArgs,
   Await,
   Outlet,
   useLoaderData,
   useLocation,
   type ShouldRevalidateFunctionArgs,
-} from "@remix-run/react";
-import { Suspense } from "react";
+} from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { ProfileData as _ProfileData } from "~/features/nostr/types";
 import { requireAnySubscription } from "~/features/payments";
 import {
@@ -23,9 +23,8 @@ import {
   loadSettingsData,
   type SettingsLoaderData,
 } from "~/features/settings/settings-loader.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logError } from "~/lib/error-logger.server";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 async function loadSettingsOrThrow(
   userId: string
@@ -36,21 +35,6 @@ async function loadSettingsOrThrow(
 async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  // Direct loader tests still pass `?_data=`. Remix strips that before a real
-  // request. Raw single-fetch calls send `_loader=json`, which is not stripped.
-  const isDataRequest =
-    url.searchParams.has("_data") || isRemixResourceRequest(request);
-
-  if (isDataRequest) {
-    try {
-      return json(await loadSettingsOrThrow(userId));
-    } catch (error) {
-      const { handleLoaderError } = await import("~/lib/error-handler.server");
-      return handleLoaderError(error, SETTINGS_LOADER_FALLBACK);
-    }
-  }
 
   const settingsPromise = (async (): Promise<SettingsLoaderData> => {
     try {
@@ -65,9 +49,9 @@ async function loaderImpl({ request }: Pick<LoaderFunctionArgs, "request">) {
     }
   })();
 
-  return defer({
+  return {
     settings: settingsPromise,
-  });
+  };
 }
 
 export async function loader(args: LoaderFunctionArgs) {
@@ -150,7 +134,7 @@ function SettingsIndexRoute() {
     <Suspense fallback={<SettingsPageSkeleton />}>
       <Await resolve={settings} errorElement={<SettingsAwaitError />}>
         {(data) => (
-          <SettingsResolvedLoaderProvider value={data as SettingsLoaderData}>
+          <SettingsResolvedLoaderProvider value={data}>
             <SettingsPage />
           </SettingsResolvedLoaderProvider>
         )}

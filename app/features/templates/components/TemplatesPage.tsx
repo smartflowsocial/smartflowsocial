@@ -1,7 +1,7 @@
-import { Link, Outlet, useFetcher, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, FileText, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { Link, Outlet, useFetcher, useSearchParams } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -247,7 +247,7 @@ export default function TemplatesPage() {
   }, [data, typeFilter, sort]);
 
   const submitAction = (formData: FormData) => {
-    actionFetcher.submit(formData, { method: "post" });
+    void actionFetcher.submit(formData, { method: "post" });
   };
 
   const detail = sheetTemplate ? templateToDetailPayload(sheetTemplate) : null;

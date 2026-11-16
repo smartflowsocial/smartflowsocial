@@ -1,88 +1,33 @@
-import {
-  defer,
-  json,
-  type LoaderFunctionArgs,
-  type ActionFunctionArgs,
-} from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireSession, requireUserId } from "~/features/auth";
-import { requireAnySubscription } from "~/features/payments";
+import { requireSession } from "~/features/auth/auth.server";
 import { CalendarPage } from "~/features/posts/calendar";
 import { parseCalendarPastRangeSearch } from "~/features/posts/calendar/calendar-past-range";
 import { CalendarPageSkeleton } from "~/features/posts/calendar/CalendarPageSkeleton";
-import {
-  handleCalendarAction,
-  loadCalendarData,
-  loadCalendarPublishedRange,
-} from "~/features/posts/server/calendar";
-import { withCSRFProtection } from "~/lib/csrf";
+import { handleCalendarAction } from "~/features/posts/server/calendar";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
-import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
+import type { CalendarLoaderData } from "~/lib/validation/schemas/loader-responses.schemas";
+
 import {
-  calendarLoaderDataSchema,
-  calendarPastRangeLoaderDataSchema,
-  type CalendarLoaderData,
-} from "~/lib/validation/schemas/loader-responses.schemas";
-
-async function loadCalendarValidated(
-  request: Request,
-  params: LoaderFunctionArgs["params"]
-): Promise<CalendarLoaderData> {
-  const userId = await requireUserId(request);
-  await requireAnySubscription(userId);
-
-  const url = new URL(request.url);
-  const queueType =
-    params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
-
-  const data = await loadCalendarData(userId, queueType);
-  return validateLoaderResponse(data, calendarLoaderDataSchema);
-}
+  loadCalendarRange,
+  loadCalendarValidated,
+} from "./dashboard.calendar.loader.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   try {
     const url = new URL(request.url);
     const parsedRange = parseCalendarPastRangeSearch(url.searchParams);
     if (parsedRange.kind !== "full") {
-      const userId = await requireUserId(request);
-      await requireAnySubscription(userId);
-      if (parsedRange.kind === "invalid") {
-        return json(
-          { ok: false, error: "Invalid calendar range" },
-          { status: 400 }
-        );
-      }
-      const queueType =
-        params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
-      const data = await loadCalendarPublishedRange(
-        userId,
-        queueType,
-        parsedRange.start,
-        parsedRange.end
-      );
-      return json(
-        validateLoaderResponse(
-          {
-            pastPosts: data.pastPosts,
-            pastLongFormPosts: data.pastLongFormPosts,
-            from: parsedRange.start.toISOString(),
-            to: parsedRange.end.toISOString(),
-          },
-          calendarPastRangeLoaderDataSchema
-        )
-      );
+      return await loadCalendarRange(request, params);
     }
 
-    if (isRemixResourceRequest(request)) {
-      return json(await loadCalendarValidated(request, params));
-    }
-    return defer({
+    return {
       calendar: loadCalendarValidated(request, params),
-    });
+    };
   } catch (error) {
     if (error instanceof Response) {
       return error;
@@ -113,7 +58,7 @@ interface CalendarDeferredLoaderData {
 }
 
 function CalendarFeedRoute() {
-  const { calendar } = useLoaderData() as CalendarDeferredLoaderData;
+  const { calendar } = useLoaderData<CalendarDeferredLoaderData>();
 
   return (
     <Suspense fallback={<CalendarPageSkeleton />}>

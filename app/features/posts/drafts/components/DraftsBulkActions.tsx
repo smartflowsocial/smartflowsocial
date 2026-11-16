@@ -2,9 +2,9 @@
  * Bulk actions for short-form drafts (shown only when selection is non-empty).
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -87,7 +87,10 @@ export function DraftsBulkActions({
     fd.set("_action", "bulkAssignQueue");
     fd.set("postIds", JSON.stringify(bulkPostIds));
     fd.set("queueType", queueTarget);
-    assignFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
+    void assignFetcher.submit(fd, {
+      method: "post",
+      action: "/dashboard/drafts",
+    });
   };
 
   const handleBulkDuplicate = () => {
@@ -95,7 +98,7 @@ export function DraftsBulkActions({
     const fd = new FormData();
     fd.set("_action", "bulkDuplicateDrafts");
     fd.set("postIds", JSON.stringify(bulkPostIds));
-    dupFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
+    void dupFetcher.submit(fd, { method: "post", action: "/dashboard/drafts" });
   };
 
   return (

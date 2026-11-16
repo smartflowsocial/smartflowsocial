@@ -1,7 +1,7 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, data } from "react-router";
 
 import { getAdminBtcSpotRates } from "~/features/admin/admin-fx-rates.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 /**
@@ -9,17 +9,16 @@ import { isReferralAdmin } from "~/features/referral/referral-admin.server";
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   if (request.method !== "GET") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return data({ error: "Method not allowed" }, { status: 405 });
   }
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   try {
-    const rates = await getAdminBtcSpotRates();
-    return json(rates);
+    return await getAdminBtcSpotRates();
   } catch {
-    return json({ error: "rates_unavailable" }, { status: 503 });
+    return data({ error: "rates_unavailable" }, { status: 503 });
   }
 }
 

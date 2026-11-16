@@ -1,7 +1,6 @@
-import type { LoaderFunctionArgs, SerializeFrom } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getUserSubscription } from "~/features/payments/data";
 import { getEffectiveGiveawayPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
@@ -11,6 +10,7 @@ import { getRecentPublishedPosts } from "~/features/posts/server";
 import { loadNewPostData } from "~/features/posts/server/composer";
 import { getUserById } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
+import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 import { getContestPresetById } from "./contest-presets.server";
 import { findContestCreationDraftByUserId } from "./repositories/contest-creation-draft.server";
@@ -79,7 +79,7 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
       postType: p.postType,
     }));
 
-  return json({
+  return {
     ...composerLoader,
     posts,
     planType,
@@ -88,7 +88,7 @@ export async function contestNewLoader({ request }: LoaderFunctionArgs) {
     canUsePresets,
     userTimezone: userRow?.timezone ?? "UTC",
     savedContestDraft: savedContestDraft?.payload ?? null,
-  });
+  };
 }
 
 export type ContestNewLoaderData = SerializeFrom<typeof contestNewLoader>;

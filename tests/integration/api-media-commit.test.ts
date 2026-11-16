@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(),
 }));
 
@@ -8,7 +8,9 @@ vi.mock("~/features/upload/services/media-ingest.server", () => ({
   commitMediaIngest: vi.fn(),
 }));
 
-import { requireUserId } from "~/features/auth";
+import { asRouteResponse } from "../utils/action-test-helpers";
+
+import { requireUserId } from "~/features/auth/auth.server";
 import { commitMediaIngest } from "~/features/upload/services/media-ingest.server";
 import { action, loader } from "~/routes/api.media.commit";
 
@@ -46,11 +48,14 @@ describe("API: Media Commit", () => {
       }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
+    const responseObj = await asRouteResponse(response);
     const data = (await responseObj.json()) as { committed?: unknown[] };
 
     expect(responseObj.status).toBe(200);
@@ -64,11 +69,14 @@ describe("API: Media Commit", () => {
       body: JSON.stringify({ items: [{ fileName: "photo.jpg" }] }),
     });
 
-    const response = await action({ request, params: {}, context: {} });
-    const responseObj =
-      response instanceof Response
-        ? response
-        : new Response(JSON.stringify(response));
+    const response = await action({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
+    const responseObj = await asRouteResponse(response);
 
     expect(responseObj.status).toBe(400);
   });

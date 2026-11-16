@@ -1,4 +1,4 @@
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -36,7 +36,7 @@ export function CreateTemplateTypeDialog({
             className="flex-1"
             onClick={() => {
               onOpenChange(false);
-              navigate("/dashboard/templates/new/post");
+              void navigate("/dashboard/templates/new/post");
             }}
           >
             Short post
@@ -47,7 +47,7 @@ export function CreateTemplateTypeDialog({
             className="flex-1"
             onClick={() => {
               onOpenChange(false);
-              navigate("/dashboard/templates/new/longform");
+              void navigate("/dashboard/templates/new/longform");
             }}
           >
             Article

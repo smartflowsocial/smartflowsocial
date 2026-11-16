@@ -1,6 +1,6 @@
-import { useLocation, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
 import { clearPersistedState } from "~/features/auth/lifecycle-manager.client";
 import { postJson } from "~/features/auth/login-api.client";
@@ -614,7 +614,7 @@ export default function NostrLoginPanel() {
         window.location.assign(nextUrl);
         return;
       }
-      navigate(nextUrl, { replace: true });
+      void navigate(nextUrl, { replace: true });
     } catch (e) {
       const n = normalizeError(e);
       // Map a few known server messages to typed errors

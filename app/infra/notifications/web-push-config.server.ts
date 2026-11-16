@@ -3,10 +3,9 @@
  * Handles VAPID key generation and configuration
  */
 
-import { env } from "~/lib/env.server";
+import webpush from "web-push";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- web-push is CommonJS, no types
-const webpush = require("web-push");
+import { env } from "~/lib/env.server";
 
 /**
  * Initialize web push with VAPID keys from environment
@@ -25,7 +24,6 @@ export function initWebPush(): void {
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- web-push is a CommonJS module without proper TypeScript types
   webpush.setVapidDetails(subject, publicKey, privateKey);
 }
 

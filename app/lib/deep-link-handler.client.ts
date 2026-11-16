@@ -3,7 +3,7 @@
  * Handles navigation from push notifications and other deep links
  */
 
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 
 interface DeepLinkData {
   postId?: string;
@@ -47,18 +47,18 @@ export function useDeepLinkHandler() {
 
   return (data: DeepLinkData) => {
     if (data.url) {
-      navigate(data.url);
+      void navigate(data.url);
       return;
     }
 
     if (data.postId) {
       if (data.action === "publish_failure") {
-        navigate(`/dashboard/scheduled?postId=${data.postId}`);
+        void navigate(`/dashboard/scheduled?postId=${data.postId}`);
       } else {
-        navigate(`/dashboard/published?postId=${data.postId}`);
+        void navigate(`/dashboard/published?postId=${data.postId}`);
       }
     } else {
-      navigate("/dashboard");
+      void navigate("/dashboard");
     }
   };
 }

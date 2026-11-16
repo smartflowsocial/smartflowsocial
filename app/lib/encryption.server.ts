@@ -1,6 +1,7 @@
 import crypto from "crypto";
 
 import { env } from "~/lib/env.server";
+import { safeConsoleError } from "~/lib/secrets-sanitizer.server";
 
 // Encryption version constants
 const VERSION_GCM = 0x02; // AES-256-GCM
@@ -58,10 +59,6 @@ export function encrypt(text: string): string {
   } catch (_error) {
     // Use safe logging to prevent sensitive data in logs
 
-    const { safeConsoleError } =
-      require("./secrets-sanitizer.server") as unknown as {
-        safeConsoleError: (message: string) => void;
-      };
     safeConsoleError("Encryption failed");
     throw new Error("Failed to encrypt data");
   }
@@ -103,10 +100,6 @@ export function decrypt(encryptedData: string): string {
   } catch (_error) {
     // Use safe logging to prevent sensitive data in logs
 
-    const { safeConsoleError } =
-      require("./secrets-sanitizer.server") as unknown as {
-        safeConsoleError: (message: string) => void;
-      };
     safeConsoleError("Decryption failed");
     throw new Error("Failed to decrypt data");
   }

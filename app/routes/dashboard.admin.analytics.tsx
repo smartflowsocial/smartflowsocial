@@ -1,6 +1,6 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense, useMemo } from "react";
+import { type LoaderFunctionArgs, data } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
@@ -20,27 +20,24 @@ import {
   parseRangePreset,
 } from "~/features/admin/metrics/date-range";
 import { getAdminAnalyticsPageData } from "~/features/admin/repositories/admin-analytics-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const preset = parseRangePreset(
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)
   );
-  if (isRemixResourceRequest(request)) {
-    return json(await getAdminAnalyticsPageData(preset));
-  }
-  return defer({
+
+  return {
     analytics: getAdminAnalyticsPageData(preset),
-  });
+  };
 }
 
 function mergeSeriesForChart(
@@ -83,7 +80,7 @@ type AdminAnalyticsLoaderResult =
     };
 
 export default function AdminAnalyticsPage() {
-  const raw = useLoaderData() as AdminAnalyticsLoaderResult;
+  const raw = useLoaderData<AdminAnalyticsLoaderResult>();
   if ("error" in raw) {
     return <AdminAccessDenied />;
   }

@@ -3,7 +3,7 @@
  * Shared TypeScript interfaces for post and queue features
  */
 
-import type { FetcherWithComponents } from "@remix-run/react";
+import type { FetcherWithComponents } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import type { UploadErrorCode } from "~/features/upload/upload-error-codes";

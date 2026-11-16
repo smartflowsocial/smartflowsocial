@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";

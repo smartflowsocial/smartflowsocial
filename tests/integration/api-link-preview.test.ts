@@ -8,6 +8,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock global fetch
 global.fetch = vi.fn();
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { loader } from "~/routes/api.link-preview";
 
 describe("API: Link Preview", () => {
@@ -38,11 +40,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -90,11 +95,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -139,11 +147,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -183,11 +194,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -234,11 +248,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -265,11 +282,14 @@ describe("API: Link Preview", () => {
     it("should return validation error when url parameter is missing", async () => {
       const request = new Request("http://localhost:3000/api/link-preview");
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -290,11 +310,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=not-a-url"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -314,11 +337,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=ftp://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -342,11 +368,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -371,11 +400,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -401,11 +433,14 @@ describe("API: Link Preview", () => {
         "http://localhost:3000/api/link-preview?url=https://example.com/404"
       );
 
-      const response = await loader({ request, params: {}, context: {} });
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const response = await loader({
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      });
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -435,13 +470,18 @@ describe("API: Link Preview", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -476,13 +516,18 @@ describe("API: Link Preview", () => {
         request: Request;
         params: Record<string, string | undefined>;
         context: Record<string, unknown>;
+        url: URL;
+        pattern: string;
       }
-      const loaderArgs: LoaderArgs = { request, params: {}, context: {} };
+      const loaderArgs: LoaderArgs = {
+        request,
+        params: {},
+        context: {},
+        url: new URL(request.url),
+        pattern: "*",
+      };
       const response = await loader(loaderArgs);
-      const responseObj =
-        response instanceof Response
-          ? response
-          : new Response(JSON.stringify(response));
+      const responseObj = await asRouteResponse(response);
       const dataRaw: unknown = await responseObj.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

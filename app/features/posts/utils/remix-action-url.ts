@@ -1,9 +1,6 @@
-import { toSingleFetchActionUrl } from "~/lib/remix/single-fetch";
+import { toDashboardJsonUrl } from "~/lib/remix/fetch-json";
 
-/**
- * Bare `fetch()` POST target for a route action. Single fetch serves the
- * action payload at `pathname.data` as turbo-stream, not HTML.
- */
+/** POST target whose action returns JSON instead of a document. */
 export function buildActionUrl(pathname: string): string {
-  return toSingleFetchActionUrl(pathname);
+  return toDashboardJsonUrl(pathname);
 }

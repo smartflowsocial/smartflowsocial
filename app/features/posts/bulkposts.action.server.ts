@@ -2,10 +2,10 @@
  * Server-side action handlers for bulk posts
  * Extracted from dashboard.bulkposts.tsx
  */
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "react-router";
 import { z } from "zod";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
 import { capMessage } from "~/features/payments/entitlements/deployment-mode";
@@ -99,7 +99,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
 
     const fileUrlsRaw = formData.get("fileUrls");
     if (typeof fileUrlsRaw !== "string") {
-      return json(
+      return data(
         { error: "fileUrls is required (JSON array of URL arrays per post)" },
         { status: 400 }
       );
@@ -109,11 +109,11 @@ export async function handleUploadImagesPreview(formData: FormData) {
     try {
       parsed = JSON.parse(fileUrlsRaw);
     } catch {
-      return json({ error: "Invalid fileUrls JSON" }, { status: 400 });
+      return data({ error: "Invalid fileUrls JSON" }, { status: 400 });
     }
 
     if (!Array.isArray(parsed)) {
-      return json({ error: "Invalid fileUrls format" }, { status: 400 });
+      return data({ error: "Invalid fileUrls format" }, { status: 400 });
     }
 
     const fileUrlsPerPost = parsed as string[][];
@@ -121,7 +121,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
       fileUrlsPerPost.length !== scheduledDates.length ||
       fileUrlsPerPost.length !== queueTypes.length
     ) {
-      return json(
+      return data(
         { error: "Mismatch between fileUrls and post data" },
         { status: 400 }
       );
@@ -139,7 +139,7 @@ export async function handleUploadImagesPreview(formData: FormData) {
       postCount: fileUrls.length,
       totalTimeMs: totalTime,
     });
-    return json({ success: true, fileUrls });
+    return { success: true, fileUrls };
   } catch (error) {
     const { handleActionError } = await import("~/lib/error-handler.server");
     return handleActionError(error);
@@ -230,7 +230,7 @@ export async function handleSignAndSchedule(
       !getEffectivePlanEntitlements(getUserPlanType(userSub))
         .canExecuteBulkActions
     ) {
-      return json(
+      return data(
         {
           error: capMessage(
             bulkBlockedMessage(),
@@ -250,7 +250,7 @@ export async function handleSignAndSchedule(
       await assertScheduleCapacity(userId, requestedScheduleCount);
     } catch (error) {
       if (error instanceof ScheduleCapExceededError) {
-        return json({ error: error.message }, { status: 403 });
+        return data({ error: error.message }, { status: 403 });
       }
       throw error;
     }
@@ -615,13 +615,13 @@ export async function handleSignAndSchedule(
     // When submitted from in-page modal, return JSON so the client can show success without navigating
     const inModal = formData.get("_inModal") === "1";
     if (inModal && firstPostId) {
-      return json({
+      return {
         bulkScheduled: true,
         count: createdPostCount,
         firstPostId,
         lastScheduledAt,
         queueSummary,
-      });
+      };
     }
 
     // If we have a first post ID, redirect to bulk posts page with success params

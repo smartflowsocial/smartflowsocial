@@ -5,6 +5,8 @@
  * Only initializes if SENTRY_DSN is configured
  */
 
+import * as Sentry from "@sentry/react-router";
+
 import { env } from "~/lib/env.server";
 import { safeConsoleError } from "~/lib/secrets-sanitizer.server";
 
@@ -32,43 +34,19 @@ export function initSentry(): void {
   try {
     // Dynamic import to avoid bundling Sentry in production if not configured
 
-    const Sentry = require("@sentry/remix") as {
-      init: (options: {
-        dsn?: string;
-        environment?: string;
-        tracesSampleRate?: number;
-        profilesSampleRate?: number;
-        beforeSend?: (event: unknown, hint: unknown) => unknown;
-        beforeSendTransaction?: (event: unknown, hint: unknown) => unknown;
-        integrations?: unknown[];
-      }) => void;
-      captureException: (error: Error, options?: unknown) => void;
-      captureMessage: (message: string, level?: string) => void;
-      setUser: (user: { id?: string; email?: string }) => void;
-    };
-
     const isProduction = env.NODE_ENV === "production";
     const tracesSampleRate = parseSampleRate(
       env.SENTRY_TRACES_SAMPLE_RATE,
-      isProduction ? 0.1 : 1.0
-    );
-    const profilesSampleRate = parseSampleRate(
-      env.SENTRY_PROFILES_SAMPLE_RATE,
       isProduction ? 0.1 : 1.0
     );
 
     Sentry.init({
       dsn: env.SENTRY_DSN,
       environment: env.NODE_ENV ?? "development",
-      // Adjust traces sample rate based on environment
       tracesSampleRate,
-      // Enable profiling in production (optional)
-      profilesSampleRate,
       // Filter out health checks and other noise
-      beforeSend(event: unknown, _hint: unknown) {
-        // Don't send events for health checks
-        const sentryEvent = event as { request?: { url?: string } };
-        const url = sentryEvent.request?.url ?? "";
+      beforeSend(event) {
+        const url = event.request?.url ?? "";
         if (
           url.includes("/health") ||
           url.includes("/metrics") ||
@@ -79,13 +57,9 @@ export function initSentry(): void {
         }
         return event;
       },
-      beforeSendTransaction(event: unknown, _hint: unknown) {
-        const sentryEvent = event as {
-          transaction?: string;
-          request?: { url?: string };
-        };
-        const url = sentryEvent.request?.url ?? "";
-        const txn = sentryEvent.transaction ?? "";
+      beforeSendTransaction(event) {
+        const url = event.request?.url ?? "";
+        const txn = event.transaction ?? "";
         const haystack = `${txn} ${url}`;
         if (
           haystack.includes("/health") ||
@@ -136,10 +110,6 @@ export function captureException(
   }
 
   try {
-    const Sentry = require("@sentry/remix") as {
-      captureException: (error: Error, options?: unknown) => void;
-    };
-
     Sentry.captureException(error, {
       tags: context?.tags,
       extra: context?.extra,
@@ -169,10 +139,6 @@ export function captureMessage(
   }
 
   try {
-    const Sentry = require("@sentry/remix") as {
-      captureMessage: (message: string, options?: unknown) => void;
-    };
-
     Sentry.captureMessage(message, {
       level,
       tags: context?.tags,
@@ -199,10 +165,6 @@ export function addBreadcrumb(breadcrumb: {
   }
 
   try {
-    const Sentry = require("@sentry/remix") as {
-      addBreadcrumb: (breadcrumb: unknown) => void;
-    };
-
     Sentry.addBreadcrumb({
       message: breadcrumb.message,
       category: breadcrumb.category,
@@ -228,13 +190,6 @@ export function setUser(user: {
   }
 
   try {
-    const Sentry = require("@sentry/remix") as {
-      setUser: (user: {
-        id?: string;
-        email?: string;
-        username?: string;
-      }) => void;
-    };
     Sentry.setUser(user);
   } catch (err) {
     // Fail silently
@@ -251,9 +206,6 @@ export function clearUser(): void {
   }
 
   try {
-    const Sentry = require("@sentry/remix") as {
-      setUser: (user: null) => void;
-    };
     Sentry.setUser(null);
   } catch (err) {
     // Fail silently
@@ -274,9 +226,8 @@ export async function withSentrySpan<T>(
   }
 
   try {
-    const Sentry = require("@sentry/remix") as Record<string, unknown>;
-    const startSpan = Sentry["startSpan"];
-    const startSpanManual = Sentry["startSpanManual"];
+    const startSpan = Sentry.startSpan;
+    const startSpanManual = Sentry.startSpanManual;
 
     if (typeof startSpan === "function") {
       return await (

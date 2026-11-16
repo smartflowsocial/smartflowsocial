@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Form,
   Link,
@@ -5,8 +6,7 @@ import {
   useLoaderData,
   useNavigation,
   useSearchParams,
-} from "@remix-run/react";
-import { useState } from "react";
+} from "react-router";
 
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
@@ -131,7 +131,6 @@ function isManualActionOk(
 }
 
 export default function AdminReferralsPage() {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Remix loader JSON
   const raw = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>() as ActionData | undefined;
   const navigation = useNavigation();

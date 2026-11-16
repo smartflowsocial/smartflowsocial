@@ -1,11 +1,10 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
 import { validateEvent } from "nostr-tools";
+import type { ActionFunctionArgs } from "react-router";
 
 import {
   consumeLoginChallengeAndCreateSession,
   getLoginChallengeForVerify,
-} from "~/features/auth";
+} from "~/features/auth/auth.server";
 import {
   getCompleteProfile,
   LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
@@ -17,9 +16,10 @@ import {
   referralContextCookie,
 } from "~/features/referral/referral-context.server";
 import { brandLoginChallengeTitle } from "~/lib/brand";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { AuthenticationError, ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const PURPOSE_LOGIN = "login";
 const LOGIN_EVENT_KIND = 27235;
@@ -47,11 +47,11 @@ export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     try {
       if (request.method !== "POST") {
-        return json({ error: "Method not allowed" }, { status: 405 });
+        return jsonResponse({ error: "Method not allowed" }, { status: 405 });
       }
 
       if (!featureFlags.nostrAuthV2Enabled) {
-        return json(
+        return jsonResponse(
           {
             success: false,
             error: {
@@ -201,7 +201,7 @@ export const action = withCSRFProtection(
       headers.append("Set-Cookie", sessionCookie);
       headers.append("Set-Cookie", clearReferralCookie);
 
-      return json(
+      return jsonResponse(
         {
           success: true,
           redirectTo: "/dashboard",

@@ -44,6 +44,8 @@ const CLIENT_CONTENT_TYPES_DEFER_TO_MAGIC_BYTES = new Set([
  * Legacy max size alias (absolute cap, 100MB).
  */
 export const MAX_FILE_SIZE = 100 * 1024 * 1024;
+/** Default `maxPartSize` of the old in-memory upload handler. */
+export const DEFAULT_MEMORY_PART_BYTES = 3_000_000;
 export const MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024;
 export const MAX_VIDEO_FILE_SIZE = 100 * 1024 * 1024;
 

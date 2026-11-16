@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { CheckCircle2, Circle } from "lucide-react";
+import { Link } from "react-router";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
