@@ -352,8 +352,10 @@ export function PlansPage(): ReactNode {
               <p className="text-text-secondary mx-auto mt-4 max-w-2xl text-sm leading-relaxed">
                 This process is self-hosted. The prices below are the managed
                 hosting plans. They do not lock scheduling, bulk, or broadcast
-                software on this install. Hosted Blossom and hosted Blastr
-                remain separate services.
+                software on this install. Campaign finalization commission is 0%
+                here, and this install does not bill SmartFlowSocial for
+                contests or giveaways. Hosted Blossom and hosted Blastr remain
+                separate services.
               </p>
             ) : null}
           </div>

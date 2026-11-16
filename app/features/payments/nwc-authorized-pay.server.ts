@@ -1,10 +1,19 @@
 import { NWCClient } from "@getalby/sdk";
 
 import {
+  normalizePaymentHex,
+  verifiedPreimage,
+} from "~/features/payments/payment-preimage";
+import {
   amountSatsFromMillisatoshis,
   assertBolt11MatchesAuthorizedAmount,
 } from "~/features/referral/bolt11-invoice.server";
 
+/**
+ * NIP-47 codes that mean the wallet refused the command before a payment
+ * existed. `PAYMENT_FAILED`, `INTERNAL`, and `OTHER` are not in this set:
+ * those responses do not prove that funds stayed put.
+ */
 const DEFINITIVE_REJECTION_CODES = new Set([
   "INSUFFICIENT_BALANCE",
   "QUOTA_EXCEEDED",
@@ -12,17 +21,10 @@ const DEFINITIVE_REJECTION_CODES = new Set([
   "UNAUTHORIZED",
   "NOT_IMPLEMENTED",
   "RATE_LIMITED",
-  "PAYMENT_FAILED",
 ]);
 
-const DEFINITIVE_REJECTION_TEXT = [
-  "insufficient balance",
-  "quota exceeded",
-  "not implemented",
-  "rate limit",
-  "unauthorized",
-  "payment failed",
-];
+export const DEFAULT_NWC_PAY_TIMEOUT_MS = 45_000;
+export const DEFAULT_NWC_RECONCILE_TIMEOUT_MS = 15_000;
 
 export interface AuthorizedNwcClient {
   payInvoice(request: { invoice: string }): Promise<unknown>;
@@ -75,17 +77,47 @@ function errorCode(error: unknown): string {
   return "";
 }
 
+export function readPositiveTimeoutMs(
+  value: string | undefined,
+  fallback: number
+): number {
+  if (value == null || !/^\d+$/.test(value.trim())) return fallback;
+  const parsed = Number(value.trim());
+  if (!Number.isSafeInteger(parsed) || parsed < 50 || parsed > 120_000) {
+    return fallback;
+  }
+  return parsed;
+}
+
+/** Operator overrides. Invalid values keep the defaults. */
+export function nwcTimeouts(
+  source: Record<string, string | undefined> = process.env
+): { payMs: number; reconcileMs: number } {
+  return {
+    payMs: readPositiveTimeoutMs(
+      source["NWC_PAY_TIMEOUT_MS"],
+      DEFAULT_NWC_PAY_TIMEOUT_MS
+    ),
+    reconcileMs: readPositiveTimeoutMs(
+      source["NWC_RECONCILE_TIMEOUT_MS"],
+      DEFAULT_NWC_RECONCILE_TIMEOUT_MS
+    ),
+  };
+}
+
 /**
  * A received wallet rejection may be retried with a new invoice.
  * A timeout, a dropped response, or an unclassified error may mean the
  * wallet already paid, so those stay unknown.
+ *
+ * Human-readable text is not proof. Only a structured NIP-47 code from
+ * `DEFINITIVE_REJECTION_CODES` is a definitive failure.
  */
 export function classifyNwcPayFailure(error: unknown): {
   disposition: "rejected" | "unknown";
   code: string;
   message: string;
 } {
-  const name = error instanceof Error ? error.name : "";
   const message = errorText(error);
   const code = errorCode(error);
   const lower = message.toLowerCase();
@@ -98,58 +130,41 @@ export function classifyNwcPayFailure(error: unknown): {
     };
   }
 
-  const unconfirmed =
-    name.includes("Timeout") ||
-    name.includes("Network") ||
-    code.includes("TIMEOUT") ||
-    code.includes("NETWORK") ||
-    lower.includes("timeout") ||
-    lower.includes("timed out") ||
-    lower.includes("econnreset") ||
-    lower.includes("econnrefused") ||
-    lower.includes("socket") ||
-    lower.includes("network") ||
-    lower.includes("fetch failed") ||
-    lower.includes("aborted") ||
-    lower.includes("websocket");
-  if (unconfirmed) {
-    return { disposition: "unknown", code: code || "UNCONFIRMED", message };
-  }
-
   if (DEFINITIVE_REJECTION_CODES.has(code)) {
     return { disposition: "rejected", code, message };
-  }
-  if (DEFINITIVE_REJECTION_TEXT.some((text) => lower.includes(text))) {
-    return { disposition: "rejected", code: code || "PAYMENT_FAILED", message };
   }
   return { disposition: "unknown", code: code || "UNCONFIRMED", message };
 }
 
-function readPreimage(value: unknown): string | null {
-  if (!value || typeof value !== "object") return null;
-  const preimage = (value as { preimage?: unknown }).preimage;
-  if (typeof preimage !== "string") return null;
-  const trimmed = preimage.trim();
-  if (trimmed.length < 32) return null;
-  return trimmed;
-}
-
 /**
  * Reads a NIP-47 lookup_invoice result.
- * Settled requires the millisatoshi amount to match the authorized sats.
- * `failed` is the only non-settled state that authorizes a later retry.
- * Anything else, including a missing lookup, stays inconclusive.
+ * Settled requires the millisatoshi amount to match the authorized sats and,
+ * when a preimage is present, that preimage to hash to the invoice payment
+ * hash. A returned payment hash that does not match is inconclusive.
+ * `failed` is the only non-settled state that authorizes a later retry, and
+ * only when the response has no preimage field.
  */
 export function interpretNwcLookup(
   raw: unknown,
-  expectedSats: number
+  expectedSats: number,
+  expectedPaymentHash: string
 ): LookupInterpretation {
+  const expected = normalizePaymentHex(expectedPaymentHash);
+  if (!expected) return { kind: "inconclusive" };
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { kind: "inconclusive" };
   }
   const obj = raw as Record<string, unknown>;
+  const returnedHash = normalizePaymentHex(obj["payment_hash"]);
+  if (returnedHash && returnedHash !== expected) {
+    return { kind: "inconclusive" };
+  }
+  const preimageField = obj["preimage"];
+  const hasPreimageField =
+    typeof preimageField === "string" && preimageField.trim().length > 0;
+  const preimage = verifiedPreimage(preimageField, expected);
+  if (hasPreimageField && !preimage) return { kind: "inconclusive" };
   const state = typeof obj["state"] === "string" ? obj["state"] : "";
-  const preimage = readPreimage(obj);
   const settledAt = obj["settled_at"];
   const settledAtMs = typeof settledAt === "number" ? settledAt : 0;
   const settled = state === "settled" || (settledAtMs > 0 && preimage !== null);
@@ -160,31 +175,34 @@ export function interpretNwcLookup(
     }
     return { kind: "settled", preimage };
   }
-  if (state === "failed" && preimage === null && settledAtMs <= 0) {
+  if (
+    state === "failed" &&
+    !hasPreimageField &&
+    preimage === null &&
+    settledAtMs <= 0
+  ) {
     return { kind: "failed" };
   }
   return { kind: "inconclusive" };
 }
 
-async function lookupIfSupported(
-  client: AuthorizedNwcClient,
-  paymentHash: string
-): Promise<unknown> {
-  if (typeof client.lookupInvoice !== "function") return undefined;
-  try {
-    if (typeof client.getInfo === "function") {
-      const info = await client.getInfo();
-      if (
-        Array.isArray(info.methods) &&
-        info.methods.length > 0 &&
-        !info.methods.includes("lookup_invoice")
-      ) {
-        return undefined;
-      }
+function swallow(work: Promise<unknown>): void {
+  void (async () => {
+    try {
+      await work;
+    } catch {
+      // The caller already continued. A late rejection must not surface.
     }
-    return await client.lookupInvoice({ payment_hash: paymentHash });
+  })();
+}
+
+async function settledCall<T>(
+  work: Promise<T>
+): Promise<{ ok: true; value: T } | { ok: false }> {
+  try {
+    return { ok: true, value: await work };
   } catch {
-    return undefined;
+    return { ok: false };
   }
 }
 
@@ -197,11 +215,48 @@ async function withTimeout<T>(
     return await Promise.race([
       work,
       new Promise<"timeout">((resolve) => {
-        timer = setTimeout(() => resolve("timeout"), timeoutMs);
+        timer = setTimeout(() => resolve("timeout"), Math.max(0, timeoutMs));
       }),
     ]);
   } finally {
     if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+async function lookupIfSupported(
+  client: AuthorizedNwcClient,
+  paymentHash: string,
+  timeoutMs: number
+): Promise<unknown> {
+  if (typeof client.lookupInvoice !== "function" || timeoutMs <= 0) {
+    return undefined;
+  }
+  const started = Date.now();
+  try {
+    if (typeof client.getInfo === "function") {
+      const info = await withTimeout(settledCall(client.getInfo()), timeoutMs);
+      if (info === "timeout" || !info.ok) return undefined;
+      const methods = info.value.methods;
+      if (
+        Array.isArray(methods) &&
+        methods.length > 0 &&
+        !methods.includes("lookup_invoice")
+      ) {
+        return undefined;
+      }
+    }
+    const remaining = timeoutMs - (Date.now() - started);
+    if (remaining <= 0 || typeof client.lookupInvoice !== "function") {
+      return undefined;
+    }
+    const looked = await withTimeout(
+      settledCall(client.lookupInvoice({ payment_hash: paymentHash })),
+      remaining
+    );
+    if (looked === "timeout" || !looked.ok) return undefined;
+    return looked.value;
+  } catch {
+    return undefined;
   }
 }
 
@@ -218,11 +273,12 @@ async function capturePay(
 
 async function captureLookup(
   client: AuthorizedNwcClient,
-  paymentHash: string
+  paymentHash: string,
+  timeoutMs: number
 ): Promise<{ type: "lookup"; value: unknown }> {
   return {
     type: "lookup",
-    value: await lookupIfSupported(client, paymentHash),
+    value: await lookupIfSupported(client, paymentHash, timeoutMs),
   };
 }
 
@@ -254,7 +310,11 @@ function fromLookup(
   checked: { paymentHash: string; amountSats: number },
   walletResponse: unknown
 ): AuthorizedPayResult {
-  const interpreted = interpretNwcLookup(raw, checked.amountSats);
+  const interpreted = interpretNwcLookup(
+    raw,
+    checked.amountSats,
+    checked.paymentHash
+  );
   if (interpreted.kind === "settled" && interpreted.preimage) {
     return paidResult(checked, interpreted.preimage, raw ?? walletResponse);
   }
@@ -262,7 +322,7 @@ function fromLookup(
     return failedResult(
       "unknown",
       "reconciliation_required",
-      "Wallet reports the invoice settled but did not return a preimage",
+      "Wallet reports the invoice settled but did not return a valid preimage",
       checked.paymentHash
     );
   }
@@ -282,16 +342,25 @@ function fromLookup(
   );
 }
 
+function returnedPaymentHash(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  return normalizePaymentHex(
+    (value as { payment_hash?: unknown }).payment_hash
+  );
+}
+
 /**
  * Pays one already-authorized BOLT11 invoice.
  * Validation runs again here so a raw invoice cannot reach `payInvoice`
  * from another call path. No wallet call is made when validation fails.
+ * Neither the payment nor the reconciliation lookup can block past its timeout.
  */
 export async function payAuthorizedBolt11(args: {
   nwcUrl: string;
   invoice: string;
   authorizedSats: number;
   timeoutMs: number;
+  reconcileTimeoutMs?: number;
   nowMs?: number;
   clientFactory?: (nwcUrl: string) => AuthorizedNwcClient;
 }): Promise<AuthorizedPayResult> {
@@ -317,21 +386,36 @@ export async function payAuthorizedBolt11(args: {
     );
   }
 
+  const reconcileMs = args.reconcileTimeoutMs ?? args.timeoutMs;
   const payPromise = capturePay(client, checked.invoice);
+  swallow(payPromise);
 
   try {
     const first = await withTimeout(payPromise, args.timeoutMs);
     if (first !== "timeout") {
-      return settlePayAttempt(first, checked, client);
+      return settlePayAttempt(first, checked, client, reconcileMs);
     }
-    const follow = await Promise.race([
-      payPromise,
-      captureLookup(client, checked.paymentHash),
-    ]);
+    const lookupPromise = captureLookup(
+      client,
+      checked.paymentHash,
+      reconcileMs
+    );
+    swallow(lookupPromise);
+    const raced = Promise.race([payPromise, lookupPromise]);
+    swallow(raced);
+    const follow = await withTimeout(raced, reconcileMs);
+    if (follow === "timeout") {
+      return failedResult(
+        "unknown",
+        "reconciliation_timeout",
+        "Payment and wallet lookup both exceeded the reconciliation deadline. Automatic retry is blocked.",
+        checked.paymentHash
+      );
+    }
     if (follow.type === "lookup") {
       return fromLookup(follow.value, checked, null);
     }
-    return settlePayAttempt(follow, checked, client);
+    return settlePayAttempt(follow, checked, client, reconcileMs);
   } finally {
     try {
       client.close?.();
@@ -344,13 +428,43 @@ export async function payAuthorizedBolt11(args: {
 async function settlePayAttempt(
   attempt: Exclude<PayAttempt, { type: "timeout" | "lookup" }>,
   checked: { paymentHash: string; amountSats: number },
-  client: AuthorizedNwcClient
+  client: AuthorizedNwcClient,
+  lookupTimeoutMs: number
 ): Promise<AuthorizedPayResult> {
   if (attempt.type === "pay") {
-    const preimage = readPreimage(attempt.value);
+    const returnedHash = returnedPaymentHash(attempt.value);
+    if (returnedHash && returnedHash !== checked.paymentHash) {
+      return failedResult(
+        "unknown",
+        "preimage_mismatch",
+        "Wallet returned a different payment hash. Automatic retry is blocked.",
+        checked.paymentHash
+      );
+    }
+    const preimage = verifiedPreimage(
+      (attempt.value as { preimage?: unknown } | null)?.preimage,
+      checked.paymentHash
+    );
     if (preimage) return paidResult(checked, preimage, attempt.value);
-    const lookedUp = await lookupIfSupported(client, checked.paymentHash);
-    return fromLookup(lookedUp, checked, attempt.value);
+    const lookedUp = await lookupIfSupported(
+      client,
+      checked.paymentHash,
+      lookupTimeoutMs
+    );
+    const reconciled = fromLookup(lookedUp, checked, attempt.value);
+    if (reconciled.ok) return reconciled;
+    if (
+      typeof (attempt.value as { preimage?: unknown } | null)?.preimage ===
+      "string"
+    ) {
+      return failedResult(
+        "unknown",
+        "preimage_mismatch",
+        "Wallet preimage does not match the invoice payment hash. Automatic retry is blocked.",
+        checked.paymentHash
+      );
+    }
+    return reconciled;
   }
   const classified = classifyNwcPayFailure(attempt.error);
   if (classified.disposition === "rejected") {
@@ -361,7 +475,11 @@ async function settlePayAttempt(
       checked.paymentHash
     );
   }
-  const lookedUp = await lookupIfSupported(client, checked.paymentHash);
+  const lookedUp = await lookupIfSupported(
+    client,
+    checked.paymentHash,
+    lookupTimeoutMs
+  );
   const reconciled = fromLookup(lookedUp, checked, null);
   if (reconciled.ok || reconciled.code === "PAYMENT_FAILED") return reconciled;
   return failedResult(
@@ -374,12 +492,13 @@ async function settlePayAttempt(
 
 /**
  * Looks up a payment that may already have been sent.
- * This never calls `payInvoice`.
+ * This never calls `payInvoice`. The lookup cannot block past `timeoutMs`.
  */
 export async function lookupAuthorizedPayment(args: {
   nwcUrl: string;
   paymentHash: string;
   authorizedSats: number;
+  timeoutMs?: number;
   clientFactory?: (nwcUrl: string) => AuthorizedNwcClient;
 }): Promise<LookupInterpretation> {
   const factory = args.clientFactory ?? defaultNwcClient;
@@ -389,9 +508,10 @@ export async function lookupAuthorizedPayment(args: {
   } catch {
     return { kind: "inconclusive" };
   }
+  const timeoutMs = args.timeoutMs ?? nwcTimeouts().reconcileMs;
   try {
-    const raw = await lookupIfSupported(client, args.paymentHash);
-    return interpretNwcLookup(raw, args.authorizedSats);
+    const raw = await lookupIfSupported(client, args.paymentHash, timeoutMs);
+    return interpretNwcLookup(raw, args.authorizedSats, args.paymentHash);
   } finally {
     try {
       client.close?.();

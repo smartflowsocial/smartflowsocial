@@ -9,6 +9,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [0.1.0-alpha.3] - 2026-11-17
+
+Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.0-alpha.2`. Notes:
+[docs/releases/v0.1.0-alpha.3.md](docs/releases/v0.1.0-alpha.3.md).
+
+### Security
+
+- NWC `pay_invoice`, `get_info`, and `lookup_invoice` each stop at a configurable deadline. A
+  payment and a lookup that both stay unresolved leave the payout `unknown`. The worker does not
+  hang and it does not send another payment.
+- A payout is confirmed only when the preimage is 32 bytes and its SHA-256 matches the invoice
+  payment hash. A returned lookup payment hash that does not match is not confirmation.
+- Wallet errors are a definitive failure only for structured NIP-47 rejections. The words "payment
+  failed" stay `unknown`.
+- `confirmed_unpaid` is refused for two minutes after the latest attempt. The operator command is
+  `scripts/resolve-campaign-payout.ts`. There is no public resolution route.
+
+### Changed
+
+- Hosted campaign commission is Free 10%, Starter 7.5% (750 basis points), Creator 5%, and 0% on
+  Pro, Teams, and Founder. Contest and giveaway invoices use that table.
+- `SELF_HOSTED=true` charges 0% on every plan, creates no platform-fee invoice, and does not require
+  `OWNER_NWC` to finalize. Winner payouts are unchanged.
+- Paid invoices are not rewritten. An open invoice at or below the new quote is reused.
+- Contests can create a finalization invoice. The screen shows the sat amount before payment.
+- The in-app footer links to the official Nostr contact
+  `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`.
+- CI has a clean-install job that runs `prisma migrate deploy` on an empty database.
+
+### Documentation
+
+- Privacy and terms replacement text names the Nostr contact and does not claim GDPR or e-commerce
+  identity compliance. The landing repository was not changed here. Revise landing pull request #2
+  before merge. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+
 ## [0.1.0-alpha.2] - 2026-11-16
 
 Prepared locally. The tag and GitHub release are not published. Notes:
@@ -36,9 +71,9 @@ Prepared locally. The tag and GitHub release are not published. Notes:
   `REFERRAL_PAYOUTS_ENABLED=true` before upgrading, or referral payouts stop.
 - A fresh `prisma migrate deploy` inserts the legacy plan rows the pricing migration expected.
   `prisma db push` is no longer the documented install path.
-- In-app campaign commission copy matches the invoice: Free 10%, Creator 5%, and 0% on Starter, Pro,
-  Teams, and Founder. The public marketing pages still describe Starter as 7.5% and omit the Free
-  fee. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+- In-app campaign commission copy at this snapshot said Free 10%, Creator 5%, and 0% on Starter,
+  Pro, Teams, and Founder. That Starter rate was superseded by 0.1.0-alpha.3 before either tag was
+  published. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
 
 ## [0.1.0-alpha.1] - 2026-11-15
 

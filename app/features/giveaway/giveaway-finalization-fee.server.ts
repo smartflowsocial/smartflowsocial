@@ -5,6 +5,8 @@
 
 import { createHash } from "node:crypto";
 
+import type { PublicDeployment } from "~/features/payments/entitlements/deployment-mode";
+import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 import type { PlanType } from "~/features/payments/types";
 
 import {
@@ -102,6 +104,8 @@ export function quoteGiveawayFinalization(input: {
     engagementWeights: unknown;
   };
   planType: PlanType;
+  /** Server deployment. Callers omit this so the process environment is used. */
+  deployment?: PublicDeployment;
 }): GiveawayFinalizationQuote {
   const plannedPayoutSats = computeGiveawayPlannedPayoutSats({
     winnerSnapshot: input.giveaway.winnerSnapshot,
@@ -109,7 +113,10 @@ export function quoteGiveawayFinalization(input: {
     winnerCount: input.giveaway.winnerCount,
     plannedPayoutSats: input.giveaway.plannedPayoutSats,
   });
-  const feeRateBps = getFinalizationFeeRateBps(input.planType);
+  const feeRateBps = getFinalizationFeeRateBps(
+    input.planType,
+    input.deployment ?? currentDeployment()
+  );
   const { feeSats, waivedByPlan } = computeFinalizationFeeSats(
     plannedPayoutSats,
     feeRateBps

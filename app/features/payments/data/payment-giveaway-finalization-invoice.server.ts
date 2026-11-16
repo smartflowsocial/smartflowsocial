@@ -3,7 +3,12 @@ import { LN, SATS } from "@getalby/sdk/lnclient";
 import { appendGiveawayActivityLog } from "~/features/giveaway/giveaway-activity-log.server";
 import { quoteGiveawayFinalization } from "~/features/giveaway/giveaway-finalization-fee.server";
 import { findGiveawayByIdAndUser } from "~/features/giveaway/repositories/giveaway-actions-data.server";
-import { expireStaleFinalizationPaymentsForGiveaway } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
+import {
+  expireGiveawayFinalizationByIds,
+  findReusableGiveawayFinalizationInvoice,
+  listGiveawayFinalizationRecords,
+} from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
+import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
 import { env } from "~/lib/env.server";
@@ -83,7 +88,50 @@ export async function createGiveawayFinalizationInvoice(params: {
     );
   }
 
-  if (quote.feeSats <= 0) {
+  const records = await listGiveawayFinalizationRecords(giveawayId, userId);
+  const collection = resolveFinalizationCollection({
+    current: quote,
+    records,
+    nowMs: Date.now(),
+  });
+
+  if (collection.kind === "waived" || collection.quote.feeSats <= 0) {
+    await expireGiveawayFinalizationByIds(
+      collection.kind === "waived" ? collection.expireIds : []
+    );
+    throw new Error("No finalization fee is due for this giveaway");
+  }
+
+  if (collection.kind === "settled") {
+    throw new Error("The finalization fee for this preview is already paid");
+  }
+
+  if (collection.kind === "honor_pending") {
+    const existing = await findReusableGiveawayFinalizationInvoice(
+      collection.paymentId
+    );
+    if (
+      existing?.expiresAt &&
+      existing.expiresAt.getTime() > Date.now() &&
+      existing.amount === collection.quote.feeSats &&
+      existing.invoice &&
+      existing.paymentHash
+    ) {
+      return {
+        invoice: existing.invoice,
+        paymentHash: existing.paymentHash,
+        amount: existing.amount,
+        amountUsd: null,
+        expiresAt: existing.expiresAt,
+        paymentId: existing.id,
+        lockConfigHash: collection.quote.lockConfigHash,
+      };
+    }
+    await expireGiveawayFinalizationByIds([collection.recordId]);
+  }
+
+  const due = collection.quote;
+  if (due.feeSats <= 0) {
     throw new Error("No finalization fee is due for this giveaway");
   }
 
@@ -104,10 +152,12 @@ export async function createGiveawayFinalizationInvoice(params: {
   };
 
   try {
-    await expireStaleFinalizationPaymentsForGiveaway(giveawayId);
+    if (collection.kind === "collect") {
+      await expireGiveawayFinalizationByIds(collection.expireIds);
+    }
 
     const request = await withOwnerWalletInvoiceRequestTimeout(
-      ln.requestPayment(SATS(quote.feeSats) as unknown as { amount: number })
+      ln.requestPayment(SATS(due.feeSats) as unknown as { amount: number })
     );
 
     const paymentId = `gf_${giveawayId}_${Date.now()}_${userId}`;
@@ -119,7 +169,7 @@ export async function createGiveawayFinalizationInvoice(params: {
       request,
       invoiceString,
       0,
-      async () => quote.feeSats
+      async () => due.feeSats
     );
 
     if (!invoiceString || !paymentHashString) {
@@ -161,10 +211,10 @@ export async function createGiveawayFinalizationInvoice(params: {
         giveawayId,
         userId,
         planName: planLabel,
-        feeRateBps: quote.feeRateBps,
-        plannedPayoutSats: quote.plannedPayoutSats,
-        feeSats: quote.feeSats,
-        lockConfigHash: quote.lockConfigHash,
+        feeRateBps: due.feeRateBps,
+        plannedPayoutSats: due.plannedPayoutSats,
+        feeSats: due.feeSats,
+        lockConfigHash: due.lockConfigHash,
         status: "PENDING",
         paymentId,
       },
@@ -174,11 +224,11 @@ export async function createGiveawayFinalizationInvoice(params: {
       where: { id: giveawayId },
       data: {
         activityLog: appendGiveawayActivityLog(g.activityLog, "fee_quoted", {
-          feeSats: quote.feeSats,
-          feeRateBps: quote.feeRateBps,
-          plannedPayoutSats: quote.plannedPayoutSats,
+          feeSats: due.feeSats,
+          feeRateBps: due.feeRateBps,
+          plannedPayoutSats: due.plannedPayoutSats,
           planName: planLabel,
-          lockConfigHash: quote.lockConfigHash,
+          lockConfigHash: due.lockConfigHash,
         }),
       },
     });
@@ -199,7 +249,7 @@ export async function createGiveawayFinalizationInvoice(params: {
       amountUsd: null,
       expiresAt,
       paymentId,
-      lockConfigHash: quote.lockConfigHash,
+      lockConfigHash: due.lockConfigHash,
     };
   } catch (error) {
     if (error instanceof ExternalServiceError) {

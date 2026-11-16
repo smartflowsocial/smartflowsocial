@@ -32,6 +32,18 @@ with the selected plan features.
 4. **Database updated** → User subscription activated, account enabled
 5. **User gets access** → Full plan features unlocked
 
+## Campaign commission
+
+Contest and giveaway finalization uses one rate table.
+
+| Deployment  | Free | Starter | Creator | Pro, Teams, Founder |
+| ----------- | ---: | ------: | ------: | ------------------: |
+| Hosted      |  10% |    7.5% |      5% |                  0% |
+| Self-hosted |   0% |      0% |      0% |                  0% |
+
+Self-hosted mode is `SELF_HOSTED=true` on the server. The fee is separate from winner payouts and
+from plan subscription invoices. A zero fee does not call `OWNER_NWC`.
+
 ## Environment Variables
 
 ```env

@@ -42,10 +42,12 @@ import {
   buildGiveawayPublicSummaryLines,
   buildGiveawayReceiptSummaryLine,
 } from "~/features/giveaway/giveaway-proof-share.server";
+import { listGiveawayFinalizationRecords } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import {
   getSubscriptionData,
   requireAnySubscription,
 } from "~/features/payments";
+import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
 import { createGiveawayFinalizationInvoice } from "~/features/payments/data/payment.commands.server";
 import { getEffectiveGiveawayPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
@@ -138,21 +140,40 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
 
   const finalizationQuote =
     giveaway.status === "PREVIEWED" && payoutSnapshot.length > 0
-      ? quoteGiveawayFinalization({
-          giveaway: {
-            winnerSnapshot: giveaway.winnerSnapshot,
-            engagementConfig: giveaway.engagementConfig,
-            winnerCount: giveaway.winnerCount,
-            plannedPayoutSats: giveaway.plannedPayoutSats,
-            selectionMode: giveaway.selectionMode,
-            scopeType: giveaway.scopeType,
-            scopeReference: giveaway.scopeReference,
-            engagementTypes: giveaway.engagementTypes,
-            filters: giveaway.filters,
-            engagementWeights: giveaway.engagementWeights,
-          },
-          planType,
-        })
+      ? await (async () => {
+          const policy = quoteGiveawayFinalization({
+            giveaway: {
+              winnerSnapshot: giveaway.winnerSnapshot,
+              engagementConfig: giveaway.engagementConfig,
+              winnerCount: giveaway.winnerCount,
+              plannedPayoutSats: giveaway.plannedPayoutSats,
+              selectionMode: giveaway.selectionMode,
+              scopeType: giveaway.scopeType,
+              scopeReference: giveaway.scopeReference,
+              engagementTypes: giveaway.engagementTypes,
+              filters: giveaway.filters,
+              engagementWeights: giveaway.engagementWeights,
+            },
+            planType,
+          });
+          const records = await listGiveawayFinalizationRecords(
+            giveaway.id,
+            userId
+          );
+          const collection = resolveFinalizationCollection({
+            current: policy,
+            records,
+            nowMs: Date.now(),
+          });
+          return {
+            ...policy,
+            feeRateBps: collection.quote.feeRateBps,
+            feeSats: collection.quote.feeSats,
+            dueNowSats:
+              collection.kind === "settled" ? 0 : collection.quote.feeSats,
+            waivedByPlan: collection.quote.waivedByPlan,
+          };
+        })()
       : null;
 
   const completedAtFormatted = new Intl.DateTimeFormat(undefined, {

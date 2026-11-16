@@ -53,6 +53,16 @@ interface EnvConfig {
   /** HTTP Primal proxy: extra retries after first attempt (default 0). */
   PRIMAL_HTTP_MAX_RETRIES?: string;
   OWNER_NWC?: string;
+  /**
+   * Bound for one NWC pay_invoice, in milliseconds. Default 45000.
+   * Values below 50 or above 120000 are ignored.
+   */
+  NWC_PAY_TIMEOUT_MS?: string;
+  /**
+   * Bound for get_info and lookup_invoice after a pay timeout, in milliseconds.
+   * Default 15000. The same range rule applies.
+   */
+  NWC_RECONCILE_TIMEOUT_MS?: string;
   OWNER_NWC_RELAY?: string;
   OWNER_NWC_RELAYS?: string;
   NOSTR_NSEC?: string;
@@ -268,6 +278,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "PRIMAL_HTTP_TIMEOUT_MS",
     "PRIMAL_HTTP_MAX_RETRIES",
     "OWNER_NWC",
+    "NWC_PAY_TIMEOUT_MS",
+    "NWC_RECONCILE_TIMEOUT_MS",
     "OWNER_NWC_RELAY",
     "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",

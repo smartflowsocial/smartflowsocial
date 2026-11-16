@@ -1,89 +1,118 @@
 # Hosted service disclosures
 
-Checked on 16 November 2026 against the application code and the live pages:
+Owner decisions recorded for the 0.1.0-alpha.3 engineering pass. These supersede the 16 November
+2026 notes that set Starter to 0% and asked for a legal name.
 
-- https://smartflow.social/privacy (updated 15 November 2026)
-- https://smartflow.social/terms (updated 14 November 2026)
-- https://smartflow.social/pricing
+The public contact is the SmartFlowSocial Nostr account:
 
-The marketing site lives in `smartflowsocial/smartflowsocial-landing`. Replacement copy is in pull
-request https://github.com/smartflowsocial/smartflowsocial-landing/pull/2. That pull request is not
-merged, and the live pages were not redeployed by this change.
+`npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`
 
-## Release blocker: legal identity
+Profile: <https://njump.me/npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0>
 
-The privacy page says the operator identity is still undecided. Do not invent it.
+`nostr:npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`
 
-Ivan needs to supply, before the hosted service is described as a GDPR-ready controller:
+That account is how the project communicates in public. It is not a registered company, a personal
+legal name, a postal address, a registration number, or a statement that a data controller has been
+identified.
 
-- The legal name of the person or entity that operates app.smartflow.social
-- A postal address, if one is required for that operator
-- The jurisdiction they will state
-- A contact that is not only a Nostr profile
-- Which subprocessors the hosted deploy actually uses, and their countries if known
-- Retention for drafts, media, billing rows of live accounts, and server logs
+## Campaign commission
 
-Until those are supplied, the privacy page should keep the sentence that the identity is not stated.
+Hosted, from `app/features/payments/plan-policy.ts`, in basis points:
 
-## What the fee code charges
+| Plan    | Commission |
+| ------- | ---------: |
+| Free    |        10% |
+| Starter |       7.5% |
+| Creator |         5% |
+| Pro     |         0% |
+| Teams   |         0% |
+| Founder |         0% |
 
-Contest and giveaway finalization fees use `campaignFinalizationFeeRateBps` in
-`app/features/payments/plan-policy.ts`. The fee is
-`floor(planned prize pool sats * basis points / 10000)`. If that floor is 0 and the pool is
-positive, the fee is 1 sat. A zero rate charges nothing.
+Self-hosted (`SELF_HOSTED=true` in the server process only): every plan is 0%. The process does not
+create a platform-fee invoice, does not require `OWNER_NWC` for that fee, and does not block
+finalization because billing is unavailable. Winner payouts stay a separate payment from a wallet
+the creator or operator connects.
 
-| Plan    | Rate charged |
-| ------- | ------------ |
-| Free    | 10%          |
-| Starter | 0%           |
-| Creator | 5%           |
-| Pro     | 0%           |
-| Teams   | 0%           |
-| Founder | 0%           |
+A browser header, cookie, query parameter, or account field cannot select the self-hosted rate.
 
-The in-app plans page and comparison table use this table.
+The fee is `floor(planned prize pool × basis points / 10000)` in whole sats. A positive pool and a
+positive rate that round to zero cost 1 sat. A paid invoice is not rewritten when the rate later
+changes. An open invoice at or below the current quote is reused. A higher open invoice is expired
+in the database and is not collected. This software does not send refunds.
 
-The live terms page says Starter is 7.5%, Creator is 5%, and Pro is 0%. It does not mention Free.
-The live pricing page lists 7.5%, 5%, and 0% on Starter, Creator, and Pro, and says nothing on Free.
-Those sentences do not match the invoice.
+## Landing repository
 
-This change does not start charging Starter 7.5% or Teams 5%. Raising a fee needs an explicit
-decision. A self-hosted install still calculates the fee from the account's plan. A Free account
-there is still quoted 10% and cannot lock a prize pool until that invoice is paid to `OWNER_NWC`.
-Waiving that on `SELF_HOSTED=true` is a separate decision.
+`smartflowsocial/smartflowsocial-landing` was not writable from the application workspace. Pull
+request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2) is the open legal
+and pricing change. Revise it before merge. Do not merge a version that sets hosted Starter to 0%.
 
-## Replacement text for the website
+These sentences were not committed, merged, deployed, or checked on the live site from this change.
 
-Terms, replace the commission paragraph with:
+### Pricing
 
-> Lightning campaign finalization fees are calculated on the planned prize pool, in whole sats,
-> rounded down. A positive pool with a positive rate and a rounded result of zero costs 1 sat. Free
-> is 10%. Creator is 5%. Starter, Pro, Teams, and Founder are 0%. Prices for the plans are listed on
-> the pricing page. The free plan has hard limits. Starter is $4/month, Creator is $7/month, and Pro
-> is $17/month. Yearly billing on those three is charged as 10 months. Founder is $899 once, limited
-> to 21 seats, and is tied to one account owner.
+On every hosted plan card, state the campaign commission next to the plan:
 
-Pricing, add this line to Free:
+- Free: 10% campaign commission on Lightning prize pools
+- Starter: 7.5% campaign commission
+- Creator: 5% campaign commission
+- Pro: 0% campaign commission
+- Teams: 0% campaign commission
+- Founder: 0% campaign commission
 
-> 10% fee on Lightning campaign prize pools
+Add this paragraph:
 
-Pricing, change Starter's commission line to:
+> A self-hosted install of the same software charges 0% platform commission on contest and giveaway
+> finalization. The hosted rates above apply only to the service operated at smartflow.social.
+> Winner payouts are paid from a wallet you connect. SmartFlowSocial does not hold the prize pool.
 
-> 0% campaign commission
+Replace any line that says the operator is still deciding whether to publish an identity, and any
+line that sets Starter to 0%.
 
-Leave Creator at 5% and Pro at 0%.
+Node.js for self-hosting is 22.22 or newer, matching `.nvmrc`. Do not advertise Node 20+.
 
-Privacy, add after the wallet paragraph:
+### Terms
 
-> Contest and giveaway payouts store the winner's public key, the amount, a Lightning address when
-> one was used, the invoice, and the payment hash. A payout whose result was not confirmed stays
-> blocked until it is reconciled. The public-stats endpoint keeps the caller IP in Redis for about
-> 60 seconds to limit request rate. That address is not written to the account database. The account
-> export does not include the encrypted wallet connection or Lightning preimages.
+Replace the commission paragraph with:
 
-## Owner decision still open
+> On the hosted service, Lightning campaign finalization fees are calculated on the planned prize
+> pool, in whole sats, before a payable action. Free is 10%. Starter is 7.5%. Creator is 5%. Pro,
+> Teams, and Founder are 0%. A self-hosted deployment of this software charges 0% platform
+> commission on the same workflows. Prices for hosted plans are listed on the pricing page. The fee
+> is separate from winner payouts. Paying a finalization fee does not place prize funds in the
+> custody of SmartFlowSocial.
 
-1. Publish the replacement text, or approve new rates and then change `campaignCommissionPercent` to
-   match.
-2. Decide whether `SELF_HOSTED=true` should waive the finalization fee.
-3. Supply the legal identity fields above before calling the hosted privacy notice complete.
+Replace the operator sentence with:
+
+> SmartFlowSocial communicates publicly under its Nostr identity
+> npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0
+> (https://njump.me/npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0). That identity
+> is not a registered company and it is not a legal name or postal address. Publishing it does not
+> by itself meet identity-disclosure duties that can apply to a commercial hosted service, including
+> GDPR Article 13 and Article 5 of Directive 2000/31/EC. The hosted service does not claim that
+> those duties are satisfied.
+
+### Privacy
+
+Use the draft in [proposed privacy notice](../privacy/proposed-privacy-notice.md). Do not claim the
+hosted service is GDPR-compliant because the Nostr contact is published. Do not invent a company,
+address, support email, or privacy officer.
+
+### Contact, footer, and FAQ
+
+Use the same npub and the njump link anywhere the site names a contact, a support channel, or the
+operator. Remove wording that says the owner is still deciding whether to publish an identity.
+Replace it with the sentence that the project communicates publicly under that Nostr identity.
+
+FAQ answer for "Who operates the hosted service?":
+
+> The hosted service is operated under the SmartFlowSocial Nostr identity
+> npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0. That is a public contact, not a
+> registered company name or a postal address. Questions can be sent to that Nostr account.
+
+## Remaining legal exposure
+
+The owner accepted a pseudonymous public contact and instructed engineering not to invent a legal
+identity. A Nostr npub does not by itself identify a data controller under GDPR Article 13 or a
+service provider under Directive 2000/31/EC Article 5. Those obligations, where they apply to the
+commercial hosted service, remain unmet. This is an owner-accepted compliance risk. It is not marked
+verified, and it is not cured by the wording above.

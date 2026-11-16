@@ -6,6 +6,7 @@
 import { getOwnerNwcWithRelayOverrides } from "~/features/payments/data";
 import {
   lookupAuthorizedPayment,
+  nwcTimeouts,
   payAuthorizedBolt11,
 } from "~/features/payments/nwc-authorized-pay.server";
 import { assertBolt11MatchesAuthorizedAmount } from "~/features/referral/bolt11-invoice.server";
@@ -29,8 +30,6 @@ import {
   groupByReferrerPendingSats,
   holdReferralPayoutAsUnknown,
 } from "./repositories/referral-data.server";
-
-const REFERRAL_PAY_TIMEOUT_MS = 45_000;
 
 const DEFAULT_MAX_INVOICE_SATS = 1_000_000;
 const DEFAULT_DAILY_CAP_SATS = 5_000_000;
@@ -179,11 +178,13 @@ export async function payReferrerWithInvoice(
   }
 
   const { credentials } = getOwnerNwcWithRelayOverrides(ownerNwc);
+  const timeouts = nwcTimeouts();
   const paid = await payAuthorizedBolt11({
     nwcUrl: credentials,
     invoice: invoice.invoice,
     authorizedSats: amountSats,
-    timeoutMs: REFERRAL_PAY_TIMEOUT_MS,
+    timeoutMs: timeouts.payMs,
+    reconcileTimeoutMs: timeouts.reconcileMs,
   });
   if (!paid.ok) {
     logError(new Error(paid.message), {
@@ -253,6 +254,7 @@ async function reconcileHeldReferralPayout(
     nwcUrl: credentials,
     paymentHash: held.paymentHash,
     authorizedSats: held.amountSats,
+    timeoutMs: nwcTimeouts().reconcileMs,
   });
   if (lookup.kind === "settled" && lookup.preimage) {
     try {
