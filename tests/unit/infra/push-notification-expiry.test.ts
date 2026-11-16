@@ -15,6 +15,10 @@ const {
 }));
 
 vi.mock("web-push", () => ({
+  default: {
+    sendNotification: mockSendNotification,
+    setVapidDetails: vi.fn(),
+  },
   sendNotification: mockSendNotification,
   setVapidDetails: vi.fn(),
 }));

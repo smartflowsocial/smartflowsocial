@@ -3,7 +3,7 @@
  * Handles sending push notifications to subscribed users
  */
 
-import * as webpush from "web-push";
+import webpush from "web-push";
 import type { PushSubscription as WebPushSubscription } from "web-push";
 
 import { getRunwaySettings } from "~/features/user/services/user-settings.server";
