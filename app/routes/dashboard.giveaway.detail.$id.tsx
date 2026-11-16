@@ -262,7 +262,7 @@ export async function loader(args: LoaderFunctionArgs) {
 }
 
 /* eslint-disable sonarjs/cognitive-complexity -- action handles multiple form actions */
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, url, params }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
@@ -274,7 +274,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  const url = new URL(request.url);
   const redirectBack = () => redirect(url.pathname);
 
   switch (intent) {

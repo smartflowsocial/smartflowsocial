@@ -79,14 +79,13 @@ type BroadcastDetailLoaderData = Awaited<
   ReturnType<typeof getBroadcastDetailData>
 >;
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, url, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
   const id = params["id"];
   if (!id) throw new Response("Not found", { status: 404 });
 
-  const url = new URL(request.url);
   const statusFilter = url.searchParams.get("rstatus") ?? "ALL";
   const search = url.searchParams.get("rq") ?? "";
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);

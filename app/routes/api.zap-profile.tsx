@@ -12,8 +12,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
  * Returns lud16 (Lightning address) for a Nostr pubkey for NIP-57 zap flow.
  * No auth required.
  */
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+export async function loader({ url }: LoaderFunctionArgs) {
   const raw = url.searchParams.get("npub")?.trim();
   if (!raw) {
     return jsonResponse({ error: "Missing npub" }, { status: 400 });

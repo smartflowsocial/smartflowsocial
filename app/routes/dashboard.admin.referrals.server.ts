@@ -37,13 +37,12 @@ export type ReferralPayoutBatchResult = Awaited<
   ReturnType<typeof runReferralPayoutBatch>
 >;
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
     return data({ error: "Forbidden" }, { status: 403 });
   }
 
-  const url = new URL(request.url);
   const exportCsv = url.searchParams.get("export") === "csv";
   const exportEarnings = url.searchParams.get("export_earnings") === "csv";
   const section = url.searchParams.get("section") ?? "referrals";

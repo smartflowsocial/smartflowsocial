@@ -6,13 +6,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { error, log } from "./logger.cjs";
 
 // Script logger (avoids console.*)
-
-const { log, error } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
 
 const buildAssetsDir = path.join(process.cwd(), "build", "client", "assets");
 

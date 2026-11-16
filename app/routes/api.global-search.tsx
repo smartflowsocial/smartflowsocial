@@ -4,9 +4,8 @@ import { requireUserId } from "~/features/auth/auth.server";
 import { performGlobalSearch } from "~/features/search";
 import { jsonResponse } from "~/lib/http/json-response";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const url = new URL(request.url);
   const query = url.searchParams.get("q") ?? "";
   const trimmedQuery = query.trim();
   const context = url.searchParams.get("context") ?? undefined;

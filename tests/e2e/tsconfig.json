@@ -5,10 +5,12 @@
     "**/*.config.ts",
     "support/**/*",
     "../../env.d.ts",
+    "../../scripts/nonce-context.d.ts",
     "../../app/types/**/*.d.ts"
   ],
   "compilerOptions": {
     "baseUrl": ".",
+    "rootDirs": ["../..", "../../.react-router/types"],
     "noEmit": true,
     "incremental": true,
     "tsBuildInfoFile": "../../.cache/tsconfig.e2e.tsbuildinfo",

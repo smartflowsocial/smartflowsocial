@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.payment-status.ts
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const TEST_USER_ID = "test-user-123";
@@ -68,13 +69,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -126,13 +127,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -181,13 +182,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -225,13 +226,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -272,13 +273,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -320,13 +321,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -367,13 +368,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -417,13 +418,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };
@@ -458,13 +459,13 @@ describe("API: Payment Status", () => {
         const actionParams: {
           request: Request;
           params: Record<string, string>;
-          context: Record<string, unknown>;
+          context: RouterContextProvider;
           url: URL;
           pattern: string;
         } = {
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         };

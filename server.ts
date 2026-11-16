@@ -4,7 +4,7 @@ import path from "node:path";
 import url from "node:url";
 
 import { createRequestHandler } from "@react-router/express";
-import type { ServerBuild } from "react-router";
+import { RouterContextProvider, type ServerBuild } from "react-router";
 import compression from "compression";
 import { config } from "dotenv";
 import express from "express";
@@ -32,6 +32,7 @@ import {
   broadcastUnsubscribeLimiter,
 } from "./app/lib/rate-limit.server";
 import { TRUSTED_PROXIES } from "./app/lib/trusted-proxies.server";
+import { nonceContext } from "#nonce-context";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
 if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
@@ -152,11 +153,12 @@ async function run() {
             "virtual:react-router/server-build"
           ) as Promise<ServerBuild>
       : ((await import(buildPath)) as ServerBuild),
-    getLoadContext: (_req, res) => ({
-      nonce: (res.locals as Record<string, unknown>)["nonce"] as
-        | string
-        | undefined,
-    }),
+    getLoadContext: (_req, res) => {
+      const context = new RouterContextProvider();
+      const nonce = (res.locals as Record<string, unknown>)["nonce"];
+      context.set(nonceContext, typeof nonce === "string" ? nonce : null);
+      return context;
+    },
   });
 
   const app = express();

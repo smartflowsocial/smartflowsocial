@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.parent.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("~/features/auth/session.server", () => ({
   requireUserId: vi.fn(),
@@ -74,14 +75,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -128,14 +129,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -175,14 +176,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -219,14 +220,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -256,14 +257,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -293,14 +294,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -349,7 +350,7 @@ describe("API: Parent", () => {
         response = await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         });
@@ -376,7 +377,7 @@ describe("API: Parent", () => {
       const loaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -411,14 +412,14 @@ describe("API: Parent", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

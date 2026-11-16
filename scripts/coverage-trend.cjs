@@ -9,7 +9,7 @@ const path = require("path");
 const { log, error } = require("./logger");
 
 const COVERAGE_DIR = path.join(__dirname, "../coverage");
-const TREND_FILE = path.join(__dirname, "../coverage/.coverage-trend.json");
+const TREND_FILE = path.join(__dirname, "../coverage/.coverage-trend.cjson");
 
 function loadTrendData() {
   if (fs.existsSync(TREND_FILE)) {
@@ -123,8 +123,8 @@ function main() {
     generateTrendReport(trendData);
   } else {
     log("Usage:");
-    log("  node scripts/coverage-trend.js record  - Record current coverage");
-    log("  node scripts/coverage-trend.js report  - Show trend report");
+    log("  node scripts/coverage-trend.cjs record  - Record current coverage");
+    log("  node scripts/coverage-trend.cjs report  - Show trend report");
     process.exit(1);
   }
 }

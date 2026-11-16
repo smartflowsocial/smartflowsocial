@@ -5,8 +5,8 @@
 // Where STATUS is one of: FREE, ACTIVE, EXPIRED, CANCELED, PAST_DUE
 
 // Load environment variables FIRST
-require("./load-env.js");
 
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, SubscriptionStatus } from "@prisma/client";
 import { Pool } from "pg";

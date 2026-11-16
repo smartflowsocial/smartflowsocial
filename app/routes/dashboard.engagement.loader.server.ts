@@ -4,6 +4,7 @@ import {
   loadEngagementFeedData,
 } from "~/features/engagement";
 import { requireAnySubscription } from "~/features/payments";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   engagementLoaderDataSchema,
@@ -22,7 +23,7 @@ export async function loadEngagementValidatedOrThrow(
 export async function loadEngagementJson(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
   return loadEngagementValidatedOrThrow(
     userId,

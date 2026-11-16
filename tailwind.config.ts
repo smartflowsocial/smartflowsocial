@@ -5,6 +5,7 @@
 // see  -  primarily the per-queue hex color utilities built from the
 // `QUEUE_COLOR_ACCENTS` map at runtime (see app/features/posts/queue-colors.ts).
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   content: [
@@ -40,5 +41,5 @@ export default {
   // Note: tailwindcss-animate plugin generates CSS with nesting syntax
   // This may cause harmless CSS syntax warnings from esbuild about `:where(& > ...)`
   // These warnings can be safely ignored - the CSS works correctly in browsers.
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

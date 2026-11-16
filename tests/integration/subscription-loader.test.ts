@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
@@ -102,7 +103,7 @@ describe("Subscription/Billing Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -166,7 +167,7 @@ describe("Subscription/Billing Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -220,7 +221,7 @@ describe("Subscription/Billing Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -281,7 +282,7 @@ describe("Subscription/Billing Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -340,7 +341,7 @@ describe("Subscription/Billing Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -380,7 +381,7 @@ describe("Subscription/Billing Loader Integration", () => {
         await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         })
@@ -410,7 +411,7 @@ describe("Subscription/Billing Loader Integration", () => {
         await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         })
@@ -439,7 +440,7 @@ describe("Subscription/Billing Loader Integration", () => {
         await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         })
@@ -459,7 +460,7 @@ describe("Subscription/Billing Loader Integration", () => {
         await loader({
           request,
           params: {},
-          context: {},
+          context: new RouterContextProvider(),
           url: new URL(request.url),
           pattern: "*",
         })

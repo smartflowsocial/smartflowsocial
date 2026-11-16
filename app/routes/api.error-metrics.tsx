@@ -15,14 +15,13 @@ import { jsonResponse } from "~/lib/http/json-response";
  *
  * Requires authentication and should be restricted to admins in production
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   // Require authentication
   await requireUserId(request);
 
   // In production, you should add admin check here:
   // await requireAdmin(request);
 
-  const url = new URL(request.url);
   const summary = url.searchParams.get("summary") === "true";
   const topErrors = url.searchParams.get("top");
   const checkRate = url.searchParams.get("checkRate") === "true";

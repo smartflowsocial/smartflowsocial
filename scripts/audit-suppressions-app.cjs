@@ -2,7 +2,7 @@
 /**
  * Enhanced audit of eslint-disable and TypeScript suppressions in app/.
  * Outputs TSV: file, line, kind, rule(s), comment, category (placeholder).
- * Usage: node scripts/audit-suppressions-app.js
+ * Usage: node scripts/audit-suppressions-app.cjs
  * See CONTRIBUTING.md § Lint and type suppression policy and docs/reference/suppressions-audit-app.md.
  */
 

@@ -36,8 +36,7 @@ function isAllowedUrl(url: URL): boolean {
   );
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+export async function loader({ url }: LoaderFunctionArgs) {
   const targetParam = url.searchParams.get("url");
 
   if (!targetParam || targetParam.trim() === "") {
