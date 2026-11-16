@@ -26,6 +26,7 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "10 scheduled items",
     "1 queue",
     "Browse broadcasts (no sending)",
+    "10% fee on Lightning campaign prize pools",
     "Paid plans unlock full send volume",
   ],
   starter: [
@@ -34,7 +35,7 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "5 GB storage / 20 GB uploads",
     "50 MB max file size",
     "Bulk workflows enabled",
-    "7.5% campaign commission",
+    "0% campaign commission",
   ],
   creator: [
     "Up to 2 accounts",

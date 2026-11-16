@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import type {
   PayoutAttemptStatus,
   PayoutItemStatus,
@@ -31,24 +33,50 @@ export async function findOrCreatePayoutRunByIdempotencyKey(
     totalSats?: number | null;
   }
 ) {
-  const existing = await tx.payoutRun.findUnique({
+  const contestId = args.contestId ?? null;
+  const giveawayId = args.giveawayId ?? null;
+  const spendCapSats = args.spendCapSats ?? null;
+  const totalItems = args.totalItems ?? null;
+  const totalSats = args.totalSats ?? null;
+  await tx.$executeRaw`
+    INSERT INTO "PayoutRun" (
+      "id",
+      "scope",
+      "userId",
+      "walletMode",
+      "trigger",
+      "idempotencyKey",
+      "contestId",
+      "giveawayId",
+      "spendCapSats",
+      "totalSats",
+      "totalItems",
+      "status",
+      "createdAt",
+      "updatedAt"
+    ) VALUES (
+      ${crypto.randomUUID()},
+      ${args.scope}::"PayoutRunScope",
+      ${args.userId},
+      ${args.walletMode}::"PayoutWalletMode",
+      ${args.trigger}::"PayoutRunTrigger",
+      ${args.idempotencyKey},
+      ${contestId},
+      ${giveawayId},
+      ${spendCapSats},
+      ${totalSats},
+      ${totalItems},
+      'draft'::"PayoutRunStatus",
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT ("idempotencyKey") DO NOTHING
+  `;
+  const row = await tx.payoutRun.findUnique({
     where: { idempotencyKey: args.idempotencyKey },
   });
-  if (existing) return existing;
-  return tx.payoutRun.create({
-    data: {
-      idempotencyKey: args.idempotencyKey,
-      scope: args.scope,
-      userId: args.userId,
-      walletMode: args.walletMode,
-      trigger: args.trigger,
-      contestId: args.contestId ?? null,
-      giveawayId: args.giveawayId ?? null,
-      spendCapSats: args.spendCapSats ?? null,
-      totalItems: args.totalItems ?? null,
-      totalSats: args.totalSats ?? null,
-    },
-  });
+  if (!row) throw new Error("Payout run was not created");
+  return row;
 }
 
 export function updatePayoutRun(

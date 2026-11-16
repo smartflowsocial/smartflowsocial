@@ -9,10 +9,10 @@ signing key stays in the signer.
 
 The same code is the hosted service and a self-hosted install. There is no private edition of the
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
-[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.1`. Release notes are in
-[docs/releases/v0.1.0-alpha.1.md](./docs/releases/v0.1.0-alpha.1.md). This repository starts at that
-version. `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository.
-Neither is a supported version.
+[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.2`. Release notes are in
+[docs/releases/v0.1.0-alpha.2.md](./docs/releases/v0.1.0-alpha.2.md). The tag is not published.
+`v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository. Neither is a
+supported version.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
@@ -72,7 +72,7 @@ pnpm install
 cp example.env .env
 pnpm docker
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 pnpm db:seed
 pnpm dev
 ```
@@ -83,8 +83,9 @@ Open `http://localhost:3000`.
 Postgres is published on **127.0.0.1:5433** (container port `5432`). Redis is on **127.0.0.1:6379**.
 Those ports are not bound on every interface. The database name in that compose file is `postgres`,
 and the password there is for local development. Point `DATABASE_URL` and `REDIS_URL` at `127.0.0.1`
-before `prisma db push` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited by
-hosted plan caps. That does not include hosted Blossom or hosted Blastr.
+before `prisma migrate deploy` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited
+by hosted plan caps. That does not include hosted Blossom or hosted Blastr. `pnpm db:seed` replaces
+plan rows. A database that already has subscriptions should not be seeded.
 
 `pnpm dev` starts the web server and the worker, and restarts the worker when its files change.
 `pnpm worker:local` runs the worker without the web server. Running it next to `pnpm dev` starts a

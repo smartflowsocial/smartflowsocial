@@ -1,154 +1,265 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// --- Mocks (must be hoisted for vi.mock factories) ---
-const { mockTx, mockPrisma } = vi.hoisted(() => {
-  const mockTx = {
-    payoutRun: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-  };
-
-  const mockPrisma = {
-    $transaction: vi.fn(),
-    payoutItem: {
-      upsert: vi.fn(),
-      update: vi.fn(),
-      findMany: vi.fn(),
-    },
-    payoutAttempt: {
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    payoutRun: {
-      update: vi.fn(),
-    },
-  };
-
-  return { mockTx, mockPrisma };
-});
-
-vi.mock("~/lib/prisma.server", () => ({
-  prisma: mockPrisma,
+const ledger = vi.hoisted(() => ({
+  withPayoutLedgerTransaction: vi.fn(
+    async (fn: (tx: unknown) => Promise<unknown>) => fn({})
+  ),
+  findOrCreatePayoutRunByIdempotencyKey: vi.fn(),
+  findPayoutRunByIdempotencyKey: vi.fn(),
+  updatePayoutRun: vi.fn(),
 }));
 
+const claimApi = vi.hoisted(() => ({
+  claimCampaignPayoutItem: vi.fn(),
+  recordUnpayableCampaignItem: vi.fn(),
+  settleCampaignPayoutAttempt: vi.fn(),
+}));
+
+const payApi = vi.hoisted(() => ({
+  payAuthorizedBolt11: vi.fn(),
+  lookupAuthorizedPayment: vi.fn(),
+}));
+
+vi.mock(
+  "~/features/payments/repositories/payout-ledger-data.server",
+  () => ledger
+);
+vi.mock(
+  "~/features/payments/repositories/campaign-payout-claim.server",
+  () => claimApi
+);
+vi.mock("~/features/payments/nwc-authorized-pay.server", () => payApi);
 vi.mock("~/features/user", () => ({
   getDecryptedUserNWC: vi.fn(),
 }));
-
 vi.mock("~/features/auth/profile.server", () => ({
   fetchPrimalProfileData: vi.fn(),
   processPrimalData: vi.fn(),
 }));
-
 vi.mock("~/features/referral/lnurl-pay.server", () => ({
-  fetchInvoiceFromLnurlPay: vi.fn(),
+  fetchLnurlPayInvoice: vi.fn(),
 }));
 
-vi.mock("@getalby/sdk", () => ({
-  NWCClient: class {
-    payInvoice = vi.fn(async () => ({ preimage: "test-preimage" }));
-    close = vi.fn();
-    constructor(_args: unknown) {}
-  },
-}));
+import { freshInvoiceForSats } from "../helpers/bolt11-fixture";
 
 import { executeCampaignPayoutBatch } from "~/features/payments/services/payout-executor.server";
-import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
+import { fetchLnurlPayInvoice } from "~/features/referral/lnurl-pay.server";
 import { getDecryptedUserNWC } from "~/features/user";
+
+const WINNER = "b".repeat(64);
+const HASH = "22".repeat(32);
+
+function input(amountSats: number, spendCapSats?: number) {
+  return {
+    scope: "GIVEAWAY" as const,
+    giveawayId: "g1",
+    creatorUserId: "u1",
+    trigger: "manual_trigger" as const,
+    walletMode: "nwc_creator" as const,
+    spendCapSats,
+    winners: [
+      {
+        winnerPubkeyHex: WINNER,
+        amountSats,
+        winnerNpub: "npub1test",
+        lnAddressSnapshot: "alice@example.com",
+      },
+    ],
+  };
+}
 
 describe("executeCampaignPayoutBatch", () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-    mockPrisma.$transaction.mockImplementation(
-      async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)
+    vi.clearAllMocks();
+    ledger.findOrCreatePayoutRunByIdempotencyKey.mockResolvedValue({
+      id: "run_1",
+      startedAt: null,
+    });
+    ledger.findPayoutRunByIdempotencyKey.mockResolvedValue({
+      id: "run_1",
+      metadataJson: null,
+    });
+    ledger.updatePayoutRun.mockResolvedValue({ id: "run_1" });
+    claimApi.recordUnpayableCampaignItem.mockResolvedValue(undefined);
+    claimApi.settleCampaignPayoutAttempt.mockResolvedValue("updated");
+    payApi.lookupAuthorizedPayment.mockResolvedValue({ kind: "inconclusive" });
+    vi.mocked(getDecryptedUserNWC).mockResolvedValue(
+      "nostr+walletconnect://test"
     );
   });
 
-  it("creates a run and skips when creator has no NWC", async () => {
-    const mockedGetDecryptedUserNWC = vi.mocked(getDecryptedUserNWC);
-    mockedGetDecryptedUserNWC.mockResolvedValue(null);
-
-    mockTx.payoutRun.findUnique.mockResolvedValue(null);
-    mockTx.payoutRun.create.mockResolvedValue({ id: "run_1", startedAt: null });
-    mockTx.payoutRun.update.mockResolvedValue({ id: "run_1" });
-
+  it("creates a run and skips when the creator has no NWC", async () => {
+    vi.mocked(getDecryptedUserNWC).mockResolvedValue(null);
     const res = await executeCampaignPayoutBatch({
+      ...input(100),
       scope: "CONTEST",
       contestId: "c1",
-      creatorUserId: "u1",
       trigger: "autorun",
-      walletMode: "nwc_creator",
-      winners: [
-        {
-          winnerPubkeyHex: "a".repeat(64),
-          amountSats: 100,
-          winnerNpub: "npub1",
-        },
-      ],
+    });
+    expect(res.eligible).toBe(false);
+    expect(res.runId).toBe("run_1");
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+    expect(claimApi.claimCampaignPayoutItem).not.toHaveBeenCalled();
+  });
+
+  it("pays one matching invoice and marks the item paid", async () => {
+    const invoice = freshInvoiceForSats(123, HASH);
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({ ok: true, invoice });
+    claimApi.claimCampaignPayoutItem.mockResolvedValue({
+      ok: true,
+      itemId: "item_1",
+      attemptKey: "attempt_1",
+      attemptNumber: 1,
+    });
+    payApi.payAuthorizedBolt11.mockResolvedValue({
+      ok: true,
+      preimage: "ab".repeat(32),
+      walletResponse: { preimage: "ab".repeat(32) },
+      paymentHash: HASH,
+      amountSats: 123,
     });
 
-    expect(res.eligible).toBe(false);
-    expect(res.walletMode).toBe("manual");
-    expect(res.runId).toBe("run_1");
-    expect(mockTx.payoutRun.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: "skipped" }) as unknown,
-      })
+    const res = await executeCampaignPayoutBatch(input(123));
+    expect(res.totals.paid).toBe(1);
+    expect(payApi.payAuthorizedBolt11).toHaveBeenCalledWith(
+      expect.objectContaining({ invoice, authorizedSats: 123 })
+    );
+    expect(claimApi.settleCampaignPayoutAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "paid", itemId: "item_1" })
     );
   });
 
-  it("pays one invoice via NWC and marks item paid", async () => {
-    const mockedGetDecryptedUserNWC = vi.mocked(getDecryptedUserNWC);
-    mockedGetDecryptedUserNWC.mockResolvedValue("nostr+walletconnect://test");
-    const mockedFetchInvoiceFromLnurlPay = vi.mocked(fetchInvoiceFromLnurlPay);
-    mockedFetchInvoiceFromLnurlPay.mockResolvedValue("lnbc1testinvoice");
-
-    mockTx.payoutRun.findUnique.mockResolvedValue(null);
-    mockTx.payoutRun.create.mockResolvedValue({ id: "run_2", startedAt: null });
-    mockTx.payoutRun.update.mockResolvedValue({ id: "run_2" });
-
-    mockPrisma.payoutItem.upsert.mockResolvedValue({
-      id: "item_1",
-      status: "pending",
-      attemptCount: 0,
+  it("does not pay an invoice one sat above or below the winner amount", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(101, HASH),
     });
-    mockPrisma.payoutItem.update.mockResolvedValue({ id: "item_1" });
-    mockPrisma.payoutAttempt.create.mockResolvedValue({ id: "att_1" });
-    mockPrisma.payoutAttempt.update.mockResolvedValue({ id: "att_1" });
-    mockPrisma.payoutRun.update.mockResolvedValue({ id: "run_2" });
+    const above = await executeCampaignPayoutBatch(input(100));
+    expect(above.totals.paid).toBe(0);
+    expect(above.totals.failed).toBe(1);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+    expect(claimApi.claimCampaignPayoutItem).not.toHaveBeenCalled();
 
-    const res = await executeCampaignPayoutBatch({
-      scope: "GIVEAWAY",
-      giveawayId: "g1",
-      creatorUserId: "u1",
-      trigger: "manual_trigger",
-      walletMode: "nwc_creator",
-      winners: [
-        {
-          winnerPubkeyHex: "b".repeat(64),
-          amountSats: 123,
-          winnerNpub: "npub1test",
-          lnAddressSnapshot: "alice@example.com",
-        },
-      ],
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(99, HASH),
     });
+    const below = await executeCampaignPayoutBatch(input(100));
+    expect(below.totals.failed).toBe(1);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+  });
 
-    expect(res.eligible).toBe(true);
+  it("does not pay an amountless or corrupt invoice", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: false,
+      code: "invoice_rejected",
+      detail: "Amountless BOLT11 invoices cannot be paid",
+    });
+    const res = await executeCampaignPayoutBatch(input(100));
+    expect(res.totals.paid).toBe(0);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+    expect(claimApi.recordUnpayableCampaignItem).toHaveBeenCalled();
+  });
+
+  it("does not pay when the campaign budget is exhausted", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(100, HASH),
+    });
+    claimApi.claimCampaignPayoutItem.mockResolvedValue({
+      ok: false,
+      reason: "budget_exhausted",
+      message: "Invoice amount exceeds the campaign's remaining budget",
+    });
+    const res = await executeCampaignPayoutBatch(input(100, 0));
+    expect(res.totals.paid).toBe(0);
+    expect(res.totals.failed).toBe(1);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+  });
+
+  it("does not pay a winner who is already paid", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(100, HASH),
+    });
+    claimApi.claimCampaignPayoutItem.mockResolvedValue({
+      ok: false,
+      reason: "already_paid",
+      itemId: "item_1",
+    });
+    const res = await executeCampaignPayoutBatch(input(100));
+    expect(res.totals.paid).toBe(0);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+  });
+
+  it("marks a timeout unknown and does not pay it again", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(100, HASH),
+    });
+    claimApi.claimCampaignPayoutItem
+      .mockResolvedValueOnce({
+        ok: true,
+        itemId: "item_1",
+        attemptKey: "attempt_1",
+        attemptNumber: 1,
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        reason: "unknown",
+        itemId: "item_1",
+        paymentHash: HASH,
+        amountSats: 100,
+      });
+    payApi.payAuthorizedBolt11.mockResolvedValue({
+      ok: false,
+      disposition: "unknown",
+      code: "UNCONFIRMED",
+      message: "NWC payInvoice timeout",
+      paymentHash: HASH,
+    });
+    payApi.lookupAuthorizedPayment.mockResolvedValue({ kind: "inconclusive" });
+
+    const first = await executeCampaignPayoutBatch(input(100));
+    expect(first.totals.claimNeeded).toBe(1);
+    expect(claimApi.settleCampaignPayoutAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "unknown" })
+    );
+
+    const second = await executeCampaignPayoutBatch(input(100));
+    expect(second.totals.paid).toBe(0);
+    expect(payApi.payAuthorizedBolt11).toHaveBeenCalledTimes(1);
+    expect(payApi.lookupAuthorizedPayment).toHaveBeenCalled();
+  });
+
+  it("marks a held payout paid when lookup shows it settled", async () => {
+    vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
+      ok: true,
+      invoice: freshInvoiceForSats(100, HASH),
+    });
+    claimApi.claimCampaignPayoutItem.mockResolvedValue({
+      ok: false,
+      reason: "paying",
+      itemId: "item_1",
+      paymentHash: HASH,
+      amountSats: 100,
+    });
+    payApi.lookupAuthorizedPayment.mockResolvedValue({
+      kind: "settled",
+      preimage: "ab".repeat(32),
+    });
+    const res = await executeCampaignPayoutBatch(input(100));
     expect(res.totals.paid).toBe(1);
-    expect(mockPrisma.payoutAttempt.create).toHaveBeenCalled();
-    expect(mockPrisma.payoutItem.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: "paid" }) as unknown,
-      })
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+    expect(claimApi.settleCampaignPayoutAttempt).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "paid" })
     );
-    expect(mockPrisma.payoutRun.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          status: expect.any(String) as unknown,
-        }) as unknown,
-      })
-    );
+  });
+
+  it("rejects a fractional winner amount without calling the wallet", async () => {
+    const res = await executeCampaignPayoutBatch(input(1.5));
+    expect(res.totals.failed).toBe(1);
+    expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
+    expect(vi.mocked(fetchLnurlPayInvoice)).not.toHaveBeenCalled();
   });
 });

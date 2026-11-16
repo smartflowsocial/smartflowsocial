@@ -1,25 +1,37 @@
 import crypto from "node:crypto";
 
-import { NWCClient } from "@getalby/sdk";
-
 import {
   fetchPrimalProfileData,
   processPrimalData,
 } from "~/features/auth/profile.server";
 import {
-  createPayoutAttempt,
+  readSpendCap,
+  sumPayableSats,
+  type BudgetWinner,
+} from "~/features/payments/campaign-payout-budget";
+import {
+  lookupAuthorizedPayment,
+  payAuthorizedBolt11,
+} from "~/features/payments/nwc-authorized-pay.server";
+import {
+  claimCampaignPayoutItem,
+  recordUnpayableCampaignItem,
+  settleCampaignPayoutAttempt,
+  type CampaignClaimResult,
+} from "~/features/payments/repositories/campaign-payout-claim.server";
+import {
   findOrCreatePayoutRunByIdempotencyKey,
   findPayoutRunByIdempotencyKey,
-  updatePayoutAttemptByIdempotencyKey,
-  updatePayoutItem,
   updatePayoutRun,
-  upsertPayoutItemByRunAndWinner,
   withPayoutLedgerTransaction,
 } from "~/features/payments/repositories/payout-ledger-data.server";
-import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
+import { assertBolt11MatchesAuthorizedAmount } from "~/features/referral/bolt11-invoice.server";
+import { fetchLnurlPayInvoice } from "~/features/referral/lnurl-pay.server";
 import { getDecryptedUserNWC } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
+
+const CAMPAIGN_PAY_TIMEOUT_MS = 45_000;
 
 export type CampaignPayoutScope = "CONTEST" | "GIVEAWAY";
 export type CampaignWalletMode = "manual" | "nwc_creator";
@@ -89,17 +101,96 @@ interface PayoutDelta {
   skipped: number;
 }
 
+function winnerAmountClass(value: number): "pay" | "skip" | "reject" {
+  if (typeof value !== "number" || !Number.isSafeInteger(value))
+    return "reject";
+  if (value < 0) return "reject";
+  if (value === 0) return "skip";
+  return "pay";
+}
+
+function requestedWinners(
+  winners: readonly WinnerPayoutInput[]
+): BudgetWinner[] {
+  return winners.flatMap((winner) =>
+    winnerAmountClass(winner.amountSats) === "pay"
+      ? [
+          {
+            winnerPubkey: winner.winnerPubkeyHex,
+            amountSats: winner.amountSats,
+          },
+        ]
+      : []
+  );
+}
+
+async function recordWinnerIssue(args: {
+  runId: string;
+  winnerPubkey: string;
+  amountSats: number;
+  idempotencyKey: string;
+  status: "claim_needed" | "failed";
+  errorCode: string;
+  errorMessage: string;
+  lnAddressSnapshot?: string | null;
+}): Promise<void> {
+  await recordUnpayableCampaignItem(args);
+}
+
+async function reconcileHeldWinner(args: {
+  nwc: string;
+  claim: Extract<CampaignClaimResult, { ok: false }>;
+}): Promise<PayoutDelta> {
+  const neutral = { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
+  if (!args.claim.itemId) return neutral;
+  const amountSats = args.claim.amountSats;
+  const lookup =
+    args.claim.paymentHash &&
+    typeof amountSats === "number" &&
+    Number.isSafeInteger(amountSats) &&
+    amountSats > 0
+      ? await lookupAuthorizedPayment({
+          nwcUrl: args.nwc,
+          paymentHash: args.claim.paymentHash,
+          authorizedSats: amountSats,
+        })
+      : { kind: "inconclusive" as const };
+  if (lookup.kind === "settled" && lookup.preimage) {
+    await settleCampaignPayoutAttempt({
+      itemId: args.claim.itemId,
+      outcome: "paid",
+      preimage: lookup.preimage,
+    });
+    return { paid: 1, failed: 0, claimNeeded: 0, skipped: 0 };
+  }
+  if (args.claim.reason === "paying") {
+    await settleCampaignPayoutAttempt({
+      itemId: args.claim.itemId,
+      outcome: "unknown",
+      errorCode: "reconciliation_required",
+      errorMessage:
+        "Payment outcome is unknown. Automatic retry is blocked until the wallet is checked.",
+    });
+  }
+  return neutral;
+}
+
 async function processOneWinnerForCampaignPayout(args: {
   runId: string;
   nwc: string;
   input: ExecuteCampaignPayoutBatchInput;
   w: WinnerPayoutInput;
+  spendCapSats: number | null;
 }): Promise<PayoutDelta> {
-  const { runId, nwc, input, w } = args;
-  const amountSats = Math.max(0, Math.floor(w.amountSats));
-  if (amountSats <= 0) {
+  const { runId, nwc, input, w, spendCapSats } = args;
+  const amountClass = winnerAmountClass(w.amountSats);
+  if (amountClass === "skip") {
     return { paid: 0, failed: 0, claimNeeded: 0, skipped: 1 };
   }
+  if (amountClass === "reject") {
+    return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
+  }
+  const amountSats = w.amountSats;
 
   const itemKey = winnerItemIdempotencyKey({
     scope: input.scope,
@@ -108,28 +199,20 @@ async function processOneWinnerForCampaignPayout(args: {
     winnerPubkeyHex: w.winnerPubkeyHex,
     amountSats,
   });
-
-  const item = await upsertPayoutItemByRunAndWinner({
-    runId,
-    winnerPubkey: w.winnerPubkeyHex,
-    amountSats,
-    idempotencyKey: itemKey,
-  });
-
   const winnerNpub = (w.winnerNpub ?? "").trim()
     ? (w.winnerNpub ?? "").trim()
     : nostrAdapter.encodeNpub(w.winnerPubkeyHex);
   if (!winnerNpub) {
-    await updatePayoutItem(item.id, {
+    await recordWinnerIssue({
+      runId,
+      winnerPubkey: w.winnerPubkeyHex,
+      amountSats,
+      idempotencyKey: itemKey,
       status: "claim_needed",
       errorCode: "missing_destination",
       errorMessage: "Invalid winner pubkey (cannot derive npub)",
     });
     return { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
-  }
-
-  if (item.status === "paid" || item.status === "skipped") {
-    return { paid: 0, failed: 0, claimNeeded: 0, skipped: 1 };
   }
 
   const inv = await resolveInvoiceForWinner({
@@ -138,71 +221,109 @@ async function processOneWinnerForCampaignPayout(args: {
     lnAddressSnapshot: w.lnAddressSnapshot ?? null,
   });
   if (!inv.ok) {
-    await updatePayoutItem(item.id, {
+    await recordWinnerIssue({
+      runId,
+      winnerPubkey: w.winnerPubkeyHex,
+      amountSats,
+      idempotencyKey: itemKey,
       status: "claim_needed",
       errorCode: inv.code,
-      errorMessage:
-        inv.code === "missing_destination"
-          ? "Winner has no Lightning address"
-          : "Could not fetch invoice from LNURL pay endpoint",
+      errorMessage: inv.detail,
+      lnAddressSnapshot: inv.lnAddressSnapshot,
     });
     return { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
   }
 
-  const nextAttemptNumber = item.attemptCount + 1;
-  const attemptKey = attemptIdempotencyKey({
-    payoutItemId: item.id,
-    attemptNumber: nextAttemptNumber,
-  });
-
-  await createPayoutAttempt({
-    runId,
-    itemId: item.id,
-    attemptNumber: nextAttemptNumber,
-    idempotencyKey: attemptKey,
-  });
-
-  await updatePayoutItem(item.id, {
+  const decoded = assertBolt11MatchesAuthorizedAmount({
     invoice: inv.invoice,
-    lnAddressSnapshot: inv.lnAddressSnapshot,
-    status: "pending",
-    attemptCount: nextAttemptNumber,
-    lastAttemptAt: new Date(),
+    authorizedSats: amountSats,
   });
+  if (!decoded.ok) {
+    await recordWinnerIssue({
+      runId,
+      winnerPubkey: w.winnerPubkeyHex,
+      amountSats,
+      idempotencyKey: itemKey,
+      status: "failed",
+      errorCode: "invoice_rejected",
+      errorMessage: decoded.error,
+      lnAddressSnapshot: inv.lnAddressSnapshot,
+    });
+    return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
+  }
 
-  const payRes = await payInvoiceWithTimeout(nwc, inv.invoice, 45000);
+  const claim = await claimCampaignPayoutItem({
+    runId,
+    winnerPubkey: w.winnerPubkeyHex,
+    amountSats,
+    idempotencyKey: itemKey,
+    invoice: decoded.invoice,
+    paymentHash: decoded.paymentHash,
+    invoiceExpiresAt: new Date(decoded.expiresAtMs),
+    lnAddressSnapshot: inv.lnAddressSnapshot,
+    requestedSpendCapSats: spendCapSats,
+    requestedWinners: requestedWinners(input.winners),
+  });
+  if (!claim.ok) {
+    if (claim.reason === "already_paid" || claim.reason === "skipped") {
+      return { paid: 0, failed: 0, claimNeeded: 0, skipped: 1 };
+    }
+    if (claim.reason === "paying" || claim.reason === "unknown") {
+      return reconcileHeldWinner({ nwc, claim });
+    }
+    if (
+      claim.reason === "budget_exhausted" ||
+      claim.reason === "amount_mismatch" ||
+      claim.reason === "duplicate_invoice"
+    ) {
+      await recordWinnerIssue({
+        runId,
+        winnerPubkey: w.winnerPubkeyHex,
+        amountSats,
+        idempotencyKey: itemKey,
+        status: "failed",
+        errorCode: claim.reason,
+        errorMessage: claim.message ?? "Payout was refused before payment",
+        lnAddressSnapshot: inv.lnAddressSnapshot,
+      });
+    }
+    return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
+  }
+
+  const payRes = await payAuthorizedBolt11({
+    nwcUrl: nwc,
+    invoice: decoded.invoice,
+    authorizedSats: amountSats,
+    timeoutMs: CAMPAIGN_PAY_TIMEOUT_MS,
+  });
   if (!payRes.ok) {
-    logError(payRes.error, {
+    logError(new Error(payRes.message), {
       message: "Payout payInvoice failed",
       scope: input.scope,
       contestId: input.contestId ?? null,
       giveawayId: input.giveawayId ?? null,
       winnerPubkey: w.winnerPubkeyHex,
+      disposition: payRes.disposition,
     });
-    await updatePayoutAttemptByIdempotencyKey(attemptKey, {
-      status: "failed",
-      errorCode: "wallet_error",
-      errorMessage: payRes.error.message,
-      finishedAt: new Date(),
+    await settleCampaignPayoutAttempt({
+      itemId: claim.itemId,
+      attemptKey: claim.attemptKey,
+      outcome: payRes.disposition === "unknown" ? "unknown" : "failed",
+      errorCode: payRes.code,
+      errorMessage: payRes.message,
     });
-    await updatePayoutItem(item.id, {
-      status: "failed",
-      errorCode: "wallet_error",
-      errorMessage: payRes.error.message,
-    });
+    if (payRes.disposition === "unknown") {
+      return { paid: 0, failed: 0, claimNeeded: 1, skipped: 0 };
+    }
     return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
   }
 
-  await updatePayoutAttemptByIdempotencyKey(attemptKey, {
-    status: "succeeded",
-    walletResponseJson: payRes.walletResponse ?? null,
-    finishedAt: new Date(),
-  });
-  await updatePayoutItem(item.id, {
-    status: "paid",
-    paymentPreimage: payRes.preimage ?? null,
-    errorCode: null,
-    errorMessage: null,
+  await settleCampaignPayoutAttempt({
+    itemId: claim.itemId,
+    attemptKey: claim.attemptKey,
+    outcome: "paid",
+    preimage: payRes.preimage,
+    walletResponse: payRes.walletResponse,
   });
   return { paid: 1, failed: 0, claimNeeded: 0, skipped: 0 };
 }
@@ -264,13 +385,6 @@ function winnerItemIdempotencyKey(args: {
   );
 }
 
-function attemptIdempotencyKey(args: {
-  payoutItemId: string;
-  attemptNumber: number;
-}): string {
-  return stableHash(`${args.payoutItemId}:attempt:${args.attemptNumber}`);
-}
-
 function lud16ToLnurlPayUrl(lud16: string): string | null {
   const trimmed = lud16.trim().toLowerCase();
   const at = trimmed.indexOf("@");
@@ -298,19 +412,47 @@ async function resolveInvoiceForWinner(args: {
   lnAddressSnapshot?: string | null;
 }): Promise<
   | { ok: true; lnAddressSnapshot: string; invoice: string }
-  | { ok: false; code: "missing_destination" | "invoice_fetch_failed" }
+  | {
+      ok: false;
+      code: "missing_destination" | "invoice_fetch_failed";
+      detail: string;
+      lnAddressSnapshot?: string;
+    }
 > {
   const snapshotAddress = args.lnAddressSnapshot?.trim();
   const fetchedAddress = snapshotAddress
     ? null
     : await fetchLud16ForNpub(args.winnerNpub);
   const lnAddress = snapshotAddress ?? fetchedAddress ?? "";
-  if (!lnAddress) return { ok: false, code: "missing_destination" };
+  if (!lnAddress) {
+    return {
+      ok: false,
+      code: "missing_destination",
+      detail: "Winner has no Lightning address",
+    };
+  }
   const lnurlPayUrl = lud16ToLnurlPayUrl(lnAddress);
-  if (!lnurlPayUrl) return { ok: false, code: "missing_destination" };
-  const invoice = await fetchInvoiceFromLnurlPay(lnurlPayUrl, args.amountSats);
-  if (!invoice) return { ok: false, code: "invoice_fetch_failed" };
-  return { ok: true, lnAddressSnapshot: lnAddress, invoice };
+  if (!lnurlPayUrl) {
+    return {
+      ok: false,
+      code: "missing_destination",
+      detail: "Winner Lightning address is not a LUD-16 address",
+      lnAddressSnapshot: lnAddress,
+    };
+  }
+  const invoice = await fetchLnurlPayInvoice(lnurlPayUrl, args.amountSats);
+  if (!invoice.ok) {
+    return {
+      ok: false,
+      code:
+        invoice.code === "invalid_destination"
+          ? "missing_destination"
+          : "invoice_fetch_failed",
+      detail: invoice.detail,
+      lnAddressSnapshot: lnAddress,
+    };
+  }
+  return { ok: true, lnAddressSnapshot: lnAddress, invoice: invoice.invoice };
 }
 
 async function getEligibility(
@@ -337,43 +479,9 @@ async function getEligibility(
   return { eligible: true, walletMode: "nwc_creator", nwc: decrypted };
 }
 
-async function payInvoiceWithTimeout(
-  nwc: string,
-  invoice: string,
-  timeoutMs: number
-): Promise<
-  | { ok: true; preimage?: string; walletResponse?: unknown }
-  | { ok: false; error: Error }
-> {
-  const client = new NWCClient({ nostrWalletConnectUrl: nwc });
-  try {
-    const payPromise = client.payInvoice({ invoice });
-    const res = await Promise.race([
-      payPromise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("NWC payInvoice timeout")), timeoutMs)
-      ),
-    ]);
-    const obj =
-      typeof res === "object" && !Array.isArray(res)
-        ? (res as Record<string, unknown>)
-        : {};
-    const preimage =
-      typeof obj["preimage"] === "string" ? obj["preimage"] : undefined;
-    return { ok: true, preimage, walletResponse: res };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e : new Error(String(e)) };
-  } finally {
-    try {
-      client.close();
-    } catch {
-      // ignore
-    }
-  }
-}
-
 async function ensureRun(tx: PayoutTx, input: ExecuteCampaignPayoutBatchInput) {
   const idKey = campaignIdempotencyKey(input);
+  const spendCap = readSpendCap(input.spendCapSats);
   return findOrCreatePayoutRunByIdempotencyKey(tx, {
     idempotencyKey: idKey,
     scope: input.scope,
@@ -382,13 +490,31 @@ async function ensureRun(tx: PayoutTx, input: ExecuteCampaignPayoutBatchInput) {
     trigger: input.trigger,
     contestId: input.contestId ?? null,
     giveawayId: input.giveawayId ?? null,
-    spendCapSats: input.spendCapSats ?? null,
+    spendCapSats: spendCap.ok ? spendCap.spendCapSats : null,
     totalItems: input.winners.length,
-    totalSats: input.winners.reduce(
-      (acc, w) => acc + Math.max(0, w.amountSats),
-      0
-    ),
+    totalSats: sumPayableSats(input.winners.map((winner) => winner.amountSats)),
   });
+}
+
+function invalidSpendCapResult(
+  input: ExecuteCampaignPayoutBatchInput,
+  runId: string,
+  message: string
+): ExecuteCampaignPayoutBatchResult {
+  return {
+    runId,
+    walletMode: input.walletMode,
+    eligible: true,
+    eligibilityErrorCode: "invalid_spend_cap",
+    eligibilityErrorMessage: message,
+    totals: {
+      items: input.winners.length,
+      paid: 0,
+      failed: input.winners.length,
+      claimNeeded: 0,
+      skipped: 0,
+    },
+  };
 }
 
 export async function executeCampaignPayoutBatch(
@@ -445,6 +571,17 @@ export async function executeCampaignPayoutBatch(
     };
   }
 
+  const spendCap = readSpendCap(input.spendCapSats);
+  if (!spendCap.ok) {
+    await updatePayoutRun(run.id, {
+      status: "failed",
+      eligibilityErrorCode: "invalid_spend_cap",
+      eligibilityErrorMessage: spendCap.error,
+      completedAt: new Date(),
+    });
+    return invalidSpendCapResult(input, run.id, spendCap.error);
+  }
+
   const nwc = eligibility.nwc;
   const totals = { paid: 0, failed: 0, claimNeeded: 0, skipped: 0 };
 
@@ -454,6 +591,7 @@ export async function executeCampaignPayoutBatch(
       nwc,
       input,
       w,
+      spendCapSats: spendCap.spendCapSats,
     });
     addDelta(totals, delta);
   }
@@ -465,10 +603,7 @@ export async function executeCampaignPayoutBatch(
     status: finalStatus,
     completedAt: new Date(),
     totalItems,
-    totalSats: input.winners.reduce(
-      (acc, w) => acc + Math.max(0, Math.floor(w.amountSats)),
-      0
-    ),
+    totalSats: sumPayableSats(input.winners.map((winner) => winner.amountSats)),
     metadataJson: { ...totals },
   });
 
@@ -610,6 +745,23 @@ export async function executeCampaignPayoutBatchStep(
     }
   }
 
+  const spendCap = readSpendCap(input.spendCapSats);
+  if (!spendCap.ok) {
+    await updatePayoutRun(runId, {
+      status: "failed",
+      eligibilityErrorCode: "invalid_spend_cap",
+      eligibilityErrorMessage: spendCap.error,
+      completedAt: new Date(),
+    });
+    return {
+      ...invalidSpendCapResult(input, runId, spendCap.error),
+      stepIndex,
+      totalSteps,
+      done: true,
+      nextStep: null,
+    };
+  }
+
   const nwc = eligibility.nwc;
   const existingRun = await findPayoutRunByIdempotencyKey(idKey);
   const prevMeta =
@@ -627,14 +779,14 @@ export async function executeCampaignPayoutBatchStep(
     nwc,
     input,
     w,
+    spendCapSats: spendCap.spendCapSats,
   });
   addDelta(cumulative, delta);
 
   const done = stepIndex >= totalSteps - 1;
   const totalItems = totalSteps;
-  const totalSats = input.winners.reduce(
-    (acc, winner) => acc + Math.max(0, Math.floor(winner.amountSats)),
-    0
+  const totalSats = sumPayableSats(
+    input.winners.map((winner) => winner.amountSats)
   );
 
   if (done) {

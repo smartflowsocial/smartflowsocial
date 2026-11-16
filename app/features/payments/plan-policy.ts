@@ -1,9 +1,10 @@
 import type { PlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import type { BroadcastAudienceGate } from "~/features/payments/types";
 
-import type {
-  CommercialPlanType,
-  CommercialPublicPlanName,
+import {
+  parseCommercialPlanType,
+  type CommercialPlanType,
+  type CommercialPublicPlanName,
 } from "./plan-mapping";
 
 export interface CanonicalPlanPolicy {
@@ -112,7 +113,9 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 7.5,
+      // The invoice charges 0% for Starter. The public terms page still says
+      // 7.5%. Do not raise this without an explicit decision to charge that fee.
+      campaignCommissionPercent: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -231,7 +234,8 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 5,
+      // The invoice charges 0% for Teams. An older policy value said 5%.
+      campaignCommissionPercent: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -302,6 +306,20 @@ export function getCanonicalPlanPolicy(
   planType: CommercialPlanType
 ): CanonicalPlanPolicy {
   return POLICIES[planType];
+}
+
+/**
+ * Basis points charged on a contest or giveaway prize pool.
+ * Unknown plan names charge nothing. A positive rate is what the invoice uses.
+ */
+export function campaignFinalizationFeeRateBps(planType: string): number {
+  const commercial = parseCommercialPlanType(planType);
+  if (!commercial) return 0;
+  const percent = POLICIES[commercial].campaigns.campaignCommissionPercent;
+  if (percent == null || !Number.isFinite(percent) || percent <= 0) return 0;
+  const bps = Math.round(percent * 100);
+  if (Math.abs(percent * 100 - bps) > 1e-6) return 0;
+  return bps;
 }
 
 export function toExecutionEntitlements(

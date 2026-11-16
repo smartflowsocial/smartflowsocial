@@ -112,7 +112,7 @@ STORAGE_BUCKET=your_s3_bucket
 pnpm exec prisma generate
 
 # Run database push command
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 ```
 
@@ -587,7 +587,7 @@ Use appropriate labels to categorize issues:
 
    ```bash
    pnpm exec prisma generate
-   pnpm exec prisma db push
+   pnpm exec prisma migrate deploy
    pnpm db:seed
    ```
 

@@ -43,4 +43,23 @@ describe("quoteContestFinalization", () => {
     expect(quote.feeSats).toBe(0);
     expect(quote.waivedByPlan).toBe(true);
   });
+
+  it("does not charge Starter or Teams", () => {
+    const contest = {
+      sourceNoteId: "note123",
+      rankingMetric: "ZAPS" as const,
+      contestEndAt: new Date("2026-03-25T12:00:00.000Z"),
+      prizeMode: "EQUAL" as const,
+      winnerCount: 1,
+      equalRewardSats: 1000,
+    };
+    const starter = quoteContestFinalization({
+      contest,
+      planType: "starter",
+    });
+    const teams = quoteContestFinalization({ contest, planType: "teams" });
+    expect(starter.feeRateBps).toBe(0);
+    expect(starter.feeSats).toBe(0);
+    expect(teams.feeSats).toBe(0);
+  });
 });

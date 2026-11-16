@@ -1,7 +1,7 @@
 # Self-host smoke test
 
 **Estimated time:** 30–60 minutes the first time, a few minutes after Postgres and Redis are up  
-**Last updated:** 2026-11-15
+**Last updated:** 2026-11-16
 
 This is the check that a clean checkout can schedule a signed Nostr note and hand it to a publisher.
 It does not use the hosted service, a paid account, or a production relay.
@@ -60,7 +60,7 @@ Generate `SESSION_SECRET` with `openssl rand -base64 32`. Leave storage, Blastr,
 ```bash
 pnpm docker
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 pnpm publisher:local
 ```
 
@@ -127,6 +127,10 @@ configured.
   run without a person clicking a signer. Browser login is covered by `pnpm test:e2e:smoke` when
   Cypress is installed.
 - The note reached a public relay. `pnpm smoke:publish` stops at the local publisher.
-  `pnpm test:relay-publish` reaches a relay on this machine only.
+  `pnpm test:relay-publish` reaches a relay on this machine only. It uses
+  `scripts/relay-publisher.mjs` in this repository. That is not the Cloudflare publisher worker. The
+  app's publish job is the real one. The worker in
+  [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) is a
+  separate process and was not started by that command.
 - Uploads, Blossom, Blastr, analytics, or Lightning work. Those stay off until their variables are
   set. Missing payout and cron secrets do not open those routes.
