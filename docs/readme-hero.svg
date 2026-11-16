@@ -85,9 +85,9 @@
     </text>
 
     <text x="0" y="172" class="sfsBody">
-      <tspan x="0" dy="0">Scheduling, drafts, queues, and delivery - Remix, Postgres, Redis, BullMQ,</tspan>
-      <tspan x="0" dy="24">with metrics and health checks whether you use the hosted service or</tspan>
-      <tspan x="0" dy="24">deploy this repository yourself.</tspan>
+      <tspan x="0" dy="0">Scheduling, drafts, queues, and delivery on React Router,</tspan>
+      <tspan x="0" dy="24">Postgres, Redis, and BullMQ, with metrics and health checks whether</tspan>
+      <tspan x="0" dy="24">you use the hosted service or deploy this repository yourself.</tspan>
     </text>
 
     <text x="0" y="268" class="sfsMeta">NIP-07 &#183; NIP-46 &#183; smartflow.social or self-host</text>
@@ -106,7 +106,7 @@
     <path d="M260 104 L318 104" class="sfsFlow" marker-end="url(#sfsArrow)"/>
 
     <rect x="318" y="48" width="240" height="112" rx="16" fill="url(#sfsNodeHi)" stroke="#5b21b6" stroke-width="1.25" filter="url(#sfsSoft)"/>
-    <text x="438" y="92" text-anchor="middle" class="sfsDiagLabelHi">Remix app</text>
+    <text x="438" y="92" text-anchor="middle" class="sfsDiagLabelHi">React Router</text>
     <text x="438" y="116" text-anchor="middle" class="sfsDiagCap">sessions + APIs</text>
 
     <path d="M558 104 L616 104" class="sfsFlow" marker-end="url(#sfsArrow)"/>
