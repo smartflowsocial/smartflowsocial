@@ -1,6 +1,6 @@
 /**
  * Application URL for code that only has the Fetch request.
- * With `v8_passThroughRequests`, `request.url` keeps the `.data` suffix.
+ * `request.url` keeps the `.data` suffix on data requests.
  * Loaders that receive the framework `url` argument should use that instead.
  */
 export function appUrlFromRequest(request: Request): URL {

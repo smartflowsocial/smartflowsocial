@@ -102,10 +102,10 @@ describe("seo", () => {
   it("reads siteOrigin from root matches with localhost fallback", () => {
     expect(
       siteOriginFromMatches([
-        { id: "root", data: { siteOrigin: "https://smartflow.social" } },
+        { id: "root", loaderData: { siteOrigin: "https://smartflow.social" } },
       ])
     ).toBe("https://smartflow.social");
-    expect(siteOriginFromMatches([{ id: "other", data: {} }])).toBe(
+    expect(siteOriginFromMatches([{ id: "other", loaderData: {} }])).toBe(
       "http://localhost"
     );
   });
