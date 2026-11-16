@@ -1,4 +1,3 @@
-import { Link } from "@remix-run/react";
 import {
   Bell,
   Heart,
@@ -9,6 +8,7 @@ import {
 } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {

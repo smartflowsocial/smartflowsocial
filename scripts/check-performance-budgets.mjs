@@ -109,7 +109,8 @@ function checkK6Budgets(config, args) {
 }
 
 function checkBundleBudgets(config) {
-  const buildDir = config.bundle?.directory ?? path.resolve("public", "build");
+  const buildDir =
+    config.bundle?.directory ?? path.resolve("build", "client", "assets");
   if (!fs.existsSync(buildDir)) {
     fail(`Build directory does not exist: ${buildDir}`);
   }

@@ -1,8 +1,9 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getMutualPubkeysGraph } from "~/features/nostr/social-graph.server";
 import { getUserById } from "~/features/user";
+import { jsonResponse } from "~/lib/http/json-response";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 /**
@@ -13,23 +14,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const type = url.searchParams.get("type");
   if (type !== "MUTUALS") {
-    return json({ error: "Invalid type" }, { status: 400 });
+    return jsonResponse({ error: "Invalid type" }, { status: 400 });
   }
 
   const user = await getUserById(userId);
   if (!user?.npub) {
-    return json({ count: null, fetchFailed: true });
+    return jsonResponse({ count: null, fetchFailed: true });
   }
   const hex =
     nostrAdapter.decodeNpub(user.npub)?.toLowerCase() ??
     user.npub.toLowerCase();
   if (!/^[0-9a-f]{64}$/i.test(hex)) {
-    return json({ count: null, fetchFailed: true });
+    return jsonResponse({ count: null, fetchFailed: true });
   }
 
   const r = await getMutualPubkeysGraph(hex);
 
-  return json({
+  return jsonResponse({
     count: r.pubkeys.length,
     fetchFailed: r.fetchFailed,
   });

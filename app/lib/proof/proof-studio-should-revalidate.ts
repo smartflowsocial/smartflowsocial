@@ -1,4 +1,4 @@
-import type { ShouldRevalidateFunction } from "@remix-run/react";
+import type { ShouldRevalidateFunction } from "react-router";
 
 /**
  * Proof Studio pages are client-heavy and revalidate on window focus by default.

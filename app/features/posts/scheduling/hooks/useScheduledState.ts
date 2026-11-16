@@ -1,6 +1,6 @@
-import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useFetcher, useNavigate } from "react-router";
 
 import { getSelectableRootIdsForMixedListing } from "~/features/posts/components/all-content-listing-selectable";
 import { buildComposeEditUrl } from "~/features/posts/composer";
@@ -295,7 +295,7 @@ export function useScheduledState({
       formData.append("_action", "bulkDeleteMixed");
       formData.append("itemData", JSON.stringify(selectedItems));
 
-      bulkDeleteFetcher.submit(formData, { method: "post" });
+      void bulkDeleteFetcher.submit(formData, { method: "post" });
     } else {
       const action =
         currentTab === "longform" ? "bulkDeleteLongForm" : "bulkDelete";
@@ -304,7 +304,7 @@ export function useScheduledState({
       formData.append("_action", action);
       formData.append("postIds", JSON.stringify(postIds));
 
-      bulkDeleteFetcher.submit(formData, { method: "post" });
+      void bulkDeleteFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -420,7 +420,7 @@ export function useScheduledState({
             mode: "edit_scheduled",
             scheduledActionId: post.id,
           });
-    navigate(editUrl);
+    void navigate(editUrl);
     return;
   };
 

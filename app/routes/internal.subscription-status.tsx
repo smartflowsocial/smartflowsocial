@@ -9,13 +9,13 @@
  * (or lifetime access).
  */
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { isSubscriptionActiveForGating } from "~/features/payments";
 import { getUserByNpub } from "~/features/user";
 import { env } from "~/lib/env.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
@@ -44,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logInfo("Blossom subscription-status: invalid or missing pubkey", {
       pubkeyLength: pubkeyHex.length,
     });
-    return json({ active: false });
+    return jsonResponse({ active: false });
   }
 
   // User.npub is stored as hex (from login flow), so look up by hex first; fallback to bech32 npub
@@ -57,14 +57,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logInfo("Blossom subscription-status: no user found for pubkey", {
       pubkeyLength: pubkeyHex.length,
     });
-    return json({ active: false });
+    return jsonResponse({ active: false });
   }
   if (!user.isEnabled) {
     logInfo("Blossom subscription-status: user disabled", {
       userId: user.id,
       pubkeyLength: pubkeyHex.length,
     });
-    return json({ active: false });
+    return jsonResponse({ active: false });
   }
 
   const active = await isSubscriptionActiveForGating(user.id);
@@ -74,5 +74,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
       pubkeyLength: pubkeyHex.length,
     });
   }
-  return json({ active });
+  return jsonResponse({ active });
 }

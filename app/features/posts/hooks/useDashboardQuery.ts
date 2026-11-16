@@ -3,13 +3,13 @@
  * Provides caching and background refetching for dashboard index
  */
 
+import { useQuery } from "@tanstack/react-query";
 import {
   useFetcher,
   useLoaderData,
   useParams,
   useSearchParams,
-} from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
+} from "react-router";
 
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
 import { getNextPageParamFromPaginationTotals } from "~/lib/query/infinite-remix-pagination";
@@ -56,7 +56,7 @@ export function useDashboardQuery() {
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
   const fetcher = useFetcher();
 
   // Validate initial loader data
@@ -72,7 +72,7 @@ export function useDashboardQuery() {
         queueType !== "all"
           ? `/dashboard?tab=${currentTab}&queueType=${queueType}`
           : `/dashboard?tab=${currentTab}`;
-      fetcher.load(url);
+      void fetcher.load(url);
 
       return new Promise<DashboardLoaderData>((resolve, reject) => {
         const checkFetcher = () => {
@@ -119,7 +119,7 @@ export function useDashboardInfiniteQuery() {
     params["queueType"] ?? searchParams.get("queueType") ?? "all";
   const currentTab = searchParams.get("tab") ?? "all";
 
-  const loaderDataRaw = useLoaderData();
+  const loaderDataRaw = useLoaderData<unknown>();
 
   // Validate initial loader data
   const validatedLoaderData = safeValidateLoaderResponse(

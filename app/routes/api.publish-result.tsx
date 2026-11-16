@@ -1,9 +1,9 @@
-import { json } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getPostDataForModal } from "~/features/posts/server";
 import { getPublishRelayAcksByAttemptId } from "~/features/relays/publish-relay-acks.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * API route for polling relay acknowledgements
@@ -17,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const publishAttemptId = url.searchParams.get("publishAttemptId");
 
     if (!postId || !publishAttemptId) {
-      return json(
+      return jsonResponse(
         { error: "postId and publishAttemptId are required" },
         { status: 400 }
       );
@@ -27,13 +27,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const postData = await getPostDataForModal(postId, userId);
 
     if (!postData) {
-      return json({ error: "Post not found or unauthorized" }, { status: 404 });
+      return jsonResponse(
+        { error: "Post not found or unauthorized" },
+        { status: 404 }
+      );
     }
 
     // Get relay acknowledgements
     const acks = await getPublishRelayAcksByAttemptId(publishAttemptId, userId);
 
-    return json({
+    return jsonResponse({
       acks: acks.map((ack) => ({
         relayUrl: ack.relayUrl,
         status: ack.status,

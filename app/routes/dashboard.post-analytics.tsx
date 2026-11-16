@@ -1,11 +1,10 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 
 import { loadPostAnalyticsPage } from "~/features/analytics/load-post-analytics.server";
 import { PostAnalyticsPage } from "~/features/analytics/PostAnalyticsPage";
 import { collectViewerPostAnalytics } from "~/features/analytics/run-sweep.server";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   isSubscriptionActiveForGating,
   requireAnySubscription,
@@ -17,13 +16,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const indexUnavailable = await collectViewerPostAnalytics(userId);
   const url = new URL(request.url);
   const selected = url.searchParams.get("event")?.trim() ?? "";
-  const data = await loadPostAnalyticsPage({
+  return await loadPostAnalyticsPage({
     userId,
     collectionActive: await isSubscriptionActiveForGating(userId),
     selectedEventId: selected.length > 0 ? selected : null,
     indexUnavailable,
   });
-  return json(data);
 }
 
 export default function DashboardPostAnalyticsRoute() {

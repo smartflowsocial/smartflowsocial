@@ -1,10 +1,10 @@
+import { useEffect } from "react";
 import {
   Link,
   useLoaderData,
   useNavigation,
   useSearchParams,
-} from "@remix-run/react";
-import { useEffect } from "react";
+} from "react-router";
 
 import { NostrClientSettings } from "~/components/settings/NostrClientSettings";
 import { NotificationSettings } from "~/components/settings/NotificationSettings";

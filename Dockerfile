@@ -18,6 +18,8 @@ WORKDIR /myapp
 COPY package.json pnpm-lock.yaml prisma.config.ts ./
 COPY patches ./patches
 COPY prisma ./prisma
+# prisma.config.ts imports this module, and postinstall runs prisma generate.
+COPY app/lib/prisma-command-url.ts ./app/lib/prisma-command-url.ts
 # HUSKY=0 skips the git hooks. The schema is here so postinstall can generate the client.
 RUN pnpm install --frozen-lockfile --prod=false
 

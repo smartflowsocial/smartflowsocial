@@ -1,7 +1,20 @@
-/// <reference types="@remix-run/dev" />
-/// <reference types="@remix-run/node" />
+/// <reference types="vite/client" />
+/// <reference types="@react-router/node" />
 
-// Ensure Window.nostr type is available globally
+declare module "react-router" {
+  interface AppLoadContext {
+    nonce?: string;
+  }
+
+  interface LoaderFunctionArgs {
+    context: AppLoadContext;
+  }
+
+  interface ActionFunctionArgs {
+    context: AppLoadContext;
+  }
+}
+
 declare global {
   interface Window {
     nostr?: {

@@ -3,7 +3,7 @@
  * Handles draft, post, and schedule actions for text posts
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { PublishNowUseCase } from "~/features/posts/server/publishing";
@@ -196,7 +196,7 @@ export async function handleDraftText({
   isRecyclable,
   hashTagPresetId,
   correlationId,
-}: TextHandlerParams): Promise<Response> {
+}: TextHandlerParams) {
   const contentValue = formData.get("content");
   let content = contentValue ? String(contentValue) : "";
   let fileUrl: string[] = [];
@@ -253,7 +253,7 @@ export async function handlePostOrScheduleText({
   sanitizedRelays = [],
   action = "post-text",
   correlationId,
-}: TextHandlerParams): Promise<Response> {
+}: TextHandlerParams) {
   const contentValue = formData.get("content");
   const signedEventValue = formData.get("signedEvent");
   const nostrEventValue = formData.get("nostrEvent");

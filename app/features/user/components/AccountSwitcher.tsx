@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import * as React from "react";
+import { useFetcher } from "react-router";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import {
@@ -13,6 +13,7 @@ import { allowsMultipleAccounts } from "~/features/payments/entitlements/deploym
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useDeployment, useSubscription } from "~/features/payments/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 interface ChildAccount {
@@ -51,7 +52,7 @@ export default function AccountSwitcher() {
       fetcher.state === "idle" &&
       !fetcher.data
     ) {
-      fetcher.load("/api/children");
+      void fetcher.load("/api/children");
     }
   }, [isChild, hasAccountsAccess, fetcher.state, fetcher]);
 
@@ -72,13 +73,6 @@ export default function AccountSwitcher() {
         `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } =
-        require("~/lib/error-handler.client") as unknown as {
-          handleErrorSafely: (
-            error: unknown,
-            context: { component: string; action: string }
-          ) => void;
-        };
       handleErrorSafely(e, {
         component: "AccountSwitcher",
         action: "handleAccountSwitch",

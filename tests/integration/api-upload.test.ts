@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUserId: vi.fn(),
 }));
 
@@ -31,29 +31,18 @@ vi.mock("~/features/upload/s3.server", () => ({
   createUploadHandler: vi.fn(() => vi.fn()),
 }));
 
-// Mock Remix upload handlers
-vi.mock("@remix-run/node", async () => {
-  const actual = await vi.importActual("@remix-run/node");
-  return {
-    ...actual,
-    unstable_composeUploadHandlers: vi.fn((..._handlers) => {
-      return async (_name: string, _stream: unknown, _info: unknown) => {
-        // Mock upload handler that returns a URL
-        return "https://example.com/uploaded-file.jpg";
-      };
-    }),
-    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(async (_request, _handler) => {
-      const formData = new FormData();
-      formData.append("file", "https://example.com/uploaded-file.jpg");
-      return formData;
-    }),
-  };
-});
+vi.mock("@remix-run/form-data-parser", () => ({
+  parseFormData: vi.fn(async () => {
+    const formData = new FormData();
+    formData.append("file", "https://example.com/uploaded-file.jpg");
+    return formData;
+  }),
+}));
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import { TEST_USER_ID } from "../utils/test-helpers";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { loadUploadProviderSettings } from "~/features/user";
 import { action, loader } from "~/routes/api.upload";
 
@@ -82,12 +71,17 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -123,11 +117,14 @@ describe("API: Upload", () => {
           },
         });
 
-        const response = await action({ request, params: {}, context: {} });
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const response = await action({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        });
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -152,11 +149,14 @@ describe("API: Upload", () => {
         });
 
         // requireUserId throws a Response (redirect), not an Error
-        const response = await action({ request, params: {}, context: {} });
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const response = await action({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        });
+        const responseObj = await asRouteResponse(response);
         expect(responseObj.status).toBeGreaterThanOrEqual(400);
       });
 
@@ -172,12 +172,17 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -198,11 +203,10 @@ describe("API: Upload", () => {
       });
 
       it("should handle multipart parsing errors", async () => {
-        const { unstable_parseMultipartFormData } =
-          await import("@remix-run/node");
-        (
-          unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
-        ).mockRejectedValue(new Error("Parse error"));
+        const { parseFormData } = await import("@remix-run/form-data-parser");
+        (parseFormData as ReturnType<typeof vi.fn>).mockRejectedValue(
+          new Error("Parse error")
+        );
 
         const request = new Request("http://localhost:3000/api/upload", {
           method: "POST",
@@ -215,12 +219,17 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -236,12 +245,9 @@ describe("API: Upload", () => {
       });
 
       it("should return validation error when no file provided", async () => {
-        const { unstable_parseMultipartFormData } =
-          await import("@remix-run/node");
-        (
-          unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
-        ).mockResolvedValue(
-          new FormData() // Empty form data
+        const { parseFormData } = await import("@remix-run/form-data-parser");
+        (parseFormData as ReturnType<typeof vi.fn>).mockResolvedValue(
+          new FormData()
         );
 
         const request = new Request("http://localhost:3000/api/upload", {
@@ -255,12 +261,17 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -276,13 +287,10 @@ describe("API: Upload", () => {
       });
 
       it("should return validation error when file upload fails (no URL)", async () => {
-        const { unstable_parseMultipartFormData } =
-          await import("@remix-run/node");
+        const { parseFormData } = await import("@remix-run/form-data-parser");
         const formData = new FormData();
         formData.append("file", "not-a-url");
-        (
-          unstable_parseMultipartFormData as ReturnType<typeof vi.fn>
-        ).mockResolvedValue(formData);
+        (parseFormData as ReturnType<typeof vi.fn>).mockResolvedValue(formData);
 
         const request = new Request("http://localhost:3000/api/upload", {
           method: "POST",
@@ -295,12 +303,17 @@ describe("API: Upload", () => {
           request: Request;
           params: Record<string, string>;
           context: Record<string, unknown>;
-        } = { request, params: {}, context: {} };
+          url: URL;
+          pattern: string;
+        } = {
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        };
         const response = await action(actionParams);
-        const responseObj =
-          response instanceof Response
-            ? response
-            : new Response(JSON.stringify(response));
+        const responseObj = await asRouteResponse(response);
         const dataRaw: unknown = await responseObj.json();
         const data =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

@@ -226,7 +226,7 @@ function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
         ...process.env,
         E2E_TEST: "true",
         // Override NODE_ENV after spread to ensure it's set
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
+
         NODE_ENV: process.env["NODE_ENV"] ?? "test",
       },
     }).then((result) => {
@@ -449,7 +449,7 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
           ...process.env,
           E2E_TEST: "true",
           // Override NODE_ENV after spread to ensure it's set
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.env values can be undefined at runtime
+
           NODE_ENV: process.env["NODE_ENV"] ?? "test",
         },
       }

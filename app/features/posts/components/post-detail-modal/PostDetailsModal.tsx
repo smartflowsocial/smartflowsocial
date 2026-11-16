@@ -14,7 +14,7 @@ import { formatDate } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
-import { readRemixActionData } from "~/lib/remix/single-fetch";
+import { readJsonActionData } from "~/lib/remix/fetch-json";
 import {
   useDashboardRouteLoaderData,
   useOptionalUser,
@@ -126,7 +126,7 @@ export default function PostDetailsModal({
           body: formData,
           credentials: "same-origin",
         });
-        const json = (await readRemixActionData(resp)) as {
+        const json = (await readJsonActionData(resp)) as {
           cascadeDeletedIds?: string[];
         } | null;
         const cascadeIds = json?.cascadeDeletedIds;

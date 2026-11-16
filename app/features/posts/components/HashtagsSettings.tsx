@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -39,7 +39,7 @@ export function HashtagsSettings({ tags }: HashtagsSettingsProps) {
 
   const onSubmit = form.handleSubmit((data) => {
     const formData = formDataToFormData(data, "update_tags");
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   });
 
   return (

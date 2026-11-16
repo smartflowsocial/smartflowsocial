@@ -3,12 +3,12 @@
  */
 /// <reference types="@testing-library/jest-dom" />
 
-import type * as RemixReact from "@remix-run/react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type * as RemixReact from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@remix-run/react", async () => {
-  const actual = await vi.importActual<typeof RemixReact>("@remix-run/react");
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual<typeof RemixReact>("react-router");
   return {
     ...actual,
     useMatches: () => [],

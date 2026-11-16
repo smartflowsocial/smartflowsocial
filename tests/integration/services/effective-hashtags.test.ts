@@ -29,7 +29,7 @@ describe("Effective Hashtags Service", () => {
       const result = await getEffectiveHashtags(TEST_USER_ID, "unassigned");
 
       expect(getQueueTypes).not.toHaveBeenCalled();
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "" });
     });
 
@@ -67,7 +67,7 @@ describe("Effective Hashtags Service", () => {
       );
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "#morning #goodmorning" });
     });
 
@@ -89,7 +89,7 @@ describe("Effective Hashtags Service", () => {
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
 
       expect(getQueueTypes).toHaveBeenCalledWith(TEST_USER_ID);
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "#morning #goodmorning" });
     });
 
@@ -108,7 +108,7 @@ describe("Effective Hashtags Service", () => {
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
 
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "" });
     });
 
@@ -117,7 +117,7 @@ describe("Effective Hashtags Service", () => {
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "NonExistent");
 
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "" });
     });
 
@@ -149,7 +149,7 @@ describe("Effective Hashtags Service", () => {
         "queue-1"
       );
 
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "#morning" });
     });
 
@@ -170,7 +170,7 @@ describe("Effective Hashtags Service", () => {
 
       const result = await getEffectiveHashtags(TEST_USER_ID, "Morning");
 
-      const jsonResult = await result.json();
+      const jsonResult: unknown = await result.json();
       expect(jsonResult).toEqual({ hashtags: "" });
     });
   });

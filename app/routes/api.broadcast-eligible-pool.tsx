@@ -1,7 +1,8 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getBroadcastEligiblePoolPubkeys } from "~/features/broadcast/broadcast-recipient-picker.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * GET ?pool=followers|mutuals  -  eligible pubkey list for recipient picker (cache-based).
@@ -11,7 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const pool = url.searchParams.get("pool");
   if (pool !== "followers" && pool !== "mutuals") {
-    return json({ error: "Invalid pool" }, { status: 400 });
+    return jsonResponse({ error: "Invalid pool" }, { status: 400 });
   }
 
   const { pubkeys, fetchFailed } = await getBroadcastEligiblePoolPubkeys(
@@ -19,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     pool
   );
 
-  return json({
+  return jsonResponse({
     pubkeys,
     fetchFailed,
     truncatedNote:

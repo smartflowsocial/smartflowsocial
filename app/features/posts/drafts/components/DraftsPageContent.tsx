@@ -1,4 +1,4 @@
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 
 import {
   BulkDraftsListing,
@@ -183,7 +183,7 @@ export function DraftsPageContent({
             onScrollContainerReady={isMobile ? setScrollRoot : undefined}
             queueTypes={queueTypes}
             onResetDraftFilters={() => {
-              navigate("/dashboard/drafts?tab=all");
+              void navigate("/dashboard/drafts?tab=all");
               setSearchTerm("");
             }}
           />

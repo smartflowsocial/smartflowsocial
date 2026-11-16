@@ -1,6 +1,6 @@
-import { Link, useSearchParams } from "@remix-run/react";
 import { Zap, MessageCircle, Heart } from "lucide-react";
 import { useState } from "react";
+import { Link, useSearchParams } from "react-router";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";

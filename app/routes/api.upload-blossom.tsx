@@ -1,14 +1,14 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   createMediaIfMissing,
   recordBlossomCompatUsage,
 } from "~/features/upload";
 import { loadUploadProviderSettings } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError, AuthorizationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 type AssertFunction = (
   condition: boolean,
@@ -218,5 +218,5 @@ export const action = withCSRFProtection(
 
 // Handle preflight requests for CORS
 export async function loader() {
-  return json({ message: "Blossom Upload API" });
+  return jsonResponse({ message: "Blossom Upload API" });
 }

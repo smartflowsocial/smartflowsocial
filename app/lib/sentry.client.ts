@@ -31,7 +31,7 @@ export function initSentry(): void {
     // Use dynamic import for async initialization
     void (async () => {
       try {
-        const Sentry = await import("@sentry/remix");
+        const Sentry = await import("@sentry/react-router");
         const isProduction =
           (window as { ENV?: { NODE_ENV?: string } }).ENV?.NODE_ENV ===
             "production" || false;
@@ -101,7 +101,7 @@ export function captureException(
   try {
     void (async () => {
       try {
-        const Sentry = await import("@sentry/remix");
+        const Sentry = await import("@sentry/react-router");
         Sentry.captureException(error, {
           tags: context?.tags,
           extra: context?.extra,
@@ -136,7 +136,7 @@ export function captureMessage(
   try {
     void (async () => {
       try {
-        const Sentry = await import("@sentry/remix");
+        const Sentry = await import("@sentry/react-router");
         Sentry.captureMessage(message, {
           level,
           tags: context?.tags,
@@ -167,7 +167,7 @@ export function setUser(user: {
   try {
     void (async () => {
       try {
-        const Sentry = await import("@sentry/remix");
+        const Sentry = await import("@sentry/react-router");
         Sentry.setUser(user);
       } catch {
         // Fail silently
@@ -190,7 +190,7 @@ export function clearUser(): void {
   try {
     void (async () => {
       try {
-        const Sentry = await import("@sentry/remix");
+        const Sentry = await import("@sentry/react-router");
         Sentry.setUser(null);
       } catch {
         // Fail silently

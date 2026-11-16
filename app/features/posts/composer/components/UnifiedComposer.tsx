@@ -4,8 +4,8 @@
  * Layout + composition of composer subcomponents and hooks.
  */
 
-import { useFetcher, useNavigate } from "@remix-run/react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useFetcher, useNavigate } from "react-router";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -1640,7 +1640,7 @@ export function UnifiedComposer({
                   const separator = draftPickerNavigateBase.includes("?")
                     ? "&"
                     : "?";
-                  navigate(
+                  void navigate(
                     `${draftPickerNavigateBase}${separator}draftId=${encodeURIComponent(id)}`
                   );
                 }
@@ -1655,7 +1655,7 @@ export function UnifiedComposer({
                     const separator = draftPickerNavigateBase.includes("?")
                       ? "&"
                       : "?";
-                    navigate(
+                    void navigate(
                       `${draftPickerNavigateBase}${separator}templateId=${encodeURIComponent(templateId)}`
                     );
                   },

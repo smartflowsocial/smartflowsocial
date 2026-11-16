@@ -1,9 +1,9 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { upsertPushSubscription } from "~/features/notifications";
 import { getVapidPublicKey } from "~/infra/notifications/web-push-config.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * GET /api/push-subscribe - Get VAPID public key
@@ -17,7 +17,7 @@ export async function loader() {
 
     const publicKey = getVapidPublicKey();
     if (!publicKey) {
-      return json(
+      return jsonResponse(
         {
           error:
             "Push notifications not configured. Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.",
@@ -25,13 +25,13 @@ export async function loader() {
         { status: 503 }
       );
     }
-    return json({ publicKey });
+    return jsonResponse({ publicKey });
   } catch (error) {
     const { logError } = await import("~/lib/error-logger.server");
     logError(error instanceof Error ? error : new Error(String(error)), {
       message: "Failed to get VAPID public key",
     });
-    return json(
+    return jsonResponse(
       {
         error:
           "Failed to initialize push notifications. Please check server configuration.",
@@ -46,7 +46,7 @@ export async function loader() {
  */
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
 
   try {
@@ -59,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const { endpoint, keys } = body;
 
     if (!endpoint || !keys?.p256dh || !keys.auth) {
-      return json(
+      return jsonResponse(
         { error: "Missing required fields: endpoint, keys.p256dh, keys.auth" },
         { status: 400 }
       );
@@ -72,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
       auth: keys.auth,
     });
 
-    return json({ success: true });
+    return jsonResponse({ success: true });
   } catch (error) {
     if (error instanceof Response) {
       return error;

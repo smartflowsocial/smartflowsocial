@@ -1,6 +1,6 @@
-import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { Link, useFetcher, useLoaderData, useNavigate } from "react-router";
 
 import {
   AlertDialog,
@@ -117,7 +117,7 @@ export default function TemplateEditPage() {
       "redirectTo" in fetcherData &&
       typeof fetcherData.redirectTo === "string"
     ) {
-      navigate(
+      void navigate(
         safeInternalPath(fetcherData.redirectTo, "/dashboard/templates")
       );
     }
@@ -131,7 +131,7 @@ export default function TemplateEditPage() {
     const formData = new FormData();
     formData.append("_action", "deleteTemplate");
 
-    deleteTemplateFetcher.submit(formData, { method: "post" });
+    void deleteTemplateFetcher.submit(formData, { method: "post" });
     setShowDeleteConfirm(false);
   };
 

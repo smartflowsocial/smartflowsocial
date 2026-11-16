@@ -113,7 +113,7 @@ export function buildComposerContentSummaryLines(
   tagsSummary: string | null | undefined,
   _isRecyclable?: boolean
 ): string[] {
-  void _isRecyclable;
+  _isRecyclable;
   return [
     `${charCount} characters`,
     `${attachmentCount} media`,
@@ -289,7 +289,7 @@ export function formatPostStatusSummaryInline(
   tagsSummary: string | null | undefined,
   _isRecyclable?: boolean
 ): string {
-  void _isRecyclable;
+  _isRecyclable;
   return `${charCount} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
@@ -300,7 +300,7 @@ export function formatThreadPostStatusSummaryInline(
   tagsSummary: string | null | undefined,
   _isRecyclable?: boolean
 ): string {
-  void _isRecyclable;
+  _isRecyclable;
   return `${segmentCount} segments · ${totalChars} chars · ${attachmentCount} media · ${tagsInlineSuffix(tagsSummary)}`;
 }
 
@@ -310,7 +310,7 @@ export function formatPollPostStatusSummaryInline(
   tagsSummary: string | null | undefined,
   _isRecyclable: boolean
 ): string {
-  void _isRecyclable;
+  _isRecyclable;
   return `${questionCharCount} question chars · ${optionCount} options · ${tagsInlineSuffix(tagsSummary)}`;
 }
 

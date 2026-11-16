@@ -1,14 +1,12 @@
-import { defer, json } from "@remix-run/node";
-import { Await, useLoaderData } from "@remix-run/react";
 import { Suspense } from "react";
+import { Await, useLoaderData } from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPageSkeleton, BulkPostsPage } from "~/features/posts/ui";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
 
@@ -28,15 +26,13 @@ export async function loader({ request }: { request: Request }) {
     const url = new URL(request.url);
     const shouldAvoidDeferredFallback =
       url.searchParams.get("bulkScheduled") === "true";
-    if (isRemixResourceRequest(request)) {
-      return json(await loadBulkPostsData(request));
-    }
+
     if (shouldAvoidDeferredFallback) {
-      return json(await loadBulkPostsData(request));
+      return await loadBulkPostsData(request);
     }
-    return defer({
+    return {
       bulkPosts: loadBulkPostsData(request),
-    });
+    };
   } catch (error) {
     const { handleLoaderError } = await import("~/lib/error-handler.server");
     return handleLoaderError(error, {
@@ -53,7 +49,7 @@ interface BulkPostsDeferredLoaderData {
 }
 
 function BulkPostsFeedRoute() {
-  const { bulkPosts } = useLoaderData() as BulkPostsDeferredLoaderData;
+  const { bulkPosts } = useLoaderData<BulkPostsDeferredLoaderData>();
 
   return (
     <Suspense fallback={<BulkPostsPageSkeleton />}>

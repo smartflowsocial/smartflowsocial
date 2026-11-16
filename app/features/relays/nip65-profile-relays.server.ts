@@ -2,23 +2,11 @@
  * Fetch NIP-65 (kind 10002) relay list metadata for an author.
  */
 
-import { DEFAULT_USER_WRITE_RELAYS } from "~/features/relays/relay-constants";
-import { env } from "~/lib/env.server";
+import "~/lib/websocket-polyfill.server";
 
-if (
-  env.NODE_ENV !== "development" &&
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Node may lack WebSocket until polyfill
-  globalThis.WebSocket === undefined
-) {
-  const { WebSocket } = require("ws") as {
-    WebSocket: typeof globalThis.WebSocket;
-  };
-  globalThis.WebSocket = WebSocket;
-}
-
-// eslint-disable-next-line import/order -- polyfill must run before nostr-tools loads
 import { SimplePool } from "nostr-tools";
 
+import { DEFAULT_USER_WRITE_RELAYS } from "~/features/relays/relay-constants";
 import { logWarning } from "~/lib/error-logger.server";
 
 import type {

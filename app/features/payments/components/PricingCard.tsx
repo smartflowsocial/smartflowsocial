@@ -2,8 +2,8 @@
  * Pricing card component (main grid recurring tiers + Free).
  */
 
-import { Form, Link } from "@remix-run/react";
 import { Loader2 } from "lucide-react";
+import { Form, Link } from "react-router";
 
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 

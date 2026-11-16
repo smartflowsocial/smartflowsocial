@@ -1,18 +1,18 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   createReplyTemplate,
   deleteReplyTemplate,
   listReplyTemplates,
 } from "~/features/engagement/engagement-reply-templates.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     const templates = await listReplyTemplates(userId);
-    return json({ templates });
+    return jsonResponse({ templates });
   } catch (error) {
     if (error instanceof Response) return error;
     const { handleLoaderError } = await import("~/lib/error-handler.server");
@@ -27,7 +27,7 @@ function parseJsonBody(value: unknown): Record<string, unknown> | null {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json(
+    return jsonResponse(
       { success: false, error: "Method not allowed" },
       { status: 405 }
     );
@@ -45,40 +45,40 @@ export async function action({ request }: ActionFunctionArgs) {
       const templateBody =
         typeof body?.["body"] === "string" ? body["body"] : undefined;
       if (!slug || templateBody === undefined) {
-        return json(
+        return jsonResponse(
           { success: false, error: "slug and body are required" },
           { status: 400 }
         );
       }
       const result = await createReplyTemplate(userId, slug, templateBody);
       if (!result.success) {
-        return json(
+        return jsonResponse(
           { success: false, error: result.error ?? "Failed to create" },
           { status: 400 }
         );
       }
-      return json({ success: true });
+      return jsonResponse({ success: true });
     }
 
     if (actionType === "delete") {
       const id = typeof body?.["id"] === "string" ? body["id"] : undefined;
       if (!id) {
-        return json(
+        return jsonResponse(
           { success: false, error: "id is required" },
           { status: 400 }
         );
       }
       const result = await deleteReplyTemplate(userId, id);
       if (!result.success) {
-        return json(
+        return jsonResponse(
           { success: false, error: result.error ?? "Failed to delete" },
           { status: 400 }
         );
       }
-      return json({ success: true });
+      return jsonResponse({ success: true });
     }
 
-    return json(
+    return jsonResponse(
       { success: false, error: "action must be create or delete" },
       { status: 400 }
     );

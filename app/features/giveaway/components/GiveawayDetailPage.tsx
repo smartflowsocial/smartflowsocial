@@ -1,6 +1,6 @@
-import { Form, useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-hot-toast";
+import { Form, useFetcher, Link } from "react-router";
 
 import {
   AlertDialog,
@@ -360,7 +360,7 @@ export function GiveawayDetailPage({
         const fd = new FormData();
         fd.set("intent", "logActivity");
         fd.set("activityType", "proof_summary_copied");
-        activityLogFetcher.submit(fd, { method: "post" });
+        void activityLogFetcher.submit(fd, { method: "post" });
       }
     } catch {
       toast.error("Could not copy");
@@ -403,7 +403,7 @@ export function GiveawayDetailPage({
     const fd = new FormData();
     fd.set("intent", "logActivity");
     fd.set("activityType", "csv_exported");
-    activityLogFetcher.submit(fd, { method: "post" });
+    void activityLogFetcher.submit(fd, { method: "post" });
   };
 
   return (
@@ -1006,7 +1006,7 @@ export function GiveawayDetailPage({
                             "lockConfigHash",
                             finalizationQuote.lockConfigHash
                           );
-                          invoiceFetcher.submit(fd, { method: "post" });
+                          void invoiceFetcher.submit(fd, { method: "post" });
                         }}
                       >
                         {invoiceFetcher.state !== "idle"
@@ -1026,7 +1026,7 @@ export function GiveawayDetailPage({
                             finalizationQuote.lockConfigHash
                           );
                         }
-                        lockFetcher.submit(fd, { method: "post" });
+                        void lockFetcher.submit(fd, { method: "post" });
                       }}
                     >
                       {lockFetcher.state !== "idle"

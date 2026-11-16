@@ -34,6 +34,7 @@ vi.mock("~/features/posts/server", () => ({
   deleteLongFormPost: vi.fn().mockResolvedValue(null),
 }));
 
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import { createFormData, TEST_USER_ID } from "../../utils/test-helpers";
 
 import { getUserSubscription } from "~/features/payments/data";
@@ -81,10 +82,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "create_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -121,10 +119,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "create_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -168,10 +163,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         throw new Error(`Validation failed: ${JSON.stringify(data)}`);
       }
 
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -208,10 +200,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "create_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -248,10 +237,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "create_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -338,10 +324,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "update_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&
@@ -381,10 +364,7 @@ describe("Queue Types Action Handler - Edge Cases", () => {
         "update_queue_type",
         formData
       );
-      const responseObj =
-        result instanceof Response
-          ? result
-          : new Response(JSON.stringify(result));
+      const responseObj = await asRouteResponse(result);
       const jsonResultRaw: unknown = await responseObj.json();
       const jsonResult =
         jsonResultRaw &&

@@ -2,7 +2,7 @@
  * Redirect: /dashboard/posted/:queueType -> /dashboard/published/:queueType
  * Keeps old bookmarks and links working.
  */
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 export async function loader({ params }: { params: { queueType?: string } }) {
   const queueType = params.queueType ?? "all";

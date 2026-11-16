@@ -2,7 +2,6 @@
  * Thread tree: top-level replies from search loader; nested replies load on expand.
  */
 
-import { Link, useFetcher } from "@remix-run/react";
 import {
   ChevronDown,
   ChevronRight,
@@ -11,6 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { startTransition, useCallback, useEffect, useState } from "react";
+import { Link, useFetcher } from "react-router";
 
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
 import type { NostrClientConfig } from "~/lib/nostr-client-urls";
@@ -75,7 +75,7 @@ export function SearchReplyThread({
       const norm = parentId.toLowerCase();
       setLoadingFor(norm);
       const q = `/api/search/thread-replies?parent_event_id=${encodeURIComponent(norm)}`;
-      fetcher.load(q);
+      void fetcher.load(q);
     },
     [fetcher]
   );

@@ -1,12 +1,12 @@
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
-} from "@remix-run/node";
+} from "react-router";
 
-import { logout } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { logout } from "~/features/auth/auth.server";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
 
 export const meta: MetaFunction = ({ matches }) =>

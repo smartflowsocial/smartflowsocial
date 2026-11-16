@@ -1,10 +1,10 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getPostStats } from "~/features/posts/stats.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 type AssertFunction = (
   condition: boolean,
@@ -73,7 +73,7 @@ export const action = withCSRFProtection(
       // Fetch stats using the optimized function
       const stats = await getPostStats(eventIdsArray);
 
-      return json({ stats });
+      return jsonResponse({ stats });
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

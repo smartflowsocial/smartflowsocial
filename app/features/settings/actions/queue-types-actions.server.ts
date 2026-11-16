@@ -2,7 +2,7 @@
  * Queue type action handlers
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import { getUserSubscription } from "~/features/payments/data";
 import { capMessage } from "~/features/payments/entitlements/deployment-mode";
@@ -138,7 +138,7 @@ function rowToUserSubscription(
   };
 }
 
-async function checkQueueCreationCap(userId: string): Promise<Response | null> {
+async function checkQueueCreationCap(userId: string) {
   const row = await getUserSubscription(userId);
   const planType = getUserPlanType(rowToUserSubscription(row));
   const deployment = currentDeployment();
@@ -146,7 +146,7 @@ async function checkQueueCreationCap(userId: string): Promise<Response | null> {
   if (maxQueues == null) return null;
   const count = await countQueueTypesForUser(userId);
   if (count >= maxQueues) {
-    return json(
+    return data(
       {
         error: capMessage(
           queueCapExceededMessage(maxQueues),
@@ -163,7 +163,7 @@ async function checkQueueCreationCap(userId: string): Promise<Response | null> {
 async function validateHashtagPreset(
   userId: string,
   hashTagPresetId: string | null | undefined
-): Promise<Response | null> {
+) {
   if (!hashTagPresetId) {
     return null;
   }
@@ -172,7 +172,7 @@ async function validateHashtagPreset(
     hashTagPresetId
   );
   if (!presetExists) {
-    return json(
+    return data(
       { error: "Selected hashtag preset does not exist" },
       { status: 400 }
     );
@@ -264,10 +264,7 @@ function buildScheduleConfig(data: {
   return { slots: data.slots!, ...randomWindow };
 }
 
-async function handleCreateQueueType(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleCreateQueueType(userId: string, formData: FormData) {
   const queueCapCheck = await checkQueueCreationCap(userId);
   if (queueCapCheck) {
     return queueCapCheck;
@@ -297,16 +294,13 @@ async function handleCreateQueueType(
     includeHashtagsInNoteBody: data.includeHashtagsInNoteBody,
   });
   await invalidateQueueTypesCache(userId);
-  return json({
+  return {
     success: true,
     queueType: queueTypeToClient(created),
-  });
+  };
 }
 
-async function handleUpdateQueueType(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleUpdateQueueType(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, updateQueueTypeSchema);
   if (!result.success) {
     return result.response;
@@ -333,16 +327,13 @@ async function handleUpdateQueueType(
     includeHashtagsInNoteBody: data.includeHashtagsInNoteBody,
   });
   await invalidateQueueTypesCache(userId);
-  return json({
+  return {
     success: true,
     queueType: queueTypeToClient(updated),
-  });
+  };
 }
 
-async function handleToggleQueueEnabled(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleToggleQueueEnabled(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, toggleQueueEnabledSchema);
   if (!result.success) {
     return result.response;
@@ -350,33 +341,30 @@ async function handleToggleQueueEnabled(
   const { id, isEnabled } = result.data;
   const existing = await getQueueTypeByIdForUser(userId, id);
   if (!existing) {
-    return json({ error: "Queue type not found" }, { status: 404 });
+    return data({ error: "Queue type not found" }, { status: 404 });
   }
   if (isEnabled) {
     const resumed = await resumeQueueById({ userId, queueTypeId: id });
     await invalidateQueueTypesCache(userId);
-    return json({
+    return {
       success: true,
       queueType: queueTypeToClient(resumed.queue),
       resumedCount: resumed.resumedCount,
       needsResignCount: resumed.needsResignCount,
-    });
+    };
   }
 
   const paused = await pauseQueueById({ userId, queueTypeId: id });
   await invalidateQueueTypesCache(userId);
-  return json({
+  return {
     success: true,
     queueType: queueTypeToClient(paused.queue),
     pausedPostCount: paused.pausedPostCount,
     pausedLongFormCount: paused.pausedLongFormCount,
-  });
+  };
 }
 
-async function handlePauseQueue(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handlePauseQueue(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, queueStatusActionSchema);
   if (!result.success) {
     return result.response;
@@ -386,18 +374,15 @@ async function handlePauseQueue(
     queueTypeId: result.data.id,
   });
   await invalidateQueueTypesCache(userId);
-  return json({
+  return {
     success: true,
     queueType: queueTypeToClient(queue.queue),
     pausedPostCount: queue.pausedPostCount,
     pausedLongFormCount: queue.pausedLongFormCount,
-  });
+  };
 }
 
-async function handleResumeQueue(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleResumeQueue(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, queueStatusActionSchema);
   if (!result.success) {
     return result.response;
@@ -407,18 +392,15 @@ async function handleResumeQueue(
     queueTypeId: result.data.id,
   });
   await invalidateQueueTypesCache(userId);
-  return json({
+  return {
     success: true,
     queueType: queueTypeToClient(queue.queue),
     resumedCount: queue.resumedCount,
     needsResignCount: queue.needsResignCount,
-  });
+  };
 }
 
-async function handleDeleteQueueType(
-  userId: string,
-  formData: FormData
-): Promise<Response> {
+async function handleDeleteQueueType(userId: string, formData: FormData) {
   const result = validateFormDataOrRespond(formData, deleteQueueTypeSchema);
   if (!result.success) {
     return result.response;
@@ -429,14 +411,14 @@ async function handleDeleteQueueType(
   if (deleteMode === "queue_and_scheduled") {
     const queueType = await getQueueTypeByIdForUser(userId, deletedId);
     if (!queueType) {
-      return json({ error: "Queue type not found" }, { status: 404 });
+      return data({ error: "Queue type not found" }, { status: 404 });
     }
     await deleteScheduledContentForQueue(userId, queueType.name);
   }
 
   await deleteQueueType(userId, deletedId);
   await invalidateQueueTypesCache(userId);
-  return json({ success: true, deletedId, deleteMode });
+  return { success: true, deletedId, deleteMode };
 }
 
 async function deleteScheduledContentForQueue(

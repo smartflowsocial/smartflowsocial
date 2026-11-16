@@ -3,7 +3,7 @@
  * Shared TypeScript interfaces for template features
  */
 
-import type { FetcherWithComponents } from "@remix-run/react";
+import type { FetcherWithComponents } from "react-router";
 
 import type { PrismaTemplate } from "./data/template-prisma-types.server";
 

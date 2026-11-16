@@ -1,9 +1,3 @@
-import {
-  useLoaderData,
-  useNavigation,
-  useSearchParams,
-  useNavigate,
-} from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   lazy,
@@ -13,6 +7,12 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+  useNavigate,
+} from "react-router";
 
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { Button } from "~/components/ui/button";
@@ -622,7 +622,7 @@ export default function NewPostPage() {
       onContentTypeChange={(next) => {
         if (navigation.state !== "idle") return;
         if (next === "article") {
-          navigate("/dashboard/compose?type=article");
+          void navigate("/dashboard/compose?type=article");
           return;
         }
         setComposerTab(next);
@@ -669,7 +669,9 @@ export default function NewPostPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/dashboard/scheduled")}
+                onClick={() => {
+                  void navigate("/dashboard/scheduled");
+                }}
               >
                 Go back
               </Button>
@@ -792,7 +794,7 @@ export default function NewPostPage() {
                       )
                         ? "&"
                         : "?";
-                      navigate(
+                      void navigate(
                         `${shortComposeDraftPickerBase}${separator}draftId=${encodeURIComponent(id)}`
                       );
                     }
@@ -809,7 +811,7 @@ export default function NewPostPage() {
                         )
                           ? "&"
                           : "?";
-                        navigate(
+                        void navigate(
                           `${shortComposeDraftPickerBase}${separator}templateId=${encodeURIComponent(templateId)}`
                         );
                       },
@@ -856,11 +858,11 @@ export default function NewPostPage() {
                     // ignore
                   }
                   // Client-side navigation preserves in-memory NIP-46 signer cache so the next post can sign without reconnecting
-                  navigate(getNewPostUrl(postType), { replace: true });
+                  void navigate(getNewPostUrl(postType), { replace: true });
                 }}
                 onGoToDashboard={() => {
                   resetPublishModalState();
-                  navigate("/dashboard");
+                  void navigate("/dashboard");
                 }}
                 onViewPage={() => {
                   const postType = getPostTypeFromPost(
@@ -876,14 +878,14 @@ export default function NewPostPage() {
 
                   if (action === "schedule") {
                     if (postType === "longform") {
-                      navigate("/dashboard/scheduled?tab=longform");
+                      void navigate("/dashboard/scheduled?tab=longform");
                     } else {
-                      navigate("/dashboard/scheduled");
+                      void navigate("/dashboard/scheduled");
                     }
                   } else if (postType === "longform") {
-                    navigate("/dashboard/published?tab=longform");
+                    void navigate("/dashboard/published?tab=longform");
                   } else {
-                    navigate("/dashboard/published");
+                    void navigate("/dashboard/published");
                   }
                 }}
               />

@@ -2,10 +2,10 @@
  * NIP-88 poll composer (kind 1068): question, options, schedule/publish via newpost action.
  */
 
-import { useFetcher } from "@remix-run/react";
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -485,7 +485,7 @@ export function PollComposer({
         fd.set("nominalScheduledFor", String(nominalUnix));
       }
 
-      fetcher.submit(fd, { method: "post" });
+      void fetcher.submit(fd, { method: "post" });
     } catch (e) {
       setLastPublishFailed(true);
       setSigningError(

@@ -1,5 +1,5 @@
-import { useFetcher } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -55,7 +55,7 @@ export function ScheduleOverviewTargetModal({
     const formData = new FormData();
     formData.set("_action", "updateScheduleOverviewTarget");
     formData.set("targetPostsPerDay", String(value));
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const isSubmitting = fetcher.state !== "idle";

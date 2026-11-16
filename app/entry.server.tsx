@@ -6,11 +6,11 @@
 
 import { PassThrough } from "node:stream";
 
-import { createReadableStreamFromReadable } from "@remix-run/node";
-import type { EntryContext } from "@remix-run/node";
-import { RemixServer } from "@remix-run/react";
+import { createReadableStreamFromReadable } from "@react-router/node";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
+import type { EntryContext } from "react-router";
+import { ServerRouter } from "react-router";
 
 // Initialize Sentry early for server-side error tracking
 import { logError } from "~/lib/error-logger.server";
@@ -30,20 +30,24 @@ export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext
+  reactRouterContext: EntryContext,
+  loadContext: { nonce?: string }
 ) {
+  const nonce = loadContext.nonce;
   return isbot(request.headers.get("user-agent"))
     ? handleBotRequest(
         request,
         responseStatusCode,
         responseHeaders,
-        remixContext
+        reactRouterContext,
+        nonce
       )
     : handleBrowserRequest(
         request,
         responseStatusCode,
         responseHeaders,
-        remixContext
+        reactRouterContext,
+        nonce
       );
 }
 
@@ -51,14 +55,15 @@ function handleBotRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext
+  reactRouterContext: EntryContext,
+  nonce: string | undefined
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
-      <RemixServer
-        context={remixContext}
+      <ServerRouter
+        context={reactRouterContext}
         url={request.url}
-        abortDelay={ABORT_DELAY}
+        nonce={nonce}
       />,
       {
         onAllReady() {
@@ -98,14 +103,15 @@ function handleBrowserRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  remixContext: EntryContext
+  reactRouterContext: EntryContext,
+  nonce: string | undefined
 ) {
   return new Promise((resolve, reject) => {
     const { abort, pipe } = renderToPipeableStream(
-      <RemixServer
-        context={remixContext}
+      <ServerRouter
+        context={reactRouterContext}
         url={request.url}
-        abortDelay={ABORT_DELAY}
+        nonce={nonce}
       />,
       {
         onShellReady() {

@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { Lock, X } from "lucide-react";
+import { Link } from "react-router";
 
 import { getMinimumPlanForFeature, type FeatureName } from "../types";
 interface UpgradePromptProps {

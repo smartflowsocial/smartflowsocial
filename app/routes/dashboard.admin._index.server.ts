@@ -2,15 +2,15 @@
  * Server-only loader for Admin Overview tab.
  */
 
-import { json } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import { data as routeData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 
 import {
   defaultRangeForAdminPath,
   parseRangePreset,
 } from "~/features/admin/metrics/date-range";
 import { getAdminOverviewPageData } from "~/features/admin/repositories/admin-overview-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 
 export type AdminOverviewIndexLoaderSuccess = Awaited<
@@ -20,7 +20,7 @@ export type AdminOverviewIndexLoaderSuccess = Awaited<
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return routeData({ error: "Forbidden" }, { status: 403 });
   }
 
   const url = new URL(request.url);
@@ -30,5 +30,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const data = await getAdminOverviewPageData(preset);
-  return json(data satisfies AdminOverviewIndexLoaderSuccess);
+  return data satisfies AdminOverviewIndexLoaderSuccess;
 }

@@ -1,9 +1,4 @@
-import {
-  Link,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "@remix-run/react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 
 import {
   Select,
@@ -96,7 +91,7 @@ export default function PostTypeTabs({
   const wrapperClass = inRow ? "flex-1 min-w-0" : "border-border mb-6 border-b";
 
   const handleMobileTabChange = (value: string) => {
-    navigate(`${basePath}${queueParam}?${searchWithTab(value)}`);
+    void navigate(`${basePath}${queueParam}?${searchWithTab(value)}`);
   };
 
   if (useDropdown) {

@@ -1,6 +1,6 @@
-import { useFetcher } from "@remix-run/react";
 import { FileText, LayoutTemplate, List } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -82,7 +82,7 @@ export function DraftPickerModal({
     }
     // Fetcher data persists across unmount. Load again each time the dialog opens.
     requestedThisOpenRef.current = true;
-    fetcher.load("/dashboard/drafts");
+    void fetcher.load("/dashboard/drafts");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetcher identity changes; we only want to react to state
   }, [open, skipDraftsFetch, fetcher.state]);
 

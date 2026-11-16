@@ -1,6 +1,6 @@
-import { Link, useFetcher } from "@remix-run/react";
 import { RefreshCw } from "lucide-react";
 import * as React from "react";
+import { Link, useFetcher } from "react-router";
 
 import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import type { ProfileData } from "~/features/nostr/types";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useSubscription } from "~/features/payments/types";
+import { handleErrorSafely } from "~/lib/error-handler.client";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 import { useOptionalUser } from "~/lib/remix-utils";
@@ -117,7 +118,7 @@ export default function AccountSwitchMenu() {
       fetcher.state === "idle" &&
       !fetcher.data
     ) {
-      fetcher.load("/api/children");
+      void fetcher.load("/api/children");
     }
   }, [open, hasAccountsAccess, fetcher.state, fetcher]);
 
@@ -129,7 +130,7 @@ export default function AccountSwitchMenu() {
       parentFetcher.state === "idle" &&
       !parentFetcher.data
     ) {
-      parentFetcher.load("/api/parent");
+      void parentFetcher.load("/api/parent");
     }
   }, [open, isChild, parentNpub, parentFetcher.state, parentFetcher]);
 
@@ -147,12 +148,6 @@ export default function AccountSwitchMenu() {
         `/login?expectedPubkey=${encodeURIComponent(childNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
-        handleErrorSafely: (
-          error: unknown,
-          context: { component: string; action: string }
-        ) => void;
-      };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchAccount",
@@ -168,12 +163,6 @@ export default function AccountSwitchMenu() {
         `/login?expectedPubkey=${encodeURIComponent(parentNpub)}`
       );
     } catch (e) {
-      const { handleErrorSafely } = require("~/lib/error-handler.client") as {
-        handleErrorSafely: (
-          error: unknown,
-          context: { component: string; action: string }
-        ) => void;
-      };
       handleErrorSafely(e, {
         component: "AccountSwitchMenu",
         action: "onSwitchParent",

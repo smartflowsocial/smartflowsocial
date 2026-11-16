@@ -2,7 +2,7 @@
  * Split handlers for engagement settings actions (keeps router complexity low).
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import {
   createReplyTemplate,
@@ -28,13 +28,13 @@ export async function syncMutedListAction(userId: string) {
   const userInfo = await getUserBasicInfo(userId);
 
   if (!userInfo?.npub) {
-    return json({ error: "User not found" }, { status: 404 });
+    return data({ error: "User not found" }, { status: 404 });
   }
 
   const mutedListData = await fetchMutedList(userInfo.npub);
 
   if (!mutedListData) {
-    return json(
+    return data(
       { error: "Failed to fetch muted list from Nostr" },
       { status: 500 }
     );
@@ -42,10 +42,10 @@ export async function syncMutedListAction(userId: string) {
 
   await updateUserMutedList(userId, mutedListData);
 
-  return json({
+  return {
     success: true,
     mutedList: mutedListData,
-  });
+  };
 }
 
 export async function toggleFilterMutedAction(
@@ -58,7 +58,7 @@ export async function toggleFilterMutedAction(
   }
   await updateUserFilterMuted(userId, result.data.filterMuted);
 
-  return json({ success: true, filterMuted: result.data.filterMuted });
+  return { success: true, filterMuted: result.data.filterMuted };
 }
 
 export async function toggleHideLowTrustAction(
@@ -71,10 +71,10 @@ export async function toggleHideLowTrustAction(
   }
   await updateUserHideLowTrust(userId, result.data.hidePostsFromLowTrustUsers);
 
-  return json({
+  return {
     success: true,
     hidePostsFromLowTrustUsers: result.data.hidePostsFromLowTrustUsers,
-  });
+  };
 }
 
 export async function replyTemplateCreateAction(
@@ -84,16 +84,16 @@ export async function replyTemplateCreateAction(
   const slug = formData.get("slug");
   const body = formData.get("body");
   if (typeof slug !== "string" || !slug.trim()) {
-    return json({ error: "Slug is required" }, { status: 400 });
+    return data({ error: "Slug is required" }, { status: 400 });
   }
   if (typeof body !== "string") {
-    return json({ error: "Body is required" }, { status: 400 });
+    return data({ error: "Body is required" }, { status: 400 });
   }
   const result = await createReplyTemplate(userId, slug.trim(), body);
   if (!result.success) {
-    return json({ error: result.error ?? "Failed to create" }, { status: 400 });
+    return data({ error: result.error ?? "Failed to create" }, { status: 400 });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 export async function replyTemplateDeleteAction(
@@ -102,13 +102,13 @@ export async function replyTemplateDeleteAction(
 ) {
   const id = formData.get("id");
   if (typeof id !== "string" || !id) {
-    return json({ error: "Template id is required" }, { status: 400 });
+    return data({ error: "Template id is required" }, { status: 400 });
   }
   const result = await deleteReplyTemplate(userId, id);
   if (!result.success) {
-    return json({ error: result.error ?? "Failed to delete" }, { status: 400 });
+    return data({ error: result.error ?? "Failed to delete" }, { status: 400 });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 export async function replyTemplateUpdateAction(
@@ -119,19 +119,19 @@ export async function replyTemplateUpdateAction(
   const slug = formData.get("slug");
   const body = formData.get("body");
   if (typeof id !== "string" || !id) {
-    return json({ error: "Template id is required" }, { status: 400 });
+    return data({ error: "Template id is required" }, { status: 400 });
   }
   if (typeof slug !== "string" || !slug.trim()) {
-    return json({ error: "Slug is required" }, { status: 400 });
+    return data({ error: "Slug is required" }, { status: 400 });
   }
   if (typeof body !== "string") {
-    return json({ error: "Body is required" }, { status: 400 });
+    return data({ error: "Body is required" }, { status: 400 });
   }
   const result = await updateReplyTemplate(userId, id, slug.trim(), body);
   if (!result.success) {
-    return json({ error: result.error ?? "Failed to update" }, { status: 400 });
+    return data({ error: result.error ?? "Failed to update" }, { status: 400 });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 export async function updateDefaultZapAmountAction(
@@ -149,8 +149,8 @@ export async function updateDefaultZapAmountAction(
     userId,
     result.data.defaultZapAmountSats
   );
-  return json({
+  return {
     success: true,
     defaultZapAmountSats: result.data.defaultZapAmountSats,
-  });
+  };
 }

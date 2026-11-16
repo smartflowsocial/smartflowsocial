@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { data, useLoaderData } from "react-router";
 
 import { applyUnsubscribeFromRawToken } from "~/features/broadcast/broadcast-unsubscribe.server";
 import { buildSeoMeta, siteOriginFromMatches } from "~/lib/seo";
@@ -16,7 +15,7 @@ export const meta: MetaFunction = ({ matches }) =>
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   if (request.method !== "GET") {
-    return json(
+    return data(
       {
         title: "Unable to process request",
         message: "This unsubscribe endpoint only supports GET requests.",
@@ -27,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const t = url.searchParams.get("t");
   await applyUnsubscribeFromRawToken(t);
-  return json(
+  return data(
     {
       title: "You're unsubscribed",
       message:

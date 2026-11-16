@@ -3,14 +3,13 @@
  * Handles payment status checking
  */
 
-import { json } from "@remix-run/node";
-
 import {
   checkPaymentStatus,
   getPaymentUserId,
   manuallyVerifyPayment,
 } from "~/features/payments/data";
 import { DatabaseError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 export { getPaymentUserId };
 /**
@@ -50,7 +49,7 @@ export async function checkPaymentStatusById(paymentId: string) {
   }
 
   if (paymentStatus.paid) {
-    return json(
+    return jsonResponse(
       {
         success: true,
         paid: true,
@@ -66,7 +65,7 @@ export async function checkPaymentStatusById(paymentId: string) {
     );
   }
 
-  return json(
+  return jsonResponse(
     {
       success: true,
       paid: false,

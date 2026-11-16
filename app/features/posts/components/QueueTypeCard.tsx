@@ -1,5 +1,5 @@
-import type { FetcherWithComponents } from "@remix-run/react";
 import { Edit, Trash2 } from "lucide-react";
+import type { FetcherWithComponents } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
@@ -39,7 +39,7 @@ export function QueueTypeCard({
     const formData = new FormData();
     formData.set("_action", "delete_queue_type");
     formData.set("id", queueType.id);
-    deleteFetcher.submit(formData, { method: "post" });
+    void deleteFetcher.submit(formData, { method: "post" });
   };
 
   const primaryLine = getQueuePrimaryScheduleLine(

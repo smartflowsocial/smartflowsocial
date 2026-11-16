@@ -9,9 +9,7 @@ require("./load-env.js");
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, SubscriptionStatus } from "@prisma/client";
-import { installGlobals } from "@remix-run/node";
 import { Pool } from "pg";
-installGlobals();
 
 type TestSubscriptionStatus =
   | "FREE"

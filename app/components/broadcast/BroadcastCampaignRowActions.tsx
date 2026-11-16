@@ -1,7 +1,7 @@
 "use client";
 
-import { useFetcher } from "@remix-run/react";
 import { MoreHorizontal } from "lucide-react";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -53,7 +53,7 @@ export function BroadcastCampaignRowActions(props: {
     status === "CANCELLED";
 
   function postIntent(intent: string) {
-    fetcher.submit(
+    void fetcher.submit(
       { intent, campaignId },
       { method: "post", action: BROADCASTS_INDEX_ACTION }
     );

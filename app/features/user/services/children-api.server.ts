@@ -3,8 +3,6 @@
  * Handles children account information for parent accounts
  */
 
-import { json } from "@remix-run/node";
-
 import {
   getCompleteProfile,
   LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
@@ -21,6 +19,7 @@ import {
 } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile) {
     return {
@@ -92,12 +91,12 @@ export async function loadChildrenData(userId: string) {
   const me = await getUserBasicInfo(userId);
 
   if (!me?.npub) {
-    return json({ children: [] });
+    return jsonResponse({ children: [] });
   }
 
   // Only parents can fetch children
   if (me.isChild) {
-    return json({ children: [] });
+    return jsonResponse({ children: [] });
   }
 
   // Check subscription plan supports linked accounts.
@@ -117,7 +116,7 @@ export async function loadChildrenData(userId: string) {
   );
 
   if (!hasAccountsAccess) {
-    return json({ children: [] });
+    return jsonResponse({ children: [] });
   }
 
   const confirmed = await getConfirmedChildrenForParent(me.npub);
@@ -161,7 +160,7 @@ export async function loadChildrenData(userId: string) {
     };
   });
 
-  return json({ children });
+  return jsonResponse({ children });
 }
 
 /**
@@ -176,5 +175,5 @@ export function handleChildrenApiError(error: unknown, requestUrl: string) {
   // Gracefully handle other errors by returning empty array
   // Log error but don't expose it to client
   logError(normalizeError(error), { path: requestUrl });
-  return json({ children: [] });
+  return jsonResponse({ children: [] });
 }

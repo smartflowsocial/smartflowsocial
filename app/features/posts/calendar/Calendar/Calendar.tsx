@@ -1,7 +1,7 @@
-import { useNavigate, useSearchParams } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -706,7 +706,7 @@ export function Calendar({
               mode: "edit_scheduled",
               scheduledActionId: postData.id,
             });
-      navigate(composeUrl);
+      void navigate(composeUrl);
     },
     [isLongform, isAll, navigate]
   );

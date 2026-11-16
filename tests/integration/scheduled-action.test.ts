@@ -38,6 +38,7 @@ vi.mock(
   })
 );
 
+import { asRouteResponse } from "../utils/action-test-helpers";
 import {
   createActionFormData,
   TEST_USER_ID,
@@ -140,7 +141,9 @@ describe("Scheduled Action Handler", () => {
 
       // Zod validation requires at least one post ID
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(data.error).toContain("postIds");
       expect(deletePost).not.toHaveBeenCalled();
@@ -279,7 +282,9 @@ describe("Scheduled Action Handler", () => {
 
       // Zod validation requires at least one item
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
       expect(data.error).toContain("itemData");
       expect(deletePost).not.toHaveBeenCalled();
@@ -295,7 +300,9 @@ describe("Scheduled Action Handler", () => {
 
       // Zod validation fails because "invalidAction" is not in the enum
       expect(result).toBeInstanceOf(Response);
-      const data = (await (result as Response).json()) as { error?: string };
+      const data = (await (await asRouteResponse(result)).json()) as {
+        error?: string;
+      };
       expect(data).toHaveProperty("error");
     });
 

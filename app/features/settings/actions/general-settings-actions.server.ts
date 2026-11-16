@@ -2,7 +2,7 @@
  * General settings action handlers
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import { getUserSubscription } from "~/features/payments/data";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";
@@ -84,10 +84,7 @@ function parseNotificationPreferencesFromFormData(formData: FormData): {
   };
 }
 
-async function handleLocaleDefaultsAction(
-  userId: string,
-  formData: FormData
-): Promise<ReturnType<typeof json> | null> {
+async function handleLocaleDefaultsAction(userId: string, formData: FormData) {
   const timeFormat = formData.get("timeFormat");
   const dateFormat = formData.get("dateFormat");
   if (
@@ -96,14 +93,14 @@ async function handleLocaleDefaultsAction(
       dateFormat !== "mmddyyyy" &&
       dateFormat !== "yyyymmdd")
   ) {
-    return json(
+    return data(
       { error: "Invalid time or date format for locale defaults" },
       { status: 400 }
     );
   }
   const appliedAt = await getLocaleDefaultsAppliedAt(userId);
   if (appliedAt != null) {
-    return json({ success: true, skipped: true });
+    return { success: true, skipped: true };
   }
   const [currentTimeFormat, currentDateFormat] = await Promise.all([
     getUserTimeFormat(userId),
@@ -112,10 +109,10 @@ async function handleLocaleDefaultsAction(
   const stillOnDefaults =
     currentTimeFormat === "24h" && currentDateFormat === "ddmmyyyy";
   if (!stillOnDefaults) {
-    return json({ success: true, skipped: true });
+    return { success: true, skipped: true };
   }
   await applyLocaleDefaultsOnce(userId, timeFormat, dateFormat);
-  return json({ success: true });
+  return { success: true };
 }
 
 export async function handleGeneralSettingsAction(
@@ -127,7 +124,7 @@ export async function handleGeneralSettingsAction(
     const result = validateFormDataOrRespond(formData, updateTimezoneSchema);
     if (!result.success) return result.response;
     await updateUserTimezone(userId, result.data.timezone);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_theme_preference") {
@@ -137,10 +134,10 @@ export async function handleGeneralSettingsAction(
     );
     if (!result.success) return result.response;
     await updateUserThemePreference(userId, result.data.themePreference);
-    return json({
+    return {
       success: true,
       themePreference: result.data.themePreference,
-    });
+    };
   }
 
   if (action === "update_relays") {
@@ -151,7 +148,7 @@ export async function handleGeneralSettingsAction(
       publishRelaySource: result.data.publishRelaySource,
     });
     await invalidateRelayIntentCache(userId);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_blastr_relay_enabled") {
@@ -161,7 +158,7 @@ export async function handleGeneralSettingsAction(
       planEnablesRelayBlast: subscription?.Plan?.enableRelayBlast === true,
     });
     if (!canToggleBlastr) {
-      return json(
+      return data(
         { error: "SFS Blastr is not available on your current plan." },
         { status: 403 }
       );
@@ -169,14 +166,14 @@ export async function handleGeneralSettingsAction(
     const value = formData.get("blastrRelayEnabled");
     const enabled = String(value ?? "") === "true";
     await updateUserBlastrRelayEnabled(userId, enabled);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_blacklist") {
     const result = validateFormDataOrRespond(formData, updateBlacklistSchema);
     if (!result.success) return result.response;
     await updateGiveawayBlacklist(userId, result.data.blacklist);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_schedule_intervals") {
@@ -186,22 +183,22 @@ export async function handleGeneralSettingsAction(
     );
     if (!result.success) return result.response;
     await updateScheduleInterval(userId, result.data.scheduleIntervals);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_notification_preferences") {
     const preferences = parseNotificationPreferencesFromFormData(formData);
     await updateUserPushNotificationPreferences(userId, preferences);
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "update_time_format") {
     const timeFormat = formData.get("timeFormat");
     if (timeFormat === "12h" || timeFormat === "24h") {
       await updateUserTimeFormat(userId, timeFormat);
-      return json({ success: true });
+      return { success: true };
     }
-    return json({ error: "Invalid time format" }, { status: 400 });
+    return data({ error: "Invalid time format" }, { status: 400 });
   }
 
   if (action === "update_date_format") {
@@ -212,9 +209,9 @@ export async function handleGeneralSettingsAction(
       dateFormat === "yyyymmdd"
     ) {
       await updateUserDateFormat(userId, dateFormat);
-      return json({ success: true });
+      return { success: true };
     }
-    return json({ error: "Invalid date format" }, { status: 400 });
+    return data({ error: "Invalid date format" }, { status: 400 });
   }
 
   if (action === "update_preferred_nostr_client") {
@@ -228,7 +225,7 @@ export async function handleGeneralSettingsAction(
       result.data.preferredNostrClient,
       result.data.customNostrClientBaseUrl ?? undefined
     );
-    return json({ success: true });
+    return { success: true };
   }
 
   if (action === "apply_locale_defaults") {

@@ -72,6 +72,8 @@ describe("manual referral payout route", () => {
       ),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(404);
     expect(pay).not.toHaveBeenCalled();
@@ -91,6 +93,8 @@ describe("manual referral payout route", () => {
       ),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(404);
     expect(pay).not.toHaveBeenCalled();
@@ -107,6 +111,8 @@ describe("manual referral payout route", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(401);
     expect(pay).not.toHaveBeenCalled();
@@ -127,6 +133,8 @@ describe("manual referral payout route", () => {
       ),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(401);
     expect(pay).not.toHaveBeenCalled();
@@ -147,6 +155,8 @@ describe("manual referral payout route", () => {
       ),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(200);
     expect(pay).toHaveBeenCalledWith("npub1example", "lnbc1", 10);
@@ -167,6 +177,8 @@ describe("manual referral payout route", () => {
       ),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     });
     expect(response.status).toBe(400);
     expect(pay).not.toHaveBeenCalled();

@@ -1,11 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
 import {
   useFetcher,
   useParams,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+} from "react-router";
 
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
@@ -249,7 +249,7 @@ export function useDashboardState({
     formData.append("_action", "bulkDelete");
     formData.append("postIds", JSON.stringify(postIds));
 
-    bulkDeleteFetcher.submit(formData, { method: "post" });
+    void bulkDeleteFetcher.submit(formData, { method: "post" });
   };
 
   // Invalidate queries when delete succeeds
@@ -294,7 +294,7 @@ export function useDashboardState({
 
   const revalidator = useRevalidator();
   const handleModalSuccess = () => {
-    revalidator.revalidate();
+    void revalidator.revalidate();
   };
 
   return {

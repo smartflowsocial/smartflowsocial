@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import "./shared-setup";
+import { asRouteResponse } from "../../utils/action-test-helpers";
 import {
   TEST_USER_ID,
   createMockQueueType,
@@ -90,7 +91,9 @@ describe("Schedule Longform Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
 
     expect(mockCreateLongFormPostExecute).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -116,7 +119,9 @@ describe("Schedule Longform Action", () => {
       body: formData,
     });
 
-    const response = await handleNewLongFormAction(TEST_USER_ID, request);
+    const response = await asRouteResponse(
+      await handleNewLongFormAction(TEST_USER_ID, request)
+    );
     const dataRaw: unknown = await response.json();
     const data =
       dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)

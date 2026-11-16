@@ -1,6 +1,6 @@
-import { Link, useLocation } from "@remix-run/react";
 import { ChevronDown, Lock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router";
 
 import {
   DASHBOARD_SIDEBAR_NAV_LINK_ACTIVE,
@@ -242,7 +242,6 @@ export function ExpandableNavigationSection({
           <ChevronDown className="h-4 w-4" strokeWidth={NAV_ICON_STROKE} />
         </span>
       </button>
-
       {/* Children Items */}
       <div
         id={`${title.toLowerCase().replace(/\s+/g, "-")}-section-content`}

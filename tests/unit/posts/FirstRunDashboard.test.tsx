@@ -6,7 +6,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@remix-run/react", () => ({
+vi.mock("react-router", () => ({
   Link: ({
     to,
     children,

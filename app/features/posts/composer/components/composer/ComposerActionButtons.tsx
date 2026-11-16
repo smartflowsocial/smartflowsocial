@@ -2,9 +2,9 @@
  * Composer action buttons: Post/Schedule, Save as Draft, or template save/cancel.
  */
 
-import { Link } from "@remix-run/react";
 import { Clock, Pencil, Send } from "lucide-react";
 import React from "react";
+import { Link } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";

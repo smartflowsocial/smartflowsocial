@@ -1,5 +1,5 @@
-import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams, useNavigate } from "react-router";
 
 import Toast from "~/components/ui/Toast";
 import { getSelectableRootIdsForMixedListing } from "~/features/posts/components/all-content-listing-selectable";
@@ -730,7 +730,7 @@ export default function PublishedPostsPage() {
             setModalPostId(null);
             setModalPost(null);
             setModalLongFormPost(null);
-            navigate(getNewPostUrl(postType));
+            void navigate(getNewPostUrl(postType));
           }}
           onViewPage={() => {
             setShowPublishModal(false);

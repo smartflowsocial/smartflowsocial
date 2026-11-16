@@ -2,7 +2,7 @@
  * Action tests for referral payouts on dashboard.admin.referrals.
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const envState = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ vi.mock("~/lib/env.server", () => ({
   },
 }));
 
-vi.mock("~/lib/csrf", () => ({
+vi.mock("~/lib/csrf.server", () => ({
   withCSRFProtection: (fn: (args: ActionFunctionArgs) => Promise<unknown>) =>
     fn,
 }));
@@ -41,7 +41,7 @@ const mockIsReferralAdmin = vi.fn();
 const mockRunReferralPayoutBatch = vi.fn();
 const mockPayReferrerWithInvoice = vi.fn();
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUser: (...args: unknown[]) => mockRequireUser(...args),
 }));
 
@@ -105,6 +105,8 @@ vi.mock("~/features/referral/referral-payout.server", async () => {
   };
 });
 
+import { asRouteResponse } from "../utils/action-test-helpers";
+
 import { action } from "~/routes/dashboard.admin.referrals.server";
 
 describe("dashboard.admin.referrals action", () => {
@@ -136,8 +138,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
   });
 
@@ -154,8 +158,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
     expect(mockRunReferralPayoutBatch).not.toHaveBeenCalled();
   });
@@ -173,8 +179,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(403);
     expect(mockRunReferralPayoutBatch).not.toHaveBeenCalled();
     expect(mockPayReferrerWithInvoice).not.toHaveBeenCalled();
@@ -192,8 +200,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(400);
   });
 
@@ -207,8 +217,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(400);
   });
 
@@ -224,8 +236,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({
       ok: true,
@@ -249,8 +263,10 @@ describe("dashboard.admin.referrals action", () => {
       }),
       params: {},
       context: {},
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
     };
-    const res = await action(args);
+    const res = await asRouteResponse(await action(args));
     expect(res.status).toBe(200);
     expect(mockPayReferrerWithInvoice).toHaveBeenCalledWith(
       "npub1test",

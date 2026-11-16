@@ -1,8 +1,7 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   formatContestStatusLabel,
   listContestsFiltered,
@@ -92,7 +91,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   })();
 
   const contests = await contestsPromise;
-  return json({ contests });
+  return { contests };
 }
 
 export default function ContestProofPage() {

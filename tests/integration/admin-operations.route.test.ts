@@ -2,7 +2,7 @@
  * Action tests for app/routes/dashboard.admin.operations (dead-letter replay).
  */
 
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockRequireUser = vi.fn();
@@ -11,7 +11,7 @@ const mockRetryDeadLetterJob = vi.fn();
 const mockCleanFailedJobsInAllQueues = vi.fn();
 const mockPurgePublishRelayAcksAdmin = vi.fn();
 
-vi.mock("~/features/auth", () => ({
+vi.mock("~/features/auth/auth.server", () => ({
   requireUser: (...args: unknown[]) => mockRequireUser(...args),
 }));
 
@@ -33,10 +33,12 @@ vi.mock(
   })
 );
 
-vi.mock("~/lib/csrf", () => ({
+vi.mock("~/lib/csrf.server", () => ({
   withCSRFProtection: (fn: (args: ActionFunctionArgs) => Promise<unknown>) =>
     fn,
 }));
+
+import { asRouteResponse } from "../utils/action-test-helpers";
 
 import { action } from "~/routes/dashboard.admin.operations";
 
@@ -48,6 +50,8 @@ function postForm(body: FormData): ActionFunctionArgs {
     }),
     params: {},
     context: {},
+    url: new URL("http://localhost:3000/"),
+    pattern: "*",
   };
 }
 
@@ -81,7 +85,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_1");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(403);
   });
 
@@ -90,7 +94,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_1");
     body.set("confirm_phrase", "no");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(400);
     expect(mockRetryDeadLetterJob).not.toHaveBeenCalled();
   });
@@ -100,7 +104,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "dl_abc");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true });
     expect(mockRetryDeadLetterJob).toHaveBeenCalledWith("dl_abc");
@@ -115,7 +119,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "replay_dead_letter");
     body.set("entry_id", "missing");
     body.set("confirm_phrase", "REPLAY");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(422);
     await expect(res.json()).resolves.toMatchObject({
       error: "Dead letter entry not found",
@@ -126,7 +130,7 @@ describe("dashboard.admin.operations action", () => {
     const body = new FormData();
     body.set("_action", "clean_failed_jobs");
     body.set("confirm_phrase", "CLEAN");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       ok: true,
@@ -141,7 +145,7 @@ describe("dashboard.admin.operations action", () => {
     const body = new FormData();
     body.set("_action", "clean_failed_jobs");
     body.set("confirm_phrase", "no");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(400);
     expect(mockCleanFailedJobsInAllQueues).not.toHaveBeenCalled();
   });
@@ -151,7 +155,7 @@ describe("dashboard.admin.operations action", () => {
     body.set("_action", "purge_relay_acks");
     body.set("confirm_phrase", "PURGE");
     body.set("older_than_days", "14");
-    const res = await action(postForm(body));
+    const res = await asRouteResponse(await action(postForm(body)));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
       ok: true,

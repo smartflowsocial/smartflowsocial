@@ -1,19 +1,20 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { Suspense, useState } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
+  redirect,
+  data,
   Await,
   Form,
   Link,
   useLoaderData,
   useSearchParams,
-} from "@remix-run/react";
-import { Suspense, useState } from "react";
+} from "react-router";
 
 import { RecipientPicker } from "~/components/broadcast/audience/RecipientPicker";
 import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Button } from "~/components/ui/button";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   createBroadcastSavedAudience,
   deleteBroadcastSavedAudience,
@@ -31,7 +32,6 @@ import {
 import { requireAnySubscription } from "~/features/payments";
 import { PublishingPageHeader } from "~/features/posts/ui";
 import { dateLikeToIsoString } from "~/lib/date";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const BROADCAST_AUDIENCES_PATH = "/dashboard/broadcasts/audiences";
@@ -78,13 +78,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { rows, notice, editingRow };
   })();
 
-  if (isRemixResourceRequest(request)) {
-    return json(await audiencesPromise);
-  }
-
-  return defer<{ audiences: Promise<BroadcastAudiencesLoaderData> }>({
+  return {
     audiences: audiencesPromise,
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -107,14 +103,14 @@ export async function action({ request }: ActionFunctionArgs) {
     const customNpubLines = splitCustom(customRaw);
     const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
     if (!name) {
-      return json({ error: "Name required" }, { status: 400 });
+      return data({ error: "Name required" }, { status: 400 });
     }
     if (
       !VALID_SAVED_AUDIENCE_TYPES.includes(
         audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
       )
     ) {
-      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
+      return data({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
     }
     await createBroadcastSavedAudience(userId, {
       name,
@@ -132,16 +128,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const customRaw = String(form.get("customNpubs") ?? "");
     const customNpubLines = splitCustom(customRaw);
     const ruleSummary = String(form.get("ruleSummary") ?? "").trim();
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     if (!name) {
-      return json({ error: "Name required" }, { status: 400 });
+      return data({ error: "Name required" }, { status: 400 });
     }
     if (
       !VALID_SAVED_AUDIENCE_TYPES.includes(
         audienceType as (typeof VALID_SAVED_AUDIENCE_TYPES)[number]
       )
     ) {
-      return json({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
+      return data({ error: ERR_INVALID_AUDIENCE }, { status: 400 });
     }
     await updateBroadcastSavedAudience(userId, id, {
       name,
@@ -154,7 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "duplicate") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     const { id: newId } = await duplicateBroadcastSavedAudience(userId, id);
     return redirect(
       `${BROADCAST_AUDIENCES_PATH}?edit=${encodeURIComponent(newId)}`
@@ -163,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "refresh_estimate") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     await refreshSavedAudienceEstimate(userId, id);
     return redirect(BROADCAST_AUDIENCES_PATH);
   }
@@ -172,20 +168,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const campaignId = String(form.get("campaignId") ?? "");
     const name = String(form.get("name") ?? "").trim();
     if (!campaignId) {
-      return json({ error: "Missing campaign" }, { status: 400 });
+      return data({ error: "Missing campaign" }, { status: 400 });
     }
     const campaign = await getBroadcastCampaignForUser(campaignId, userId);
     if (!campaign) {
-      return json({ error: "Campaign not found" }, { status: 404 });
+      return data({ error: "Campaign not found" }, { status: 404 });
     }
     if (campaign.audienceType === "FOLLOWING") {
-      return json(
+      return data(
         { error: "This audience type cannot be saved" },
         { status: 400 }
       );
     }
     if (campaign.audienceType === "FOLLOWERS") {
-      return json(
+      return data(
         { error: "This audience type cannot be saved" },
         { status: 400 }
       );
@@ -201,12 +197,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "delete") {
     const id = String(form.get("id") ?? "");
-    if (!id) return json({ error: ERR_MISSING_ID }, { status: 400 });
+    if (!id) return data({ error: ERR_MISSING_ID }, { status: 400 });
     await deleteBroadcastSavedAudience(userId, id);
     return redirect(BROADCAST_AUDIENCES_PATH);
   }
 
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 export default function BroadcastAudiencesRoute() {
@@ -223,9 +219,9 @@ export default function BroadcastAudiencesRoute() {
       >
         {(loaded) => (
           <BroadcastAudiencesRouteLoaded
-            rows={(loaded as BroadcastAudiencesLoaderData).rows}
-            notice={(loaded as BroadcastAudiencesLoaderData).notice}
-            editingRow={(loaded as BroadcastAudiencesLoaderData).editingRow}
+            rows={loaded.rows}
+            notice={loaded.notice}
+            editingRow={loaded.editingRow}
           />
         )}
       </Await>

@@ -1,17 +1,6 @@
-/* eslint-disable import/order -- env must load before nostr-tools WebSocket polyfill */
+/* eslint-disable import/order -- WebSocket polyfill must load before nostr-tools */
+import "~/lib/websocket-polyfill.server";
 import { env } from "~/lib/env.server";
-
-// Polyfill WebSocket for nostr-tools in Node.js (production only); must run before nostr-tools import
-if (
-  env.NODE_ENV !== "development" &&
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime polyfill check for Node.js environment
-  globalThis.WebSocket === undefined
-) {
-  const { WebSocket } = require("ws") as {
-    WebSocket: typeof globalThis.WebSocket;
-  };
-  globalThis.WebSocket = WebSocket;
-}
 
 import { nip04, finalizeEvent, nip19, SimplePool } from "nostr-tools";
 import { wrapManyEvents } from "nostr-tools/nip17";

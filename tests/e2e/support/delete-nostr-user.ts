@@ -7,9 +7,7 @@ require("./load-env.js");
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Prisma } from "@prisma/client";
-import { installGlobals } from "@remix-run/node";
 import { Pool } from "pg";
-installGlobals();
 
 async function deleteNostrUser(npub: string) {
   if (!npub) {

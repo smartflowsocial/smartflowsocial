@@ -18,7 +18,7 @@ vi.mock("@tanstack/react-query", () => ({
   }),
 }));
 
-vi.mock("@remix-run/react", () => ({
+vi.mock("react-router", () => ({
   useLoaderData: () => ({
     queueTypes: [
       {

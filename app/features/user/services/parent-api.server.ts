@@ -3,8 +3,6 @@
  * Handles parent account information for child accounts
  */
 
-import { json } from "@remix-run/node";
-
 import {
   getCompleteProfile,
   LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS,
@@ -17,6 +15,7 @@ import {
 } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
+import { jsonResponse } from "~/lib/http/json-response";
 
 function isDisplayProfileEmpty(nostrProfile: unknown): boolean {
   if (nostrProfile == null) return true;
@@ -95,13 +94,13 @@ export async function loadParentData(userId: string) {
   const me = await getUserBasicInfo(userId);
 
   if (!me?.isChild || !me.parentNpub) {
-    return json({ parent: null });
+    return jsonResponse({ parent: null });
   }
 
   const parent = await getUserByNpubWithProfile(me.parentNpub);
 
   if (!parent) {
-    return json({ parent: null });
+    return jsonResponse({ parent: null });
   }
 
   let profileForDisplay: ProfileData | null | undefined = parent.nostrProfile;
@@ -126,7 +125,7 @@ export async function loadParentData(userId: string) {
 
   const bits = extractProfileBits(profileForDisplay);
 
-  return json({
+  return jsonResponse({
     parent: {
       npub: parent.npub,
       name: bits.name,
@@ -148,5 +147,5 @@ export function handleParentApiError(error: unknown, requestUrl: string) {
   // Gracefully handle other errors by returning null parent
   // Log error but don't expose it to client
   logError(normalizeError(error), { path: requestUrl });
-  return json({ parent: null });
+  return jsonResponse({ parent: null });
 }

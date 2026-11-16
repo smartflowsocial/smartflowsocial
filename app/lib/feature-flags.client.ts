@@ -13,6 +13,8 @@
  *  -  production code paths read the named export directly.
  */
 
+import { readProcessEnv } from "~/lib/runtime-env";
+
 function parseBooleanEnv(
   value: string | undefined,
   defaultValue: boolean
@@ -42,10 +44,7 @@ function readEnvFlag(name: string): string | undefined {
     if (env && typeof env[name] === "string") return env[name];
     return undefined;
   }
-  if (typeof process !== "undefined") {
-    return process.env[name];
-  }
-  return undefined;
+  return readProcessEnv(name);
 }
 
 /**

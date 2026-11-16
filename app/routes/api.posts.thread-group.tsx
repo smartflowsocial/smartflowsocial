@@ -1,8 +1,8 @@
-import { json } from "@remix-run/node";
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { getThreadGroupSegmentsForUser } from "~/features/posts/server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 /**
  * GET /api/posts/thread-group?groupId=&postId=
@@ -16,10 +16,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const postId = url.searchParams.get("postId");
 
     if (!groupId?.trim()) {
-      return json({ error: "groupId is required" }, { status: 400 });
+      return jsonResponse({ error: "groupId is required" }, { status: 400 });
     }
     if (!postId?.trim()) {
-      return json({ error: "postId is required" }, { status: 400 });
+      return jsonResponse({ error: "postId is required" }, { status: 400 });
     }
 
     const result = await getThreadGroupSegmentsForUser(
@@ -29,10 +29,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     if (!result) {
-      return json({ segments: [], currentIndex: -1, total: 0 });
+      return jsonResponse({ segments: [], currentIndex: -1, total: 0 });
     }
 
-    return json({
+    return jsonResponse({
       segments: result.segments,
       currentIndex: result.currentIndex,
       total: result.segments.length,

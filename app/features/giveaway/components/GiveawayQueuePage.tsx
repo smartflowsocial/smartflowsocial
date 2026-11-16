@@ -1,4 +1,4 @@
-import { useParams } from "@remix-run/react";
+import { useParams } from "react-router";
 
 import { type CombinedContent, type PostData } from "~/features/posts/server";
 import { PostDetailsModal } from "~/features/posts/ui";

@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 import { getThreadViewWithCache } from "~/features/cache/thread-view-cache.server";
 import { ExternalServiceError } from "~/lib/errors";

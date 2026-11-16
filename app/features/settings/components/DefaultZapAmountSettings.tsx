@@ -1,6 +1,6 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -55,7 +55,7 @@ export function DefaultZapAmountSettings({
         toast.success("Zap default saved");
         lastToastAt.current = now;
       }
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     } else if (
       fetcher.data &&
       "error" in fetcher.data &&
@@ -72,7 +72,7 @@ export function DefaultZapAmountSettings({
     const fd = new FormData();
     fd.set("_action", "update_default_zap_amount");
     fd.set("defaultZapAmountSats", String(sats));
-    fetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
+    void fetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
     lastSaved.current = sats;
   };
 

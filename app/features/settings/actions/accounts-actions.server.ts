@@ -2,7 +2,7 @@
  * Accounts management action handlers
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import {
   updateUserSubscription,
@@ -37,13 +37,13 @@ import {
 async function handleSearchAccounts(
   formData: FormData,
   me: Awaited<ReturnType<typeof getUserBasicInfo>>
-): Promise<Response> {
+) {
   const result = validateFormDataOrRespond(formData, searchAccountsSchema);
   if (!result.success) {
     return result.response;
   }
   if (me?.isChild) {
-    return json(
+    return data(
       { error: "Child accounts cannot search or manage child accounts." },
       { status: 403 }
     );
@@ -52,19 +52,19 @@ async function handleSearchAccounts(
     result.data.q,
     me?.npub ?? undefined
   );
-  return json({ results });
+  return { results };
 }
 
 async function handleRequestChild(
   formData: FormData,
   me: Awaited<ReturnType<typeof getUserBasicInfo>>
-): Promise<Response> {
+) {
   const result = validateFormDataOrRespond(formData, requestChildSchema);
   if (!result.success) {
     return result.response;
   }
   if (me?.isChild) {
-    return json(
+    return data(
       { error: "Child accounts cannot link child accounts." },
       { status: 403 }
     );
@@ -72,21 +72,21 @@ async function handleRequestChild(
   const parentNpub = me?.npub ?? "";
   const res = await requestChildLink(parentNpub, result.data.childNpub);
   if (!res.ok) {
-    return json({ error: res.reason }, { status: 400 });
+    return data({ error: res.reason }, { status: 400 });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleCancelChildRequest(
   formData: FormData,
   me: Awaited<ReturnType<typeof getUserBasicInfo>>
-): Promise<Response> {
+) {
   const result = validateFormDataOrRespond(formData, cancelChildRequestSchema);
   if (!result.success) {
     return result.response;
   }
   if (me?.isChild) {
-    return json(
+    return data(
       { error: "Child accounts cannot manage child requests." },
       { status: 403 }
     );
@@ -96,27 +96,27 @@ async function handleCancelChildRequest(
     result.data.childNpub
   );
   if (!res.ok) {
-    return json({ error: res.reason }, { status: 400 });
+    return data({ error: res.reason }, { status: 400 });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleUnlinkParent(
   userId: string,
   me: Awaited<ReturnType<typeof getUserBasicInfo>>
-): Promise<Response> {
+) {
   if (!me?.isChild) {
-    return json(
+    return data(
       { error: "This account is not a child account." },
       { status: 400 }
     );
   }
   if (!me.npub) {
-    return json({ error: "User npub not found" }, { status: 400 });
+    return data({ error: "User npub not found" }, { status: 400 });
   }
   const res = await unlinkParent(me.npub);
   if (!res.ok) {
-    return json({ error: res.reason }, { status: 400 });
+    return data({ error: res.reason }, { status: 400 });
   }
   // Demote child back to free plan
   try {
@@ -131,26 +131,26 @@ async function handleUnlinkParent(
       error: e instanceof Error ? e.message : String(e),
     });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleUnlinkChild(
   formData: FormData,
   me: Awaited<ReturnType<typeof getUserBasicInfo>>
-): Promise<Response> {
+) {
   const result = validateFormDataOrRespond(formData, unlinkChildSchema);
   if (!result.success) {
     return result.response;
   }
   if (!me?.npub || me.isChild) {
-    return json(
+    return data(
       { error: "Only a parent account can unlink a child." },
       { status: 403 }
     );
   }
   const res = await unlinkChildByParent(me.npub, result.data.childNpub);
   if (!res.ok) {
-    return json({ error: res.reason }, { status: 400 });
+    return data({ error: res.reason }, { status: 400 });
   }
   // Demote child to free plan
   try {
@@ -168,7 +168,7 @@ async function handleUnlinkChild(
       error: e instanceof Error ? e.message : String(e),
     });
   }
-  return json({ success: true });
+  return { success: true };
 }
 
 export async function handleAccountsAction(
@@ -201,7 +201,7 @@ export async function handleAccountsAction(
     "unlink_child",
   ].includes(action);
   if (requiresLinkedAccountsPlan && !hasAccountsAccess) {
-    return json(
+    return data(
       {
         error: "Accounts management requires a plan with multi-account access.",
       },
@@ -211,7 +211,7 @@ export async function handleAccountsAction(
 
   if (action === "respond_child_request") {
     if (!me?.npub) {
-      return json({ error: "User npub not found" }, { status: 400 });
+      return data({ error: "User npub not found" }, { status: 400 });
     }
     return handleDashboardAction(formData, userId, me.npub);
   }

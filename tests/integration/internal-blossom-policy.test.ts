@@ -45,7 +45,13 @@ describe("GET /internal/blossom/policy", () => {
     const request = new Request("http://localhost/internal/blossom/policy", {
       headers: { "x-internal-secret": "wrong" },
     });
-    const response = await loader({ request, params: {}, context: {} });
+    const response = await loader({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     expect(response.status).toBe(401);
   });
 
@@ -59,7 +65,13 @@ describe("GET /internal/blossom/policy", () => {
         headers: { "x-internal-secret": "secret" },
       }
     );
-    const response = await loader({ request, params: {}, context: {} });
+    const response = await loader({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const data = (await response.json()) as { allowCompatUpload?: boolean };
     expect(response.status).toBe(200);
     expect(data.allowCompatUpload).toBe(false);
@@ -75,7 +87,13 @@ describe("GET /internal/blossom/policy", () => {
         headers: { "x-internal-secret": "secret" },
       }
     );
-    const response = await loader({ request, params: {}, context: {} });
+    const response = await loader({
+      request,
+      params: {},
+      context: {},
+      url: new URL(request.url),
+      pattern: "*",
+    });
     const data = (await response.json()) as { allowCompatUpload?: boolean };
     expect(response.status).toBe(200);
     expect(data.allowCompatUpload).toBe(true);

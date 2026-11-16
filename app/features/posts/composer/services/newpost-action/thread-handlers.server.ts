@@ -2,7 +2,7 @@
  * Thread post action: create N posts (one per segment) with delay, optional threadGroupId.
  */
 
-import { json, redirect } from "@remix-run/node";
+import { redirect, data } from "react-router";
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { resolveQueueTypeId } from "~/features/posts/server";
@@ -195,7 +195,7 @@ export async function handleThreadAction(
   sessionPubkey: string,
   formData: FormData,
   sanitizedRelays: string[]
-): Promise<Response> {
+) {
   const action = formData.get("_action");
   const isSchedule = action === "schedule-thread";
 
@@ -204,14 +204,14 @@ export async function handleThreadAction(
 
   const segmentError = threadSegmentsValidationError(segments, signedEvents);
   if (segmentError) {
-    return json(segmentError, { status: 400 });
+    return data(segmentError, { status: 400 });
   }
 
   const delaySeconds = threadDelaySecondsFromForm(formData);
 
   const scheduleBase = threadScheduleBaseFromForm(formData, isSchedule);
   if (!scheduleBase.ok) {
-    return json({ error: scheduleBase.error }, { status: 400 });
+    return data({ error: scheduleBase.error }, { status: 400 });
   }
   const { baseTime, nominalFirstUnix } = scheduleBase;
 
@@ -308,7 +308,7 @@ export async function handleThreadAction(
 
   const firstId = postIds[0];
   if (firstId == null) {
-    return json({ error: "No posts created" }, { status: 500 });
+    return data({ error: "No posts created" }, { status: 500 });
   }
   if (isContestEmbedRequest(formData)) {
     return await jsonContestEmbedPost(userId, firstId);

@@ -1,14 +1,15 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
+import { Megaphone } from "lucide-react";
+import { Suspense } from "react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
+  redirect,
+  data,
   Await,
   Form,
   Link,
   useLoaderData,
   useSearchParams,
-} from "@remix-run/react";
-import { Megaphone } from "lucide-react";
-import { Suspense } from "react";
+} from "react-router";
 
 import { BroadcastCampaignRowActions } from "~/components/broadcast/BroadcastCampaignRowActions";
 import { BroadcastIndexPageSkeleton } from "~/components/broadcast/BroadcastIndexPageSkeleton";
@@ -16,7 +17,7 @@ import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRou
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   archiveBroadcastCampaign,
   type BroadcastIndexFilters,
@@ -42,7 +43,6 @@ import {
   DeferredRouteLoaderProvider,
   useDeferredRouteLoaderData,
 } from "~/lib/remix/deferred-route-loader-context";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 const BROADCAST_FILTER_NARROW_FIELD_CLASS = "w-auto min-w-[9rem]";
@@ -134,12 +134,9 @@ async function loadBroadcastsIndexData(request: Request) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  if (isRemixResourceRequest(request)) {
-    return json(await loadBroadcastsIndexData(request));
-  }
-  return defer({
+  return {
     broadcastsIndex: loadBroadcastsIndexData(request),
-  });
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -150,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = form.get("intent");
   const campaignId = form.get("campaignId");
   if (typeof campaignId !== "string" || !campaignId) {
-    return json({ error: "Missing campaign" }, { status: 400 });
+    return data({ error: "Missing campaign" }, { status: 400 });
   }
 
   if (intent === "cancel") {
@@ -181,7 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
       `/dashboard/broadcasts/new/review?campaignId=${encodeURIComponent(id)}`
     );
   }
-  return json({ error: "Unknown intent" }, { status: 400 });
+  return data({ error: "Unknown intent" }, { status: 400 });
 }
 
 function SummaryCard(props: {
@@ -532,7 +529,7 @@ interface BroadcastsIndexDeferredLoaderData {
 
 export default function BroadcastsIndexRoute() {
   const { broadcastsIndex } =
-    useLoaderData() as BroadcastsIndexDeferredLoaderData;
+    useLoaderData<BroadcastsIndexDeferredLoaderData>();
 
   return (
     <Suspense fallback={<BroadcastIndexPageSkeleton />}>

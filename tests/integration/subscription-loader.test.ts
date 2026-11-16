@@ -7,7 +7,7 @@
  * Migrated from: tests/e2e/subscription/billing-loader.cy.ts
  */
 
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
 vi.mock("~/lib/prisma.server", () => ({
@@ -44,6 +44,8 @@ vi.mock("~/features/settings", () => ({
     children ?? null,
   handleSettingsAction: vi.fn(),
 }));
+
+import { asRouteResponse } from "../utils/action-test-helpers";
 
 import { requireUserId } from "~/features/auth/session.server";
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
@@ -101,8 +103,10 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -163,8 +167,10 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -215,8 +221,10 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -274,8 +282,10 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -331,8 +341,10 @@ describe("Subscription/Billing Loader Integration", () => {
         request,
         params: {},
         context: {},
+        url: new URL(request.url),
+        pattern: "*",
       };
-      const response = (await loader(loaderArgs)) as Response;
+      const response = await asRouteResponse(await loader(loaderArgs));
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
@@ -364,11 +376,15 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(401);
     });
@@ -390,11 +406,15 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -415,11 +435,15 @@ describe("Subscription/Billing Loader Integration", () => {
       );
 
       // Loader catches Response errors and returns them
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        })
+      );
       expect(response).toBeInstanceOf(Response);
       expect(response.status).toBe(403);
     });
@@ -431,30 +455,26 @@ describe("Subscription/Billing Loader Integration", () => {
 
       const request = settingsLoaderJsonRequest("tab=billing");
 
-      const response = (await loader({
-        request,
-        params: {},
-        context: {},
-      })) as Response;
+      const response = await asRouteResponse(
+        await loader({
+          request,
+          params: {},
+          context: {},
+          url: new URL(request.url),
+          pattern: "*",
+        })
+      );
       expect(response).toBeInstanceOf(Response);
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(200);
 
       const dataRaw: unknown = await response.json();
       const data =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as { error?: { message?: string } })
+          ? (dataRaw as { subscription?: unknown; timezone?: unknown })
           : {};
 
-      expect(data.error).toBeDefined();
-      const error =
-        data.error &&
-        typeof data.error === "object" &&
-        !Array.isArray(data.error)
-          ? data.error
-          : {};
-      const errorMessage =
-        typeof error.message === "string" ? error.message : "";
-      expect(errorMessage).toContain("Database error");
+      expect(data.subscription).toBeNull();
+      expect(data.timezone).toBe("Etc/GMT");
     });
   });
 });

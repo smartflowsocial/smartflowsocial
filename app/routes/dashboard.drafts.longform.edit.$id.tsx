@@ -1,16 +1,12 @@
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { LongFormDraftEditPage } from "~/features/posts/longform";
 import {
   handleLongFormEditAction,
   loadLongFormEditData,
 } from "~/features/posts/server/longform";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
@@ -20,8 +16,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Post not found", { status: 404 });
   }
 
-  const data = await loadLongFormEditData(userId, postId);
-  return json(data);
+  return await loadLongFormEditData(userId, postId);
 }
 
 export const action = withCSRFProtection(

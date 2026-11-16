@@ -1,6 +1,6 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { Link, useRouteLoaderData } from "react-router";
 
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
 import type { PlanUsageSnapshot } from "~/features/payments/plan-usage.types";

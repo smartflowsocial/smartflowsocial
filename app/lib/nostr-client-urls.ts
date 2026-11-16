@@ -243,7 +243,7 @@ export interface RootUserNostrClientPreference {
 
 /**
  * Build config and URL helpers from root loader user. Use in components that need
- * to build event/article/profile URLs. Pass rootData?.user from useRouteLoaderData("root").
+ * to build event/article/profile URLs. Pass rootData?.user from useRouteLoaderData<unknown>("root").
  */
 export function getNostrClientUrlsFromUser(
   rootUser: RootUserNostrClientPreference | null | undefined

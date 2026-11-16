@@ -6,6 +6,8 @@
 
 import { toast } from "react-hot-toast";
 
+import { isProd } from "~/lib/runtime-env";
+
 import type { ErrorResponse } from "./error-handler.server";
 import {
   safeConsoleError,
@@ -118,7 +120,7 @@ export function logClientError(
 ): void {
   const { message: errorMessage, stack: errorStack } = getErrorDetails(error);
 
-  if (process.env.NODE_ENV === "production") {
+  if (isProd) {
     const logEntry = buildLogEntry(errorMessage, errorStack, level, context);
     safeConsoleError(JSON.stringify(logEntry));
   } else {

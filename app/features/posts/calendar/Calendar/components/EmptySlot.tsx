@@ -2,8 +2,8 @@
  * Empty slot UI: create menu and placeholder content for future slots.
  */
 
-import { useNavigate } from "@remix-run/react";
 import { FileText, MessageSquare, Plus } from "lucide-react";
+import { useNavigate } from "react-router";
 
 import {
   DropdownMenu,
@@ -99,14 +99,18 @@ export function EmptySlotCreateMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="right" sideOffset={4}>
         <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/compose?type=post"))}
+          onSelect={() => {
+            void navigate(q("/dashboard/compose?type=post"));
+          }}
           className="cluster"
         >
           <MessageSquare className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />
           Composer (Post)
         </DropdownMenuItem>
         <DropdownMenuItem
-          onSelect={() => navigate(q("/dashboard/compose?type=article"))}
+          onSelect={() => {
+            void navigate(q("/dashboard/compose?type=article"));
+          }}
           className="cluster"
         >
           <FileText className={EMPTY_SLOT_ICON_CLASS} strokeWidth={2.25} />

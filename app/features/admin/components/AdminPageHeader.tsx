@@ -1,4 +1,4 @@
-import { useRevalidator } from "@remix-run/react";
+import { useRevalidator } from "react-router";
 
 import { PageHeader } from "~/components/layout/PageHeader";
 import { Button } from "~/components/ui/button";
@@ -45,7 +45,9 @@ export function AdminPageHeader({
           variant="outline"
           size="sm"
           className="shrink-0"
-          onClick={() => revalidator.revalidate()}
+          onClick={() => {
+            void revalidator.revalidate();
+          }}
           disabled={revalidator.state === "loading"}
         >
           {revalidator.state === "loading" ? "Refreshing…" : "Refresh"}

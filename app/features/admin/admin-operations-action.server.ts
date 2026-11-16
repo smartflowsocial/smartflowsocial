@@ -1,19 +1,19 @@
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { type ActionFunctionArgs, data } from "react-router";
 
 import {
   cleanFailedJobsInAllQueues,
   purgePublishRelayAcksAdmin,
 } from "~/features/admin/repositories/admin-operations-cleanup.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { retryDeadLetterJob } from "~/infra/queue/dead-letter-queue.server";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export const adminOperationsAction = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     const user = await requireUser(request);
     if (!isReferralAdmin(user.npub)) {
-      return json({ error: "Forbidden" }, { status: 403 });
+      return data({ error: "Forbidden" }, { status: 403 });
     }
 
     const formData = await request.formData();
@@ -23,13 +23,13 @@ export const adminOperationsAction = withCSRFProtection(
       const entryId = String(formData.get("entry_id") ?? "").trim();
       const confirmPhrase = String(formData.get("confirm_phrase") ?? "").trim();
       if (!entryId) {
-        return json(
+        return data(
           { error: "Missing dead-letter entry id." },
           { status: 400 }
         );
       }
       if (confirmPhrase !== "REPLAY") {
-        return json(
+        return data(
           { error: "Type REPLAY in the confirmation field to proceed." },
           { status: 400 }
         );
@@ -37,19 +37,19 @@ export const adminOperationsAction = withCSRFProtection(
 
       const result = await retryDeadLetterJob(entryId);
       if (!result.success) {
-        return json(
+        return data(
           { error: result.error ?? "Could not re-enqueue job." },
           { status: 422 }
         );
       }
 
-      return json({ ok: true as const });
+      return { ok: true as const };
     }
 
     if (op === "clean_failed_jobs") {
       const confirmPhrase = String(formData.get("confirm_phrase") ?? "").trim();
       if (confirmPhrase !== "CLEAN") {
-        return json(
+        return data(
           { error: "Type CLEAN in the confirmation field to proceed." },
           { status: 400 }
         );
@@ -58,21 +58,21 @@ export const adminOperationsAction = withCSRFProtection(
         operatorNpub: user.npub,
       });
       if (!cleaned.ok) {
-        return json({ error: cleaned.error }, { status: 422 });
+        return data({ error: cleaned.error }, { status: 422 });
       }
-      return json({
+      return {
         ok: true as const,
         cleanFailed: {
           total: cleaned.total,
           byQueue: cleaned.byQueue,
         },
-      });
+      };
     }
 
     if (op === "purge_relay_acks") {
       const confirmPhrase = String(formData.get("confirm_phrase") ?? "").trim();
       if (confirmPhrase !== "PURGE") {
-        return json(
+        return data(
           { error: "Type PURGE in the confirmation field to proceed." },
           { status: 400 }
         );
@@ -80,7 +80,7 @@ export const adminOperationsAction = withCSRFProtection(
       const daysRaw = String(formData.get("older_than_days") ?? "30").trim();
       const olderThanDays = parseInt(daysRaw, 10);
       if (!Number.isFinite(olderThanDays)) {
-        return json({ error: "Invalid older_than_days." }, { status: 400 });
+        return data({ error: "Invalid older_than_days." }, { status: 400 });
       }
 
       const purged = await purgePublishRelayAcksAdmin({
@@ -88,18 +88,18 @@ export const adminOperationsAction = withCSRFProtection(
         operatorNpub: user.npub,
       });
       if (!purged.ok) {
-        return json({ error: purged.error }, { status: 422 });
+        return data({ error: purged.error }, { status: 422 });
       }
-      return json({
+      return {
         ok: true as const,
         purgeRelayAcks: {
           deletedCount: purged.deletedCount,
           cutoffIso: purged.cutoffIso,
           olderThanDays: purged.olderThanDays,
         },
-      });
+      };
     }
 
-    return json({ error: "Invalid action" }, { status: 400 });
+    return data({ error: "Invalid action" }, { status: 400 });
   }
 );

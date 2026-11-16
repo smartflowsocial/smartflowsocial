@@ -4,13 +4,13 @@
  */
 
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
-} from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+  data,
+} from "react-router";
+import { Link, useLoaderData } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { LongFormPost } from "~/features/posts/longform";
 import {
@@ -21,14 +21,13 @@ import {
 import { loadNewLongFormData } from "~/features/posts/server/longform";
 import { getQueueAccentHex } from "~/features/posts/ui";
 import { handleCreateTemplateFromScratchLongform } from "~/features/templates";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const data = await loadNewLongFormData(userId);
-  return json(data);
+  return await loadNewLongFormData(userId);
 }
 
 export const action = withCSRFProtection(
@@ -41,7 +40,7 @@ export const action = withCSRFProtection(
     if (actionType === "createTemplate") {
       return await handleCreateTemplateFromScratchLongform(userId, formData);
     }
-    return json({ error: "Unknown action" }, { status: 400 });
+    return data({ error: "Unknown action" }, { status: 400 });
   }
 );
 

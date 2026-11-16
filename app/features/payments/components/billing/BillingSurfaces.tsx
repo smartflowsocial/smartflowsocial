@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 
 import { BannerDismissButton } from "~/components/ui/BannerDismissButton";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";

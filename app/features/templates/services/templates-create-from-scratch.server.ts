@@ -3,7 +3,7 @@
  * Used by template-only composer routes (new/post and new/longform).
  */
 
-import { redirect } from "@remix-run/node";
+import { redirect } from "react-router";
 
 import { parseAttachmentMeta } from "~/features/posts/composer/services/newpost-action/handlers/text-handlers.server";
 import { getHashtagPresetTags } from "~/features/posts/composer/services/newpost-action/hashtag-preset-utils.server";

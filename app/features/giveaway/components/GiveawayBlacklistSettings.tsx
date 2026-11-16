@@ -1,7 +1,7 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -42,7 +42,7 @@ export function GiveawayBlacklistSettings({
     if (!wasSubmitting || fetcher.state !== "idle") return;
     if (fetcher.data?.success) {
       toast.success("Blacklist updated");
-      revalidatorRef.current.revalidate();
+      void revalidatorRef.current.revalidate();
     } else if (fetcher.data?.error) {
       toast.error(fetcher.data.error);
     }
@@ -55,7 +55,10 @@ export function GiveawayBlacklistSettings({
       { blacklist: next.join("\n") },
       "update_blacklist"
     );
-    fetcher.submit(formData, { method: "post", action: "/dashboard/settings" });
+    void fetcher.submit(formData, {
+      method: "post",
+      action: "/dashboard/settings",
+    });
   };
 
   const handleAdd = () => {

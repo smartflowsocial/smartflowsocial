@@ -3,8 +3,8 @@
  * Manages push notification preferences
  */
 
-import { useFetcher } from "@remix-run/react";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useFetcher } from "react-router";
 
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
@@ -84,7 +84,7 @@ export function NotificationSettings({
         const formData = new FormData();
         formData.append("_action", "update_notification_preferences");
         formData.append("pushNotificationsEnabled", "true");
-        fetcher.submit(formData, { method: "post" });
+        void fetcher.submit(formData, { method: "post" });
       }
     } catch (error) {
       console.error("Auto-subscribe for push failed:", error);
@@ -233,7 +233,7 @@ export function NotificationSettings({
       const formData = new FormData();
       formData.append("_action", "update_notification_preferences");
       formData.append("pushNotificationsEnabled", String(enabled));
-      fetcher.submit(formData, { method: "post" });
+      void fetcher.submit(formData, { method: "post" });
     },
     [fetcher]
   );
@@ -368,7 +368,7 @@ export function NotificationSettings({
         const formData = new FormData();
         formData.append("_action", "update_notification_preferences");
         formData.append("pushNotificationsEnabled", "false");
-        fetcher.submit(formData, { method: "post" });
+        void fetcher.submit(formData, { method: "post" });
       } catch (error) {
         console.error("Failed to unsubscribe from push notifications:", error);
         setIsSubscribed(false);
@@ -382,7 +382,7 @@ export function NotificationSettings({
     const formData = new FormData();
     formData.append("_action", "update_notification_preferences");
     formData.append("pushNotifyPublishSuccess", String(enabled));
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleFailure = (enabled: boolean) => {
@@ -390,7 +390,7 @@ export function NotificationSettings({
     const formData = new FormData();
     formData.append("_action", "update_notification_preferences");
     formData.append("pushNotifyPublishFailure", String(enabled));
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleRunwayLow = (enabled: boolean) => {
@@ -402,7 +402,7 @@ export function NotificationSettings({
       "runwayNotifyBelowDays",
       runwayNotifyBelowDays !== null ? String(runwayNotifyBelowDays) : ""
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleIncludePreview = (enabled: boolean) => {
@@ -410,7 +410,7 @@ export function NotificationSettings({
     const formData = new FormData();
     formData.append("_action", "update_notification_preferences");
     formData.append("pushNotifyIncludePreview", String(enabled));
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const handleRunwayNotifyBelowDaysChange = (value: number | null) => {
@@ -422,7 +422,7 @@ export function NotificationSettings({
       "runwayNotifyBelowDays",
       value !== null ? String(value) : ""
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const subordinateActive = isSubscribed;

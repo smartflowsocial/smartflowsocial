@@ -1,7 +1,7 @@
-import { useFetcher } from "@remix-run/react";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useFetcher } from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
@@ -105,7 +105,7 @@ export function MutedListSettings({
   const handleSync = () => {
     const formData = new FormData();
     formData.set("_action", "sync_muted_list");
-    syncFetcher.submit(formData, { method: "post" });
+    void syncFetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleFilter = (checked: boolean) => {
@@ -113,7 +113,7 @@ export function MutedListSettings({
     const formData = new FormData();
     formData.set("_action", "toggle_filter_muted");
     formData.set("filterMuted", checked.toString());
-    toggleFetcher.submit(formData, { method: "post" });
+    void toggleFetcher.submit(formData, { method: "post" });
   };
 
   const handleToggleLowTrust = (checked: boolean) => {
@@ -121,7 +121,7 @@ export function MutedListSettings({
     const formData = new FormData();
     formData.set("_action", "toggle_hide_low_trust");
     formData.set("hidePostsFromLowTrustUsers", checked.toString());
-    toggleLowTrustFetcher.submit(formData, { method: "post" });
+    void toggleLowTrustFetcher.submit(formData, { method: "post" });
   };
 
   useFetcherSuccessToast(syncFetcher, "Muted list synced");

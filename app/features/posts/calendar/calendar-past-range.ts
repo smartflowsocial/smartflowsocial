@@ -191,10 +191,9 @@ export function buildCalendarPastRangePath(
 ): string {
   const params = new URLSearchParams({
     pastRange: "1",
-    _loader: "json",
     from: range.start,
     to: range.end,
     queueType,
   });
-  return `/dashboard/calendar?${params.toString()}`;
+  return `/api/dashboard/calendar?${params.toString()}`;
 }

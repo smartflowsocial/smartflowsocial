@@ -7,13 +7,9 @@ declare module "web-push" {
     };
   }
 
-  export interface SendResult {
-    statusCode: number;
-  }
-
-  export interface VapidKeys {
-    publicKey: string;
-    privateKey: string;
+  export interface SendNotificationOptions {
+    TTL?: number;
+    urgency?: "very-low" | "low" | "normal" | "high";
   }
 
   export function setVapidDetails(
@@ -23,15 +19,14 @@ declare module "web-push" {
   ): void;
 
   export function sendNotification(
-    pushSubscription: PushSubscription,
-    payload?: string | Buffer | null,
-    options?: {
-      TTL?: number;
-      contentEncoding?: string;
-      urgency?: "very-low" | "low" | "normal" | "high";
-      topic?: string;
-    }
-  ): Promise<SendResult>;
+    subscription: PushSubscription,
+    payload: string,
+    options?: SendNotificationOptions
+  ): Promise<unknown>;
 
-  export function generateVAPIDKeys(): VapidKeys;
+  const webPush: {
+    setVapidDetails: typeof setVapidDetails;
+    sendNotification: typeof sendNotification;
+  };
+  export default webPush;
 }

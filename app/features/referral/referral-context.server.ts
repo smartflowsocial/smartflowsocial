@@ -3,7 +3,7 @@
  * TTL 7 days; contents { referrer_npub, created_at }.
  */
 
-import { createCookie } from "@remix-run/node";
+import { createCookie } from "react-router";
 
 import { env } from "~/lib/env.server";
 

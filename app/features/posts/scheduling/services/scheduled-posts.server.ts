@@ -4,7 +4,7 @@
  * Handles scheduled posts data loading and actions
  */
 
-import { json } from "@remix-run/node";
+import { data } from "react-router";
 
 import type { SignedEvent, NostrEvent } from "~/features/nostr/types";
 import { assertScheduleCapacity } from "~/features/payments/entitlements/schedule-cap-policy.server";
@@ -265,12 +265,12 @@ function parseFileUrl(
 async function handleDelete(postId: string, userId: string) {
   await cascadeDeleteAttachedFollowups({ rootPostId: postId, userId });
   await deletePost({ id: postId, userId });
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleDeleteLongForm(postId: string, userId: string) {
   await deleteLongFormPost({ id: postId, userId });
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleBulkDelete(formData: FormData, userId: string) {
@@ -282,7 +282,7 @@ async function handleBulkDelete(formData: FormData, userId: string) {
       await deletePost({ id, userId });
     })
   );
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
@@ -291,7 +291,7 @@ async function handleBulkDeleteLongForm(formData: FormData, userId: string) {
   await Promise.all(
     postIds.map((id: string) => deleteLongFormPost({ id, userId }))
   );
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleBulkDeleteMixed(formData: FormData, userId: string) {
@@ -308,7 +308,7 @@ async function handleBulkDeleteMixed(formData: FormData, userId: string) {
     }
   });
   await Promise.all(promises);
-  return json({ success: true });
+  return { success: true };
 }
 
 async function handleReschedule(formData: FormData, userId: string) {
@@ -320,12 +320,12 @@ async function handleReschedule(formData: FormData, userId: string) {
   const queueTypeId = formData.get("queueTypeId") as string;
 
   if (!postId || !newTime) {
-    return json({ error: "Missing required fields" }, { status: 400 });
+    return data({ error: "Missing required fields" }, { status: 400 });
   }
 
   const originalPost = await getPostById({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
   }
 
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
@@ -339,7 +339,7 @@ async function handleReschedule(formData: FormData, userId: string) {
     if (parent?.scheduledAtUtc) {
       const parentUnix = Math.floor(parent.scheduledAtUtc.getTime() / 1000);
       if (Number(newTime) < parentUnix) {
-        return json(
+        return data(
           { error: "Follow-up must be scheduled at or after the parent post." },
           { status: 400 }
         );
@@ -380,10 +380,10 @@ async function handleReschedule(formData: FormData, userId: string) {
       userId,
       parentPredictedEventId: parsedSignedEvent.id,
     });
-    return json({ success: true, post: updatedPost, signed: true });
+    return { success: true, post: updatedPost, signed: true };
   }
 
-  return json({ success: true, post: updatedPost, needsSigning: true });
+  return { success: true, post: updatedPost, needsSigning: true };
 }
 
 async function handleRescheduleLongform(formData: FormData, userId: string) {
@@ -393,12 +393,12 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
   const nostrEventStr = formData.get("nostrEvent") as string;
 
   if (!postId || !newTime) {
-    return json({ error: "Missing required fields" }, { status: 400 });
+    return data({ error: "Missing required fields" }, { status: 400 });
   }
 
   const originalPost = await getLongFormPostModel({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+    return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
   }
 
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
@@ -430,11 +430,11 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
         : undefined,
     });
 
-    return json({
+    return {
       success: true,
       post: updatedPost,
       signed: true,
-    });
+    };
   }
 
   // If no signed event, just update the post
@@ -445,12 +445,12 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
     status: "SCHEDULED",
   });
 
-  return json({
+  return {
     success: true,
     post: updatedPost,
     signed: false,
     needsSigning: true,
-  });
+  };
 }
 
 async function handleEditPost(formData: FormData, userId: string) {
@@ -466,12 +466,12 @@ async function handleEditPost(formData: FormData, userId: string) {
     (formData.get("hashTagPresetId") as string | null) ?? null;
 
   if (!postId) {
-    return json({ error: "Missing postId" }, { status: 400 });
+    return data({ error: "Missing postId" }, { status: 400 });
   }
 
   const originalPost = await getPostById({ id: postId, userId });
   if (!originalPost) {
-    return json({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
+    return data({ error: ERROR_POST_NOT_FOUND }, { status: 404 });
   }
 
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
@@ -547,11 +547,11 @@ async function handleEditPost(formData: FormData, userId: string) {
     });
   }
 
-  return json({
+  return {
     success: true,
     post: updated,
     signed: !!parsedSignedEvent,
-  });
+  };
 }
 
 async function handleEditLongform(formData: FormData, userId: string) {
@@ -565,12 +565,12 @@ async function handleEditLongform(formData: FormData, userId: string) {
   const scheduledFor = (formData.get("scheduledFor") as string | null) ?? null;
 
   if (!postId) {
-    return json({ error: "Missing postId" }, { status: 400 });
+    return data({ error: "Missing postId" }, { status: 400 });
   }
 
   const originalLongform = await getLongFormPostModel({ id: postId, userId });
   if (!originalLongform) {
-    return json({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
+    return data({ error: ERROR_LONGFORM_POST_NOT_FOUND }, { status: 404 });
   }
 
   const { signedEvent: parsedSignedEvent, nostrEvent: parsedNostrEvent } =
@@ -608,11 +608,11 @@ async function handleEditLongform(formData: FormData, userId: string) {
       : undefined,
   });
 
-  return json({
+  return {
     success: true,
     post: updated,
     signed: !!parsedSignedEvent,
-  });
+  };
 }
 
 // ============================================================================
@@ -631,7 +631,7 @@ export async function handleScheduledPostAction(
 
   const actionHandlers: Record<
     string,
-    (formData: FormData, userId: string) => Promise<ReturnType<typeof json>>
+    (formData: FormData, userId: string) => Promise<unknown>
   > = {
     delete: () => handleDelete(postId, userId),
     deleteLongForm: () => handleDeleteLongForm(postId, userId),
@@ -653,5 +653,5 @@ export async function handleScheduledPostAction(
     return await handler(formData, userId);
   }
 
-  return json({ error: "Invalid action" }, { status: 400 });
+  return data({ error: "Invalid action" }, { status: 400 });
 }

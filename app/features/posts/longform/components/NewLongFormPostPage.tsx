@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Form,
   useActionData,
@@ -5,9 +7,7 @@ import {
   useNavigation,
   useSearchParams,
   useNavigate,
-} from "@remix-run/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+} from "react-router";
 
 import { Button } from "~/components/ui/button";
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
@@ -235,7 +235,7 @@ export default function NewLongFormPostPage() {
       onContentTypeChange={(next) => {
         if (navigation.state !== "idle") return;
         if (next === "article") return;
-        navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
+        void navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
       title={shellTitle}
       composerHeaderActions={
@@ -296,7 +296,9 @@ export default function NewLongFormPostPage() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => navigate("/dashboard/scheduled?tab=longform")}
+              onClick={() => {
+                void navigate("/dashboard/scheduled?tab=longform");
+              }}
             >
               Go back
             </Button>
@@ -367,7 +369,9 @@ export default function NewLongFormPostPage() {
         type="longform"
         onSelect={
           longformDraftPicker.mode === "drafts"
-            ? (id) => navigate(`/dashboard/drafts/longform/edit/${id}`)
+            ? (id) => {
+                void navigate(`/dashboard/drafts/longform/edit/${id}`);
+              }
             : undefined
         }
         draftsAndTemplates={
@@ -375,10 +379,11 @@ export default function NewLongFormPostPage() {
             ? {
                 templates: templatesRaw,
                 templatesOnly: true,
-                onSelectTemplate: (templateId) =>
-                  navigate(
+                onSelectTemplate: (templateId) => {
+                  void navigate(
                     `/dashboard/compose?type=article&templateId=${encodeURIComponent(templateId)}`
-                  ),
+                  );
+                },
               }
             : undefined
         }
@@ -424,11 +429,11 @@ export default function NewLongFormPostPage() {
             } catch {
               // ignore
             }
-            navigate(getNewPostUrl(postType));
+            void navigate(getNewPostUrl(postType));
           }}
           onGoToDashboard={() => {
             resetPublishModalState();
-            navigate("/dashboard");
+            void navigate("/dashboard");
           }}
           onViewPage={() => {
             const postType = getPostTypeFromPost(modalPost, modalLongFormPost);
@@ -438,14 +443,14 @@ export default function NewLongFormPostPage() {
 
             if (action === "schedule") {
               if (postType === "longform") {
-                navigate("/dashboard/scheduled?tab=longform");
+                void navigate("/dashboard/scheduled?tab=longform");
               } else {
-                navigate("/dashboard/scheduled");
+                void navigate("/dashboard/scheduled");
               }
             } else if (postType === "longform") {
-              navigate("/dashboard/published?tab=longform");
+              void navigate("/dashboard/published?tab=longform");
             } else {
-              navigate("/dashboard/published");
+              void navigate("/dashboard/published");
             }
           }}
         />

@@ -1,10 +1,10 @@
 import { SignerReconnectFailureBucket } from "@prisma/client";
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import { data } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 
 import { insertSignerReconnectEvent } from "~/features/admin/repositories/admin-telemetry.server";
-import { requireUserId } from "~/features/auth";
-import { withCSRFProtection } from "~/lib/csrf";
+import { requireUserId } from "~/features/auth/auth.server";
+import { withCSRFProtection } from "~/lib/csrf.server";
 
 function parseFailureBucket(
   v: unknown
@@ -27,21 +27,21 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {
     if (request.method !== "POST") {
-      return json({ error: "Method not allowed" }, { status: 405 });
+      return data({ error: "Method not allowed" }, { status: 405 });
     }
     const userId = await requireUserId(request);
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return json({ error: "Invalid JSON" }, { status: 400 });
+      return data({ error: "Invalid JSON" }, { status: 400 });
     }
     if (!isRecord(body)) {
-      return json({ error: "Invalid body" }, { status: 400 });
+      return data({ error: "Invalid body" }, { status: 400 });
     }
     const success = body["success"];
     if (typeof success !== "boolean") {
-      return json({ error: "success must be boolean" }, { status: 400 });
+      return data({ error: "success must be boolean" }, { status: 400 });
     }
     const failureBucket = parseFailureBucket(body["failureBucket"]);
     const result = await insertSignerReconnectEvent({
@@ -50,9 +50,9 @@ export const action = withCSRFProtection(
       failureBucket: success ? null : failureBucket,
     });
     if (!result.ok) {
-      return json({ error: "rate_limited" }, { status: 429 });
+      return data({ error: "rate_limited" }, { status: 429 });
     }
-    return json({ ok: true });
+    return { ok: true };
   }
 );
 

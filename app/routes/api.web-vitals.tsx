@@ -1,7 +1,7 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
 import { logInfo, logWarning } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 interface WebVitalMetric {
   name: string;
@@ -33,14 +33,14 @@ function toWebVitalMetric(value: unknown): WebVitalMetric | null {
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
-    return json({ error: "Method not allowed" }, { status: 405 });
+    return jsonResponse({ error: "Method not allowed" }, { status: 405 });
   }
 
   try {
     const rawBody: unknown = await request.json();
     const metric = toWebVitalMetric(rawBody);
     if (!metric) {
-      return json({ error: "Invalid metric payload" }, { status: 400 });
+      return jsonResponse({ error: "Invalid metric payload" }, { status: 400 });
     }
 
     logInfo("web-vital", {
@@ -52,11 +52,11 @@ export async function action({ request }: ActionFunctionArgs) {
       userAgent: request.headers.get("user-agent") ?? undefined,
     });
 
-    return json({ ok: true });
+    return jsonResponse({ ok: true });
   } catch (error) {
     logWarning("web-vital-ingest-failed", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return json({ error: "Invalid JSON payload" }, { status: 400 });
+    return jsonResponse({ error: "Invalid JSON payload" }, { status: 400 });
   }
 }

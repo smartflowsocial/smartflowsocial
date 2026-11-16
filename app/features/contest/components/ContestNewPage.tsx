@@ -1,12 +1,4 @@
 import {
-  Link,
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useNavigation,
-  useRevalidator,
-} from "@remix-run/react";
-import {
   useCallback,
   useEffect,
   useMemo,
@@ -15,6 +7,14 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
+import {
+  Link,
+  useActionData,
+  useFetcher,
+  useLoaderData,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
 
 import {
   ActionRailActions,
@@ -791,9 +791,9 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
           sourceMode: "create",
           launchMode,
         });
-        fetcher.submit(fd, { method: "post" });
+        void fetcher.submit(fd, { method: "post" });
       }
-      revalidator.revalidate();
+      void revalidator.revalidate();
     },
     [
       applyFreshContestEndToFormData,
@@ -1027,7 +1027,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
     fd.set("intent", "save-draft");
     fd.set("draftPayload", JSON.stringify(payload));
     trackContestCreationEvent("contest_draft_saved");
-    fetcher.submit(fd, { method: "post" });
+    void fetcher.submit(fd, { method: "post" });
   }, [
     sourceMode,
     launchMode,
@@ -1062,7 +1062,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
         const fd = new FormData(formRef.current);
         applyFreshContestEndToFormData(fd);
         fd.set("intent", "launch");
-        fetcher.submit(fd, { method: "post" });
+        void fetcher.submit(fd, { method: "post" });
       }
       return;
     }

@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { Check, Settings2 } from "lucide-react";
+import { Link } from "react-router";
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import {

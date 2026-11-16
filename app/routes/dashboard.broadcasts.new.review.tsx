@@ -1,12 +1,11 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json, redirect } from "@remix-run/node";
-import { Await, Form, Link, useLoaderData } from "@remix-run/react";
 import { Suspense, useCallback, useMemo, useState } from "react";
+import type { LoaderFunctionArgs } from "react-router";
+import { redirect, Await, Form, Link, useLoaderData } from "react-router";
 
 import { BroadcastReviewPageSkeleton } from "~/components/broadcast/BroadcastReviewPageSkeleton";
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { Button } from "~/components/ui/button";
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import {
   formatBroadcastAudienceLabel,
   formatBroadcastCampaignStatus,
@@ -27,7 +26,6 @@ import { getUserPlanType, requireAnySubscription } from "~/features/payments";
 import { getEffectiveBroadcastPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
 import { getSubscriptionData } from "~/features/payments/subscriptions.server";
 import { getUserById } from "~/features/user";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 function audienceResolvedMetadata(
@@ -176,13 +174,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const reviewPromise = getBroadcastReviewData({ campaignId, userId, request });
 
-  if (isRemixResourceRequest(request)) {
-    return json(await reviewPromise);
-  }
-
-  return defer<{ review: Promise<BroadcastReviewLoaderData> }>({
+  return {
     review: reviewPromise,
-  });
+  };
 }
 
 export default function BroadcastNewReviewRoute() {
@@ -197,11 +191,7 @@ export default function BroadcastNewReviewRoute() {
           <DeferredRouteAwaitError retryTo="/dashboard/broadcasts/new" />
         }
       >
-        {(loaded) => (
-          <BroadcastNewReviewRouteLoaded
-            loaded={loaded as BroadcastReviewLoaderData}
-          />
-        )}
+        {(loaded) => <BroadcastNewReviewRouteLoaded loaded={loaded} />}
       </Await>
     </Suspense>
   );

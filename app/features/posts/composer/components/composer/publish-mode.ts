@@ -28,7 +28,7 @@ export function getPrimaryCtaLabelForMode(
   mode: ComposerPublishMode,
   _entity: "post" | "poll" | "thread" | "article"
 ): string {
-  void _entity;
+  _entity;
   if (mode === "queue") return "Add to queue";
   if (mode === "schedule") return "Schedule post";
   return "Publish now";
@@ -39,7 +39,7 @@ export function getPrimaryCtaPendingLabelForMode(
   mode: ComposerPublishMode,
   _entity: "post" | "poll" | "thread" | "article"
 ): string {
-  void _entity;
+  _entity;
   if (mode === "queue") return "Adding to queue…";
   if (mode === "schedule") return "Scheduling…";
   return "Publishing…";

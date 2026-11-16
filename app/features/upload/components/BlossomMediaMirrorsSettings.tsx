@@ -1,6 +1,6 @@
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { useFetcher, useRevalidator } from "react-router";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
@@ -95,7 +95,7 @@ export function BlossomMediaMirrorsSettings({
       },
       "update_blossom_mirrors"
     );
-    fetcher.submit(formData, { method: "post" });
+    void fetcher.submit(formData, { method: "post" });
   };
 
   const urlsDirty = useMemo(() => {
@@ -118,7 +118,7 @@ export function BlossomMediaMirrorsSettings({
     if (fetcher.state !== "idle") return;
     if (fetcher.data?.success) {
       clearUploadProviderCache();
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
   }, [fetcher.state, fetcher.data, revalidator]);
 

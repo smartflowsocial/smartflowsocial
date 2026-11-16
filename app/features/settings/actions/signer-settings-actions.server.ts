@@ -1,5 +1,3 @@
-import { json } from "@remix-run/node";
-
 import type { PrimarySignerProfile } from "~/features/auth/signer";
 import {
   clearUserPrimarySignerProfile,
@@ -46,12 +44,12 @@ export async function handleSignerSettingsAction(
           };
 
     await updateUserPrimarySignerProfile(userId, profile);
-    return json({ success: true, primarySignerProfile: profile });
+    return { success: true, primarySignerProfile: profile };
   }
 
   if (action === "clear_primary_signer_profile") {
     await clearUserPrimarySignerProfile(userId);
-    return json({ success: true, primarySignerProfile: null });
+    return { success: true, primarySignerProfile: null };
   }
 
   return null;

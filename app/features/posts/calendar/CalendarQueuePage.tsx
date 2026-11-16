@@ -1,4 +1,4 @@
-import { Link, useParams, useRevalidator } from "@remix-run/react";
+import { Link, useParams, useRevalidator } from "react-router";
 
 import { Calendar, useCalendarQueueData } from "~/features/posts/calendar";
 import { postsToCalendarPosts } from "~/features/posts/server/calendar";
@@ -35,7 +35,11 @@ export default function CalendarQueuePage() {
           <Link
             to="/dashboard/calendar"
             prefetch="intent"
-            onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+            onClick={() => {
+              setTimeout(() => {
+                void revalidator.revalidate();
+              }, 0);
+            }}
             className={`border-b-2 px-1 py-2 text-sm font-medium whitespace-nowrap ${
               !params["queueType"]
                 ? "border-brand-strong text-text-secondary"
@@ -76,7 +80,9 @@ export default function CalendarQueuePage() {
                     to={`/dashboard/calendar/${queueName}`}
                     prefetch="intent"
                     onClick={() =>
-                      setTimeout(() => revalidator.revalidate(), 0)
+                      setTimeout(() => {
+                        void revalidator.revalidate();
+                      }, 0)
                     }
                     className={`${baseClasses} border-b-2`}
                     style={{
@@ -94,7 +100,11 @@ export default function CalendarQueuePage() {
                   key={queueId}
                   to={`/dashboard/calendar/${queueName}`}
                   prefetch="intent"
-                  onClick={() => setTimeout(() => revalidator.revalidate(), 0)}
+                  onClick={() => {
+                    setTimeout(() => {
+                      void revalidator.revalidate();
+                    }, 0);
+                  }}
                   className={`${baseClasses} ${
                     isSelected
                       ? `border-brand-strong ${colors.text}`

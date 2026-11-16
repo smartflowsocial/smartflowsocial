@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockNavigate = vi.fn();
 const mockSetSearchParams = vi.fn();
-vi.mock("@remix-run/react", () => ({
+vi.mock("react-router", () => ({
   useFetcher: () => ({
     data: undefined,
     state: "idle",

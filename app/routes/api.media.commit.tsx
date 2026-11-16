@@ -1,10 +1,10 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireUserId } from "~/features/auth";
+import { requireUserId } from "~/features/auth/auth.server";
 import { commitMediaIngest } from "~/features/upload";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { logInfo } from "~/lib/error-logger.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 interface CommitItemPayload {
   fileName: string;
@@ -45,7 +45,7 @@ export const action = withCSRFProtection(
         items.length === 0 ||
         !items.every((item) => isCommitItemPayload(item))
       ) {
-        return json({ error: "invalid_request" }, { status: 400 });
+        return jsonResponse({ error: "invalid_request" }, { status: 400 });
       }
       const intentId =
         typeof payload.intentId === "string" ? payload.intentId : undefined;
@@ -56,7 +56,7 @@ export const action = withCSRFProtection(
         committedCount: result.committed.length,
         intentId: intentId ?? null,
       });
-      return json(result);
+      return jsonResponse(result);
     } catch (error) {
       if (error instanceof Response) return error;
       const message = error instanceof Error ? error.message : String(error);
@@ -65,7 +65,7 @@ export const action = withCSRFProtection(
         message.includes("media_intent_") ||
         message.includes("invalid_media_intent")
       ) {
-        return json(
+        return jsonResponse(
           {
             error: "MEDIA_PROVIDER_MISMATCH",
             message:
@@ -81,5 +81,5 @@ export const action = withCSRFProtection(
 );
 
 export async function loader() {
-  return json({ message: "Media commit endpoint" });
+  return jsonResponse({ message: "Media commit endpoint" });
 }

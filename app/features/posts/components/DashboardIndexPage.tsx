@@ -1,11 +1,3 @@
-import {
-  useLoaderData,
-  useNavigate,
-  useNavigation,
-  useRevalidator,
-  useRouteLoaderData,
-  useSearchParams,
-} from "@remix-run/react";
 import { ChevronRight } from "lucide-react";
 import {
   useCallback,
@@ -15,6 +7,14 @@ import {
   useState,
   type RefObject,
 } from "react";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+  useRouteLoaderData,
+  useSearchParams,
+} from "react-router";
 
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { FirstRunDashboard } from "~/features/posts/components/FirstRunDashboard";
@@ -696,7 +696,7 @@ export default function DashboardIndexPage() {
       if (!canAutoRevalidateDashboard()) {
         return;
       }
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }, 60_000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- revalidator identity can change; we only want one interval per flowItems.length
@@ -707,7 +707,7 @@ export default function DashboardIndexPage() {
     handleCloseRescheduleModal();
     setSelectedPost(null);
     setSelectedLongFormPost(null);
-    revalidator.revalidate();
+    void revalidator.revalidate();
   };
 
   useEffect(() => {
@@ -833,7 +833,9 @@ export default function DashboardIndexPage() {
             lowerRowHeightPx={lowerRowHeightPx}
             desktopFlowCardHeightPx={desktopFlowCardHeightPx}
             flowError={flowError}
-            onFlowRetry={() => revalidator.revalidate()}
+            onFlowRetry={() => {
+              void revalidator.revalidate();
+            }}
             isNavigatingToDashboard={isNavigatingToDashboard}
             flowItems={flowItems}
             flowViewRef={flowViewRef}
@@ -897,7 +899,7 @@ export default function DashboardIndexPage() {
         runwaySettings={runwaySettings ?? undefined}
         onSuccess={() => {
           resetFlowMergeState();
-          revalidator.revalidate();
+          void revalidator.revalidate();
         }}
       />
 
@@ -910,7 +912,7 @@ export default function DashboardIndexPage() {
         targetPerDay={targetPerDay}
         onSuccess={() => {
           resetFlowMergeState();
-          revalidator.revalidate();
+          void revalidator.revalidate();
         }}
       />
 
@@ -921,11 +923,11 @@ export default function DashboardIndexPage() {
           onClose={() => setSelectedPost(null)}
           onDeleted={() => {
             resetFlowMergeState();
-            revalidator.revalidate();
+            void revalidator.revalidate();
           }}
           onEdit={(p) => {
             setSelectedPost(null);
-            navigate(
+            void navigate(
               buildComposeEditUrl({
                 mode: "edit_scheduled",
                 scheduledActionId: String(p.id),
@@ -951,7 +953,7 @@ export default function DashboardIndexPage() {
           onClose={() => setSelectedLongFormPost(null)}
           onDeleted={() => {
             resetFlowMergeState();
-            revalidator.revalidate();
+            void revalidator.revalidate();
           }}
           onReschedule={(p) => {
             setSelectedLongFormPost(null);

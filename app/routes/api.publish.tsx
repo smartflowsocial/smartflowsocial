@@ -1,7 +1,6 @@
-import { json } from "@remix-run/node";
-import type { ActionFunctionArgs } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
 
-import { requireSession } from "~/features/auth";
+import { requireSession } from "~/features/auth/auth.server";
 import { assertValidKind10002RelayListEvent } from "~/features/nostr/kind10002-nip65.server";
 import { KIND_RELAY_LIST_NIP65 } from "~/features/nostr/nostr-event-kinds";
 import { publishSignedEventToRelays } from "~/features/nostr/server";
@@ -15,9 +14,10 @@ import { recordReplyPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { invalidateRelayIntentCache } from "~/features/user";
-import { withCSRFProtection } from "~/lib/csrf";
+import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
+import { jsonResponse } from "~/lib/http/json-response";
 import { assertSignedEventMatchesSessionPubkey } from "~/lib/nostr-session-invariants.server";
 import {
   claimPublishAttempt,
@@ -203,7 +203,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
 
   const session = await requireSession(request);
 
-  void relays;
+  relays;
   const resolvedRelays = await resolveExecutionRelays(session.userId);
 
   const validatedEvent = validateSignedEventCryptographically(event);
@@ -259,7 +259,10 @@ async function runPublishApiAction(request: Request): Promise<Response> {
     });
   }
 
-  return json({ success: true, ...(deduped ? { deduped: true } : {}) });
+  return jsonResponse({
+    success: true,
+    ...(deduped ? { deduped: true } : {}),
+  });
 }
 
 export const action = withCSRFProtection(

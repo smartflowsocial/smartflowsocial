@@ -1,11 +1,11 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   useFetcher,
   useNavigate,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+} from "react-router";
 
 import type { ToastMessage } from "~/components/types";
 import { signingAttempts } from "~/features/auth/signing/signing-attempts.client";
@@ -207,7 +207,7 @@ export function usePublishedPosts({
       formData.append("_action", ACTION_BULK_DELETE_MIXED);
       formData.append("itemData", JSON.stringify(selectedItems));
 
-      bulkDeleteFetcher.submit(formData, { method: "post" });
+      void bulkDeleteFetcher.submit(formData, { method: "post" });
     } else {
       // For individual tabs, use the original handlers
       const formData = new FormData();
@@ -219,7 +219,7 @@ export function usePublishedPosts({
       );
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-      bulkDeleteFetcher.submit(formData, { method: "post" });
+      void bulkDeleteFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -244,13 +244,13 @@ export function usePublishedPosts({
         JSON.stringify(selectedItems.map((item) => item.id))
       );
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
       formData.append("_action", ACTION_BULK_REPOST);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -275,13 +275,13 @@ export function usePublishedPosts({
         JSON.stringify(selectedItems.map((item) => item.id))
       );
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
       formData.append("_action", ACTION_BULK_SCHEDULED_REPOST);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -306,13 +306,13 @@ export function usePublishedPosts({
         JSON.stringify(selectedItems.map((item) => item.id))
       );
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     } else {
       const formData = new FormData();
       formData.append("_action", ACTION_BULK_QUOTE);
       formData.append("postIds", JSON.stringify(Array.from(selectedPosts)));
 
-      repostFetcher.submit(formData, { method: "post" });
+      void repostFetcher.submit(formData, { method: "post" });
     }
   };
 
@@ -411,7 +411,7 @@ export function usePublishedPosts({
 
   useEffect(() => {
     if (repostFetcher.data?.repostData) {
-      const postsData = repostFetcher.data.repostData as unknown as PostData[];
+      const postsData = repostFetcher.data.repostData;
 
       const userTimezone = user?.timezone ?? "UTC";
       const now = nowInTimezone(userTimezone);
@@ -452,7 +452,7 @@ export function usePublishedPosts({
           STORAGE_KEY_REPOST_DATA,
           JSON.stringify(repostData)
         );
-        navigate(PATH_BULK_POSTS_RECYCLE, { replace: true });
+        void navigate(PATH_BULK_POSTS_RECYCLE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -474,8 +474,7 @@ export function usePublishedPosts({
       const now = nowInTimezone(userTimezone);
       const baseTime = addHours(now, 1);
 
-      const postsDataTyped = repostFetcher.data
-        .scheduledRepostData as unknown as PostData[];
+      const postsDataTyped = repostFetcher.data.scheduledRepostData;
       const scheduledRepostData = postsDataTyped.map((post, index: number) => {
         const scheduleZoned = addHours(baseTime, index);
         const scheduledFor = formatForDateTimeLocal(
@@ -509,7 +508,7 @@ export function usePublishedPosts({
           STORAGE_KEY_SCHEDULED_REPOST_DATA,
           JSON.stringify(scheduledRepostData)
         );
-        navigate(PATH_BULK_POSTS_REPOST, { replace: true });
+        void navigate(PATH_BULK_POSTS_REPOST, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -536,7 +535,7 @@ export function usePublishedPosts({
           STORAGE_KEY_QUOTE_POST_DATA,
           JSON.stringify(quoteData)
         );
-        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
+        void navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -550,7 +549,7 @@ export function usePublishedPosts({
         setSelectedPosts(new Set());
       } else {
         sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
-        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
+        void navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
         setSelectedPosts(new Set());
       }
     }
@@ -689,7 +688,7 @@ export function usePublishedPosts({
       sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
       // Navigate to bulk posts page with quote mode
-      navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
+      void navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
     } else if (longformQuoteFetcher.data?.error) {
       setToast({
         type: "error",
@@ -805,7 +804,7 @@ export function usePublishedPosts({
         sessionStorage.setItem("quotePostData", JSON.stringify(quoteData));
 
         // Navigate to bulk posts page with quote mode
-        navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
+        void navigate(PATH_BULK_POSTS_QUOTE, { replace: true });
       } else if (individualRepostFetcher.data?.error) {
         setToast({
           type: "error",

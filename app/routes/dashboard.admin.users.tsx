@@ -1,12 +1,12 @@
-import { defer, json, type LoaderFunctionArgs } from "@remix-run/node";
+import { Suspense, useMemo, useState } from "react";
+import { type LoaderFunctionArgs, data } from "react-router";
 import {
   Await,
   Form,
   Link,
   useLoaderData,
   useSearchParams,
-} from "@remix-run/react";
-import { Suspense, useMemo, useState } from "react";
+} from "react-router";
 
 import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
@@ -31,16 +31,15 @@ import {
 } from "~/features/admin";
 import type { AdminUserSegment } from "~/features/admin/repositories/admin-users-queries.server";
 import { getAdminUsersPageData } from "~/features/admin/repositories/admin-users-queries.server";
-import { requireUser } from "~/features/auth";
+import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
 import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
-    return json({ error: "Forbidden" }, { status: 403 });
+    return data({ error: "Forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const page = url.searchParams.get("page");
@@ -53,10 +52,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sort,
     search,
   });
-  if (isRemixResourceRequest(request)) {
-    return json(await usersPagePromise);
-  }
-  return defer({ usersPage: usersPagePromise });
+
+  return { usersPage: usersPagePromise };
 }
 
 const SEGMENTS: Array<{ id: AdminUserSegment | "all"; label: string }> = [
@@ -104,11 +101,7 @@ export default function AdminUsersPage() {
           <DeferredRouteAwaitError retryTo="/dashboard/admin/users" />
         }
       >
-        {(loaded) => (
-          <AdminUsersPageLoaded
-            data={loaded as Awaited<ReturnType<typeof getAdminUsersPageData>>}
-          />
-        )}
+        {(loaded) => <AdminUsersPageLoaded data={loaded} />}
       </Await>
     </Suspense>
   );

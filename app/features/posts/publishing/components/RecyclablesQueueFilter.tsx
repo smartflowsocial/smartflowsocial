@@ -3,7 +3,7 @@ import {
   useParams,
   useRevalidator,
   useSearchParams,
-} from "@remix-run/react";
+} from "react-router";
 
 import {
   Select,
@@ -47,8 +47,10 @@ export function RecyclablesQueueFilter({
       value === "all"
         ? "/dashboard/recyclables"
         : `/dashboard/recyclables/${encodeURIComponent(value)}`;
-    navigate(`${path}${searchSuffix}`);
-    setTimeout(() => revalidator.revalidate(), 0);
+    void navigate(`${path}${searchSuffix}`);
+    setTimeout(() => {
+      void revalidator.revalidate();
+    }, 0);
   };
 
   return (

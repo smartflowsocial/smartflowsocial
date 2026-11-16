@@ -1,5 +1,5 @@
-import { type FetcherWithComponents } from "@remix-run/react";
 import type { MutableRefObject } from "react";
+import { type FetcherWithComponents } from "react-router";
 
 import { type ToastMessage } from "~/components/types";
 import { uploadMany as uploadMultipleFiles } from "~/features/upload/media.client";
@@ -165,7 +165,7 @@ export async function runUploadPreparation(
         `[BulkPosts] Submitting to server at ${nowUTC().toInstant().toString()}`
       );
       isWaitingForUploadRef.current = true;
-      fetcher.submit(formData, {
+      void fetcher.submit(formData, {
         method: "post",
         ...(submitAction ? { action: submitAction } : {}),
       });
@@ -196,7 +196,7 @@ export async function runUploadPreparation(
     `[BulkPosts] Submitting to server (no uploads) at ${nowUTC().toInstant().toString()}`
   );
   isWaitingForUploadRef.current = true;
-  fetcher.submit(formData, {
+  void fetcher.submit(formData, {
     method: "post",
     ...(submitAction ? { action: submitAction } : {}),
   });

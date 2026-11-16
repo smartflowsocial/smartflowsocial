@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
 import {
   allowedStatsOrigin,
@@ -7,6 +7,7 @@ import {
 } from "~/features/public-stats/public-stats.server";
 import { redis } from "~/infra/queue/queue-client.server";
 import { env } from "~/lib/env.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const WINDOW_SECONDS = 60;
 const MAX_PER_WINDOW = 60;
@@ -46,9 +47,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return new Response("Not found", { status: 404 });
   }
   if (await limited(request)) {
-    return json({ error: "Too many requests" }, { status: 429 });
+    return jsonResponse({ error: "Too many requests" }, { status: 429 });
   }
   const origin = new URL(request.url).origin;
   const stats = await getPublicStats(origin);
-  return json(stats, { headers: corsHeaders(request) });
+  return jsonResponse(stats, { headers: corsHeaders(request) });
 }

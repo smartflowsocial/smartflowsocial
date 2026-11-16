@@ -2,9 +2,9 @@
  * Regional & display  -  timezone, 12/24h time, and date ordering in one section.
  */
 
-import { useFetcher, useRevalidator } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useFetcher, useRevalidator } from "react-router";
 
 import { SearchableTimezoneSelector } from "~/components/settings/SearchableTimezoneSelector";
 import { Label } from "~/components/ui/label";
@@ -78,7 +78,7 @@ export function RegionalDisplaySettings({
       timezoneFetcher.data?.success
     ) {
       toast.success("Timezone saved");
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
     if (
       prevTz.current === "submitting" &&
@@ -97,7 +97,7 @@ export function RegionalDisplaySettings({
       timeFormatFetcher.data?.success
     ) {
       toast.success("Time format saved");
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
     if (
       prevTf.current === "submitting" &&
@@ -116,7 +116,7 @@ export function RegionalDisplaySettings({
       dateFormatFetcher.data?.success
     ) {
       toast.success("Date format saved");
-      revalidator.revalidate();
+      void revalidator.revalidate();
     }
     if (
       prevDf.current === "submitting" &&
@@ -133,7 +133,7 @@ export function RegionalDisplaySettings({
     if (!parsed.success) return;
     if (parsed.data.timezone === (timezone ?? "Etc/UTC")) return;
     const formData = formDataToFormData(parsed.data, "update_timezone");
-    timezoneFetcher.submit(formData, { method: "post" });
+    void timezoneFetcher.submit(formData, { method: "post" });
   };
 
   const persistTimeFormat = (value: "12h" | "24h") => {
@@ -141,7 +141,7 @@ export function RegionalDisplaySettings({
     const formData = new FormData();
     formData.append("_action", "update_time_format");
     formData.append("timeFormat", value);
-    timeFormatFetcher.submit(formData, { method: "post" });
+    void timeFormatFetcher.submit(formData, { method: "post" });
   };
 
   const persistDateFormat = (value: DateFormatKey) => {
@@ -149,7 +149,7 @@ export function RegionalDisplaySettings({
     const formData = new FormData();
     formData.append("_action", "update_date_format");
     formData.append("dateFormat", value);
-    dateFormatFetcher.submit(formData, { method: "post" });
+    void dateFormatFetcher.submit(formData, { method: "post" });
   };
 
   const tzSubmitting = timezoneFetcher.state === "submitting";

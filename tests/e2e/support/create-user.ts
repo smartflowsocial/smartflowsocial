@@ -4,12 +4,10 @@
 // and it will log out the cookie value you can use to interact with the server
 // as that new user.
 
-import { installGlobals } from "@remix-run/node";
 import { parse } from "cookie";
 
-import { createUserSession } from "~/features/auth";
+import { createUserSession } from "~/features/auth/auth.server";
 import { createUser } from "~/features/user";
-installGlobals();
 
 async function createAndLogin(email: string) {
   if (!email) {

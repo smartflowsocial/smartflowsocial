@@ -10,11 +10,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- Example file, variables may be unused for demonstration */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment -- Example file, unsafe assignments for demonstration */
 
-import {
-  json,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "@remix-run/node";
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 
 import {
   withErrorHandling,
@@ -75,7 +73,7 @@ export async function manualLoaderExample({
 
     // Your loader logic here
     const data = { userId };
-    return json(data);
+    return jsonResponse(data);
   } catch (error) {
     return handleLoaderError(error, { userId: null, data: [] });
   }
@@ -103,7 +101,7 @@ export async function manualActionExample({
     }
 
     // Your action logic here
-    return json(createSuccessResponse({ email }));
+    return jsonResponse(createSuccessResponse({ email }));
   } catch (error) {
     return handleActionError(error);
   }
@@ -138,7 +136,7 @@ export async function assertionExample({
     { userId, resourceId }
   );
 
-  return json({ resource });
+  return jsonResponse({ resource });
 }
 
 // ============================================================================
@@ -179,7 +177,7 @@ export async function specificErrorsExample({
   }
 
   // Your logic here
-  return json(createSuccessResponse({ post }));
+  return jsonResponse(createSuccessResponse({ post }));
 }
 
 // ============================================================================
@@ -197,7 +195,7 @@ export async function externalServiceExample({ request }: ActionFunctionArgs) {
       );
     }
     const data = await response.json();
-    return json(createSuccessResponse(data));
+    return jsonResponse(createSuccessResponse(data));
   } catch (error) {
     if (error instanceof ExternalServiceError) {
       throw error; // Re-throw our custom error

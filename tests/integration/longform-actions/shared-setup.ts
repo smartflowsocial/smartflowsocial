@@ -6,6 +6,8 @@
 
 import { vi } from "vitest";
 
+import { readMockMultipartFormData } from "../../utils/action-test-helpers";
+
 // Mock global fetch
 global.fetch = vi.fn();
 
@@ -152,66 +154,9 @@ vi.mock("~/features/user", () => ({
 // Store FormData objects for mock access
 export const formDataStore = new Map<string, FormData>();
 
-// Mock Remix upload handlers
-vi.mock("@remix-run/node", async () => {
-  const actual = await vi.importActual("@remix-run/node");
-  return {
-    ...actual,
-    unstable_composeUploadHandlers: vi.fn((...handlers) => {
-      return async (part: {
-        filename?: string;
-        name?: string;
-        data: AsyncIterable<Uint8Array>;
-      }) => {
-        if (part.filename) {
-          const firstHandler = handlers[0] as
-            | ((part: {
-                filename?: string;
-                name?: string;
-                data: AsyncIterable<Uint8Array>;
-              }) => Promise<unknown>)
-            | undefined;
-          if (firstHandler) {
-            return await firstHandler(part);
-          }
-        }
-        return part.data;
-      };
-    }),
-    unstable_createMemoryUploadHandler: vi.fn(() => vi.fn()),
-    unstable_parseMultipartFormData: vi.fn(
-      async (
-        request: { url?: string; formData?: () => Promise<FormData> },
-        _uploadHandler: unknown
-      ) => {
-        const url =
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for request type
-          request &&
-          typeof request === "object" &&
-          "url" in request &&
-          typeof request.url === "string"
-            ? request.url
-            : String(request.url ?? "");
-        const storedFormData = formDataStore.get(url);
-        if (storedFormData) {
-          formDataStore.delete(url);
-          return storedFormData;
-        }
-
-        try {
-          const formData =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Defensive check for request type
-            request &&
-            typeof request === "object" &&
-            "formData" in request &&
-            typeof request.formData === "function"
-              ? await request.formData()
-              : new FormData();
-          return formData;
-        } catch (_error) {
-          return new FormData();
-        }
-      }
-    ),
-  };
-});
+vi.mock("@remix-run/form-data-parser", () => ({
+  parseFormData: vi.fn(
+    async (request: { url?: string; formData?: () => Promise<FormData> }) =>
+      readMockMultipartFormData(formDataStore, request)
+  ),
+}));

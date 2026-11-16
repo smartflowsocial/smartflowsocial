@@ -325,7 +325,7 @@ export default (async () => {
         "**/*.md",
         "node_modules/**",
         "build/**",
-        "public/build/**",
+        ".react-router/**",
         "postgres-data/**",
         "coverage/**",
         "docs/**/*.{ts,tsx}",

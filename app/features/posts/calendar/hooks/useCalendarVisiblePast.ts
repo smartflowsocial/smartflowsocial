@@ -5,9 +5,9 @@
  * prefetches the previous period so Back is already cached.
  */
 
-import { useParams, useSearchParams } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
+import { useParams, useSearchParams } from "react-router";
 
 import type { CalendarPost } from "~/features/posts/calendar/Calendar/PostBlock.types";
 import {
@@ -38,8 +38,7 @@ import {
   isStandaloneRepostPost,
 } from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
-import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
-import { fetchRemixLoader } from "~/lib/remix/single-fetch";
+import { fetchJson } from "~/lib/remix/fetch-json";
 import { nowMillis } from "~/lib/temporal";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -60,11 +59,7 @@ async function fetchCalendarPastRange(
   signal?: AbortSignal
 ): Promise<CalendarPastRangeLoaderData> {
   const path = buildCalendarPastRangePath(queueType, range);
-  const result = await fetchRemixLoader(
-    path,
-    pathnameToRemixDataRouteId("/dashboard/calendar"),
-    { signal }
-  );
+  const result = await fetchJson(path, { signal });
   if (!result.ok || result.data == null) {
     throw new Error(`Failed to fetch calendar posts: ${result.status}`);
   }
