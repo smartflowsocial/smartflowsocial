@@ -1,5 +1,5 @@
 /**
- * Remix client `fetch()` for loader JSON must pass `?_data=<route module id>`.
+ * Single-fetch loader calls pass this id as `?_routes=<route module id>`.
  * Route ids use file segments (e.g. `dashboard.scheduled.$queueType`), not URL
  * segments (so `/dashboard/scheduled/abc123` maps to
  * `routes/dashboard.scheduled.$queueType`, not `routes/dashboard.scheduled.abc123`).
@@ -13,7 +13,7 @@ const QUEUE_FILTER_ROUTE_NAMES = new Set([
 ]);
 
 /**
- * Maps a URL pathname to the Remix `_data` route id string.
+ * Maps a URL pathname to the Remix route id used by single-fetch `_routes`.
  */
 export function pathnameToRemixDataRouteId(pathname: string): string {
   const trimmed = pathname.replace(/\/+$/, "") || "/";

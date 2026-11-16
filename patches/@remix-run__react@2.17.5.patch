@@ -1,5 +1,5 @@
 diff --git a/dist/browser.js b/dist/browser.js
-index 52e0727268e39fbb12b8bab6ce8e1c87ca534af2..6d75110a0709232afa4aaf1c71f88e23c83085da 100644
+index efac5c1cf96ae4d9a01b286ca16843b4fa382d25..589010d79fd84f601163a4333dac804a4636fc72 100644
 --- a/dist/browser.js
 +++ b/dist/browser.js
 @@ -229,7 +229,8 @@ function RemixBrowser(_props) {
@@ -13,7 +13,7 @@ index 52e0727268e39fbb12b8bab6ce8e1c87ca534af2..6d75110a0709232afa4aaf1c71f88e23
      }))), window.__remixContext.future.v3_singleFetch ? /*#__PURE__*/React__namespace.createElement(React__namespace.Fragment, null) : null)
    );
 diff --git a/dist/esm/browser.js b/dist/esm/browser.js
-index c05184c366348dd19a1f035c6efdfe5ff4607b53..d647aef8f12777e42c8e7c9cf08a5c361429c876 100644
+index 2c4da3c2fe60f0c9d8709191ac953e681f959512..47cc461ac966004aad788826da4fa184f8640a5c 100644
 --- a/dist/esm/browser.js
 +++ b/dist/esm/browser.js
 @@ -279,7 +279,8 @@ function RemixBrowser(_props) {
@@ -26,3 +26,109 @@ index c05184c366348dd19a1f035c6efdfe5ff4607b53..d647aef8f12777e42c8e7c9cf08a5c36
        }
      }))), window.__remixContext.future.v3_singleFetch ? /*#__PURE__*/React.createElement(React.Fragment, null) : null)
    );
+diff --git a/dist/esm/single-fetch.js b/dist/esm/single-fetch.js
+index 5597e178d55e7beaa7d339747595ad57949c94b8..aa61f55be375170c17cf19841348027fbc2e824d 100644
+--- a/dist/esm/single-fetch.js
++++ b/dist/esm/single-fetch.js
+@@ -356,10 +356,36 @@ async function fetchAndDecode(url, init) {
+   }
+ }
+ 
++// turbo-stream 3.2.1 (pinned in this repo) decodes a string stream and resolves
++// to the value itself. Remix 2.17 was written for turbo-stream 2, which accepted
++// the fetch byte stream and resolved to `{ value }`.
++function turboStreamTextBody(body) {
++  let decoder = new TextDecoder();
++  let reader = body.getReader();
++  return new ReadableStream({
++    async pull(controller) {
++      let result = await reader.read();
++      if (result.done) {
++        let tail = decoder.decode();
++        if (tail) controller.enqueue(tail);
++        controller.close();
++        return;
++      }
++      let value = result.value;
++      controller.enqueue(typeof value === "string" ? value : decoder.decode(value, {
++        stream: true
++      }));
++    },
++    cancel(reason) {
++      return reader.cancel(reason);
++    }
++  });
++}
++
+ // Note: If you change this function please change the corresponding
+ // encodeViaTurboStream function in server-runtime
+-function decodeViaTurboStream(body, global) {
+-  return decode(body, {
++async function decodeViaTurboStream(body, global) {
++  let value = await decode(turboStreamTextBody(body), {
+     plugins: [(type, ...rest) => {
+       // Decode Errors back into Error instances using the right type and with
+       // the right (potentially undefined) stacktrace
+@@ -403,6 +429,9 @@ function decodeViaTurboStream(body, global) {
+       }
+     }]
+   });
++  return {
++    value
++  };
+ }
+ function unwrapSingleFetchResults(results, routeId) {
+   let redirect = results[UNSAFE_SingleFetchRedirectSymbol];
+diff --git a/dist/single-fetch.js b/dist/single-fetch.js
+index 61c18dc4e4497abe7322bcb3cde6db3b1d024d6c..86db8cc1c193a0d8a54be2280fa2b124fa8f7347 100644
+--- a/dist/single-fetch.js
++++ b/dist/single-fetch.js
+@@ -380,10 +380,36 @@ async function fetchAndDecode(url, init) {
+   }
+ }
+ 
++// turbo-stream 3.2.1 (pinned in this repo) decodes a string stream and resolves
++// to the value itself. Remix 2.17 was written for turbo-stream 2, which accepted
++// the fetch byte stream and resolved to `{ value }`.
++function turboStreamTextBody(body) {
++  let decoder = new TextDecoder();
++  let reader = body.getReader();
++  return new ReadableStream({
++    async pull(controller) {
++      let result = await reader.read();
++      if (result.done) {
++        let tail = decoder.decode();
++        if (tail) controller.enqueue(tail);
++        controller.close();
++        return;
++      }
++      let value = result.value;
++      controller.enqueue(typeof value === "string" ? value : decoder.decode(value, {
++        stream: true
++      }));
++    },
++    cancel(reason) {
++      return reader.cancel(reason);
++    }
++  });
++}
++
+ // Note: If you change this function please change the corresponding
+ // encodeViaTurboStream function in server-runtime
+-function decodeViaTurboStream(body, global) {
+-  return turboStream.decode(body, {
++async function decodeViaTurboStream(body, global) {
++  let value = await turboStream.decode(turboStreamTextBody(body), {
+     plugins: [(type, ...rest) => {
+       // Decode Errors back into Error instances using the right type and with
+       // the right (potentially undefined) stacktrace
+@@ -427,6 +453,9 @@ function decodeViaTurboStream(body, global) {
+       }
+     }]
+   });
++  return {
++    value
++  };
+ }
+ function unwrapSingleFetchResults(results, routeId) {
+   let redirect = results[serverRuntime.UNSAFE_SingleFetchRedirectSymbol];

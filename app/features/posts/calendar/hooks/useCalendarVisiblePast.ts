@@ -38,6 +38,8 @@ import {
   isStandaloneRepostPost,
 } from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import { pathnameToRemixDataRouteId } from "~/lib/query/remix-data-route-id";
+import { fetchRemixLoader } from "~/lib/remix/single-fetch";
 import { nowMillis } from "~/lib/temporal";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
 import {
@@ -57,14 +59,17 @@ async function fetchCalendarPastRange(
   range: CalendarInstantRange,
   signal?: AbortSignal
 ): Promise<CalendarPastRangeLoaderData> {
-  const response = await fetch(buildCalendarPastRangePath(queueType, range), {
-    signal,
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch calendar posts: ${response.status}`);
+  const path = buildCalendarPastRangePath(queueType, range);
+  const result = await fetchRemixLoader(
+    path,
+    pathnameToRemixDataRouteId("/dashboard/calendar"),
+    { signal }
+  );
+  if (!result.ok || result.data == null) {
+    throw new Error(`Failed to fetch calendar posts: ${result.status}`);
   }
 
-  const payload: unknown = await response.json();
+  const payload: unknown = result.data;
   const validated = safeValidateLoaderResponse(
     payload,
     calendarPastRangeLoaderDataSchema

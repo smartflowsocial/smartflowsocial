@@ -78,6 +78,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import { readRemixActionData } from "~/lib/remix/single-fetch";
 import { formatForDisplay, fromDate } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
 
@@ -461,7 +462,7 @@ export function ScheduledPostsTable({
             body: formData,
             credentials: "same-origin",
           });
-          const json = (await resp.json().catch(() => null)) as {
+          const json = (await readRemixActionData(resp)) as {
             cascadeDeletedIds?: string[];
           } | null;
           const cascadeIds = json?.cascadeDeletedIds;

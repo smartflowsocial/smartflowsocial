@@ -41,6 +41,7 @@ import {
 } from "~/features/posts/utils/thread-list-grouping";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import { readRemixActionData } from "~/lib/remix/single-fetch";
 import { fromISOString } from "~/lib/temporal";
 
 import type {
@@ -242,7 +243,7 @@ export default function AllContentListing({
             body: formData,
             credentials: "same-origin",
           });
-          const json = (await resp.json().catch(() => null)) as {
+          const json = (await readRemixActionData(resp)) as {
             cascadeDeletedIds?: string[];
           } | null;
           const cascadeIds = json?.cascadeDeletedIds;
