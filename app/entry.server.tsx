@@ -38,7 +38,8 @@ export default function handleRequest(
   reactRouterContext: EntryContext,
   loadContext: RouterContextProvider
 ) {
-  const nonce = loadContext.get(nonceContext);
+  const nonceValue = loadContext.get(nonceContext);
+  const nonce = typeof nonceValue === "string" ? nonceValue : undefined;
   return isbot(request.headers.get("user-agent"))
     ? handleBotRequest(
         request,

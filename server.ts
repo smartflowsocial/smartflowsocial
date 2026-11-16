@@ -22,7 +22,6 @@ import rateLimit from "express-rate-limit";
 import { PlanBillingModel } from "@prisma/client";
 
 import { env } from "./app/lib/env.server";
-import { nonceContext } from "./app/lib/nonce-context";
 import { logInfo, logWarning } from "./app/lib/error-logger.server";
 import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
 import {
@@ -33,6 +32,7 @@ import {
   broadcastUnsubscribeLimiter,
 } from "./app/lib/rate-limit.server";
 import { TRUSTED_PROXIES } from "./app/lib/trusted-proxies.server";
+import { nonceContext } from "./app/lib/nonce-context";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
 if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
@@ -156,7 +156,7 @@ async function run() {
     getLoadContext: (_req, res) => {
       const context = new RouterContextProvider();
       const nonce = (res.locals as Record<string, unknown>)["nonce"];
-      if (typeof nonce === "string") context.set(nonceContext, nonce);
+      context.set(nonceContext, typeof nonce === "string" ? nonce : null);
       return context;
     },
   });
