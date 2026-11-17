@@ -634,9 +634,7 @@ See [Queue System](../guides/operations.md#queue-system) for more details.
    // Test S3 connection
    import { S3Client, ListBucketsCommand } from "@aws-sdk/client-s3";
 
-   const client = new S3Client({
-     /* config */
-   });
+   const client = new S3Client({/* config */});
    const result = await client.send(new ListBucketsCommand({}));
    ```
 

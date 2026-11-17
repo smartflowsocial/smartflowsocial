@@ -17,11 +17,7 @@ export type UnifiedPayoutItemPhase =
   | "Needs review";
 
 type GiveawayStatus =
-  | "DRAFT"
-  | "PREVIEWED"
-  | "LOCKED"
-  | "PAID_OUT"
-  | "CANCELLED";
+  "DRAFT" | "PREVIEWED" | "LOCKED" | "PAID_OUT" | "CANCELLED";
 type ContestStatus =
   | "DRAFT"
   | "SCHEDULED_LAUNCH"

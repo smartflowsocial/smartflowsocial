@@ -73,11 +73,7 @@ export interface ProofCardPayload {
 }
 
 export type AdminProofCardType =
-  | "milestone"
-  | "reliability"
-  | "adoption"
-  | "product"
-  | "range";
+  "milestone" | "reliability" | "adoption" | "product" | "range";
 
 /** Map legacy admin proof-card-build types to shared ProofCardType */
 export function adminCardTypeToShared(

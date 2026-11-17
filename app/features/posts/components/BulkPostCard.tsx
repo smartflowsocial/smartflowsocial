@@ -161,9 +161,7 @@ export function BulkPostCard({
       file: File;
     }
     const previewEntry = previewData.get(index) as
-      | PreviewItem
-      | PreviewItem[]
-      | undefined;
+      PreviewItem | PreviewItem[] | undefined;
     const previewInfo: PreviewItem | undefined = Array.isArray(previewEntry)
       ? previewEntry[0]
       : previewEntry;

@@ -57,8 +57,7 @@ export async function createContestPreset(
         ? ((input.rankRewards ?? []) as unknown as Prisma.InputJsonValue)
         : Prisma.JsonNull,
     fairnessConfig: (input.fairnessConfig ?? undefined) as
-      | Prisma.InputJsonValue
-      | undefined,
+      Prisma.InputJsonValue | undefined,
   });
 }
 

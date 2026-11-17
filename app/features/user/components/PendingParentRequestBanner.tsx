@@ -15,8 +15,7 @@ function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
       typeof nostrProfile === "string"
         ? (JSON.parse(nostrProfile) as { name?: string; display_name?: string })
         : (nostrProfile as
-            | { name?: string; display_name?: string }
-            | undefined);
+            { name?: string; display_name?: string } | undefined);
     name = p?.name;
     display_name = p?.display_name;
   } catch {

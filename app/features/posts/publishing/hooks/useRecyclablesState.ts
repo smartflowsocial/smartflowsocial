@@ -110,8 +110,7 @@ interface UseRecyclablesStateProps {
   onOpenBulkComposer?: (payload: BulkComposerPayload) => void;
   user?: User | null;
   repostFetcher:
-    | FetcherWithComponents<RepostFetcherData>
-    | FetcherWithComponents<unknown>;
+    FetcherWithComponents<RepostFetcherData> | FetcherWithComponents<unknown>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Remix fetcher type requires any for dynamic action types
   bulkDeleteFetcher: ReturnType<typeof useFetcher<any>>;
   bulkRepostFetcher: ReturnType<typeof useFetcher>;
@@ -261,13 +260,9 @@ export function useRecyclablesState({
     direction: "asc" | "desc"
   ): number {
     const aValue = (a as unknown as Record<string, unknown>)[sortKey] as
-      | string
-      | number
-      | undefined;
+      string | number | undefined;
     const bValue = (b as unknown as Record<string, unknown>)[sortKey] as
-      | string
-      | number
-      | undefined;
+      string | number | undefined;
 
     if (aValue == null && bValue == null) return 0;
     if (aValue == null) return direction === "asc" ? -1 : 1;

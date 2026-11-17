@@ -3,7 +3,7 @@
  * Handles sending push notifications to subscribed users
  */
 
-import webpush from "web-push";
+import { sendNotification } from "web-push";
 import type { PushSubscription as WebPushSubscription } from "web-push";
 
 import { getRunwaySettings } from "~/features/user/services/user-settings.server";
@@ -214,14 +214,10 @@ export async function sendPushNotification(
       },
     };
 
-    await webpush.sendNotification(
-      webPushSubscription,
-      JSON.stringify(payload),
-      {
-        TTL: 86400, // 24 hours
-        urgency: payload.data?.action === "publish_failure" ? "high" : "normal",
-      }
-    );
+    await sendNotification(webPushSubscription, JSON.stringify(payload), {
+      TTL: 86400, // 24 hours
+      urgency: payload.data?.action === "publish_failure" ? "high" : "normal",
+    });
 
     return { sent: true };
   } catch (error) {

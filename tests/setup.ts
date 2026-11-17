@@ -6,14 +6,12 @@
 import { createRequire } from "node:module";
 
 import "dotenv/config";
-import * as matchers from "@testing-library/jest-dom/matchers";
+import "@testing-library/jest-dom/vitest";
 // eslint-disable-next-line testing-library/no-manual-cleanup -- vitest is not configured with globals: true, so RTL's auto-cleanup never runs; we wire it through the global afterEach below.
 import { cleanup } from "@testing-library/react";
-import { expect, afterEach, vi } from "vitest";
+import { afterEach, vi } from "vitest";
 
 import { evaluateTestDatabase } from "~/lib/test-database-target";
-// Extend Vitest's expect with jest-dom matchers
-expect.extend(matchers);
 
 const requireModule = createRequire(import.meta.url);
 if (typeof globalThis.WebSocket === "undefined") {

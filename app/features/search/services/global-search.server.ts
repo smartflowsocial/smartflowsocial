@@ -585,10 +585,7 @@ async function searchFeatures(
 
 /** Context from current page to prioritize matching result types first */
 export type GlobalSearchPriorityContext =
-  | "draft"
-  | "scheduled"
-  | "published"
-  | "template";
+  "draft" | "scheduled" | "published" | "template";
 
 /**
  * Perform global search across all content types.

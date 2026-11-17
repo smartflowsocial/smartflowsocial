@@ -15,6 +15,7 @@ import {
   manuallyVerifyPayment,
   PlanBillingModel,
 } from "~/features/payments/data";
+import { LINKED_CHILD_BILLING_ERROR } from "~/features/payments/linked-account-subscription";
 import {
   NwcChargeError,
   nwcChargeFailureNotice,
@@ -76,9 +77,7 @@ function fallbackPriceUsd(params: {
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
   billingPaymentMethod:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 }): number | null {
   const baseMonthly = Number(params.plan.price);
   if (!Number.isFinite(baseMonthly) || baseMonthly < 0) return null;
@@ -114,9 +113,7 @@ async function createInvoiceForSelection(params: {
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
   billingPaymentMethod:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
   priceUsd: number;
 }) {
   return createPlanInvoice({
@@ -218,6 +215,14 @@ async function handleSelectPlanIntent(
   request: Request
 ) {
   const user = await requireUser(request);
+
+  if (user.isChild) {
+    return {
+      success: false,
+      error: LINKED_CHILD_BILLING_ERROR,
+      status: 400,
+    };
+  }
 
   trackProductEvent("checkout_lane_selected", {
     userId: user.id,

@@ -84,8 +84,7 @@ function initWebVitalsRUM() {
   try {
     // TTFB can be read directly from navigation timing.
     const navigation = performance.getEntriesByType("navigation")[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (navigation) {
       sendWebVital("TTFB", navigation.responseStart);
     }

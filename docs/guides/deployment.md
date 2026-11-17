@@ -35,7 +35,7 @@ end as part of that check. Treat them as starting points and test them before yo
 
 Before deploying, ensure you have:
 
-- ✅ Node.js 22.22.0 or higher (`.nvmrc` is `22.22`)
+- ✅ Node.js 26.13.1 or higher (`.nvmrc` is `26.13.1`)
 - ✅ PostgreSQL database (managed or self-hosted)
 - ✅ Redis instance (for BullMQ queues)
 - ✅ S3-compatible storage (for image uploads)
@@ -291,6 +291,11 @@ Use Docker images with ECS. See [Docker Deployment](#docker-deployment) section.
 ---
 
 ### Docker Deployment
+
+The hosted app is this `Dockerfile`. Coolify uses the Dockerfile build pack, exposes port 3000, and
+leaves the start command empty so the image runs `pnpm start`. The base image is
+`node:26.13.1-bookworm-slim`, the same patch as `.nvmrc`. Node 26 does not ship Corepack; the image
+installs Corepack itself. Nixpacks cannot select Node 26, so do not build production with it.
 
 #### 1. Build Docker Image
 

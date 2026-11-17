@@ -64,10 +64,7 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
     colorToken: (q as { colorToken?: string | null }).colorToken ?? undefined,
     description,
     scheduleType: q.scheduleType as
-      | "INTERVAL"
-      | "FIXED_SLOTS"
-      | "WEEKLY_SLOTS"
-      | undefined,
+      "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(q.scheduleConfig),
     status:
       q.status === "paused"
@@ -180,9 +177,7 @@ export function parseMutedList(mutedListRaw: unknown): {
   lastSynced: string;
 } {
   const mutedListRawTyped = mutedListRaw as
-    | { npubs?: unknown; lastSynced?: unknown }
-    | null
-    | undefined;
+    { npubs?: unknown; lastSynced?: unknown } | null | undefined;
   if (
     mutedListRawTyped &&
     typeof mutedListRawTyped === "object" &&

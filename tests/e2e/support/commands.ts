@@ -11,11 +11,7 @@ export const TEST_FILES = [
 
 // Subscription status for testing different plan states
 export type TestSubscriptionStatus =
-  | "FREE"
-  | "ACTIVE"
-  | "EXPIRED"
-  | "CANCELED"
-  | "PAST_DUE";
+  "FREE" | "ACTIVE" | "EXPIRED" | "CANCELED" | "PAST_DUE";
 
 declare global {
   namespace Cypress {
@@ -135,24 +131,70 @@ declare global {
   }
 }
 
+interface SupportScriptResult {
+  code: number;
+  stdout: string;
+  stderr: string;
+}
+
+function supportScriptEnv(
+  extra: Record<string, string | undefined> = {}
+): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries({
+    ...process.env,
+    ...extra,
+    E2E_TEST: "true",
+  })) {
+    if (typeof value === "string") env[key] = value;
+  }
+  return env;
+}
+
+export function runSupportScript(
+  script: string,
+  args: string[],
+  options?: {
+    failOnNonZeroExit?: boolean;
+    env?: Record<string, string | undefined>;
+  }
+): Cypress.Chainable<SupportScriptResult> {
+  return cy
+    .task(
+      "runSupportScript",
+      {
+        script,
+        args,
+        env: supportScriptEnv(options?.env),
+      },
+      { log: true }
+    )
+    .then((result) => {
+      const value = result as SupportScriptResult;
+      if (options?.failOnNonZeroExit !== false && value.code !== 0) {
+        throw new Error(
+          value.stderr || `${script} exited with code ${String(value.code)}`
+        );
+      }
+      return value;
+    });
+}
+
 function login({
   email = faker.internet.email({ provider: "example.com" }),
 }: {
   email?: string;
 } = {}) {
   cy.then(() => ({ email })).as("user");
-  cy.exec(`npx tsx ./tests/e2e/support/create-user.ts "${email}"`, {
-    env: {
-      ...process.env,
-      E2E_TEST: "true",
-    },
-  }).then(({ stdout }) => {
-    const cookieValue = extractSessionCookieValue(stdout);
-    if (!cookieValue) {
-      throw new Error("No session cookie value found in create-user output.");
+  runSupportScript("tests/e2e/support/create-user.ts", [email]).then(
+    ({ stdout }) => {
+      const cookieValue = extractSessionCookieValue(stdout);
+      if (!cookieValue) {
+        throw new Error("No session cookie value found in create-user output.");
+      }
+      applySessionCookie(cookieValue);
     }
-    applySessionCookie(cookieValue);
-  });
+  );
   return cy.get("@user");
 }
 
@@ -195,40 +237,11 @@ function applySessionCookie(cookieValue: string): void {
 function loginNostr({ npub = TEST_NPUB }: { npub?: string } = {}) {
   cy.then(() => ({ npub })).as("user");
   // Delete user first to ensure fresh state, then create
-  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
+  runSupportScript("tests/e2e/support/delete-nostr-user.ts", [npub], {
     failOnNonZeroExit: false,
-    env: {
-      ...process.env,
-      E2E_TEST: "true",
-    },
   }).then(() => {
-    // Get DATABASE_URL from Cypress env or process.env
-    const databaseUrl =
-      (Cypress.env("DATABASE_URL") as string | undefined) ??
-      process.env["DATABASE_URL"];
-    const sessionSecret =
-      (Cypress.env("SESSION_SECRET") as string | undefined) ??
-      process.env["SESSION_SECRET"];
-    const nostrPublisherUrl =
-      (Cypress.env("NOSTR_PUBLISHER_URL") as string | undefined) ??
-      process.env["NOSTR_PUBLISHER_URL"];
-    const redisUrl =
-      (Cypress.env("REDIS_URL") as string | undefined) ??
-      process.env["REDIS_URL"];
-
-    cy.exec(`npx tsx ./tests/e2e/support/create-nostr-user.ts "${npub}"`, {
+    runSupportScript("tests/e2e/support/create-nostr-user.ts", [npub], {
       failOnNonZeroExit: false,
-      env: {
-        DATABASE_URL: databaseUrl,
-        SESSION_SECRET: sessionSecret,
-        NOSTR_PUBLISHER_URL: nostrPublisherUrl,
-        REDIS_URL: redisUrl,
-        ...process.env,
-        E2E_TEST: "true",
-        // Override NODE_ENV after spread to ensure it's set
-
-        NODE_ENV: process.env["NODE_ENV"] ?? "test",
-      },
     }).then((result) => {
       const { stdout, stderr } = result;
       const code = "code" in result ? result.code : undefined;
@@ -307,8 +320,7 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
         state: (key: string) => unknown;
       }
       const aliases = (cy as unknown as CypressState).state("aliases") as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       if (aliases?.user) {
         cy.get("@user", { log: false }).then((user) => {
           const userNpub = (user as { npub?: string }).npub;
@@ -325,17 +337,13 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
 }
 
 function deleteUserByEmail(email: string) {
-  void cy.exec(`npx tsx ./tests/e2e/support/delete-user.ts "${email}"`);
+  runSupportScript("tests/e2e/support/delete-user.ts", [email]);
   cy.clearCookie("__session");
 }
 
 function deleteNostrUserByNpub(npub: string) {
-  cy.exec(`npx tsx ./tests/e2e/support/delete-nostr-user.ts "${npub}"`, {
+  runSupportScript("tests/e2e/support/delete-nostr-user.ts", [npub], {
     failOnNonZeroExit: false,
-    env: {
-      ...process.env,
-      E2E_TEST: "true",
-    },
   }).then((result) => {
     const code = "code" in result ? result.code : undefined;
     const stderr = result.stderr;
@@ -423,36 +431,10 @@ function setSubscriptionStatus(status: TestSubscriptionStatus): void {
       );
     }
 
-    // Get environment variables for the script
-    const databaseUrl =
-      (Cypress.env("DATABASE_URL") as string | undefined) ??
-      process.env["DATABASE_URL"];
-    const sessionSecret =
-      (Cypress.env("SESSION_SECRET") as string | undefined) ??
-      process.env["SESSION_SECRET"];
-    const nostrPublisherUrl =
-      (Cypress.env("NOSTR_PUBLISHER_URL") as string | undefined) ??
-      process.env["NOSTR_PUBLISHER_URL"];
-    const redisUrl =
-      (Cypress.env("REDIS_URL") as string | undefined) ??
-      process.env["REDIS_URL"];
-
-    cy.exec(
-      `npx tsx ./tests/e2e/support/update-subscription-status.ts "${npub}" "${status}"`,
-      {
-        failOnNonZeroExit: false,
-        env: {
-          DATABASE_URL: databaseUrl,
-          SESSION_SECRET: sessionSecret,
-          NOSTR_PUBLISHER_URL: nostrPublisherUrl,
-          REDIS_URL: redisUrl,
-          ...process.env,
-          E2E_TEST: "true",
-          // Override NODE_ENV after spread to ensure it's set
-
-          NODE_ENV: process.env["NODE_ENV"] ?? "test",
-        },
-      }
+    runSupportScript(
+      "tests/e2e/support/update-subscription-status.ts",
+      [npub, status],
+      { failOnNonZeroExit: false }
     ).then((result) => {
       const { stdout, stderr } = result;
       const code = "code" in result ? result.code : undefined;

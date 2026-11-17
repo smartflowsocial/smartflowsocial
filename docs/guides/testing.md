@@ -184,7 +184,7 @@ SmartFlowSocial uses multiple testing frameworks and techniques:
 
 ### Prerequisites
 
-1. **Node.js 22.22+** installed (`.nvmrc` is `22.22`)
+1. **Node.js 26.13.1+** installed (`.nvmrc` is `26.13.1`)
 2. **Dependencies installed**: Run `pnpm install`
 3. **Database running**: Ensure PostgreSQL is accessible (via Docker or local install)
 4. **Environment configured**: Copy `example.env` to `.env` and configure required variables

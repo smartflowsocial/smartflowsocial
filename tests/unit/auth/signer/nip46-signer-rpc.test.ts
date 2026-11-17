@@ -162,8 +162,7 @@ describe("Nip46Signer RPC dispatch", () => {
     await signer.getPublicKey();
 
     const call = pool.subscribe.mock.calls[0] as
-      | [string[], Record<string, unknown>, Record<string, unknown>]
-      | undefined;
+      [string[], Record<string, unknown>, Record<string, unknown>] | undefined;
     expect(call).toBeDefined();
     const callRelays = call![0];
     const callFilter = call![1];
@@ -185,8 +184,7 @@ describe("Nip46Signer RPC dispatch", () => {
     await signer.getPublicKey();
 
     const closer = pool.subscribe.mock.results[0]?.value as
-      | { close: ReturnType<typeof vi.fn> }
-      | undefined;
+      { close: ReturnType<typeof vi.fn> } | undefined;
     expect(closer?.close).toHaveBeenCalledTimes(1);
   });
 
@@ -198,8 +196,7 @@ describe("Nip46Signer RPC dispatch", () => {
     await expect(signer.getPublicKey()).rejects.toThrow("boom");
 
     const closer = pool.subscribe.mock.results[0]?.value as
-      | { close: ReturnType<typeof vi.fn> }
-      | undefined;
+      { close: ReturnType<typeof vi.fn> } | undefined;
     expect(closer?.close).toHaveBeenCalledTimes(1);
   });
 
@@ -252,11 +249,9 @@ describe("Nip46Signer RPC dispatch", () => {
 
     expect(pool.subscribe).toHaveBeenCalledTimes(2);
     const closer1 = pool.subscribe.mock.results[0]?.value as
-      | { close: ReturnType<typeof vi.fn> }
-      | undefined;
+      { close: ReturnType<typeof vi.fn> } | undefined;
     const closer2 = pool.subscribe.mock.results[1]?.value as
-      | { close: ReturnType<typeof vi.fn> }
-      | undefined;
+      { close: ReturnType<typeof vi.fn> } | undefined;
     expect(closer1?.close).toHaveBeenCalledTimes(1);
     expect(closer2?.close).toHaveBeenCalledTimes(1);
     expect(closer1).not.toBe(closer2);
@@ -380,11 +375,9 @@ describe("Nip46Signer RPC dispatch", () => {
       // One fresh sub per attempt  -  both opened, both closed.
       expect(pool.subscribe).toHaveBeenCalledTimes(2);
       const closer1 = pool.subscribe.mock.results[0]?.value as
-        | { close: ReturnType<typeof vi.fn> }
-        | undefined;
+        { close: ReturnType<typeof vi.fn> } | undefined;
       const closer2 = pool.subscribe.mock.results[1]?.value as
-        | { close: ReturnType<typeof vi.fn> }
-        | undefined;
+        { close: ReturnType<typeof vi.fn> } | undefined;
       expect(closer1?.close).toHaveBeenCalledTimes(1);
       expect(closer2?.close).toHaveBeenCalledTimes(1);
     } finally {

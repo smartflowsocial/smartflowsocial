@@ -225,10 +225,7 @@ export function useCalendarData() {
                 (q as { colorToken?: string | null }).colorToken ?? undefined,
               description: undefined,
               scheduleType: q.scheduleType as
-                | "INTERVAL"
-                | "FIXED_SLOTS"
-                | "WEEKLY_SLOTS"
-                | undefined,
+                "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined,
               scheduleConfig: convertJsonValueToScheduleConfig(
                 q.scheduleConfig
               ),

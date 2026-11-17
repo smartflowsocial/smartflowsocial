@@ -398,6 +398,7 @@ async function processUserSubscription(
   user: {
     id: string;
     npub: string;
+    isChild?: boolean;
     nwcEnabled: boolean;
     encryptedNwc: string | null;
     Subscription: {
@@ -425,6 +426,12 @@ async function processUserSubscription(
   const subscription = user.Subscription;
 
   if (!subscription) {
+    return;
+  }
+
+  // A linked child is covered by the parent plan. Do not lapse or disable
+  // the child from its own leftover subscription row.
+  if (user.isChild) {
     return;
   }
 

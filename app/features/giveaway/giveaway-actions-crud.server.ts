@@ -45,9 +45,7 @@ export interface CreateGiveawayInput {
   winnerCount: number;
   /** Per-type rewards (advanced), or `_simpleUnified` for simple payout mode. */
   engagementConfig?:
-    | GiveawayEngagementConfig
-    | SimpleUnifiedEngagementConfig
-    | null;
+    GiveawayEngagementConfig | SimpleUnifiedEngagementConfig | null;
   selectionMode?: GiveawaySelectionMode;
   engagementWeights?: Record<string, number> | null;
   filters?: Record<string, unknown> | null;
@@ -144,9 +142,7 @@ export interface UpdateGiveawayInput {
   winnerCount?: number;
   engagementTypes?: string[];
   engagementConfig?:
-    | GiveawayEngagementConfig
-    | SimpleUnifiedEngagementConfig
-    | null;
+    GiveawayEngagementConfig | SimpleUnifiedEngagementConfig | null;
   selectionMode?: GiveawaySelectionMode;
 }
 

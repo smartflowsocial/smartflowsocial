@@ -69,7 +69,8 @@ Add this paragraph:
 Replace any line that says the operator is still deciding whether to publish an identity, and any
 line that sets Starter to 0%.
 
-Node.js for self-hosting is 22.22 or newer, matching `.nvmrc`. Do not advertise Node 20+.
+Node.js for self-hosting is 26.13.1 or newer, matching `.nvmrc`. Do not advertise Node 20+ or
+Node 22.
 
 ### Terms
 

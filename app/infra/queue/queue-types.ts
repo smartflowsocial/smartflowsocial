@@ -68,11 +68,7 @@ export interface QueueOperationResult {
  * Queue job status
  */
 export type JobStatus =
-  | "waiting"
-  | "active"
-  | "completed"
-  | "failed"
-  | "delayed";
+  "waiting" | "active" | "completed" | "failed" | "delayed";
 
 /**
  * Queue type identifier

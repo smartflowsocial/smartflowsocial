@@ -3,7 +3,7 @@
  * Handles VAPID key generation and configuration
  */
 
-import webpush from "web-push";
+import { setVapidDetails } from "web-push";
 
 import { env } from "~/lib/env.server";
 
@@ -24,7 +24,7 @@ export function initWebPush(): void {
     return;
   }
 
-  webpush.setVapidDetails(subject, publicKey, privateKey);
+  setVapidDetails(subject, publicKey, privateKey);
 }
 
 /**

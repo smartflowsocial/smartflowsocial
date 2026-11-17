@@ -21,10 +21,7 @@ export type ScheduledDependencyMode = "standalone" | "attached";
 export type ScheduledTargetMode = "direct" | "scheduled_parent";
 export type FollowUpTimingMode = "offset_from_parent" | "fixed_datetime";
 export type ScheduledSigningState =
-  | "unsigned"
-  | "signed"
-  | "stale"
-  | "invalidated";
+  "unsigned" | "signed" | "stale" | "invalidated";
 /**
  * Schedule configuration for INTERVAL schedule type
  */
@@ -59,9 +56,7 @@ export interface WeeklySlotsScheduleConfig {
  * Union type for schedule configurations
  */
 export type ScheduleConfig =
-  | IntervalScheduleConfig
-  | FixedSlotsScheduleConfig
-  | WeeklySlotsScheduleConfig;
+  IntervalScheduleConfig | FixedSlotsScheduleConfig | WeeklySlotsScheduleConfig;
 
 /**
  * Type guard to check if config is IntervalScheduleConfig
@@ -233,10 +228,7 @@ export function convertPrismaQueueTypeToQueueType(
     colorToken: prisma.colorToken ?? undefined,
     description: prisma.description,
     scheduleType: prisma.scheduleType as
-      | "INTERVAL"
-      | "FIXED_SLOTS"
-      | "WEEKLY_SLOTS"
-      | undefined,
+      "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined,
     scheduleConfig: convertJsonValueToScheduleConfig(prisma.scheduleConfig),
     status: normalizeQueueStatus(prisma.status, prisma.isEnabled),
     isEnabled: prisma.isEnabled ?? undefined,
@@ -262,9 +254,7 @@ export function convertPrismaQueueTypeToQueueType(
 
 export type QueueStatus = "active" | "paused" | "archived";
 export type QueueHoldStatus =
-  | "none"
-  | "held_by_queue"
-  | "needs_resign_after_queue_resume";
+  "none" | "held_by_queue" | "needs_resign_after_queue_resume";
 
 /**
  * Queue type with scheduling configuration

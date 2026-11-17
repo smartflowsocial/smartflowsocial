@@ -166,6 +166,25 @@ describe("User Queries", () => {
 
       expect(result?.nostrProfile).toBeNull();
     });
+
+    it("parses a JSON string profile into name and picture", async () => {
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+        npub: "71ecabd8",
+        nostrProfile: JSON.stringify({
+          name: "operator",
+          display_name: "SmartFlow Operator",
+          picture: "https://example.com/parent.png",
+        }),
+      });
+
+      const result = await getUserByNpubWithProfile("71ecabd8");
+
+      expect(result?.nostrProfile).toEqual({
+        name: "operator",
+        display_name: "SmartFlow Operator",
+        picture: "https://example.com/parent.png",
+      });
+    });
   });
 
   describe("getUserIdByNpub", () => {

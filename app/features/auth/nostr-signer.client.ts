@@ -14,11 +14,7 @@ import { BRAND_NAME, brandLoginChallengeTitle } from "~/lib/brand";
 export type NostrSignerType = "nip07" | "nip46";
 
 export type SignerStatus =
-  | "unavailable"
-  | "available"
-  | "awaiting_approval"
-  | "ready"
-  | "error";
+  "unavailable" | "available" | "awaiting_approval" | "ready" | "error";
 
 export interface NostrSigner {
   type: NostrSignerType;
@@ -525,8 +521,7 @@ export class Nip46Signer implements NostrSigner {
     const clientPubkey = getPublicKey(secretKey);
 
     let closer:
-      | { close: (reason?: string) => Promise<void> | void }
-      | undefined;
+      { close: (reason?: string) => Promise<void> | void } | undefined;
     try {
       closer = this.pool.subscribe(
         relays,

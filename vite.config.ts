@@ -173,6 +173,42 @@ export default defineConfig(({ command }) => ({
     reactRouter(),
     tsconfigPaths(),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Vite 8 otherwise leaves dependency code inside route chunks. The
+        // drafts route then exceeds the 500KB chunk budget.
+        codeSplitting: {
+          groups: [
+            {
+              // prosemirror-history does `new PluginKey()` at module init.
+              // The vendor maxSize split put that call and the PluginKey
+              // class in different chunks that import each other, so the
+              // constructor was still uninitialized ("o is not a constructor").
+              // The route module then failed to evaluate and hydration never
+              // replaced the "Preparing sign-in…" placeholder.
+              name: "prosemirror",
+              test: /node_modules[\\/](?:prosemirror-|@tiptap[\\/]|orderedmap|rope-sequence|w3c-keyname)/,
+              priority: 20,
+            },
+            {
+              // Same failure mode: maxSize split recharts across chunks that
+              // import each other, so a z-index table was still undefined
+              // when a chart module read `.axis` during evaluation.
+              name: "recharts",
+              test: /node_modules[\\/](?:recharts|victory-vendor)[\\/]/,
+              priority: 10,
+            },
+            {
+              name: "vendor",
+              test: /node_modules/,
+              maxSize: 450 * 1024,
+            },
+          ],
+        },
+      },
+    },
+  },
   ssr:
     command === "build"
       ? {

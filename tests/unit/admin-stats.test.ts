@@ -22,8 +22,7 @@ vi.mock("~/lib/prisma.server", () => ({
     user: {
       count: (...args: unknown[]) => {
         const where = args[0] as
-          | { where?: { isEnabled?: boolean } }
-          | undefined;
+          { where?: { isEnabled?: boolean } } | undefined;
         if (where?.where?.isEnabled === true) {
           return mocks.mockUserCountEnabled();
         }

@@ -99,8 +99,7 @@ describe("Primal Cache Service", () => {
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
       const headers = fetchOptions.headers as
-        | Record<string, string>
-        | undefined;
+        Record<string, string> | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
       expect(headers?.["X-Cache-Skip-Native"]).toBe("1");
       expect(fetchOptions.body).toBe(

@@ -402,10 +402,11 @@ export function getPlanDisplayName(
 
 /**
  * Get the minimum plan required for a feature (upgrade prompts).
- * Browse surfaces are on Free; paid execution (bulk, broadcast send) starts at Starter.
+ * Browse surfaces and bulk scheduling are on Free. Broadcast sending starts at Starter.
+ * Scheduled-item caps stay on the plan entitlements, not this minimum.
  */
 export function getMinimumPlanForFeature(feature: FeatureName): PlanType {
-  if (feature === "bulkScheduling" || feature === "broadcasts") {
+  if (feature === "broadcasts") {
     return "starter";
   }
   // PLAN_FEATURES currently marks all surface features true on every tier; paid execution uses getPlanEntitlements.
@@ -438,9 +439,7 @@ export interface CreateInvoiceParams {
   billingCadence?: "monthly" | "yearly";
   accessDurationMonths?: number;
   billingPaymentMethod?:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 }
 
 /** Lightning bolt11 vs BTCPay hosted checkout URL */

@@ -30,7 +30,7 @@ describe("deployment mode", () => {
     });
     const entitlements = resolveExecutionEntitlements("free", deployment);
     expect(entitlements.maxFutureScheduledItems).toBe(10);
-    expect(entitlements.canExecuteBulkActions).toBe(false);
+    expect(entitlements.canExecuteBulkActions).toBe(true);
     expect(entitlements.canSendBroadcast).toBe(false);
     expect(
       resolveBroadcastLimits("starter", deployment).maxRecipientsPerCampaign

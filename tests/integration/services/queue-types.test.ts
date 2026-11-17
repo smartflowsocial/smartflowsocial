@@ -143,8 +143,7 @@ describe("Queue Types Service", () => {
 
       const updateCall = (prisma.queueType.update as ReturnType<typeof vi.fn>)
         .mock.calls[0]?.[0] as
-        | { data?: { hashTagPreset?: { disconnect?: boolean } } }
-        | undefined;
+        { data?: { hashTagPreset?: { disconnect?: boolean } } } | undefined;
       expect(updateCall?.data?.hashTagPreset).toEqual({ disconnect: true });
     });
 

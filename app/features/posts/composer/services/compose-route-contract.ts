@@ -1,9 +1,6 @@
 export type ComposeContentType = "post" | "poll" | "thread" | "article";
 export type ComposerMode =
-  | "create"
-  | "edit_draft"
-  | "edit_scheduled"
-  | "edit_follow_up";
+  "create" | "edit_draft" | "edit_scheduled" | "edit_follow_up";
 
 export type ComposerContext =
   | { mode: "create" }

@@ -22,7 +22,6 @@ export function SettingsResolvedLoaderProvider({
 
 /** Resolved settings payload from a deferred loader (only set inside &lt;Await&gt;). */
 export function useSettingsResolvedLoaderData():
-  | SettingsLoaderData
-  | undefined {
+  SettingsLoaderData | undefined {
   return useContext(SettingsResolvedLoaderContext);
 }

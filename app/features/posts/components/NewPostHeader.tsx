@@ -3,12 +3,7 @@
  */
 
 export type ComposerStatus =
-  | "Draft"
-  | "Ready"
-  | "Scheduled"
-  | "Signing…"
-  | "Publishing…"
-  | "Failed";
+  "Draft" | "Ready" | "Scheduled" | "Signing…" | "Publishing…" | "Failed";
 
 interface NewPostHeaderProps {
   title?: string;

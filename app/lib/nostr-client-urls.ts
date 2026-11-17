@@ -24,12 +24,7 @@ export type PreferredNostrClientPreset =
   | "CUSTOM";
 
 export type NostrClientPathStyle =
-  | "primal"
-  | "bech32_bare"
-  | "nostrudel"
-  | "yakihonne"
-  | "iris"
-  | "jumble";
+  "primal" | "bech32_bare" | "nostrudel" | "yakihonne" | "iris" | "jumble";
 
 export interface NostrClientConfig {
   baseUrl: string;

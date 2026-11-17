@@ -3,9 +3,7 @@ export type BillingNotificationCommMode = "AUTO_RENEW_NWC" | "MANUAL_TOP_UP";
 
 /** Matches Prisma BillingPaymentMethod. */
 export type SubscriptionBillingPaymentMethod =
-  | "nwc_auto_renew"
-  | "lightning_one_time"
-  | "btc_btcpay_onchain";
+  "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 
 /** Derived UI + notification routing (spec §12). */
 export type BillingUiStatus =

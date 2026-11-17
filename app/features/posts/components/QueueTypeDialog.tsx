@@ -131,9 +131,7 @@ function QueueTypeDialogScheduleAndTimingSections({
             value={scheduleType}
             onValueChange={(value) => {
               const newType = value as
-                | "INTERVAL"
-                | "FIXED_SLOTS"
-                | "WEEKLY_SLOTS";
+                "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS";
               form.setValue("scheduleType", newType);
               if (
                 newType === "WEEKLY_SLOTS" &&
@@ -383,8 +381,7 @@ export function QueueTypeDialog({
       intervalHours: "",
       slots: "",
       weeklySlots: undefined as
-        | Array<{ dayOfWeek: number; time: string }>
-        | undefined,
+        Array<{ dayOfWeek: number; time: string }> | undefined,
       scheduleRandomWindowMinutes: 0,
     };
   }, [queueType]);

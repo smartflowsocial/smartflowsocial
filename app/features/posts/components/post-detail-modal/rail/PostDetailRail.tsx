@@ -132,9 +132,7 @@ export function PostDetailRail({
   type: "draft" | "published" | "scheduled";
   post: PostDetailModalPost;
   queueType:
-    | { name: string; color?: string | null; id?: string }
-    | null
-    | undefined;
+    { name: string; color?: string | null; id?: string } | null | undefined;
   showStats: boolean;
   stats?: {
     likes: number;

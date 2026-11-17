@@ -74,10 +74,7 @@ export async function updateUserSubscription(
     billingCadence: "monthly" | "yearly" | null;
     accessDurationMonths: number | null;
     billingPaymentMethod:
-      | "nwc_auto_renew"
-      | "lightning_one_time"
-      | "btc_btcpay_onchain"
-      | null;
+      "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain" | null;
   } | null = null;
 
   if (paymentId && !paymentId.startsWith("free_")) {
@@ -218,10 +215,7 @@ export async function extendUserSubscriptionFromPayment(
     billingCadence: "monthly" | "yearly" | null;
     accessDurationMonths: number | null;
     billingPaymentMethod:
-      | "nwc_auto_renew"
-      | "lightning_one_time"
-      | "btc_btcpay_onchain"
-      | null;
+      "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain" | null;
   } | null = null;
 
   if (paymentId && !paymentId.startsWith("free_")) {

@@ -12,7 +12,7 @@ import path from "node:path";
 import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import { parse } from "cookie";
+import { parseCookie } from "cookie";
 import { config as loadDotenv } from "dotenv";
 import { Pool } from "pg";
 
@@ -244,7 +244,7 @@ async function createNostrUserAndLogin(npub: string) {
     throw new Error("Cookie missing from createUserSession response");
   }
 
-  const parsedCookie = parse(cookieValue);
+  const parsedCookie = parseCookie(cookieValue);
 
   // Log the cookie in a parseable format
 

@@ -20,12 +20,7 @@ export interface StoredFinalizationRecord {
   lockConfigHash: string;
   paymentId: string | null;
   paymentStatus:
-    | "PENDING"
-    | "COMPLETED"
-    | "EXPIRED"
-    | "FAILED"
-    | "CANCELED"
-    | null;
+    "PENDING" | "COMPLETED" | "EXPIRED" | "FAILED" | "CANCELED" | null;
   paymentExpiresAtMs: number | null;
 }
 

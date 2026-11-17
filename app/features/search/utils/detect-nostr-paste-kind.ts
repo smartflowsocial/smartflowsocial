@@ -1,11 +1,6 @@
 /** Client-only label for pasted global search input (no server imports). */
 export type NostrPasteKindLabel =
-  | "Note"
-  | "Event"
-  | "Addressable"
-  | "Hex id"
-  | "URL"
-  | null;
+  "Note" | "Event" | "Addressable" | "Hex id" | "URL" | null;
 
 export function detectNostrPasteKind(raw: string): NostrPasteKindLabel {
   const t = raw.trim();

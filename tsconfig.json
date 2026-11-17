@@ -44,8 +44,9 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
 
-    // Path mappings
-    "baseUrl": ".",
+    // Path mappings. Entries are already relative, so baseUrl is omitted.
+    // TypeScript 7 removed baseUrl.
+    "types": ["*"],
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "~/*": ["./app/*"],

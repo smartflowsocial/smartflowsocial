@@ -276,8 +276,7 @@ export async function resetTestDatabase(): Promise<void> {
     try {
       const modelKey = modelName.toLowerCase() as keyof PrismaClient;
       const model = prisma[modelKey] as
-        | { deleteMany: (args: {}) => Promise<unknown> }
-        | undefined;
+        { deleteMany: (args: {}) => Promise<unknown> } | undefined;
       if (model && typeof model.deleteMany === "function") {
         await model.deleteMany({});
       }

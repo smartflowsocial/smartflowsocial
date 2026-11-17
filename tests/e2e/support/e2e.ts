@@ -4,10 +4,10 @@ import "@testing-library/cypress/add-commands";
 registerCommands();
 
 Cypress.on("uncaught:exception", (err) => {
-  const allowHydrationExceptions =
-    Cypress.env("ALLOW_HYDRATION_EXCEPTIONS") === true ||
-    Cypress.env("ALLOW_HYDRATION_EXCEPTIONS") === "true";
-  if (!allowHydrationExceptions) {
+  if (
+    Cypress.expose("ALLOW_HYDRATION_EXCEPTIONS") !== true &&
+    Cypress.expose("ALLOW_HYDRATION_EXCEPTIONS") !== "true"
+  ) {
     return;
   }
 

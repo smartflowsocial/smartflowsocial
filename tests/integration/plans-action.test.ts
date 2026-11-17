@@ -255,6 +255,31 @@ describe("Plans Action Handler", () => {
       });
     });
 
+    it("should refuse checkout for a linked child account", async () => {
+      (requireUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: TEST_USER_ID,
+        npub: "test-npub",
+        isChild: true,
+      });
+
+      const formData = createFormData({
+        intent: "select_plan",
+        planId: "starter",
+        paymentMode: "manual",
+        billingCadence: "monthly",
+        accessDurationMonths: "1",
+      });
+
+      const request = new Request("http://localhost:3000/plans");
+      const result = await handlePlansAction(formData, request);
+
+      expect(PaymentsData.createPlanInvoice).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        success: false,
+        status: 400,
+      });
+    });
+
     it("should attempt auto-renew payment via NWC when selected", async () => {
       const mockInvoice = {
         invoice: "lnbc123...",

@@ -1,8 +1,5 @@
 export type NotePerformanceStatus =
-  | "not_collected"
-  | "missing"
-  | "zero"
-  | "counts";
+  "not_collected" | "missing" | "zero" | "counts";
 
 export interface LatestCounts {
   missingFromIndex: boolean;

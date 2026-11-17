@@ -1,11 +1,12 @@
 import * as React from "react";
 import { useFetcher, useRevalidator } from "react-router";
 
-import { Avatar, AvatarImage } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import type { ProfileData } from "~/features/nostr/types";
+import { formatNpubShort } from "~/lib/nostr-conversion";
 interface AccountInfo {
   npub: string;
   nostrProfile?: ProfileData | null;
@@ -25,6 +26,12 @@ interface SearchResult {
 const ACTION_REQUEST_CHILD = "request_child";
 const ACTION_RESPOND_CHILD_REQUEST = "respond_child_request";
 const DASHBOARD_SETTINGS_ACTION = "/dashboard/settings";
+
+function nonempty(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  return trimmed;
+}
 
 function extractProfileBits(nostrProfile: ProfileData | null | undefined) {
   if (!nostrProfile)
@@ -174,8 +181,13 @@ export function AccountsSettings({
 
   if (isChild) {
     const bits = extractProfileBits(parentUser?.nostrProfile);
-    const parentName =
-      bits.name ?? bits.display_name ?? parentUser?.npub ?? "Parent";
+    const profileName =
+      nonempty(bits.display_name) ?? nonempty(bits.name) ?? "";
+    const parentPubkey = parentUser?.npub
+      ? formatNpubShort(parentUser.npub)
+      : "";
+    const parentName = profileName || parentPubkey || "Parent";
+    const parentInitial = parentName.trim().charAt(0).toUpperCase() || "P";
     return (
       <Card className="p-4">
         <div className="mb-4">
@@ -191,14 +203,15 @@ export function AccountsSettings({
               {bits.picture ? (
                 <AvatarImage src={bits.picture} alt={parentName} />
               ) : null}
+              <AvatarFallback>{parentInitial}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <div className="truncate font-medium">
                 Managed by {parentName}
               </div>
-              {parentUser?.npub ? (
+              {profileName && parentPubkey ? (
                 <div className="text-text-secondary truncate text-xs">
-                  {parentUser.npub}
+                  {parentPubkey}
                 </div>
               ) : null}
             </div>

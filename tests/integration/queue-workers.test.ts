@@ -57,6 +57,7 @@ vi.mock("~/features/relays/publish-relay-acks.server", () => ({
 vi.mock("~/infra/queue", () => ({
   getQueueInstance: vi.fn(() => ({
     add: vi.fn(),
+    upsertJobScheduler: vi.fn(),
   })),
   redis: {
     quit: vi.fn(),
@@ -225,8 +226,7 @@ describe("Queue Workers", () => {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
       async (
         args:
-          | { where: { id: string; userId?: string } }
-          | { where: { id: string } }
+          { where: { id: string; userId?: string } } | { where: { id: string } }
       ) => {
         const postId = args.where.id;
 
@@ -270,8 +270,7 @@ describe("Queue Workers", () => {
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Mock implementation needs to be async
       async (
         args:
-          | { where: { id: string; userId?: string } }
-          | { where: { id: string } }
+          { where: { id: string; userId?: string } } | { where: { id: string } }
       ) => {
         const postId = args.where.id;
 
@@ -361,8 +360,7 @@ describe("Queue Workers", () => {
       const fetchOptions = fetchCall[1] as RequestInit;
       expect(fetchOptions.method).toBe("POST");
       const headers = fetchOptions.headers as
-        | Record<string, string>
-        | undefined;
+        Record<string, string> | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
       // JSON.stringify excludes Symbol(verified), so parse and check properties
       const body = JSON.parse(fetchOptions.body as string) as {

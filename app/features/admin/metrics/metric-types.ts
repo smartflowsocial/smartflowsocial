@@ -3,31 +3,17 @@
  */
 
 export type MetricDomain =
-  | "business"
-  | "product"
-  | "signer"
-  | "publishing"
-  | "referral"
-  | "infra";
+  "business" | "product" | "signer" | "publishing" | "referral" | "infra";
 
 export type MetricFormat =
-  | "count"
-  | "sats"
-  | "currency"
-  | "percent"
-  | "duration";
+  "count" | "sats" | "currency" | "percent" | "duration";
 
 /** How the metric behaves with time range selection (proof-of-work / exports). */
 export type RangeSemantics =
-  | "all_time"
-  | "range_sensitive"
-  | "fixed_window"
-  | "hybrid";
+  "all_time" | "range_sensitive" | "fixed_window" | "hybrid";
 
 export type MetricConfidence =
-  | "confident"
-  | "directional"
-  | "insufficient_sample";
+  "confident" | "directional" | "insufficient_sample";
 
 export interface MetricDefinition {
   key: string;

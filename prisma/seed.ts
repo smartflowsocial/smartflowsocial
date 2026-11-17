@@ -86,7 +86,7 @@ async function main() {
       features: {
         basicScheduling: true,
         multipleQueues: false,
-        bulkScheduling: false,
+        bulkScheduling: true,
         repostsAndQuotes: false,
         engagementFeed: false,
         giveaways: true,
@@ -106,7 +106,7 @@ async function main() {
       maxLongFormPosts: 2,
       enableBasicScheduling: true,
       enableMultipleQueues: false,
-      enableBulkScheduling: false,
+      enableBulkScheduling: true,
       enableRepostsAndQuotes: false,
       enableEngagementFeed: false,
       enableGiveaways: true,
@@ -403,9 +403,7 @@ async function main() {
     billingCadence: "monthly" | "yearly";
     accessDurationMonths: number;
     paymentMethod:
-      | "nwc_auto_renew"
-      | "lightning_one_time"
-      | "btc_btcpay_onchain";
+      "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
     priceUsd: number;
   }> = [];
 

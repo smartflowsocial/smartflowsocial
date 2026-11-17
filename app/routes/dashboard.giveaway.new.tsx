@@ -40,8 +40,7 @@ function parseScopeReference(
   formData: FormData,
   scopeTypeResolved: "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING"
 ):
-  | { scopeReference: Record<string, unknown> }
-  | { error: string; status: 400 } {
+  { scopeReference: Record<string, unknown> } | { error: string; status: 400 } {
   if (scopeTypeResolved === "PERIOD") {
     const queueId = formData.get("queueId");
     const queueIdTrimmed =
@@ -355,11 +354,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const name = formData.get("name");
   const scopeType = formData.get("scopeType") as
-    | "PERIOD"
-    | "SINGLE_POST"
-    | "FOLLOWERS"
-    | "FOLLOWING"
-    | null;
+    "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING" | null;
   const scopeTypeResolved =
     scopeType === "SINGLE_POST"
       ? "SINGLE_POST"

@@ -7,11 +7,7 @@ import { cn } from "~/lib/utils";
  * shells (e.g. Plans); it currently matches `library`  -  do not force migration yet.
  */
 export type PageHeaderVariant =
-  | "library"
-  | "compact"
-  | "admin"
-  | "dashboard"
-  | "marketing";
+  "library" | "compact" | "admin" | "dashboard" | "marketing";
 
 /** Shared shell for library / dashboard / marketing title rows. */
 const PAGE_HEADER_SHELL_LIBRARY_LIKE =

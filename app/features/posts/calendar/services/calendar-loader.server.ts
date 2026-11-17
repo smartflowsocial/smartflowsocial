@@ -247,10 +247,8 @@ export async function loadCalendarData(
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType;
+            "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined =
+            queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,
@@ -314,10 +312,8 @@ export async function loadCalendarData(
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType;
+            "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined =
+            queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,
@@ -377,14 +373,9 @@ export async function loadCalendarData(
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType as
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined;
+            "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined =
+            queueType.scheduleType as
+              "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined;
           return {
             id: queueType.id,
             name: queueType.name,
@@ -447,10 +438,7 @@ export async function loadCalendarData(
             const descriptionValue: string | null | undefined =
               "description" in queueType ? queueType.description : undefined;
             const scheduleTypeValue:
-              | "INTERVAL"
-              | "FIXED_SLOTS"
-              | "WEEKLY_SLOTS"
-              | undefined = (
+              "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined = (
               "scheduleType" in queueType ? queueType.scheduleType : undefined
             ) as "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined;
             const isEnabledValue: boolean | undefined = (
@@ -610,10 +598,8 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
           const scheduleTypeValue:
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType;
+            "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined =
+            queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,

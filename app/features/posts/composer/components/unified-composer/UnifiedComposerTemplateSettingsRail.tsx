@@ -16,9 +16,7 @@ export function UnifiedComposerTemplateSettingsRail(props: {
   primaryActionLoading: boolean;
   primarySubmitDisabled: boolean;
   editTemplateContext:
-    | { templateId: string; postId: string }
-    | null
-    | undefined;
+    { templateId: string; postId: string } | null | undefined;
   onSaveTemplate: () => void;
   onTemplateDeleteClick?: (() => void) | null;
   disabled: boolean;

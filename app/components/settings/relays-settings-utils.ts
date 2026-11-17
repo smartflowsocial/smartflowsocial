@@ -2,8 +2,7 @@ import type { Nip65RelayScope } from "~/features/relays/nip65-relay-entry";
 
 export function formatAck(
   ack:
-    | { status: string; createdAt: string; receivedAt: string | null }
-    | undefined
+    { status: string; createdAt: string; receivedAt: string | null } | undefined
 ): string {
   if (!ack) return "—";
   const status = ack.status.toLowerCase();

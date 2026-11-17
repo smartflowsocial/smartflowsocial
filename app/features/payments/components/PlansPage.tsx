@@ -166,6 +166,7 @@ export function PlansPage(): ReactNode {
     comparisonTablePlans,
     founderOffering,
     user,
+    linkedChildAccount,
     currentSubscription,
     nwc,
     subscriptionCheckoutV2Enabled,
@@ -348,6 +349,13 @@ export function PlansPage(): ReactNode {
               Yearly billing is available for Starter, Creator, and Pro at the
               equivalent of 10 months.
             </p>
+            {linkedChildAccount ? (
+              <p className="text-text-secondary mx-auto mt-4 max-w-2xl text-sm leading-relaxed">
+                This account is linked to a parent account and uses that
+                account&apos;s plan. Switch to the parent account to change
+                billing.
+              </p>
+            ) : null}
             {deployment.mode === "self-hosted" ? (
               <p className="text-text-secondary mx-auto mt-4 max-w-2xl text-sm leading-relaxed">
                 This process is self-hosted. The prices below are the managed
@@ -423,6 +431,7 @@ export function PlansPage(): ReactNode {
                 useCheckoutModal={Boolean(subscriptionCheckoutV2Enabled)}
                 billingCadence={billingCadence}
                 onPlanSelect={(planId) => {
+                  if (linkedChildAccount) return;
                   if (subscriptionCheckoutV2Enabled) {
                     if (planId === "free") {
                       if (!user) {
@@ -500,6 +509,7 @@ export function PlansPage(): ReactNode {
                         type="button"
                         disabled={isLoading}
                         onClick={() => {
+                          if (linkedChildAccount) return;
                           if (!user) {
                             void navigate("/login", { replace: true });
                             return;
