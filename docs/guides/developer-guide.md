@@ -26,7 +26,7 @@ architecture patterns, and best practices.
 
 ### Prerequisites
 
-- Node.js 22.22.0+ (`.nvmrc` is `22.22`)
+- Node.js 26.13.1+ (`.nvmrc` is `26.13.1`)
 - pnpm package manager
 - PostgreSQL 14+
 - Redis 6+

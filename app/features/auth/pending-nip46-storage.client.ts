@@ -56,9 +56,13 @@ export interface PendingNip46Handoff {
   relays: string[];
 }
 
+function inBrowser(): boolean {
+  return typeof window !== "undefined";
+}
+
 function safeGetLocal(key: string): string | null {
   try {
-    return typeof localStorage !== "undefined"
+    return inBrowser() && typeof localStorage !== "undefined"
       ? localStorage.getItem(key)
       : null;
   } catch {
@@ -68,7 +72,7 @@ function safeGetLocal(key: string): string | null {
 
 function safeGetSession(key: string): string | null {
   try {
-    return typeof sessionStorage !== "undefined"
+    return inBrowser() && typeof sessionStorage !== "undefined"
       ? sessionStorage.getItem(key)
       : null;
   } catch {
@@ -78,7 +82,7 @@ function safeGetSession(key: string): string | null {
 
 function safeSetLocal(key: string, value: string): void {
   try {
-    if (typeof localStorage !== "undefined") {
+    if (inBrowser() && typeof localStorage !== "undefined") {
       localStorage.setItem(key, value);
     }
   } catch {
@@ -88,7 +92,7 @@ function safeSetLocal(key: string, value: string): void {
 
 function safeSetSession(key: string, value: string): void {
   try {
-    if (typeof sessionStorage !== "undefined") {
+    if (inBrowser() && typeof sessionStorage !== "undefined") {
       sessionStorage.setItem(key, value);
     }
   } catch {
@@ -98,7 +102,7 @@ function safeSetSession(key: string, value: string): void {
 
 function safeRemoveLocal(key: string): void {
   try {
-    if (typeof localStorage !== "undefined") {
+    if (inBrowser() && typeof localStorage !== "undefined") {
       localStorage.removeItem(key);
     }
   } catch {
@@ -108,7 +112,7 @@ function safeRemoveLocal(key: string): void {
 
 function safeRemoveSession(key: string): void {
   try {
-    if (typeof sessionStorage !== "undefined") {
+    if (inBrowser() && typeof sessionStorage !== "undefined") {
       sessionStorage.removeItem(key);
     }
   } catch {

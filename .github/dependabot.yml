@@ -177,8 +177,8 @@ updates:
     pull-request-branch-name:
       separator: "/"
     rebase-strategy: "auto"
-    # Coolify builds with nixpacks nodejs_22 (.nvmrc). The Dockerfile base is
-    # the same pin and is not the production image; do not jump Node majors.
+    # Coolify builds this Dockerfile. Keep the base image on the same patch as
+    # .nvmrc. A Node major moves only together with that pin, not on its own.
     ignore:
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]

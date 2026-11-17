@@ -43,12 +43,14 @@ describe("pending-nip46-storage", () => {
       makeStorageMock(localStore);
     (globalThis as unknown as { sessionStorage: unknown }).sessionStorage =
       makeStorageMock(sessionStore);
+    (globalThis as unknown as { window: unknown }).window = globalThis;
   });
 
   afterEach(() => {
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
     delete (globalThis as unknown as { sessionStorage?: unknown })
       .sessionStorage;
+    delete (globalThis as unknown as { window?: unknown }).window;
     vi.restoreAllMocks();
   });
 

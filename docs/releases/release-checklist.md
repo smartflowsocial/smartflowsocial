@@ -45,7 +45,7 @@ website, a production deploy, or a legal review as done from a source change.
 - [ ] Those landing pages are deployed by the operator and then read on the live site
 - [ ] The public contact is `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`
 - [ ] The pages do not claim GDPR or commercial-identity compliance
-- [ ] Self-host docs say Node.js 22.22 or newer
+- [ ] Self-host docs say Node.js 26.13.1 or newer
 
 ## Human
 

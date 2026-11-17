@@ -1,5 +1,6 @@
-# base node image
-FROM node:22-bookworm-slim AS base
+# Production image. Coolify builds this file. The patch matches .nvmrc.
+# Node 25 and later do not ship Corepack.
+FROM node:26.13.1-bookworm-slim AS base
 
 # set for base and all layers that inherit from it
 ENV NODE_ENV=production
@@ -8,7 +9,9 @@ ENV HUSKY=0
 # openssl for Prisma. python/make/g++ build native modules such as sharp.
 RUN apt-get update && apt-get install -y openssl wget python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@10.27.0 --activate
+RUN npm install --global corepack@0.36.0 \
+  && corepack enable \
+  && corepack prepare pnpm@10.27.0 --activate
 
 # Install all node_modules, including dev dependencies
 FROM base AS deps
@@ -58,5 +61,7 @@ COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma.config.ts /myapp/prisma.config.ts
 # prisma.config.ts imports this at migrate time. The rest of app/ is bundled.
 COPY --from=build /myapp/app/lib/prisma-command-url.ts /myapp/app/lib/prisma-command-url.ts
+
+EXPOSE 3000
 
 CMD ["pnpm", "start"]

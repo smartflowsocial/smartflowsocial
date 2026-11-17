@@ -1,7 +1,9 @@
 FROM gitpod/workspace-full
 
-# Install pnpm (required for this project)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Node 25 and later do not ship Corepack. Pin the same pnpm as packageManager.
+RUN npm install --global corepack@0.36.0 \
+  && corepack enable \
+  && corepack prepare pnpm@10.27.0 --activate
 
 # Install Fly
 RUN curl -L https://fly.io/install.sh | sh

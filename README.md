@@ -20,7 +20,7 @@ repository. Neither is a supported version of this repository.
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
 [![CI](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml)
-[![Node 22.22+](https://img.shields.io/badge/node-22.22%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node 26.13.1+](https://img.shields.io/badge/node-26.13.1%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![React Router 8.5](https://img.shields.io/badge/React_Router-8.5.1-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-primary-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -62,9 +62,9 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 
 ## Run it yourself
 
-You need Node.js 22.22 or newer, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs a
-running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads need
-S3-compatible storage. First-time setup is about 30–60 minutes.
+You need Node.js 26.13.1 or newer, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs
+a running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads
+need S3-compatible storage. First-time setup is about 30–60 minutes.
 [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
 signed event reaches a loopback relay. `pnpm smoke:publish` stops at a signature check.
 `pnpm test:relay-publish` delivers the event. The Cloudflare Worker itself is `pnpm test:worker` in
