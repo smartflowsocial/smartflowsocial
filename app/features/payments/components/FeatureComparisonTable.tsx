@@ -15,9 +15,9 @@ import {
   formatCampaignCommissionPercent,
 } from "~/features/payments/campaign-fee-policy";
 import type { PublicDeployment } from "~/features/payments/entitlements/deployment-mode";
-import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import { tryGetPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
-import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 import { useDeployment } from "~/features/payments/types";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
@@ -47,7 +47,8 @@ function campaignCommissionLabel(
   planId: string,
   deployment: PublicDeployment
 ): string {
-  const planType = mapLegacyPlanIdToCommercialPlanType(planId);
+  const planType = parseCommercialPlanType(planId);
+  if (!planType) return "-";
   return formatCampaignCommissionPercent(
     effectiveCampaignFinalizationFeeRateBps(planType, deployment)
   );
@@ -79,7 +80,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Accounts included",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       return getCanonicalPlanPolicy(planType).accountsIncluded;
     },
   },
@@ -88,7 +90,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Draft/template limits",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       if (ent.maxDrafts == null || ent.maxTemplates == null) return "-";
       return `${ent.maxDrafts} drafts / ${ent.maxTemplates} templates`;
     },
@@ -98,7 +101,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Scheduled items included",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.maxFutureScheduledItems ?? "-";
     },
   },
@@ -107,7 +111,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Queue count",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.maxQueues ?? "-";
     },
   },
@@ -121,7 +126,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Broadcast sending",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.canSendBroadcast ? "Included" : "Browse only (no send)";
     },
   },
@@ -130,7 +136,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Bulk workflow",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.canExecuteBulkActions;
     },
   },
@@ -141,7 +148,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       "Hosted on Blossom-compatible infrastructure for broader Nostr media workflows.",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       return getCanonicalPlanPolicy(planType).media.canUseSfsBlossomStorage
         ? "Yes"
         : "No";
@@ -152,7 +160,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Monthly hosted storage",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyStorageBytes)
@@ -164,7 +173,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Monthly hosted uploads",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyUploadBytes)
@@ -176,7 +186,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Max hosted file size",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.maxFileBytes)
