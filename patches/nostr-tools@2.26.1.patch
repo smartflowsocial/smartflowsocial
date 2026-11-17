@@ -1,8 +1,8 @@
 diff --git a/lib/cjs/abstract-pool.js b/lib/cjs/abstract-pool.js
-index 551a59d8b990cdfe008e980eedb853e496e7302d..fe51d9ce5e2662a5001881114ddd9b83ec0527c9 100644
+index 9d110ea960165d40ae8a1327c72117ceb7c949a8..d034a1793b6bd193b2061a1c2568f4d61722c2d3 100644
 --- a/lib/cjs/abstract-pool.js
 +++ b/lib/cjs/abstract-pool.js
-@@ -299,7 +299,13 @@ var AbstractRelay = class {
+@@ -312,7 +312,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -18,10 +18,10 @@ index 551a59d8b990cdfe008e980eedb853e496e7302d..fe51d9ce5e2662a5001881114ddd9b83
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/cjs/abstract-relay.js b/lib/cjs/abstract-relay.js
-index c61e752f610cf2e1612d3acba6cd94fa20a23421..0603b22de25ebe335fccd7d27d21be37c6237be7 100644
+index 4bf580e8f76263283275af71efa4072485c59a0c..39057982a5a8b3e715457f299fd0af98d46d70b7 100644
 --- a/lib/cjs/abstract-relay.js
 +++ b/lib/cjs/abstract-relay.js
-@@ -301,7 +301,13 @@ var AbstractRelay = class {
+@@ -314,7 +314,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -37,10 +37,10 @@ index c61e752f610cf2e1612d3acba6cd94fa20a23421..0603b22de25ebe335fccd7d27d21be37
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/cjs/index.js b/lib/cjs/index.js
-index 7157108583d5d35644d4be604b0a956d5f434d66..26c72452ee9f080a40927c7ed26a78b835a7e6f8 100644
+index 686378aa80217e3739fba8fc36e153fcedf8abf7..5ec6ac51fa1e4cc16dc53edbc9125f9a5798d3a3 100644
 --- a/lib/cjs/index.js
 +++ b/lib/cjs/index.js
-@@ -1034,7 +1034,13 @@ var AbstractRelay = class {
+@@ -1098,7 +1098,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -56,10 +56,10 @@ index 7157108583d5d35644d4be604b0a956d5f434d66..26c72452ee9f080a40927c7ed26a78b8
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/cjs/nip46.js b/lib/cjs/nip46.js
-index fd3c1bd554637dc1ddbc3c58b9a861a9dfe34774..06cbe5c95e9a0219fdcf94b5154962d1cbff826f 100644
+index 869e9bda47464aac426d1256f85098b854504702..fd33010c8ffb477c8d257df896a8a00734285700 100644
 --- a/lib/cjs/nip46.js
 +++ b/lib/cjs/nip46.js
-@@ -537,7 +537,13 @@ var AbstractRelay = class {
+@@ -550,7 +550,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -75,10 +75,10 @@ index fd3c1bd554637dc1ddbc3c58b9a861a9dfe34774..06cbe5c95e9a0219fdcf94b5154962d1
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/cjs/pool.js b/lib/cjs/pool.js
-index 039d2e948210b5c749c850afd411da9c40efdf7b..0e3680c88d4145ea4ea14805106fd0a4b0e6c8c5 100644
+index 04a149f5bcf68aa5c35ec338812405da9153233b..d5126ab7f27467952566138691ef2dba08b19356 100644
 --- a/lib/cjs/pool.js
 +++ b/lib/cjs/pool.js
-@@ -396,7 +396,13 @@ var AbstractRelay = class {
+@@ -409,7 +409,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -94,10 +94,10 @@ index 039d2e948210b5c749c850afd411da9c40efdf7b..0e3680c88d4145ea4ea14805106fd0a4
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/cjs/relay.js b/lib/cjs/relay.js
-index fc8655ac747b4972934263d76df56a45f1eb59ec..7f64cdf6f0b90b5d1b9a494b7def5415e8c77444 100644
+index 360865a1848167e8f3b0c7ab9c4a48d5bbec552c..2e9d1ac9fffbda7a51fa6c73124718e925821cd8 100644
 --- a/lib/cjs/relay.js
 +++ b/lib/cjs/relay.js
-@@ -398,7 +398,13 @@ var AbstractRelay = class {
+@@ -411,7 +411,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -113,10 +113,10 @@ index fc8655ac747b4972934263d76df56a45f1eb59ec..7f64cdf6f0b90b5d1b9a494b7def5415
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/abstract-pool.js b/lib/esm/abstract-pool.js
-index 7dfbee984a376507d7645fb4cfd64be8b176079f..f6612c5eb219964e1633e8bf998619b253c019eb 100644
+index 6ed00ed69f769c7c418b84918b14c28803b9404a..e4ff2786077b0e8a757239209141f1b2434ae203 100644
 --- a/lib/esm/abstract-pool.js
 +++ b/lib/esm/abstract-pool.js
-@@ -273,7 +273,13 @@ var AbstractRelay = class {
+@@ -286,7 +286,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -132,10 +132,10 @@ index 7dfbee984a376507d7645fb4cfd64be8b176079f..f6612c5eb219964e1633e8bf998619b2
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/abstract-relay.js b/lib/esm/abstract-relay.js
-index cdd6096f58ec9425e2e0ec857efb909c753a93f5..fa64bfe5208610576d73561c8ce8d64fb9c0f046 100644
+index 39f6296450f3e29a3759839c761333ddf5c20938..fc495fda86a3b09d47312c0d1e149fbb32a22614 100644
 --- a/lib/esm/abstract-relay.js
 +++ b/lib/esm/abstract-relay.js
-@@ -273,7 +273,13 @@ var AbstractRelay = class {
+@@ -286,7 +286,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -151,10 +151,10 @@ index cdd6096f58ec9425e2e0ec857efb909c753a93f5..fa64bfe5208610576d73561c8ce8d64f
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/index.js b/lib/esm/index.js
-index 2eed2deaa8c93c17424200690de361589a8dd133..38c14ebfedab4ef212de23a672a6010600a9f9a4 100644
+index 39249f04d7e059067a86fdce21d25f34727fedfe..b593d137cd228357f146a15f97d3603c207e5134 100644
 --- a/lib/esm/index.js
 +++ b/lib/esm/index.js
-@@ -972,7 +972,13 @@ var AbstractRelay = class {
+@@ -1036,7 +1036,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -170,10 +170,10 @@ index 2eed2deaa8c93c17424200690de361589a8dd133..38c14ebfedab4ef212de23a672a60106
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/nip46.js b/lib/esm/nip46.js
-index f287f691ff3edf8990026aef3b3078cca3fd10f4..268bbd22c3d4e13ee70eb412e0eed7f5ec21e9c0 100644
+index afd11ca26b216224a6d115aad3fbdafe48060756..b2dc53db6acd32f1fddce9ff5dfed50aa2067d3a 100644
 --- a/lib/esm/nip46.js
 +++ b/lib/esm/nip46.js
-@@ -503,7 +503,13 @@ var AbstractRelay = class {
+@@ -516,7 +516,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -189,10 +189,10 @@ index f287f691ff3edf8990026aef3b3078cca3fd10f4..268bbd22c3d4e13ee70eb412e0eed7f5
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/pool.js b/lib/esm/pool.js
-index dd71ed0e16beb368c39259b7d18e937c9a883673..e79db973485c7f4d340858c7b117fa2e6bf1b279 100644
+index 97e401a9edcd4d45c659a479a46a7af270830c53..028774cf6f9297494721b3c8b5a2dfd7574974e9 100644
 --- a/lib/esm/pool.js
 +++ b/lib/esm/pool.js
-@@ -368,7 +368,13 @@ var AbstractRelay = class {
+@@ -381,7 +381,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }
@@ -208,10 +208,10 @@ index dd71ed0e16beb368c39259b7d18e937c9a883673..e79db973485c7f4d340858c7b117fa2e
        };
        this.ws.onclose = (ev) => {
 diff --git a/lib/esm/relay.js b/lib/esm/relay.js
-index 1474613c265a81eb7781479a3245d3d227ff77c3..8c5fc29797cb2c8eddb2bccb7afd7cbb04a1148b 100644
+index 9d49f25e89a94a03459b1c8fe51014fe31c4f5e6..3bb34786df031207b2a12b607fe3aa626b231eba 100644
 --- a/lib/esm/relay.js
 +++ b/lib/esm/relay.js
-@@ -368,7 +368,13 @@ var AbstractRelay = class {
+@@ -381,7 +381,13 @@ var AbstractRelay = class {
          if (this.reconnectAttempts === 0) {
            this.skipReconnection = true;
          }

@@ -14,7 +14,7 @@ import jestDom from "eslint-plugin-jest-dom";
 import testingLibrary from "eslint-plugin-testing-library";
 import promise from "eslint-plugin-promise";
 import noSecrets from "eslint-plugin-no-secrets";
-import eslintComments from "eslint-plugin-eslint-comments";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
 

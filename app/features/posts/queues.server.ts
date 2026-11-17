@@ -260,13 +260,16 @@ listenForWorkerErrors(postCheckerWorker, QUEUE_POST_CHECKER);
 // ---------------------------------------------------------------------------
 
 async function startPostChecker() {
-  await postCheckerQueue.add(
+  await postCheckerQueue.upsertJobScheduler(
     "check-due-posts",
-    {},
+    { every: 60000 },
     {
-      repeat: { every: 60000 },
-      removeOnComplete: 1,
-      removeOnFail: 1,
+      name: "check-due-posts",
+      data: {},
+      opts: {
+        removeOnComplete: 1,
+        removeOnFail: 1,
+      },
     }
   );
   logInfo("Post checker recurring job registered", { interval: 60000 });

@@ -82,8 +82,7 @@ const queueBacklogMetricsInterval = setInterval(() => {
           "active",
           "completed",
           "failed",
-          "delayed",
-          "paused"
+          "delayed"
         );
         const statuses: Record<string, number> = {
           waiting: counts["waiting"] ?? 0,

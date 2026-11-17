@@ -36,9 +36,23 @@ vi.mock("~/lib/metrics/business-metrics.server", () => ({
   recordPostCancelled: vi.fn(),
 }));
 
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    cascadeCancelAttachedFollowups: vi.fn().mockResolvedValue([]),
+    cascadeDeleteAttachedFollowups: vi.fn().mockResolvedValue([]),
+    cascadeAttachedReschedule: vi.fn().mockResolvedValue([]),
+    discardScheduledPost: vi.fn().mockResolvedValue(true),
+    resyncAttachedChildrenAfterParentMutation: vi
+      .fn()
+      .mockResolvedValue(undefined),
+  })
+);
+
 import { TEST_USER_ID, TEST_POST_ID } from "../../utils/test-helpers";
 
 import { CancelScheduleUseCase } from "~/features/posts/scheduling/index.server";
+import { cascadeCancelAttachedFollowups } from "~/features/posts/scheduling/services/attached-followups.server";
 import { updatePost } from "~/features/posts/server";
 import { getPostById } from "~/features/posts/server";
 import { cancelPostJob } from "~/infra/queue";
@@ -77,6 +91,12 @@ describe("CancelScheduleUseCase", () => {
         userId: TEST_USER_ID,
       });
       expect(cancelPostJob).toHaveBeenCalledWith(TEST_POST_ID);
+      expect(cascadeCancelAttachedFollowups).toHaveBeenCalledWith({
+        rootPostId: TEST_POST_ID,
+        userId: TEST_USER_ID,
+        targetState: "CANCELLED",
+        reason: "Parent schedule cancelled; attached follow-up cancelled",
+      });
       expect(updatePost).toHaveBeenCalledWith({
         id: TEST_POST_ID,
         userId: TEST_USER_ID,

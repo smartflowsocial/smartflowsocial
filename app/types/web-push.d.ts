@@ -23,10 +23,4 @@ declare module "web-push" {
     payload: string,
     options?: SendNotificationOptions
   ): Promise<unknown>;
-
-  const webPush: {
-    setVapidDetails: typeof setVapidDetails;
-    sendNotification: typeof sendNotification;
-  };
-  export default webPush;
 }
