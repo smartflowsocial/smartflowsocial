@@ -173,6 +173,23 @@ export default defineConfig(({ command }) => ({
     reactRouter(),
     tsconfigPaths(),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Vite 8 otherwise leaves dependency code inside route chunks. The
+        // drafts route then exceeds the 500KB chunk budget.
+        codeSplitting: {
+          groups: [
+            {
+              name: "vendor",
+              test: /node_modules/,
+              maxSize: 450 * 1024,
+            },
+          ],
+        },
+      },
+    },
+  },
   ssr:
     command === "build"
       ? {
