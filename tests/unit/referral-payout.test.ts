@@ -3,7 +3,14 @@
  * Tests app/features/referral/referral-payout.server.ts
  */
 
+import { createHash } from "node:crypto";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const REFERRAL_PREIMAGE = "cd".repeat(32);
+const REFERRAL_HASH = createHash("sha256")
+  .update(Buffer.from(REFERRAL_PREIMAGE, "hex"))
+  .digest("hex");
 
 const mockAggregatePendingCommissionByReferrer = vi.fn();
 const mockFindPendingEarningsWithAttemptCount = vi.fn();
@@ -12,8 +19,11 @@ const mockGroupByReferrerPendingSats = vi.fn();
 const mockBeginReferralPayout = vi.fn();
 const mockCompleteReferralPayout = vi.fn();
 const mockFailReferralPayout = vi.fn();
-const { payInvoice } = vi.hoisted(() => ({
+const mockHoldReferralPayout = vi.fn();
+const mockFindInProgressReferralClaim = vi.fn();
+const { payInvoice, lookupInvoice } = vi.hoisted(() => ({
   payInvoice: vi.fn(),
+  lookupInvoice: vi.fn(),
 }));
 
 const envState = vi.hoisted(() => ({
@@ -42,30 +52,78 @@ vi.mock("~/features/payments/data", () => ({
 vi.mock("@getalby/sdk", () => ({
   NWCClient: class {
     payInvoice = payInvoice;
+    lookupInvoice = lookupInvoice;
   },
 }));
 
-vi.mock("~/features/referral/bolt11-invoice.server", () => ({
-  readBolt11ForPayout: (invoice: string) => {
+vi.mock("~/features/referral/bolt11-invoice.server", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  function readBolt11ForPayout(invoice: string) {
     if (invoice === "lnbc-malformed") {
-      return { ok: false, error: "Malformed BOLT11 invoice" };
+      return { ok: false as const, error: "Malformed BOLT11 invoice" };
     }
     if (invoice === "lnbc-amountless") {
-      return { ok: false, error: "Amountless BOLT11 invoices cannot be paid" };
+      return {
+        ok: false as const,
+        error: "Amountless BOLT11 invoices cannot be paid",
+      };
     }
     if (invoice === "lnbc-one") {
-      return { ok: true, amountSats: 1, paymentHash: "11".repeat(32) };
+      return {
+        ok: true as const,
+        amountSats: 1,
+        paymentHash: "11".repeat(32),
+        invoice,
+        expiresAtMs: Date.now() + 60_000,
+      };
     }
     if (invoice === "lnbc-huge") {
       return {
-        ok: true,
+        ok: true as const,
         amountSats: 50_000_000,
         paymentHash: "bb".repeat(32),
+        invoice,
+        expiresAtMs: Date.now() + 60_000,
       };
     }
-    return { ok: true, amountSats: 5000, paymentHash: "aa".repeat(32) };
-  },
-}));
+    return {
+      ok: true as const,
+      amountSats: 5000,
+      paymentHash: REFERRAL_HASH,
+      invoice,
+      expiresAtMs: Date.now() + 60_000,
+    };
+  }
+  return {
+    ...actual,
+    readBolt11ForPayout,
+    assertBolt11MatchesAuthorizedAmount: (args: {
+      invoice: string;
+      authorizedSats: number;
+    }) => {
+      if (
+        !Number.isSafeInteger(args.authorizedSats) ||
+        args.authorizedSats <= 0
+      ) {
+        return {
+          ok: false as const,
+          error:
+            "Authorized payout amount must be a positive whole number of sats",
+        };
+      }
+      const read = readBolt11ForPayout(args.invoice);
+      if (!read.ok) return read;
+      if (read.amountSats !== args.authorizedSats) {
+        return {
+          ok: false as const,
+          error:
+            "Invoice amount does not match the authorized amount. Refusing to pay.",
+        };
+      }
+      return read;
+    },
+  };
+});
 
 vi.mock("~/features/referral/lnurl-pay.server", () => ({
   fetchInvoiceFromLnurlPay: vi.fn().mockResolvedValue("lnbc123"),
@@ -89,6 +147,10 @@ vi.mock("~/features/referral/repositories/referral-data.server", () => ({
     mockCompleteReferralPayout(...args),
   failReferralPayoutAttempt: (...args: unknown[]) =>
     mockFailReferralPayout(...args),
+  holdReferralPayoutAsUnknown: (...args: unknown[]) =>
+    mockHoldReferralPayout(...args),
+  findInProgressReferralClaim: (...args: unknown[]) =>
+    mockFindInProgressReferralClaim(...args),
 }));
 
 import {
@@ -105,7 +167,10 @@ describe("referral-payout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     envState.REFERRAL_PAYOUTS_ENABLED = "true";
-    payInvoice.mockResolvedValue(undefined);
+    payInvoice.mockResolvedValue({ preimage: REFERRAL_PREIMAGE });
+    lookupInvoice.mockRejectedValue(new Error("lookup unavailable"));
+    mockFindInProgressReferralClaim.mockResolvedValue(null);
+    mockHoldReferralPayout.mockResolvedValue(undefined);
     mockAggregatePendingCommissionByReferrer.mockResolvedValue({
       _sum: { commissionSats: 5000 },
     });
@@ -272,22 +337,86 @@ describe("referral-payout", () => {
         expect.objectContaining({
           auditId: "audit-1",
           earningIds: ["e1", "e2"],
-          paymentHash: "aa".repeat(32),
+          paymentHash: REFERRAL_HASH,
         })
       );
     });
 
-    it("records the wallet failure and does not complete the ledger", async () => {
-      payInvoice.mockRejectedValue(new Error("nwc rejected"));
+    it("records a definitive wallet rejection and releases the claim", async () => {
+      const error = new Error("insufficient balance");
+      error.name = "Nip47WalletError";
+      Object.assign(error, { code: "INSUFFICIENT_BALANCE" });
+      payInvoice.mockRejectedValue(error);
       const result = await payReferrerWithInvoice(
         referrerNpub,
         "lnbc123",
         5000
       );
       expect(result.success).toBe(false);
-      expect(result.error).toContain("nwc rejected");
+      expect(result.error).toContain("insufficient balance");
       expect(mockFailReferralPayout).toHaveBeenCalled();
+      expect(mockHoldReferralPayout).not.toHaveBeenCalled();
       expect(mockCompleteReferralPayout).not.toHaveBeenCalled();
+    });
+
+    it("holds the claim when the wallet times out and does not pay again", async () => {
+      payInvoice.mockRejectedValue(new Error("NWC payInvoice timeout"));
+      const first = await payReferrerWithInvoice(referrerNpub, "lnbc123", 5000);
+      expect(first.success).toBe(false);
+      expect(first.error).toContain("unknown");
+      expect(mockHoldReferralPayout).toHaveBeenCalled();
+      expect(mockFailReferralPayout).not.toHaveBeenCalled();
+      expect(payInvoice).toHaveBeenCalledTimes(1);
+
+      mockBeginReferralPayout.mockResolvedValue({
+        ok: false,
+        error: "PAYOUT_OUTCOME_UNKNOWN",
+      });
+      mockFindInProgressReferralClaim.mockResolvedValue({
+        ambiguous: false,
+        paymentHash: REFERRAL_HASH,
+        earningIds: ["e1", "e2"],
+        amountSats: 5000,
+        auditId: "audit-1",
+      });
+      const second = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(second.success).toBe(false);
+      expect(payInvoice).toHaveBeenCalledTimes(1);
+    });
+
+    it("completes a held payout from wallet lookup without paying again", async () => {
+      mockBeginReferralPayout.mockResolvedValue({
+        ok: false,
+        error: "PAYOUT_OUTCOME_UNKNOWN",
+      });
+      mockFindInProgressReferralClaim.mockResolvedValue({
+        ambiguous: false,
+        paymentHash: REFERRAL_HASH,
+        earningIds: ["e1", "e2"],
+        amountSats: 5000,
+        auditId: "audit-1",
+      });
+      lookupInvoice.mockResolvedValue({
+        state: "settled",
+        preimage: REFERRAL_PREIMAGE,
+        payment_hash: REFERRAL_HASH,
+        amount: 5_000_000,
+        settled_at: 20,
+      });
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(true);
+      expect(payInvoice).not.toHaveBeenCalled();
+      expect(mockCompleteReferralPayout).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentHash: REFERRAL_HASH })
+      );
     });
   });
 

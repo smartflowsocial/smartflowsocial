@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Scheduled Posts section)
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock Prisma to prevent $use errors
@@ -76,7 +77,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -198,7 +199,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -248,7 +249,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -288,7 +289,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -329,7 +330,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -370,7 +371,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -411,7 +412,7 @@ describe("Scheduled Posts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

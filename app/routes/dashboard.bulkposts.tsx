@@ -6,6 +6,7 @@ import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getBulkPostsDashboardData } from "~/features/posts/server";
 import { BulkPostsPageSkeleton, BulkPostsPage } from "~/features/posts/ui";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { DeferredRouteLoaderProvider } from "~/lib/remix/deferred-route-loader-context";
 
 export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.server";
@@ -13,7 +14,7 @@ export { bulkPostsAction as action } from "~/features/posts/bulkposts.action.ser
 async function loadBulkPostsData(request: Request) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const groupId = url.searchParams.get("groupId");
   return getBulkPostsDashboardData(
     userId,
@@ -21,9 +22,8 @@ async function loadBulkPostsData(request: Request) {
   );
 }
 
-export async function loader({ request }: { request: Request }) {
+export async function loader({ request, url }: { request: Request; url: URL }) {
   try {
-    const url = new URL(request.url);
     const shouldAvoidDeferredFallback =
       url.searchParams.get("bulkScheduled") === "true";
 

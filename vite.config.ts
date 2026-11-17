@@ -120,6 +120,24 @@ function stubSource(file: string | undefined): string {
  * stubs them. Dev serves native ESM, which needs the real export names.
  * Calling one from the browser throws.
  */
+function externalNonceContext(): Plugin {
+  return {
+    name: "external-nonce-context",
+    enforce: "pre",
+    resolveId(id) {
+      if (this.environment?.name === "client") return null;
+      if (
+        id === "#nonce-context" ||
+        id.endsWith("/scripts/nonce-context.mjs") ||
+        id.endsWith("\\scripts\\nonce-context.mjs")
+      ) {
+        return { id: "#nonce-context", external: true };
+      }
+      return null;
+    },
+  };
+}
+
 function stubServerModulesInClient(): Plugin {
   return {
     name: "stub-server-modules-in-client",
@@ -146,6 +164,19 @@ function stubServerModulesInClient(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [stubServerModulesInClient(), reactRouter(), tsconfigPaths()],
-});
+export default defineConfig(({ command }) => ({
+  plugins: [
+    // Vite's dev module runner cannot load a bare #import marked external.
+    // Production Node can, and that is what keeps one copy in the image.
+    ...(command === "build" ? [externalNonceContext()] : []),
+    stubServerModulesInClient(),
+    reactRouter(),
+    tsconfigPaths(),
+  ],
+  ssr:
+    command === "build"
+      ? {
+          external: ["#nonce-context"],
+        }
+      : undefined,
+}));

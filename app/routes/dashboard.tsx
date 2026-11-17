@@ -41,7 +41,7 @@ export const meta: MetaFunction = ({ matches, location }) => {
   const label = resolveDashboardPageLabel({
     leafId,
     search: location.search,
-    leafData: leaf?.data,
+    leafData: leaf?.loaderData,
   });
   return buildSeoMeta(
     {

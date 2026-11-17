@@ -27,6 +27,8 @@ vi.mock(
   () => ({
     findPaidFinalizationForLock: (...args: unknown[]) =>
       mockFindPaidFinalizationForLock(...args),
+    listGiveawayFinalizationRecords: async () => [],
+    expireGiveawayFinalizationByIds: async () => undefined,
   })
 );
 
@@ -48,6 +50,7 @@ vi.mock("~/features/payments/types", () => ({
 vi.mock("~/features/payments/entitlements/deployment-mode.server", () => ({
   getEffectiveGiveawayPlanLimits: (...args: unknown[]) =>
     mockGetGiveawayPlanLimits(...args),
+  currentDeployment: () => ({ mode: "hosted", operatorLimits: {} }),
 }));
 
 vi.mock("~/features/giveaway/giveaway-scope.server", () => ({

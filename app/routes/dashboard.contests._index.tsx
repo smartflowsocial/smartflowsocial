@@ -39,14 +39,13 @@ import { PublishingPageHeader } from "~/features/posts/ui";
 import { featureFlags } from "~/lib/feature-flags.server";
 import { cn } from "~/lib/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   if (!featureFlags.contestsV1Enabled) {
     throw new Response("Not found", { status: 404 });
   }
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const status = url.searchParams.get("status") ?? "all";
   const metric = url.searchParams.get("metric") ?? "all";
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();

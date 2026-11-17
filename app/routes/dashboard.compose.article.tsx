@@ -1,7 +1,6 @@
 import { redirect, type LoaderFunctionArgs } from "react-router";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+export async function loader({ url }: LoaderFunctionArgs) {
   const target = new URL("/dashboard/compose", url.origin);
   target.searchParams.set("type", "article");
   for (const [key, value] of url.searchParams.entries()) {

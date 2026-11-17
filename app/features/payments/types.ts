@@ -288,7 +288,7 @@ export function useSubscription(): SubscriptionData | null {
 
   for (let i = matches.length - 1; i >= 0; i--) {
     const match = matches[i];
-    const data = match?.data as
+    const data = match?.loaderData as
       | {
           user?: { id: string; isEnabled: boolean };
           currentSubscription?: UserSubscription;
@@ -353,7 +353,7 @@ export type { PlanEntitlements };
 export function useDeployment(): PublicDeployment {
   const matches = useMatches();
   for (let i = matches.length - 1; i >= 0; i--) {
-    const data = matches[i]?.data;
+    const data = matches[i]?.loaderData;
     if (!data || typeof data !== "object" || !("deployment" in data)) continue;
     const deployment = (data as { deployment?: PublicDeployment }).deployment;
     if (deployment?.mode === "hosted" || deployment?.mode === "self-hosted") {

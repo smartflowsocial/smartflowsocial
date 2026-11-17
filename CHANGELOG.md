@@ -9,6 +9,108 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-11-17
+
+First coordinated open-source prerelease. SmartFlowSocial was already in open beta before this
+repository was public. This is not a first launch, and it is not a stable `1.0.0`. Notes:
+[docs/releases/v1.0.0-beta.1.md](docs/releases/v1.0.0-beta.1.md). The tag is not published.
+`v0.1.0-alpha.0` and the withdrawn `v1.0.0` came from an earlier repository and are not supported
+releases of this one.
+
+### Security
+
+- Account deletion writes owned object-storage keys into `OwnedObjectDeletion` in the same
+  transaction that removes the account. A storage outage or a worker restart can still delete those
+  objects. Shared objects, Blossom blobs, and keys outside `clients/<account id>/` are not deleted.
+- Blossom `/ready` treats a missing probe object as healthy storage and reports `storageError` for
+  access, timeout, and network failures. `NODE_ENV=test` no longer skips the check.
+- The publisher keeps loopback `ws://` only when `ENVIRONMENT` is `test` or `development` and
+  `ALLOW_PRIVATE_RELAYS=true`. A failed publish releases the replay claim so the same event can be
+  tried again. A successful publish still rejects a duplicate for 24 hours.
+
+### Changed
+
+- Package version is `1.0.0-beta.1`. `"private": true` stays, so the package is not published to
+  npm.
+- Blastr production deploy is a manual workflow. Staging uses `blastr-publish-jobs-staging`.
+- Publisher, Blossom, Blastr, and the cache worker gain a full-history Gitleaks workflow.
+
+## [0.1.0-alpha.3] - 2026-11-17
+
+Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.0-alpha.2`. Notes:
+[docs/releases/v0.1.0-alpha.3.md](docs/releases/v0.1.0-alpha.3.md).
+
+### Security
+
+- NWC `pay_invoice`, `get_info`, and `lookup_invoice` each stop at a configurable deadline. A
+  payment and a lookup that both stay unresolved leave the payout `unknown`. The worker does not
+  hang and it does not send another payment.
+- A payout is confirmed only when the preimage is 32 bytes and its SHA-256 matches the invoice
+  payment hash. A returned lookup payment hash that does not match is not confirmation.
+- Wallet errors are a definitive failure only for structured NIP-47 rejections. The words "payment
+  failed" stay `unknown`.
+- `confirmed_unpaid` waits for a stored deadline. The deadline is the payment timeout, both
+  reconciliation lookups, and a 30 second margin. Defaults are 45s, 15s, and 15s, so the hold is 105
+  seconds. At the 120 second maximum for both timeouts the hold is 390 seconds. Older rows without a
+  stored deadline use that 390 second budget. The operator command is
+  `scripts/resolve-campaign-payout.ts`. There is no public resolution route.
+- Incoming payment lookups stop at the reconciliation timeout. A returned hash, amount, and preimage
+  are checked before the payment is marked paid. A settled invoice with no preimage can still be
+  accepted.
+- A contest or giveaway commission invoice is stored only when its decoded BOLT11 amount is the
+  exact authorized fee in whole sats. One pending invoice is kept per campaign configuration.
+
+### Changed
+
+- Hosted campaign commission is Free 10%, Starter 7.5% (750 basis points), Creator 5%, and 0% on
+  Pro, Teams, and Founder. Contest and giveaway invoices use that table.
+- `SELF_HOSTED=true` charges 0% on every plan, creates no platform-fee invoice, and does not require
+  `OWNER_NWC` to finalize. Winner payouts are unchanged.
+- Paid invoices are not rewritten. An open invoice at or below the new quote is reused.
+- Contests can create a finalization invoice. The screen shows the sat amount before payment.
+- The in-app footer links to the official Nostr contact
+  `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`.
+- CI has a clean-install job that runs `prisma migrate deploy` on an empty database.
+
+### Documentation
+
+- Privacy and terms replacement text names the Nostr contact and does not claim GDPR or e-commerce
+  identity compliance. Landing pull request #2 is already merged and still says Starter commission
+  is 0%. The live site stays wrong until a follow-up landing change is deployed. See
+  [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+- The `Protect main` ruleset requires the `Clean install migrations` status check.
+
+## [0.1.0-alpha.2] - 2026-11-16
+
+Prepared locally. The tag and GitHub release are not published. Notes:
+[docs/releases/v0.1.0-alpha.2.md](docs/releases/v0.1.0-alpha.2.md).
+
+### Security
+
+- Campaign Lightning payouts pay a BOLT11 invoice only when the decoded amount is the exact
+  authorized whole-sat amount, on Bitcoin mainnet, unexpired, and carrying a payment hash. An LNURL
+  callback that returns any other invoice is refused before the wallet is called.
+- A campaign payout is claimed in the database before `pay_invoice`. A timeout, crash, or missing
+  acknowledgement leaves that claim `paying` or `unknown`. Automatic retries do not send another
+  payment. `lookup_invoice` can confirm a payment that already settled. When lookup cannot prove the
+  outcome, the payout stays blocked for an operator. See
+  [Payout reconciliation](docs/security/payout-reconciliation.md).
+- `paying` and `unknown` amounts stay inside the campaign budget, so a second worker cannot spend
+  them again.
+- Referral payouts no longer turn on because `OWNER_NWC` is set. Set `REFERRAL_PAYOUTS_ENABLED` to
+  `true`, `1`, or `yes` to keep them on. A timed-out referral claim is held instead of being
+  released for another invoice.
+
+### Changed
+
+- Operators who relied on the previous production compatibility path must set
+  `REFERRAL_PAYOUTS_ENABLED=true` before upgrading, or referral payouts stop.
+- A fresh `prisma migrate deploy` inserts the legacy plan rows the pricing migration expected.
+  `prisma db push` is no longer the documented install path.
+- In-app campaign commission copy at this snapshot said Free 10%, Creator 5%, and 0% on Starter,
+  Pro, Teams, and Founder. That Starter rate was superseded by 0.1.0-alpha.3 before either tag was
+  published. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+
 ## [0.1.0-alpha.1] - 2026-11-15
 
 Prepared on `main`. The tag and GitHub release are not published. Notes:

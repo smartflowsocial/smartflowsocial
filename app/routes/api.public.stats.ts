@@ -6,6 +6,7 @@ import {
   publicStatsEnabled,
 } from "~/features/public-stats/public-stats.server";
 import { redis } from "~/infra/queue/queue-client.server";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { env } from "~/lib/env.server";
 import { jsonResponse } from "~/lib/http/json-response";
 
@@ -49,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (await limited(request)) {
     return jsonResponse({ error: "Too many requests" }, { status: 429 });
   }
-  const origin = new URL(request.url).origin;
+  const origin = appUrlFromRequest(request).origin;
   const stats = await getPublicStats(origin);
   return jsonResponse(stats, { headers: corsHeaders(request) });
 }

@@ -146,10 +146,9 @@ const LazyNewLongFormPostPage = lazy(async () => {
   return { default: mod.NewLongFormPostPage };
 });
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const url = new URL(request.url);
     const type = url.searchParams.get("type");
     const composerContextResult = parseComposerContext(url.searchParams);
     const composerContext = composerContextResult.context;
@@ -183,7 +182,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (error instanceof Response) {
       return error;
     }
-    const url = new URL(request.url);
     const mode = getComposeMode(url.searchParams.get("type"));
     return {
       scheduleIntervals: [],
@@ -208,10 +206,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export const action = withCSRFProtection(
-  async ({ request }: ActionFunctionArgs) => {
+  async ({ request, url }: ActionFunctionArgs) => {
     try {
       const userId = await requireUserId(request);
-      const url = new URL(request.url);
       const type = url.searchParams.get("type");
       const formData = await request.clone().formData();
       const contentType = String(formData.get("contentType") ?? "");

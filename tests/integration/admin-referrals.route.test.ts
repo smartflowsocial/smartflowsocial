@@ -2,6 +2,7 @@
  * Action tests for referral payouts on dashboard.admin.referrals.
  */
 
+import { RouterContextProvider } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -137,7 +138,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -157,7 +158,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -178,7 +179,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -199,7 +200,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -216,7 +217,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -235,7 +236,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };
@@ -262,7 +263,7 @@ describe("dashboard.admin.referrals action", () => {
         body,
       }),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     };

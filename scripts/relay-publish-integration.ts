@@ -6,7 +6,7 @@
  * writes the event there.
  *
  * Requires Postgres and Redis (`pnpm docker`) and a schema (`pnpm exec prisma
- * db push`). It creates an ephemeral key. It does not use a public relay, a
+ * migrate deploy`). It creates an ephemeral key. It does not use a public relay, a
  * personal key, or a Lightning wallet.
  *
  *   pnpm test:relay-publish

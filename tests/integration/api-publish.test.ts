@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.publish.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
@@ -108,13 +109,13 @@ describe("API: Publish", () => {
       const actionParams: {
         request: Request;
         params: Record<string, string>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       } = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -162,7 +163,7 @@ describe("API: Publish", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -191,13 +192,13 @@ describe("API: Publish", () => {
       const actionParams: {
         request: Request;
         params: Record<string, string>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       } = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -272,7 +273,7 @@ describe("API: Publish", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -332,7 +333,7 @@ describe("API: Publish", () => {
       await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -368,7 +369,7 @@ describe("API: Publish", () => {
       const firstResponse = await action({
         request: buildRequest(),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/api/publish"),
         pattern: "*",
       });
@@ -381,7 +382,7 @@ describe("API: Publish", () => {
       const secondResponse = await action({
         request: buildRequest(),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/api/publish"),
         pattern: "*",
       });
@@ -418,14 +419,14 @@ describe("API: Publish", () => {
       await action({
         request: requestA,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(requestA.url),
         pattern: "*",
       });
       await action({
         request: requestB,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(requestB.url),
         pattern: "*",
       });
@@ -449,14 +450,14 @@ describe("API: Publish", () => {
       await action({
         request: buildRequest(),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/api/publish"),
         pattern: "*",
       });
       await action({
         request: buildRequest(),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/api/publish"),
         pattern: "*",
       });
@@ -490,14 +491,14 @@ describe("API: Publish", () => {
       await action({
         request: requestEmpty,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(requestEmpty.url),
         pattern: "*",
       });
       await action({
         request: requestOversized,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(requestOversized.url),
         pattern: "*",
       });
@@ -515,13 +516,13 @@ describe("API: Publish", () => {
       const actionParams: {
         request: Request;
         params: Record<string, string>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       } = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -566,7 +567,7 @@ describe("API: Publish", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -585,13 +586,13 @@ describe("API: Publish", () => {
       const actionParams: {
         request: Request;
         params: Record<string, string>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       } = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -626,13 +627,13 @@ describe("API: Publish", () => {
       const actionParams: {
         request: Request;
         params: Record<string, string>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       } = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -688,7 +689,7 @@ describe("API: Publish", () => {
       const response = await action({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });

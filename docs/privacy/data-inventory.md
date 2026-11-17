@@ -1,11 +1,15 @@
 # Data inventory
 
 This is an engineering inventory of what the application stores and where it goes. It is not a
-privacy notice and it does not name a legal controller. The owner has to approve any text that is
-published to users.
+privacy notice and it does not name a legal controller. The owner decided that the public contact is
+the Nostr account `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0` and that no
+legal name or postal address will be published. That decision does not make this inventory a GDPR
+notice.
 
-Reviewed against the Prisma schema and the payment, draft, media, and wallet code on 14
-November 2026.
+Reviewed against the Prisma schema, the account export and deletion routes, and the campaign fee
+code on 16 November 2026. The live pages at https://smartflow.social/privacy,
+https://smartflow.social/terms, and https://smartflow.social/pricing were read the same day. This
+repository does not contain that website, so those pages were not changed here.
 
 ## What is not stored
 
@@ -42,6 +46,8 @@ signs it.
 | Referral ledger and payout audit     | Postgres                              | Commission balance and operator history               |
 | Encrypted NWC connection             | Postgres (`encryptedNwc` and related) | Optional auto-renew and creator payouts               |
 | Owner NWC connection string          | Server environment (`OWNER_NWC`)      | Operator wallet for referral payouts. Not a user key. |
+| Campaign payout rows                 | Postgres (`PayoutItem`)               | Winner pubkey, amount, invoice, payment hash, status  |
+| Public-stats rate limit              | Redis, about 60 seconds               | Caller IP, not written to Postgres                    |
 
 An NWC connection string is a credential. The app encrypts the user connection at rest. Anyone who
 can read both the database and the encryption key can use that connection within the permissions the
@@ -112,15 +118,38 @@ Deletion also removes the account's public key from referral rows:
   365 days. The payment hash is what stops the same invoice from being paid twice, so payout
   invoices that stay valid for more than 365 days are refused.
 
-Objects in this install's own bucket are deleted when the URL is under `clients/<user id>/` and no
-other account references that URL. Blossom blobs and files on other servers are not deleted. Events
-a relay has already accepted stay on that relay. Scheduled jobs whose post row is gone are skipped.
-Sessions and the encrypted NWC connection are on the user row and go with it.
+Objects in this install's own bucket are queued for deletion when the URL is under
+`clients/<user id>/` and no other account references that URL. The object key is written to
+`OwnedObjectDeletion` in the same database transaction that removes the account. The row has no
+foreign key to the user, so it is still there if object storage is down or the worker restarts. The
+worker retries those rows. A failed attempt stays `PENDING`, then `FAILED` after eight attempts, and
+keeps being retried at a longer interval until storage accepts the delete. The row is removed after
+a successful delete. A key that does not match that account's prefix is marked `REJECTED` and is not
+sent to storage. Blossom blobs and files on other servers are not deleted. SmartFlowSocial does not
+control externally hosted Blossom servers. Events a relay has already accepted stay on that relay.
+Scheduled jobs whose post row is gone are skipped. Sessions and the encrypted NWC connection are on
+the user row and go with it.
 
 `ENABLE_NOSTR_DELETE_EVENTS`, when set, lets the server publish a kind 5 deletion signed by the
 operator key in `NOSTR_NSEC`. That key is not the user's Nostr key. Relays may ignore the deletion.
 
+The JSON export at `/dashboard/account/export` requires a signed-in session. It omits the encrypted
+wallet connection, session secrets, and Lightning preimages. Deletion is
+`POST /dashboard/account/delete` with CSRF, the phrase `delete my account`, and the relay
+acknowledgement.
+
 A GDPR Article 13 notice has to say who the controller is, the purposes, the legal bases, the
 recipients, the retention periods, and the rights to access, rectify, erase, restrict, and complain
-to a supervisory authority. Those sentences need the owner's legal identity. They are not in this
-repository.
+to a supervisory authority. The owner chose not to publish a legal name or address. The Nostr
+contact does not fill that gap. Article 5 of Directive 2000/31/EC can separately require a service
+provider's identity. Those duties, where they apply to the commercial hosted service, are an
+owner-accepted gap. They are not marked compliant.
+
+This application does not embed a Cloudflare Web Analytics beacon. If the host or the marketing site
+sits behind Cloudflare, that account can still see connection metadata. Operational logs may include
+IP addresses. `PUBLIC_STATS_ENABLED` (on unless set to `false`) keeps a caller IP in Redis for about
+60 seconds and does not write it to Postgres.
+
+Hosted and self-hosted commission wording is in
+[hosted service disclosures](../legal/hosted-service-disclosures.md). The marketing site is a
+separate repository and was not updated by the application change that corrected the fee code.

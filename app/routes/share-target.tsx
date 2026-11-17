@@ -57,9 +57,8 @@ function composeSharedString(title: string, text: string, url: string): string {
   return parts.join("\n\n");
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, url }: LoaderFunctionArgs) => {
   const user = await getUser(request);
-  const url = new URL(request.url);
 
   // Signed out: send them to login. We intentionally drop the share payload
   // rather than persist it across an auth boundary.

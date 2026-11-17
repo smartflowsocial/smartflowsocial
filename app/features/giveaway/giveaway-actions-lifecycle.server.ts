@@ -1,3 +1,4 @@
+import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
 import { getUserSubscription } from "~/features/payments/data";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
@@ -13,7 +14,11 @@ import {
   normalizePayoutState,
 } from "./giveaway-payout.server";
 import { updateGiveaway as updateGiveawayRow } from "./repositories/giveaway-actions-data.server";
-import { findPaidFinalizationForLock } from "./repositories/giveaway-finalization-payment.server";
+import {
+  expireGiveawayFinalizationByIds,
+  findPaidFinalizationForLock,
+  listGiveawayFinalizationRecords,
+} from "./repositories/giveaway-finalization-payment.server";
 import type { GiveawayWinnerEntry } from "./types";
 
 export async function lockGiveaway(
@@ -37,7 +42,7 @@ export async function lockGiveaway(
 
   const subscription = await getUserSubscription(userId);
   const planType = getUserPlanType(subscription as UserSubscription | null);
-  const quote = quoteGiveawayFinalization({
+  const policyQuote = quoteGiveawayFinalization({
     giveaway: {
       winnerSnapshot: g.winnerSnapshot,
       engagementConfig: g.engagementConfig,
@@ -52,6 +57,16 @@ export async function lockGiveaway(
     },
     planType,
   });
+  const records = await listGiveawayFinalizationRecords(giveawayId, userId);
+  const collection = resolveFinalizationCollection({
+    current: policyQuote,
+    records,
+    nowMs: Date.now(),
+  });
+  const quote = collection.quote;
+  if (collection.kind === "waived") {
+    await expireGiveawayFinalizationByIds(collection.expireIds);
+  }
 
   if (
     options?.lockConfigHash !== undefined &&

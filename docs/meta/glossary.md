@@ -175,9 +175,18 @@ recyclable.
 
 A server in the Nostr network that stores and forwards events (messages).
 
+### React Router
+
+The full-stack React framework this app uses (8.5.1, with React 19.2.7). Route modules live in
+`app/routes/` and are registered from `app/routes.ts`. Loaders and actions run on the server. Page
+routes return plain objects. JSON resource routes use `jsonResponse` from
+`~/lib/http/json-response`.
+
 ### Remix
 
-A full-stack React framework used to build SmartFlowSocial.
+The framework this app used before React Router. New code imports from `react-router`, not
+`@remix-run/node` or `@remix-run/react`. `@remix-run/form-data-parser` remains for multipart
+uploads.
 
 ---
 

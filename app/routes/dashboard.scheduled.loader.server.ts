@@ -4,6 +4,7 @@ import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { SCHEDULED_DATE_RANGE_QUERY_LIMIT } from "~/features/posts/deferred-loader-limits";
 import { loadScheduledData } from "~/features/posts/server/scheduling";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   scheduledPostsLoaderDataSchema,
@@ -17,7 +18,7 @@ export async function loadScheduledValidated(
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const queueType =
     params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
   const dateFrom = url.searchParams.get("dateFrom") ?? undefined;

@@ -1,7 +1,7 @@
 # Self-host smoke test
 
 **Estimated time:** 30–60 minutes the first time, a few minutes after Postgres and Redis are up  
-**Last updated:** 2026-11-15
+**Last updated:** 2026-11-16
 
 This is the check that a clean checkout can schedule a signed Nostr note and hand it to a publisher.
 It does not use the hosted service, a paid account, or a production relay.
@@ -27,8 +27,8 @@ point production processes at the same Redis as a development session.
 
 ## Steps
 
-1. Install Node.js 20 or newer. CI and `.nvmrc` use Node 22. Enable Corepack and activate pnpm
-   10.27.0 (`package.json` `packageManager`).
+1. Install Node.js 22.22 or newer. `.nvmrc` is `22.22`. Enable Corepack and activate pnpm 10.27.0
+   (`package.json` `packageManager`).
 2. Clone the repository and install:
 
 ```bash
@@ -60,7 +60,7 @@ Generate `SESSION_SECRET` with `openssl rand -base64 32`. Leave storage, Blastr,
 ```bash
 pnpm docker
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 pnpm publisher:local
 ```
 
@@ -98,6 +98,13 @@ The same command also checks a publisher that is down, recovery after it returns
 an already published post, a bad signature, and a relay that is not running. A wrong publisher token
 is checked by `pnpm exec vitest run tests/integration/relay-publisher.contract.test.ts`.
 
+That publisher is `scripts/relay-publisher.mjs`. It checks the token and the signature, then writes
+the event to the loopback relay. It is not the Cloudflare Worker. To exercise the Worker runtime,
+clone [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) and
+run `pnpm test:worker`. That command starts `wrangler`'s local worker and a `ws://127.0.0.1` relay.
+It does not use a public relay or a production token. `ALLOW_PRIVATE_RELAYS` is ignored unless
+`ENVIRONMENT` is `test` or `development`.
+
 6. Start the app:
 
 ```bash
@@ -127,6 +134,10 @@ configured.
   run without a person clicking a signer. Browser login is covered by `pnpm test:e2e:smoke` when
   Cypress is installed.
 - The note reached a public relay. `pnpm smoke:publish` stops at the local publisher.
-  `pnpm test:relay-publish` reaches a relay on this machine only.
+  `pnpm test:relay-publish` reaches a relay on this machine only. It uses
+  `scripts/relay-publisher.mjs` in this repository. That is not the Cloudflare publisher worker. The
+  app's publish job is the real one. The worker in
+  [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) is a
+  separate process and was not started by that command.
 - Uploads, Blossom, Blastr, analytics, or Lightning work. Those stay off until their variables are
   set. Missing payout and cron secrets do not open those routes.

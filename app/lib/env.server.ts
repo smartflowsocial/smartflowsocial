@@ -53,6 +53,16 @@ interface EnvConfig {
   /** HTTP Primal proxy: extra retries after first attempt (default 0). */
   PRIMAL_HTTP_MAX_RETRIES?: string;
   OWNER_NWC?: string;
+  /**
+   * Bound for one NWC pay_invoice, in milliseconds. Default 45000.
+   * Values below 50 or above 120000 are ignored.
+   */
+  NWC_PAY_TIMEOUT_MS?: string;
+  /**
+   * Bound for get_info and lookup_invoice after a pay timeout, in milliseconds.
+   * Default 15000. The same range rule applies.
+   */
+  NWC_RECONCILE_TIMEOUT_MS?: string;
   OWNER_NWC_RELAY?: string;
   OWNER_NWC_RELAYS?: string;
   NOSTR_NSEC?: string;
@@ -86,6 +96,12 @@ interface EnvConfig {
    * POST /cron/purge-retained-records runs the same purge on demand.
    */
   FINANCIAL_RECORD_PURGE_INTERVAL_HOURS?: string;
+  /**
+   * How often (seconds) the worker retries owned object deletions left behind
+   * by account deletion. Defaults to 60. Set to "0" to disable the sweep.
+   * Pending rows stay in the database either way.
+   */
+  OWNED_OBJECT_DELETION_INTERVAL_SECONDS?: string;
   /**
    * Shared secret for cron routes. Required in production. Routes reject
    * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
@@ -268,6 +284,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "PRIMAL_HTTP_TIMEOUT_MS",
     "PRIMAL_HTTP_MAX_RETRIES",
     "OWNER_NWC",
+    "NWC_PAY_TIMEOUT_MS",
+    "NWC_RECONCILE_TIMEOUT_MS",
     "OWNER_NWC_RELAY",
     "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",
@@ -284,6 +302,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
     "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
     "FINANCIAL_RECORD_PURGE_INTERVAL_HOURS",
+    "OWNED_OBJECT_DELETION_INTERVAL_SECONDS",
     "CRON_SECRET",
     "FLY_REGION",
     "PRIMARY_REGION",

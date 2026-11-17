@@ -22,7 +22,7 @@ decisions of SmartFlowSocial.
 
 ## Overview
 
-SmartFlowSocial is built as a full-stack Remix application with a focus on:
+SmartFlowSocial is built as a full-stack React Router application with a focus on:
 
 - **Type Safety**: TypeScript throughout
 - **Modularity**: Feature-based organization
@@ -32,16 +32,16 @@ SmartFlowSocial is built as a full-stack Remix application with a focus on:
 
 ## Technology Stack
 
-| Layer          | Technology                                      |
-| -------------- | ----------------------------------------------- |
-| Framework      | [Remix](https://remix.run) (Full-stack React)   |
-| Database       | PostgreSQL with [Prisma](https://prisma.io) ORM |
-| Styling        | [TailwindCSS](https://tailwindcss.com)          |
-| UI Components  | [Shadcn UI](https://ui.shadcn.com) (Radix UI)   |
-| Icons          | [Lucide React](https://lucide.dev)              |
-| Queue System   | [BullMQ](https://docs.bullmq.io/) with Redis    |
-| Authentication | Nostr-based (NIP-07 browser extensions)         |
-| Payments       | Lightning Network via NWC                       |
+| Layer          | Technology                                                        |
+| -------------- | ----------------------------------------------------------------- |
+| Framework      | [React Router](https://reactrouter.com/) 8.5.1 (full-stack React) |
+| Database       | PostgreSQL with [Prisma](https://prisma.io) ORM                   |
+| Styling        | [TailwindCSS](https://tailwindcss.com)                            |
+| UI Components  | [Shadcn UI](https://ui.shadcn.com) (Radix UI)                     |
+| Icons          | [Lucide React](https://lucide.dev)                                |
+| Queue System   | [BullMQ](https://docs.bullmq.io/) with Redis                      |
+| Authentication | Nostr-based (NIP-07 browser extensions)                           |
+| Payments       | Lightning Network via NWC                                         |
 
 ## System Architecture Diagram
 
@@ -53,7 +53,7 @@ graph TB
     end
 
     subgraph "Application Layer"
-        Remix[Remix Server<br/>HTTP Handler]
+        App[React Router server<br/>HTTP Handler]
         Routes[Route Handlers<br/>Loaders & Actions]
         Models[Data Models<br/>Prisma Wrappers]
         Services[Business Logic<br/>Services]
@@ -78,10 +78,10 @@ graph TB
         NWC[NWC Service<br/>Lightning Payments]
     end
 
-    Browser -->|HTTP Requests| Remix
+    Browser -->|HTTP Requests| App
     Browser -->|Sign Events| Extension
-    Extension -->|Signed Events| Remix
-    Remix --> Routes
+    Extension -->|Signed Events| App
+    App --> Routes
     Routes --> Models
     Routes --> Services
     Models --> DB
@@ -98,7 +98,7 @@ graph TB
 
     style Browser fill:#e1f5ff
     style Extension fill:#fff4e1
-    style Remix fill:#c8e6c9
+    style App fill:#c8e6c9
     style Worker fill:#ffccbc
     style DB fill:#f3e5f5
     style Redis fill:#ffcdd2
@@ -168,7 +168,7 @@ smartflow-social/
 │   │   ├── template.server.ts   # Template operations
 │   │   └── user.server.ts       # User management (deprecated, use ~/features/user)
 │   │
-│   ├── routes/                   # Remix file-based routing
+│   ├── routes/                   # React Router file-based routes
 │   │   ├── _index.tsx           # Landing page
 │   │   ├── api.*.tsx            # API endpoints
 │   │   ├── cron.*.tsx           # Cron job endpoints
@@ -237,7 +237,7 @@ smartflow-social/
 
 ### Route Structure
 
-Remix uses file-based routing with dot notation:
+`app/routes.ts` loads these files with `@react-router/fs-routes`. Dot notation maps to URLs:
 
 - `dashboard.tsx` → Layout wrapper for `/dashboard/*`
 - `dashboard._index.tsx` → `/dashboard` (index)
@@ -260,10 +260,9 @@ Remix uses file-based routing with dot notation:
   pooling); `scripts/` and `cypress.config.ts` may use `process.env` until refactored (see
   CONTRIBUTING).
 
-### Remix Loaders and Actions
+### Loaders and Actions
 
-This project follows the standard **Remix Run** pattern where route files contain two key
-server-side functions:
+Route modules export two server functions:
 
 #### `loader` Function
 
@@ -277,7 +276,7 @@ server-side functions:
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser(request); // Auth check
   const posts = await getScheduledPosts({ userId: user.id }); // Model call
-  return json({ posts, user }); // Return to component
+  return { posts, user }; // Page routes return plain objects
 }
 ```
 
@@ -297,7 +296,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "delete") {
     await deletePost({ id: formData.get("postId"), userId: user.id });
-    return json({ success: true });
+    return { success: true };
   }
   // ... other intents
 }
@@ -325,7 +324,7 @@ export async function action({ request }: ActionFunctionArgs) {
           │                  │                   │
           ▼                  ▼                   ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Remix Server                              │
+│                 React Router server                          │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────┐  │
 │  │   Routes    │───▶│   Models    │───▶│     Prisma      │  │
 │  │  (loaders/  │    │  (database  │    │   (PostgreSQL)  │  │
@@ -400,7 +399,7 @@ sequenceDiagram
     participant User
     participant Browser
     participant Extension
-    participant Remix
+    participant App as React Router
     participant Database
     participant Queue
     participant Worker
@@ -408,25 +407,25 @@ sequenceDiagram
     participant Relays
 
     User->>Browser: Create Post
-    Browser->>Remix: POST /api/posts
-    Remix->>Database: Store Post (DRAFT)
-    Remix->>Browser: Return Post Data
+    Browser->>App: POST /api/posts
+    App->>Database: Store Post (DRAFT)
+    App->>Browser: Return Post Data
     Browser->>Extension: Request Signature
     Extension->>Browser: Signed Event
-    Browser->>Remix: POST /api/publish
-    Remix->>Database: Update Post (SIGNED)
+    Browser->>App: POST /api/publish
+    App->>Database: Update Post (SIGNED)
 
     alt Scheduled Post
-        Remix->>Queue: Enqueue Job
+        App->>Queue: Enqueue Job
         Queue->>Worker: Process Job (at scheduled time)
         Worker->>Database: Get Post
         Worker->>Publisher: Publish Event
         Publisher->>Relays: Distribute Event
         Worker->>Database: Update Status (POSTED)
     else Instant Post
-        Remix->>Publisher: Publish Event
+        App->>Publisher: Publish Event
         Publisher->>Relays: Distribute Event
-        Remix->>Database: Update Status (POSTED)
+        App->>Database: Update Status (POSTED)
     end
 ```
 
@@ -476,7 +475,7 @@ app/features/
 - Constants
 - Utility functions (if safe)
 
-### Remix Patterns
+### Route patterns
 
 #### Loader Pattern
 
@@ -494,7 +493,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const formattedPosts = posts.map(formatPost);
 
   // 4. Return data
-  return json({ posts: formattedPosts, user });
+  return { posts: formattedPosts, user };
 }
 ```
 
@@ -522,13 +521,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // 5. Return response
-  return json({ success: true });
+  return { success: true };
 }
 ```
 
 #### Error Boundaries
 
-Remix provides error boundaries for error handling:
+React Router renders an `ErrorBoundary` export from the route when a loader or action throws:
 
 ```typescript
 export function ErrorBoundary() {
@@ -578,14 +577,14 @@ Root
 
 ### Server State
 
-- Managed by Remix loaders/actions
+- Managed by React Router loaders and actions
 - Fetched on navigation
-- Cached by Remix
+- Cached by the router for the navigation
 
 ### Client State
 
 - React hooks (`useState`, `useReducer`)
-- Form state via Remix `useFetcher`
+- Form state via `useFetcher` from `react-router`
 - Optimistic updates
 
 ### Global State
@@ -725,7 +724,7 @@ See [Posting Guide](../guides/user-guides/posting.md#queue-types) for queue syst
 
 ## Additional Resources
 
-- [Remix Documentation](https://remix.run/docs)
+- [React Router documentation](https://reactrouter.com/start/framework/routing)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [BullMQ Documentation](https://docs.bullmq.io/)
 - [Database Schema](../reference/database-schema.md)

@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Calendar Queue Loader section)
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -156,7 +157,7 @@ describe("Calendar Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "all" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -200,7 +201,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -247,7 +248,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -289,7 +290,7 @@ describe("Calendar Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "all" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -335,7 +336,7 @@ describe("Calendar Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "posts" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -379,7 +380,7 @@ describe("Calendar Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "all" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -412,7 +413,7 @@ describe("Calendar Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "all" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -446,7 +447,7 @@ describe("Calendar Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: { queueType: "all" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

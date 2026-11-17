@@ -56,11 +56,10 @@ interface ActionData {
   error?: string;
 }
 
-async function loadSettingsMediaData({ request }: LoaderFunctionArgs) {
+async function loadSettingsMediaData({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10));
 
   const SFS_PROVIDER = "BLOSSOM_SFS";

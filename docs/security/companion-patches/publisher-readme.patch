@@ -1,0 +1,153 @@
+From d1f359e3f8633e672227f4c32d4acc026840b118 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 16 Nov 2026 22:32:30 +0000
+Subject: [PATCH] docs: stop putting API_TOKEN in wrangler.toml
+
+Operators set the token with wrangler secret put. .dev.vars is ignored. The KV binding matches the current Wrangler 4 config.
+---
+ .gitignore |  2 ++
+ README.md  | 69 +++++++++++++++++++-----------------------------------
+ 2 files changed, 26 insertions(+), 45 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index ea826f7..d29045c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,6 +1,8 @@
+ node_modules
+ build/
+ .env*
++.dev.vars
++.dev.vars.*
+ *.log
+ .DS_Store
+ *.tsbuildinfo
+diff --git a/README.md b/README.md
+index f088ee0..8ca3140 100644
+--- a/README.md
++++ b/README.md
+@@ -48,7 +48,7 @@ It is not an open proxy to arbitrary private networks.
+ - **Profile Caching**: Efficient profile fetching with Cloudflare KV caching
+ - **Rate Limiting**: Built-in rate limiting per IP or API token
+ - **Observability**: Comprehensive logging, metrics, and tracing support
+-- **Production Ready**: Battle-tested with timeout handling, error recovery, and monitoring
++- **Timeouts and retries**: Per-relay timeouts, retries, and circuit breakers. A green local test is not a production deploy.
+ 
+ ## Quick Start
+ 
+@@ -67,29 +67,18 @@ cd smartflowsocial-publisher
+ 
+ # Install dependencies
+ pnpm install
+-
+-# Set up Cloudflare KV namespace
+-wrangler kv:namespace create PROFILES
+-wrangler kv:namespace create PROFILES --preview
+ ```
+ 
+-Add the KV namespace bindings to `wrangler.toml`:
+-
+-```toml
+-[[kv_namespaces]]
+-binding = "PROFILES"
+-id = "<your-namespace-id>"
+-preview_id = "<your-preview-namespace-id>"
+-```
++`wrangler.toml` already binds `PROFILES` without an id. Wrangler 4 creates that namespace on deploy and keeps the id in the Cloudflare account. Do not paste a placeholder id into the file.
+ 
+ ### Basic Configuration
+ 
+-Create a `.dev.vars` file for local development:
++Create a `.dev.vars` file for local development. That file is gitignored. Do not commit the token.
+ 
+-```bash
++```
+ # Required unless you intentionally run a public publisher.
+ # Generate: openssl rand -base64 32
+-API_TOKEN=your-secret-token
++API_TOKEN=replace-with-a-generated-token
+ # ALLOW_UNAUTHENTICATED_PUBLISH=true
+ # ALLOW_PRIVATE_RELAYS=true
+ 
+@@ -155,7 +144,7 @@ All configuration is done through environment variables. Set these in your `wran
+ | Variable                     | Required | Default | Description                                                                       |
+ | ---------------------------- | -------- | ------- | --------------------------------------------------------------------------------- |
+ | `PROFILES`                   | Yes      | -       | Cloudflare KV namespace binding for profile caching                               |
+-| `API_TOKEN`                  | No       | -       | Secret token for authentication (if set, all requests require `API-TOKEN` header) |
++| `API_TOKEN`                  | Yes, unless public mode is on | - | Secret. Set with `wrangler secret put API_TOKEN`. Do not put it in `wrangler.toml`. |
+ | `CORS_ENABLED`               | No       | `false` | Enable CORS support (`"true"` to enable)                                          |
+ | `CORS_ORIGINS`               | No       | -       | Comma-separated list of allowed origins (required if `CORS_ENABLED=true`)         |
+ | `RATE_LIMIT_REQUESTS`        | No       | `100`   | Maximum requests per rate limit window                                            |
+@@ -169,43 +158,33 @@ The profile data is cached in [Cloudflare KV](https://developers.cloudflare.com/
+ 
+ **Setup Steps:**
+ 
+-1. Create KV namespaces:
++Wrangler 4 creates the `PROFILES` namespace on deploy. Leave the binding in `wrangler.toml` with no id. The id stays in the Cloudflare account.
+ 
+-```bash
+-wrangler kv:namespace create PROFILES
+-wrangler kv:namespace create PROFILES --preview
+-```
++### Configuration Examples
+ 
+-2. Add bindings to `wrangler.toml`:
++**Minimal Configuration (Public Worker):**
+ 
+-```toml
+-[[kv_namespaces]]
+-binding = "PROFILES"
+-id = "<production-namespace-id>"
+-preview_id = "<preview-namespace-id>"
+-```
++Public mode is explicit. Set `ALLOW_UNAUTHENTICATED_PUBLISH` to exactly `true` only when you mean it. The checked-in `wrangler.toml` binds `PROFILES` and does not contain a token.
+ 
+-### Configuration Examples
++**Production configuration:**
+ 
+-**Minimal Configuration (Public Worker):**
++Non-secret vars can live in `wrangler.toml`. The token cannot.
+ 
+-```toml
+-# wrangler.toml
+-[[kv_namespaces]]
+-binding = "PROFILES"
+-id = "your-namespace-id"
++```bash
++wrangler secret put API_TOKEN
++# For a named environment:
++wrangler secret put API_TOKEN --env production
+ ```
+ 
+-**Production Configuration (Protected):**
++Local development uses `.dev.vars`, which is gitignored:
+ 
+-```toml
+-# wrangler.toml
+-[[kv_namespaces]]
+-binding = "PROFILES"
+-id = "your-namespace-id"
++```
++API_TOKEN=replace-with-a-generated-token
++```
+ 
+-[env.production.vars]
+-API_TOKEN = "your-secret-token"
++```toml
++# wrangler.toml — non-secret vars only
++[vars]
+ CORS_ENABLED = "true"
+ CORS_ORIGINS = "https://yourdomain.com"
+ RATE_LIMIT_REQUESTS = "200"
+@@ -226,7 +205,7 @@ CORS_ORIGINS = "https://app.example.com,https://www.example.com"
+ 
+ 1. **Configure Environment Variables**
+    - Set up KV namespace (see [Configuration](#configuration))
+-   - Add environment variables to `wrangler.toml` or Cloudflare dashboard
++   - Put non-secret vars in `wrangler.toml`. Put `API_TOKEN` in `wrangler secret put API_TOKEN`
+ 
+ 2. **Deploy to Cloudflare**
+ 
+-- 
+2.43.0
+

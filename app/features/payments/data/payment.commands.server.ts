@@ -2,6 +2,8 @@
  * Payment commands barrel: plan invoice, giveaway finalization, renewal, free plan, manual verify.
  */
 
+export type { ContestFinalizationInvoiceResponse } from "./payment-contest-finalization-invoice.server";
+export { createContestFinalizationInvoice } from "./payment-contest-finalization-invoice.server";
 export type { GiveawayFinalizationInvoiceResponse } from "./payment-giveaway-finalization-invoice.server";
 export { createGiveawayFinalizationInvoice } from "./payment-giveaway-finalization-invoice.server";
 export { ensureUserHasFreePlan } from "./payment-free-plan.server";

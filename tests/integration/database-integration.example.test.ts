@@ -43,34 +43,25 @@ const shouldSkipDatabaseExamples =
   process.env["RUN_DATABASE_EXAMPLES"] !== "true";
 const RUN_DATABASE_EXAMPLES = !shouldSkipDatabaseExamples;
 
-// Don't mock Prisma - this test uses the real database
-// Model functions will use the real Prisma client from getTestPrisma()
-// We need to ensure prisma.server.ts uses getTestPrisma() in test mode
-// For now, we'll mock it minimally to prevent $use errors, but the actual
-// database operations will use the real client from withDatabase
-if (RUN_DATABASE_EXAMPLES) {
-  vi.mock("~/lib/prisma.server", async () => {
-    // Return a proxy that forwards to getTestPrisma() when accessed
-    // Handle case where database URL is not set (tests will be skipped)
-    const { getTestPrisma } = await import("../database/test-db");
-    return {
-      get prisma() {
-        try {
-          return getTestPrisma();
-        } catch (_error) {
-          // If database URL is not set, return a mock Prisma client
-          // The describeDatabase helper will skip the tests anyway
-          return {
-            $use: vi.fn(),
-            $transaction: vi.fn(),
-            user: { findUnique: vi.fn(), create: vi.fn() },
-            post: { findUnique: vi.fn(), create: vi.fn() },
-          } as unknown as PrismaClient;
-        }
-      },
-    };
-  });
-}
+// Vitest 5 only allows vi.mock at module scope. The suite stays skipped unless
+// RUN_DATABASE_EXAMPLES is set; the mock forwards to the real test client.
+vi.mock("~/lib/prisma.server", async () => {
+  const { getTestPrisma } = await import("../database/test-db");
+  return {
+    get prisma() {
+      try {
+        return getTestPrisma();
+      } catch (_error) {
+        return {
+          $use: vi.fn(),
+          $transaction: vi.fn(),
+          user: { findUnique: vi.fn(), create: vi.fn() },
+          post: { findUnique: vi.fn(), create: vi.fn() },
+        } as unknown as PrismaClient;
+      }
+    },
+  };
+});
 
 // Example: Test with database using transactions (runs when DB is configured)
 const describeDb = RUN_DATABASE_EXAMPLES ? describeDatabase : describe.skip;

@@ -2,8 +2,7 @@
 // Usage:
 // npx tsx ./tests/e2e/support/get-post-schedule.ts npub1xxx postId
 
-require("./load-env.js");
-
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";

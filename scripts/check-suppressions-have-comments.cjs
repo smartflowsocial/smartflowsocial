@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * CI check: fail if app/ has eslint-disable or @ts-expect-error without a trailing comment.
- * Usage: node scripts/check-suppressions-have-comments.js
+ * Usage: node scripts/check-suppressions-have-comments.cjs
  * See CONTRIBUTING.md §6 and docs/reference/suppressions-audit-app.md (visa standard).
  */
 

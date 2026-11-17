@@ -10,13 +10,9 @@
 import { resolve } from "node:path";
 import { config } from "dotenv";
 import { Pool } from "pg";
+import { error, log } from "./logger.cjs";
 
 // Script logger (avoids console.*)
-
-const { log, error } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });

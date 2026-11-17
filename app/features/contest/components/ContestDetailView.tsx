@@ -3,7 +3,6 @@ import { useRouteLoaderData } from "react-router";
 
 import { mapContestCampaignPhase } from "~/features/campaign-ui";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
 import { contestCopy } from "../contest-copy";
 import type {
@@ -74,11 +73,7 @@ function stateSummaryForContest(status: string, statusLabel: string): string {
   }
 }
 
-export function ContestDetailView({
-  data,
-}: {
-  data: SerializeFrom<ContestDetailPageData>;
-}) {
+export function ContestDetailView({ data }: { data: ContestDetailPageData }) {
   const root = useRouteLoaderData<unknown>("root");
   const nostr = useMemo(
     () => getNostrClientUrlsFromUser(rootUserFromData(root)),

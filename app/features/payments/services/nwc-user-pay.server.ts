@@ -1,6 +1,17 @@
 import { NWCClient } from "@getalby/sdk";
 
+import { verifiedPreimage } from "~/features/payments/payment-preimage";
+import { readBolt11ForPayout } from "~/features/referral/bolt11-invoice.server";
 import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
+
+const DEFINITIVE_WALLET_REJECTION_CODES = new Set([
+  "INSUFFICIENT_BALANCE",
+  "QUOTA_EXCEEDED",
+  "RESTRICTED",
+  "UNAUTHORIZED",
+  "NOT_IMPLEMENTED",
+  "RATE_LIMITED",
+]);
 
 const NWC_PROBE_TIMEOUT_MS = 15_000;
 const NWC_PAY_TIMEOUT_MS = 55_000;
@@ -74,7 +85,8 @@ export function classifyNwcPayError(error: unknown): NwcChargeFailureKind {
     return "unconfirmed";
   }
 
-  return "wallet_rejected";
+  if (DEFINITIVE_WALLET_REJECTION_CODES.has(code)) return "wallet_rejected";
+  return "unconfirmed";
 }
 
 /**
@@ -140,18 +152,39 @@ export async function payBolt11WithUserNwc(
   invoice: string
 ): Promise<string> {
   ensureServerWebSocket();
+  const decoded = readBolt11ForPayout(invoice);
+  if (!decoded.ok) {
+    throw new NwcChargeError("unconfirmed", decoded.error);
+  }
   const client = new NWCClient({ nostrWalletConnectUrl: nwcUrl });
+  const payment = captureUserPayment(client, invoice);
+  void (async () => {
+    try {
+      await payment;
+    } catch {
+      // The timeout path already decided. A late rejection must not surface.
+    }
+  })();
   try {
     const result = await withNwcTimeout(
-      client.payInvoice({ invoice }),
+      payment,
       NWC_PAY_TIMEOUT_MS,
       "Wallet payment timed out"
     );
-    const preimage = result.preimage;
-    if (typeof preimage !== "string" || preimage.trim().length === 0) {
+    if (!result.ok) {
+      throw new NwcChargeError(
+        classifyNwcPayError(result.error),
+        errorText(result.error)
+      );
+    }
+    const preimage = verifiedPreimage(
+      result.value.preimage,
+      decoded.paymentHash
+    );
+    if (!preimage) {
       throw new NwcChargeError(
         "unconfirmed",
-        "Wallet did not return a payment preimage"
+        "Wallet did not return a preimage for this invoice"
       );
     }
     return preimage;
@@ -164,6 +197,19 @@ export async function payBolt11WithUserNwc(
     throw new NwcChargeError(classifyNwcPayError(error), message);
   } finally {
     client.close();
+  }
+}
+
+async function captureUserPayment(
+  client: NWCClient,
+  invoice: string
+): Promise<
+  { ok: true; value: { preimage?: unknown } } | { ok: false; error: unknown }
+> {
+  try {
+    return { ok: true, value: await client.payInvoice({ invoice }) };
+  } catch (error) {
+    return { ok: false, error };
   }
 }
 

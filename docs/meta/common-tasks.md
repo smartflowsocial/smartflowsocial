@@ -65,7 +65,7 @@ pnpm install
 cp example.env .env
 # Edit .env
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 pnpm dev
 ```
 

@@ -152,9 +152,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "~": resolve(__dirname, "./app"),
-      "~/tests": resolve(__dirname, "./tests"),
-      "~/tests/*": resolve(__dirname, "./tests/*"),
+      "~": resolve(import.meta.dirname, "./app"),
+      "~/tests": resolve(import.meta.dirname, "./tests"),
+      "~/tests/*": resolve(import.meta.dirname, "./tests/*"),
     },
   },
 });

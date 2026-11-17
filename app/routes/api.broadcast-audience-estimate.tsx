@@ -9,9 +9,8 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
 /**
  * GET ?type=MUTUALS  -  estimated graph audience size (cache-based).
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const url = new URL(request.url);
   const type = url.searchParams.get("type");
   if (type !== "MUTUALS") {
     return jsonResponse({ error: "Invalid type" }, { status: 400 });

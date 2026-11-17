@@ -2,7 +2,7 @@
  * Admin Overview: KPI strip, alerts, publishing & user summaries, system health.
  */
 
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
 
 import { ADMIN_PAGE_BODY_CLASS } from "~/components/layout/page-layout-constants";
 import {
@@ -16,20 +16,20 @@ import {
   useAdminCurrency,
 } from "~/features/admin";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
 
-import type { loader } from "./dashboard.admin._index.server";
+import type { Route } from "./+types/dashboard.admin._index";
 
 export { loader } from "./dashboard.admin._index.server";
 
-type LoaderData = SerializeFrom<typeof loader>;
+type LoaderData = Route.ComponentProps["loaderData"];
 
 function isSuccess(d: LoaderData): d is Exclude<LoaderData, { error: string }> {
   return !("error" in d);
 }
 
-export default function AdminOverviewPage() {
-  const raw = useLoaderData<typeof loader>();
+export default function AdminOverviewPage({
+  loaderData: raw,
+}: Route.ComponentProps) {
   const { dateLocale } = useFormattedDate();
   const { unit, formatSats } = useAdminCurrency();
 

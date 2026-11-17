@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2026-03-12
+**Last updated:** 2026-11-16
 
 Guide for building and maintaining API endpoints in SmartFlowSocial.
 
@@ -46,7 +46,7 @@ SmartFlowSocial API endpoints are located in `app/routes/api.*.tsx`. These endpo
 
 ### File Naming
 
-API routes follow Remix file-based routing:
+API routes are React Router file routes. `app/routes.ts` loads them with `@react-router/fs-routes`:
 
 ```
 app/routes/
@@ -60,22 +60,23 @@ app/routes/
 
 ```typescript
 // app/routes/api.example.tsx
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 
 // GET requests
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   // Handle GET request
-  return json({ data: "..." });
+  return jsonResponse({ data: "..." });
 }
 
 // POST/PUT/DELETE requests
 export async function action({ request }: ActionFunctionArgs) {
   const userId = await requireUserId(request);
   // Handle mutation
-  return json({ success: true });
+  return jsonResponse({ success: true });
 }
 ```
 
@@ -87,8 +88,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 ```typescript
 // app/routes/api.example.tsx
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -101,14 +103,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // 3. Validate input
   if (!param) {
-    return json({ error: "Param required" }, { status: 400 });
+    return jsonResponse({ error: "Param required" }, { status: 400 });
   }
 
   // 4. Process request
   const data = await processRequest(userId, param);
 
   // 5. Return response
-  return json({ data });
+  return jsonResponse({ data });
 }
 ```
 
@@ -116,8 +118,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ```typescript
 // app/routes/api.example.tsx
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { ActionFunctionArgs } from "react-router";
+
+import { jsonResponse } from "~/lib/http/json-response";
 import { requireUserId } from "~/features/auth";
 import { ValidationError } from "~/lib/errors";
 
@@ -137,7 +140,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await processMutation(userId, body);
 
   // 5. Return response
-  return json({ success: true, data: result });
+  return jsonResponse({ success: true, data: result });
 }
 ```
 
@@ -179,13 +182,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const file = formData.get("file") as File;
 
   if (!file) {
-    return json({ error: "File required" }, { status: 400 });
+    return jsonResponse({ error: "File required" }, { status: 400 });
   }
 
   // Upload file
   const url = await uploadFile(file, userId);
 
-  return json({ url });
+  return jsonResponse({ url });
 }
 ```
 
@@ -197,10 +200,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 ```typescript
 // Simple data
-return json({ data: result });
+return jsonResponse({ data: result });
 
 // With metadata
-return json({
+return jsonResponse({
   data: result,
   meta: {
     count: result.length,
@@ -213,13 +216,13 @@ return json({
 
 ```typescript
 // Validation error
-return json({ error: "Invalid input" }, { status: 400 });
+return jsonResponse({ error: "Invalid input" }, { status: 400 });
 
 // Not found
-return json({ error: "Resource not found" }, { status: 404 });
+return jsonResponse({ error: "Resource not found" }, { status: 404 });
 
 // Server error
-return json({ error: "Internal server error" }, { status: 500 });
+return jsonResponse({ error: "Internal server error" }, { status: 500 });
 ```
 
 ### Custom Error Classes
@@ -255,10 +258,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     const data = await fetchData(userId);
-    return json({ data });
+    return jsonResponse({ data });
   } catch (error) {
     if (error instanceof ValidationError) {
-      return json({ error: error.message }, { status: 400 });
+      return jsonResponse({ error: error.message }, { status: 400 });
     }
     throw error; // Let error boundary handle
   }
@@ -313,7 +316,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Validate
   const result = schema.safeParse(body);
   if (!result.success) {
-    return json({ error: result.error.message }, { status: 400 });
+    return jsonResponse({ error: result.error.message }, { status: 400 });
   }
 
   // Use validated data
@@ -329,7 +332,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const id = url.searchParams.get("id");
 
   if (!id || !isValidId(id)) {
-    return json({ error: "Invalid ID" }, { status: 400 });
+    return jsonResponse({ error: "Invalid ID" }, { status: 400 });
   }
 
   // Use validated ID

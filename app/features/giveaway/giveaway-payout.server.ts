@@ -83,6 +83,7 @@ export type GiveawayPayoutEntryStatus =
   | "failed"
   | "marked_paid"
   | "claim_needed"
+  | "needs_review"
   | "skipped";
 
 export interface GiveawayPayoutEntry {
@@ -99,6 +100,7 @@ const VALID: GiveawayPayoutEntryStatus[] = [
   "failed",
   "marked_paid",
   "claim_needed",
+  "needs_review",
   "skipped",
 ];
 

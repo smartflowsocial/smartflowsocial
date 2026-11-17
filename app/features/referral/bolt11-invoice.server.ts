@@ -9,8 +9,34 @@ const MSATS_PER_SAT = 1000n;
 const MALFORMED_INVOICE = "Malformed BOLT11 invoice";
 
 export type Bolt11ReadResult =
-  | { ok: true; amountSats: number; paymentHash: string }
+  | {
+      ok: true;
+      amountSats: number;
+      paymentHash: string;
+      expiresAtMs: number;
+      invoice: string;
+    }
   | { ok: false; error: string };
+
+export function isPositiveWholeSats(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+export function isNonNegativeWholeSats(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+/**
+ * Exact millisats for a positive whole-sat amount.
+ * Fractional, zero, negative, and unsafe numbers are rejected. There is no
+ * rounding.
+ */
+export function millisatsFromSats(sats: number): bigint | null {
+  if (!isPositiveWholeSats(sats)) return null;
+  const msats = BigInt(sats) * MSATS_PER_SAT;
+  if (msats > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+  return msats;
+}
 
 interface Bolt11Section {
   name?: string;
@@ -22,8 +48,9 @@ interface Bolt11Section {
  * Reads the payable amount and payment hash from a BOLT11 invoice.
  * Amountless, malformed, non-mainnet, and expired invoices are rejected, and
  * so are invoices that stay valid longer than the audit retention window.
- * The decoded amount is in whole sats and must be compared with the caller's
- * declared amount before any wallet call.
+ * The decoded amount is in whole sats. Callers that move money must use
+ * `assertBolt11MatchesAuthorizedAmount` so a different invoice amount cannot
+ * reach a wallet.
  */
 export function readBolt11ForPayout(
   invoice: string,
@@ -78,7 +105,36 @@ export function readBolt11ForPayout(
     ok: true,
     amountSats: amountResult.amountSats,
     paymentHash,
+    expiresAtMs,
+    invoice: trimmed,
   };
+}
+
+/**
+ * The only amount check that may authorize a wallet payment.
+ * The invoice amount must equal `authorizedSats` exactly.
+ */
+export function assertBolt11MatchesAuthorizedAmount(args: {
+  invoice: string;
+  authorizedSats: number;
+  nowMs?: number;
+}): Bolt11ReadResult {
+  if (!isPositiveWholeSats(args.authorizedSats)) {
+    return {
+      ok: false,
+      error: "Authorized payout amount must be a positive whole number of sats",
+    };
+  }
+  const decoded = readBolt11ForPayout(args.invoice, args.nowMs);
+  if (!decoded.ok) return decoded;
+  if (decoded.amountSats !== args.authorizedSats) {
+    return {
+      ok: false,
+      error:
+        "Invoice amount does not match the authorized amount. Refusing to pay.",
+    };
+  }
+  return decoded;
 }
 
 export function amountSatsFromMillisatoshis(

@@ -1,9 +1,10 @@
 import type { PlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import type { BroadcastAudienceGate } from "~/features/payments/types";
 
-import type {
-  CommercialPlanType,
-  CommercialPublicPlanName,
+import {
+  parseCommercialPlanType,
+  type CommercialPlanType,
+  type CommercialPublicPlanName,
 } from "./plan-mapping";
 
 export interface CanonicalPlanPolicy {
@@ -25,8 +26,13 @@ export interface CanonicalPlanPolicy {
     maxGiveawayWinnerCount: number;
     canUseGiveawayQueueScope: boolean;
     canUseGiveawayPresets: boolean;
-    /** Null means “not modeled as a percent right now.” */
-    campaignCommissionPercent: number | null;
+    /**
+     * Hosted campaign finalization commission in basis points.
+     * 1000 is 10%, 750 is 7.5%, 500 is 5%, and 0 is no commission.
+     * Self-hosted installs do not use this number. See
+     * `effectiveCampaignFinalizationFeeRateBps`.
+     */
+    campaignCommissionBps: number;
   };
 
   broadcasts: {
@@ -73,7 +79,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 10,
       canUseGiveawayQueueScope: false,
       canUseGiveawayPresets: false,
-      campaignCommissionPercent: 10,
+      campaignCommissionBps: 1000,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 0,
@@ -112,7 +118,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 7.5,
+      campaignCommissionBps: 750,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -151,7 +157,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 5,
+      campaignCommissionBps: 500,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -190,7 +196,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 500,
@@ -231,7 +237,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 5,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -273,7 +279,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 500,
@@ -302,6 +308,19 @@ export function getCanonicalPlanPolicy(
   planType: CommercialPlanType
 ): CanonicalPlanPolicy {
   return POLICIES[planType];
+}
+
+/**
+ * Hosted basis points charged on a contest or giveaway prize pool.
+ * Unknown plan names charge nothing. Self-hosted installs must not use this
+ * function as the amount due. Use `effectiveCampaignFinalizationFeeRateBps`.
+ */
+export function campaignFinalizationFeeRateBps(planType: string): number {
+  const commercial = parseCommercialPlanType(planType);
+  if (!commercial) return 0;
+  const bps = POLICIES[commercial].campaigns.campaignCommissionBps;
+  if (!Number.isSafeInteger(bps) || bps <= 0 || bps > 10_000) return 0;
+  return bps;
 }
 
 export function toExecutionEntitlements(

@@ -3,7 +3,13 @@
  * Uses builder pattern for flexible test data creation
  */
 
+import { createRequire } from "node:module";
+
 import type { Payment, PaymentStatus } from "@prisma/client";
+
+import { TEST_USER_ID } from "../utils/test-helpers";
+
+const loadModule = createRequire(import.meta.url);
 
 // Type definition for Decimal-like class
 interface DecimalLike {
@@ -16,7 +22,7 @@ interface DecimalLike {
 // Use Prisma.Decimal if available, otherwise fallback to a simple number wrapper
 let Decimal: DecimalLike;
 try {
-  Decimal = require("@prisma/client/runtime/library").Decimal as DecimalLike;
+  Decimal = loadModule("@prisma/client/runtime/library").Decimal as DecimalLike;
 } catch {
   // Fallback for test environments where the runtime library is not available
   class MockDecimal {
@@ -36,8 +42,6 @@ try {
   }
   Decimal = MockDecimal as unknown as DecimalLike;
 }
-
-import { TEST_USER_ID } from "../utils/test-helpers";
 
 export interface PaymentFactoryOptions {
   id?: string;

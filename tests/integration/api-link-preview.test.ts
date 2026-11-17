@@ -4,6 +4,7 @@
  * Tests the API endpoint in app/routes/api.link-preview.tsx
  */
 
+import { RouterContextProvider } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock global fetch
 global.fetch = vi.fn();
@@ -43,7 +44,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -98,7 +99,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -150,7 +151,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -197,7 +198,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -251,7 +252,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -285,7 +286,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -313,7 +314,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -340,7 +341,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -371,7 +372,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -403,7 +404,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -436,7 +437,7 @@ describe("API: Link Preview", () => {
       const response = await loader({
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -469,14 +470,14 @@ describe("API: Link Preview", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -515,14 +516,14 @@ describe("API: Link Preview", () => {
       interface LoaderArgs {
         request: Request;
         params: Record<string, string | undefined>;
-        context: Record<string, unknown>;
+        context: RouterContextProvider;
         url: URL;
         pattern: string;
       }
       const loaderArgs: LoaderArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

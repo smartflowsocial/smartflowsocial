@@ -3,10 +3,13 @@
  * Uses owner NWC to send payment. paid_at set only on successful payout.
  */
 
-import { NWCClient } from "@getalby/sdk";
-
 import { getOwnerNwcWithRelayOverrides } from "~/features/payments/data";
-import { readBolt11ForPayout } from "~/features/referral/bolt11-invoice.server";
+import {
+  lookupAuthorizedPayment,
+  nwcTimeouts,
+  payAuthorizedBolt11,
+} from "~/features/payments/nwc-authorized-pay.server";
+import { assertBolt11MatchesAuthorizedAmount } from "~/features/referral/bolt11-invoice.server";
 import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
 import { createReferralPayoutAuditLog } from "~/features/referral/referral-payout-audit.server";
 import {
@@ -14,16 +17,18 @@ import {
   type ReferralPayoutContext,
 } from "~/features/referral/referral-payout-flag";
 import { env } from "~/lib/env.server";
-import { logError, logWarning } from "~/lib/error-logger.server";
+import { logError } from "~/lib/error-logger.server";
 
 import {
   aggregatePendingCommissionByReferrer,
   beginReferralPayout,
   completeReferralPayoutAttempt,
   failReferralPayoutAttempt,
+  findInProgressReferralClaim,
   findPendingEarningsWithAttemptCount,
   findReferrerPayoutConfig,
   groupByReferrerPendingSats,
+  holdReferralPayoutAsUnknown,
 } from "./repositories/referral-data.server";
 
 const DEFAULT_MAX_INVOICE_SATS = 1_000_000;
@@ -33,7 +38,10 @@ const BEGIN_ERRORS: Record<string, string> = {
   INVOICE_ALREADY_SUBMITTED:
     "This invoice was already submitted. Use a new invoice.",
   DAILY_CAP: "Daily referral payout cap exceeded",
-  PAYOUT_IN_PROGRESS: "A payout for this referrer is already in progress",
+  PAYOUT_IN_PROGRESS:
+    "A payout for this referrer is already in progress. Check the wallet before trying again.",
+  PAYOUT_OUTCOME_UNKNOWN:
+    "A previous payout may have been sent. Automatic retry is blocked until the wallet is checked.",
   AMOUNT_NOT_EXACT:
     "Amount must equal a whole prefix of the oldest pending earnings",
 };
@@ -76,13 +84,9 @@ function startOfUtcDay(now = new Date()): Date {
   );
 }
 
-let warnedImplicitPayouts = false;
-
 /**
  * Wallet payouts run only when REFERRAL_PAYOUTS_ENABLED is explicitly on.
- * An unset flag stays off, including when a wallet secret is missing.
- * Production that already set OWNER_NWC and left the flag unset keeps
- * paying for one compatibility window and logs a warning.
+ * An unset flag stays off. OWNER_NWC does not enable payouts.
  */
 export function referralPayoutsEnabled(
   flag: string | undefined = env.REFERRAL_PAYOUTS_ENABLED,
@@ -91,15 +95,7 @@ export function referralPayoutsEnabled(
     ownerNwc: env.OWNER_NWC,
   }
 ): boolean {
-  const decision = decideReferralPayouts(flag, context);
-  if (decision.implicitProduction && !warnedImplicitPayouts) {
-    warnedImplicitPayouts = true;
-    logWarning(
-      "REFERRAL_PAYOUTS_ENABLED is unset. Production with OWNER_NWC still runs payouts. Set REFERRAL_PAYOUTS_ENABLED=true to keep that, or false to stop.",
-      {}
-    );
-  }
-  return decision.enabled;
+  return decideReferralPayouts(flag, context).enabled;
 }
 
 /**
@@ -135,13 +131,11 @@ export async function payReferrerWithInvoice(
     return { success: false as const, error: errorMessage };
   };
 
-  const invoice = readBolt11ForPayout(bolt11);
+  const invoice = assertBolt11MatchesAuthorizedAmount({
+    invoice: bolt11,
+    authorizedSats: amountSats,
+  });
   if (!invoice.ok) return reject(invoice.error);
-  if (invoice.amountSats !== amountSats) {
-    return reject(
-      "Invoice amount does not match the declared amount. Refusing to pay."
-    );
-  }
 
   const limits = referralPayoutLimits();
   if (amountSats > limits.maxInvoiceSats) {
@@ -169,26 +163,55 @@ export async function payReferrerWithInvoice(
   });
   if (!begun.ok) {
     if (begun.error === "ALREADY_PAID") return { success: true };
+    if (
+      begun.error === "PAYOUT_IN_PROGRESS" ||
+      begun.error === "PAYOUT_OUTCOME_UNKNOWN" ||
+      begun.error === "INVOICE_ALREADY_SUBMITTED"
+    ) {
+      const reconciled = await reconcileHeldReferralPayout(
+        referrerNpub,
+        ownerNwc
+      );
+      if (reconciled) return reconciled;
+    }
     return reject(BEGIN_ERRORS[begun.error] ?? "Payout could not be started");
   }
 
   const { credentials } = getOwnerNwcWithRelayOverrides(ownerNwc);
-  const nwcClient = new NWCClient({ nostrWalletConnectUrl: credentials });
-  try {
-    await nwcClient.payInvoice({ invoice: bolt11 });
-  } catch (error) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    logError(error instanceof Error ? error : new Error(errMsg), {
+  const timeouts = nwcTimeouts();
+  const paid = await payAuthorizedBolt11({
+    nwcUrl: credentials,
+    invoice: invoice.invoice,
+    authorizedSats: amountSats,
+    timeoutMs: timeouts.payMs,
+    reconcileTimeoutMs: timeouts.reconcileMs,
+  });
+  if (!paid.ok) {
+    logError(new Error(paid.message), {
       referrerNpub,
       message: "Referral payout: payInvoice failed",
+      disposition: paid.disposition,
     });
+    if (paid.disposition === "unknown") {
+      await holdReferralPayoutAsUnknown({
+        auditId: begun.auditId,
+        earningIds: begun.earningIds,
+        paymentHash: invoice.paymentHash,
+        reason: paid.message,
+      });
+      return {
+        success: false,
+        error:
+          "Payment outcome is unknown. Automatic retry is blocked until the wallet is checked.",
+      };
+    }
     await failReferralPayoutAttempt({
       auditId: begun.auditId,
       earningIds: begun.earningIds,
       paymentHash: invoice.paymentHash,
-      reason: errMsg,
+      reason: paid.message,
     });
-    return { success: false, error: errMsg };
+    return { success: false, error: paid.message };
   }
 
   try {
@@ -204,6 +227,12 @@ export async function payReferrerWithInvoice(
       message:
         "Referral payout: wallet payment succeeded but the ledger update failed",
     });
+    await holdReferralPayoutAsUnknown({
+      auditId: begun.auditId,
+      earningIds: begun.earningIds,
+      paymentHash: invoice.paymentHash,
+      reason: "Wallet payment succeeded but the ledger update failed",
+    });
     return {
       success: false,
       error:
@@ -212,6 +241,50 @@ export async function payReferrerWithInvoice(
   }
 
   return { success: true };
+}
+
+async function reconcileHeldReferralPayout(
+  referrerNpub: string,
+  ownerNwc: string
+): Promise<{ success: boolean; error?: string } | null> {
+  const held = await findInProgressReferralClaim(referrerNpub);
+  if (!held || held.ambiguous || !held.auditId) return null;
+  const { credentials } = getOwnerNwcWithRelayOverrides(ownerNwc);
+  const lookup = await lookupAuthorizedPayment({
+    nwcUrl: credentials,
+    paymentHash: held.paymentHash,
+    authorizedSats: held.amountSats,
+    timeoutMs: nwcTimeouts().reconcileMs,
+  });
+  if (lookup.kind === "settled" && lookup.preimage) {
+    try {
+      await completeReferralPayoutAttempt({
+        auditId: held.auditId,
+        earningIds: held.earningIds,
+        paymentHash: held.paymentHash,
+        paidAt: new Date(),
+      });
+      return { success: true };
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        referrerNpub,
+        message: "Referral payout reconciliation could not update the ledger",
+      });
+      return {
+        success: false,
+        error:
+          "The wallet shows this payout as paid, but the ledger update failed. Do not retry.",
+      };
+    }
+  }
+  if (lookup.kind === "failed") {
+    return {
+      success: false,
+      error:
+        "The wallet reports the previous payout did not settle. Confirm that in the wallet before paying again.",
+    };
+  }
+  return null;
 }
 
 export async function getEarningsForPayout(

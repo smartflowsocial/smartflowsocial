@@ -42,7 +42,7 @@ missing (see `defaultRangeForAdminPath`).
 ## System health
 
 - **Database**: `SELECT 1`.
-- **Queues**: BullMQ `getJobCounts` from the Remix server process (requires Redis reachable like
+- **Queues**: BullMQ `getJobCounts` from the web server process (requires Redis reachable like
   workers).
 - **Outbox**: `getOutboxBacklogCounts`.
 - **Workers (heuristic)**: no heartbeat - derived from summed `waiting` / `active` across the same

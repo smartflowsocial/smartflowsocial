@@ -42,7 +42,7 @@ export function useMatchesData(
     () => matchingRoutes.find((route) => route.id === id),
     [matchingRoutes, id]
   );
-  const data = route?.data;
+  const data = route?.loaderData;
   // Type guard to ensure data is an object and not an error type
   if (data && typeof data === "object" && !(data instanceof Error)) {
     return data as Record<string, unknown>;
@@ -83,7 +83,7 @@ export function useOptionalUser(): User | undefined {
 
   const userFromMatches = useMemo(() => {
     // Prefer root loader (canonical source)
-    const rootData = matches.find((m) => m.id === "root")?.data;
+    const rootData = matches.find((m) => m.id === "root")?.loaderData;
     if (
       rootData &&
       typeof rootData === "object" &&
@@ -98,7 +98,7 @@ export function useOptionalUser(): User | undefined {
     // Fallback: user from dashboard (or any parent) when under /dashboard so
     // header badge and composer have user before root data is available
     for (const match of matches) {
-      const data = match.data;
+      const data = match.loaderData;
       if (
         data &&
         typeof data === "object" &&

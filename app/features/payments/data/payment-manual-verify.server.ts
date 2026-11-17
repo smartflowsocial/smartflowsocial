@@ -4,6 +4,8 @@ import {
   BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS,
   btcpayGetInvoiceSnapshot,
 } from "~/features/payments/btcpay.server";
+import { lookupIncomingInvoice } from "~/features/payments/incoming-nwc-lookup";
+import { nwcTimeouts } from "~/features/payments/nwc-authorized-pay.server";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { prisma } from "~/lib/prisma.server";
@@ -135,13 +137,20 @@ async function verifyNwcPaymentManually(params: {
   userId: string;
   planId: string;
   paymentHash: string;
+  amountSats: number;
   createdAt: Date;
-}): Promise<{ success: boolean; paid: boolean; message: string }> {
+}): Promise<{
+  success: boolean;
+  paid: boolean;
+  message: string;
+  outcome: "settled" | "unpaid" | "inconclusive";
+}> {
   const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
   if (params.createdAt <= thirtyMinutesAgo) {
     return {
       success: false,
       paid: false,
+      outcome: "inconclusive",
       message: "Payment is too old to auto-verify. Please contact support.",
     };
   }
@@ -151,6 +160,7 @@ async function verifyNwcPaymentManually(params: {
     return {
       success: false,
       paid: false,
+      outcome: "inconclusive",
       message: OWNER_NWC_MISSING,
     };
   }
@@ -163,29 +173,35 @@ async function verifyNwcPaymentManually(params: {
   });
 
   try {
-    const tx = (await nwcClient.lookupInvoice({
-      payment_hash: params.paymentHash,
-    })) as unknown;
+    const verdict = await lookupIncomingInvoice({
+      lookup: (paymentHash) =>
+        nwcClient.lookupInvoice({ payment_hash: paymentHash }),
+      paymentHash: params.paymentHash,
+      expectedAmountSats: params.amountSats,
+      timeoutMs: nwcTimeouts().reconcileMs,
+    });
 
-    const txObj: Record<string, unknown> =
-      tx && typeof tx === "object" && !Array.isArray(tx)
-        ? (tx as Record<string, unknown>)
-        : {};
-
-    const state = typeof txObj["state"] === "string" ? txObj["state"] : "";
-    const settledAt =
-      typeof txObj["settled_at"] === "number" ? txObj["settled_at"] : 0;
-    const preimage =
-      typeof txObj["preimage"] === "string" ? txObj["preimage"] : null;
-
-    const isSettled =
-      state === "settled" || (settledAt > 0 && typeof preimage === "string");
-
-    if (!isSettled) {
+    if (verdict.kind === "unpaid") {
       return {
         success: true,
         paid: false,
-        message: "Payment not settled yet",
+        outcome: "unpaid",
+        message: "Invoice is not paid",
+      };
+    }
+    if (verdict.kind !== "settled") {
+      return {
+        success:
+          verdict.reason !== "lookup_timeout" &&
+          verdict.reason !== "lookup_failed",
+        paid: false,
+        outcome: "inconclusive",
+        message:
+          verdict.reason === "lookup_timeout"
+            ? "Payment lookup did not finish in time"
+            : verdict.reason === "not_settled"
+              ? "Payment not settled yet"
+              : "Payment could not be verified",
       };
     }
 
@@ -195,16 +211,17 @@ async function verifyNwcPaymentManually(params: {
       params.planId
     );
 
-    if (preimage) {
-      await prisma.payment.update({
-        where: { id: params.paymentId },
-        data: { preimage },
+    if (verdict.preimage) {
+      await prisma.payment.updateMany({
+        where: { id: params.paymentId, preimage: null },
+        data: { preimage: verdict.preimage },
       });
     }
 
     return {
       success: true,
       paid: true,
+      outcome: "settled",
       message: "Payment verified and completed",
     };
   } catch (error) {
@@ -216,10 +233,15 @@ async function verifyNwcPaymentManually(params: {
     return {
       success: false,
       paid: false,
+      outcome: "inconclusive",
       message: "Failed to verify payment",
     };
   } finally {
-    nwcClient.close();
+    try {
+      nwcClient.close();
+    } catch {
+      // The lookup result is already decided.
+    }
   }
 }
 
@@ -295,6 +317,7 @@ export async function manuallyVerifyPayment(paymentId: string): Promise<{
     userId: payment.userId,
     planId,
     paymentHash: payment.paymentHash,
+    amountSats: payment.amount,
     createdAt: payment.createdAt,
   });
 }

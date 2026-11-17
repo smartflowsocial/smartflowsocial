@@ -56,5 +56,7 @@ COPY --from=build /myapp/scripts /myapp/scripts
 COPY --from=build /myapp/prisma /myapp/prisma
 COPY --from=build /myapp/package.json /myapp/package.json
 COPY --from=build /myapp/prisma.config.ts /myapp/prisma.config.ts
+# prisma.config.ts imports this at migrate time. The rest of app/ is bundled.
+COPY --from=build /myapp/app/lib/prisma-command-url.ts /myapp/app/lib/prisma-command-url.ts
 
 CMD ["pnpm", "start"]
