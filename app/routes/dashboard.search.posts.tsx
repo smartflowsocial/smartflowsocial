@@ -13,10 +13,9 @@ import {
   searchActionSchema,
   validateFormDataOrRespond,
 } from "~/lib/validation";
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   const data = await loadSearchData(userId);
-  const url = new URL(request.url);
   const q = url.searchParams.get("q")?.trim();
 
   if (!q) {

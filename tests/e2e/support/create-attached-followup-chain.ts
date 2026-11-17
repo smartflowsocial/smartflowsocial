@@ -3,8 +3,7 @@
 // npx tsx ./tests/e2e/support/create-attached-followup-chain.ts npub1xxx offset 1765000000 7200
 // npx tsx ./tests/e2e/support/create-attached-followup-chain.ts npub1xxx fixed 1765000000 1765001800
 
-require("./load-env.js");
-
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";

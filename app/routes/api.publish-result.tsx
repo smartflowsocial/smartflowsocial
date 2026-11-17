@@ -9,10 +9,9 @@ import { jsonResponse } from "~/lib/http/json-response";
  * API route for polling relay acknowledgements
  * GET /api/publish-result?postId=xxx&publishAttemptId=xxx
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
-    const url = new URL(request.url);
     const postId = url.searchParams.get("postId");
     const publishAttemptId = url.searchParams.get("publishAttemptId");
 

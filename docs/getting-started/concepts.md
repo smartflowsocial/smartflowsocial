@@ -121,7 +121,7 @@ SmartFlowSocial also supports NIP-46 (Nostr Connect) for remote signing:
         │                  │
         ▼                  ▼
 ┌─────────────────────────────────────────┐
-│        Remix Server (Application)        │
+│     React Router server (Application)   │
 │  ┌──────────┐  ┌──────────────────┐   │
 │  │  Routes  │  │   Background      │   │
 │  │ Loaders/ │  │   Worker          │   │
@@ -147,7 +147,7 @@ SmartFlowSocial also supports NIP-46 (Nostr Connect) for remote signing:
 
 | Layer              | Technology             | Purpose                    |
 | ------------------ | ---------------------- | -------------------------- |
-| **Framework**      | Remix                  | Full-stack React framework |
+| **Framework**      | React Router 8.5.1     | Full-stack React framework |
 | **Database**       | PostgreSQL + Prisma    | Data persistence           |
 | **Queue**          | BullMQ + Redis         | Background job processing  |
 | **Storage**        | S3-compatible          | Image uploads              |
@@ -228,7 +228,7 @@ SmartFlowSocial also supports NIP-46 (Nostr Connect) for remote signing:
    ↓
 4. Extension signs event (client-side)
    ↓
-5. Signed event sent to Remix server
+5. Signed event sent to the React Router server
    ↓
 6. Server validates and stores in database
    ↓

@@ -33,13 +33,12 @@ const STATUS_OPTIONS = [
 ] as const;
 
 /** List page loader: giveaways with KPIs, filters, rich rows. */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
 
     await requireAnySubscription(userId);
 
-    const url = new URL(request.url);
     const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
     const statusFilter = url.searchParams.get("status") ?? "";
     const scopeFilter = url.searchParams.get("scope") ?? "";

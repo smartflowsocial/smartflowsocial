@@ -23,12 +23,11 @@ function authorizeInternalRequest(request: Request): boolean {
   return BLOSSOM_INTERNAL_SECRET !== "" && BLOSSOM_INTERNAL_SECRET === provided;
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   if (!authorizeInternalRequest(request)) {
     return jsonResponse({ error: "unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
   const pubkeyParam =
     url.searchParams.get("pubkey") ?? request.headers.get("x-pubkey") ?? "";
   const pubkeyHex = pubkeyParam.trim().toLowerCase();

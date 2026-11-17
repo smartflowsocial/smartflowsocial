@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 
-import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  getPlanEntitlements,
+  tryGetPlanEntitlements,
+} from "~/features/payments/entitlements/plan-entitlements";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 
 describe("getPlanEntitlements", () => {
@@ -31,6 +34,12 @@ describe("getPlanEntitlements", () => {
     expect(e.maxDrafts).toBe(25);
     expect(e.maxTemplates).toBe(25);
     expect(e.canExecuteBulkActions).toBe(true);
+  });
+
+  it("does not treat leftover plan ids as a commercial tier", () => {
+    expect(tryGetPlanEntitlements("basic")).toBeNull();
+    expect(tryGetPlanEntitlements("premium")).toBeNull();
+    expect(() => getPlanEntitlements("basic")).toThrow(/Invalid plan type/);
   });
 
   it("applies highest concrete caps for pro", () => {

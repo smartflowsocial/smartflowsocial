@@ -13,7 +13,6 @@ import {
 import { type BatchPayoutProgressSnapshot } from "~/features/payments/components/BatchPayoutStatusBanner";
 import { BRAND_NAME } from "~/lib/brand";
 import type { NostrClientUrls } from "~/lib/nostr-client-urls";
-import type { SerializeFrom } from "~/lib/remix/serialize-from";
 import { cn } from "~/lib/utils";
 
 import { contestCopy } from "../contest-copy";
@@ -38,7 +37,7 @@ import { ContestSourcePostCard } from "./ContestSourcePostCard";
 import { ContestStateBanner } from "./ContestStateBanner";
 import { ContestStatsStrip } from "./ContestStatsStrip";
 
-type DetailData = SerializeFrom<ContestDetailPageData>;
+type DetailData = ContestDetailPageData;
 type ContestRow = DetailData["contest"];
 export type ContestDetailNostrUrls = NostrClientUrls;
 
@@ -372,6 +371,76 @@ export function ContestDetailFairnessSection({
   );
 }
 
+function ContestFinalizationActions({
+  lockConfigHash,
+  feeLabel,
+  plannedPayoutSats,
+  feeSats,
+  feeSettled,
+}: {
+  lockConfigHash: string;
+  feeLabel: string;
+  plannedPayoutSats: number;
+  feeSats: number;
+  feeSettled: boolean;
+}) {
+  const invoiceFetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    invoice?: string;
+    amount?: number;
+  }>();
+  const invoice =
+    invoiceFetcher.data?.success && invoiceFetcher.data.invoice
+      ? invoiceFetcher.data
+      : null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-text-secondary text-sm">
+        Locking makes final placements immutable for payout and proof.{" "}
+        {BRAND_NAME} does not hold prize funds. The fee below is the platform
+        commission for this install. Winner payouts are separate.
+      </p>
+      <p className="text-text-secondary text-xs">
+        {feeLabel} · Planned {plannedPayoutSats.toLocaleString()} sats · Fee{" "}
+        {feeSats.toLocaleString()} sats
+        {feeSettled ? " · Paid" : ""}
+      </p>
+      {feeSats > 0 && !feeSettled ? (
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={invoiceFetcher.state !== "idle"}
+          onClick={() => {
+            const fd = new FormData();
+            fd.set("intent", "createFinalizationInvoice");
+            fd.set("lockConfigHash", lockConfigHash);
+            void invoiceFetcher.submit(fd, { method: "post" });
+          }}
+        >
+          {invoiceFetcher.state !== "idle"
+            ? "Creating invoice…"
+            : `Pay ${feeSats.toLocaleString()} sats`}
+        </Button>
+      ) : null}
+      {invoiceFetcher.data?.error ? (
+        <p className="text-danger text-xs">{invoiceFetcher.data.error}</p>
+      ) : null}
+      {invoice?.invoice ? (
+        <p className="text-text-secondary font-mono text-xs break-all">
+          {invoice.amount?.toLocaleString()} sats · {invoice.invoice}
+        </p>
+      ) : null}
+      <Form method="post" className="space-y-2">
+        <input type="hidden" name="intent" value="lock" />
+        <input type="hidden" name="lockConfigHash" value={lockConfigHash} />
+        <Button type="submit">{contestCopy.lockWinners}</Button>
+      </Form>
+    </div>
+  );
+}
+
 export function ContestDetailFormsSection({
   contest,
   data,
@@ -478,23 +547,13 @@ export function ContestDetailFormsSection({
       ) : null}
 
       {isReview ? (
-        <Form method="post" className="space-y-2">
-          <input type="hidden" name="intent" value="lock" />
-          <input
-            type="hidden"
-            name="lockConfigHash"
-            value={contest.lockConfigHash ?? ""}
-          />
-          <p className="text-text-secondary text-sm">
-            Locking makes final placements immutable for payout and proof.
-            {BRAND_NAME} does not hold prize funds.
-          </p>
-          <p className="text-text-secondary text-xs">
-            {feeLabel} · Planned {data.quote.plannedPayoutSats.toLocaleString()}{" "}
-            sats · Fee {data.quote.feeSats.toLocaleString()} sats
-          </p>
-          <Button type="submit">{contestCopy.lockWinners}</Button>
-        </Form>
+        <ContestFinalizationActions
+          lockConfigHash={data.quote.lockConfigHash}
+          feeLabel={feeLabel}
+          plannedPayoutSats={data.quote.plannedPayoutSats}
+          feeSats={data.quote.feeSats}
+          feeSettled={data.quote.feeSettled}
+        />
       ) : null}
 
       {isLocked || isCompleted ? (

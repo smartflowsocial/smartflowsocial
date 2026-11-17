@@ -15,7 +15,7 @@ need S3-compatible storage. Production self-hosting is covered in the
 
 Before you begin, ensure you have:
 
-- ✅ **Node.js 20.0.0+** installed ([Download](https://nodejs.org/))
+- ✅ **Node.js 22.22.0+** installed ([Download](https://nodejs.org/)). `.nvmrc` is `22.22`.
 - ✅ **pnpm 10.27.0** via Corepack (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - ✅ **PostgreSQL** running (local or remote)
 - ✅ **Redis** running (for background jobs)
@@ -75,8 +75,8 @@ See [Environment Setup](./installation.md#environment-configuration) for detaile
 # Generate Prisma client
 pnpm exec prisma generate
 
-# Push schema to database
-pnpm exec prisma db push
+# Apply migrations
+pnpm exec prisma migrate deploy
 
 # Seed initial data (optional)
 pnpm db:seed

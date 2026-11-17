@@ -1,3 +1,4 @@
+import { RouterContextProvider } from "react-router";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const jobs = vi.hoisted(() => ({
@@ -90,7 +91,7 @@ describe("cron route authentication", () => {
     const response = await route.action({
       request: request("/cron/referral-payout", "POST", SECRET),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
@@ -144,7 +145,7 @@ describe("cron route authentication", () => {
       const response = await route.action({
         request: request(path, "POST"),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/"),
         pattern: "*",
       });
@@ -161,7 +162,7 @@ describe("cron route authentication", () => {
       const response = await route.action({
         request: request(path, "POST", "wrong-secret"),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/"),
         pattern: "*",
       });
@@ -179,14 +180,14 @@ describe("cron route authentication", () => {
       const posted = await route.action({
         request: request(path, "POST", SECRET),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/"),
         pattern: "*",
       });
       const gotten = await route.loader({
         request: request(path, "GET", SECRET),
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL("http://localhost:3000/"),
         pattern: "*",
       });
@@ -202,14 +203,14 @@ describe("cron route authentication", () => {
     const gotten = await route.loader({
       request: request("/cron/purge-retained-records", "GET", SECRET),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });
     const posted = await route.action({
       request: request("/cron/purge-retained-records", "POST", SECRET),
       params: {},
-      context: {},
+      context: new RouterContextProvider(),
       url: new URL("http://localhost:3000/"),
       pattern: "*",
     });

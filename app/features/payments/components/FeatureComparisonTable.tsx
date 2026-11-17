@@ -10,10 +10,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
+import {
+  effectiveCampaignFinalizationFeeRateBps,
+  formatCampaignCommissionPercent,
+} from "~/features/payments/campaign-fee-policy";
+import type { PublicDeployment } from "~/features/payments/entitlements/deployment-mode";
+import { tryGetPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
-import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
+import { useDeployment } from "~/features/payments/types";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 
 interface FeatureComparisonTableProps {
@@ -31,15 +37,21 @@ interface ComparisonRow {
   label: string;
   /** Short helper for infrastructure rows; hidden on small screens via trigger. */
   tooltip?: string;
-  getValue: (plan: PricingPagePlan) => boolean | string | number | null;
+  getValue: (
+    plan: PricingPagePlan,
+    deployment: PublicDeployment
+  ) => boolean | string | number | null;
 }
 
-function campaignCommissionPercent(planId: string): string | null {
-  const planType = mapLegacyPlanIdToCommercialPlanType(planId);
-  const pct =
-    getCanonicalPlanPolicy(planType).campaigns.campaignCommissionPercent;
-  if (pct == null) return null;
-  return Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(1)}%`;
+function campaignCommissionLabel(
+  planId: string,
+  deployment: PublicDeployment
+): string {
+  const planType = parseCommercialPlanType(planId);
+  if (!planType) return "-";
+  return formatCampaignCommissionPercent(
+    effectiveCampaignFinalizationFeeRateBps(planType, deployment)
+  );
 }
 
 const COMPARISON_ROWS: ComparisonRow[] = [
@@ -68,7 +80,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Accounts included",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       return getCanonicalPlanPolicy(planType).accountsIncluded;
     },
   },
@@ -77,7 +90,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Draft/template limits",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       if (ent.maxDrafts == null || ent.maxTemplates == null) return "-";
       return `${ent.maxDrafts} drafts / ${ent.maxTemplates} templates`;
     },
@@ -87,7 +101,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Scheduled items included",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.maxFutureScheduledItems ?? "-";
     },
   },
@@ -96,7 +111,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Queue count",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.maxQueues ?? "-";
     },
   },
@@ -110,7 +126,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Broadcast sending",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.canSendBroadcast ? "Included" : "Browse only (no send)";
     },
   },
@@ -119,7 +136,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Bulk workflow",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const ent = getPlanEntitlements(plan.id);
+      const ent = tryGetPlanEntitlements(plan.id);
+      if (!ent) return "-";
       return ent.canExecuteBulkActions;
     },
   },
@@ -130,7 +148,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
       "Hosted on Blossom-compatible infrastructure for broader Nostr media workflows.",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       return getCanonicalPlanPolicy(planType).media.canUseSfsBlossomStorage
         ? "Yes"
         : "No";
@@ -141,7 +160,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Monthly hosted storage",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyStorageBytes)
@@ -153,7 +173,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Monthly hosted uploads",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.monthlyUploadBytes)
@@ -165,7 +186,8 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: "Max hosted file size",
     getValue: (plan) => {
       if (plan.isTeamsPlaceholder) return null;
-      const planType = mapLegacyPlanIdToCommercialPlanType(plan.id);
+      const planType = parseCommercialPlanType(plan.id);
+      if (!planType) return "-";
       const media = getCanonicalPlanPolicy(planType).media;
       return media.canUseSfsBlossomStorage
         ? formatBytesForPlanMarketing(media.maxFileBytes)
@@ -180,9 +202,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     group: GROUP_CAMPAIGNS,
     label: "Campaign commission",
-    getValue: (plan) => {
+    getValue: (plan, deployment) => {
       if (plan.isTeamsPlaceholder) return null;
-      return campaignCommissionPercent(plan.id) ?? "-";
+      return campaignCommissionLabel(plan.id, deployment);
     },
   },
   {
@@ -235,6 +257,7 @@ function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
+  const deployment = useDeployment();
   const groupOrder = [
     ...new Set(COMPARISON_ROWS.map((r) => r.group)),
   ] as string[];
@@ -314,7 +337,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                           key={plan.id}
                           className="px-4 py-3 text-center align-middle"
                         >
-                          {renderCell(plan, feature.getValue(plan))}
+                          {renderCell(plan, feature.getValue(plan, deployment))}
                         </td>
                       ))}
                     </tr>

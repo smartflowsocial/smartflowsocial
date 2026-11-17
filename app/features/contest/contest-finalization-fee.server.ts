@@ -1,5 +1,8 @@
-/* eslint-disable import/order -- Contest module import ordering will be normalized after feature stabilization. */
 import { createHash } from "crypto";
+
+import type { PublicDeployment } from "~/features/payments/entitlements/deployment-mode";
+import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
+import type { PlanType } from "~/features/payments/types";
 
 import {
   computeContestFinalizationFeeSats,
@@ -8,7 +11,6 @@ import {
   stableSortRankRewards,
 } from "./contest-finalization-fee.shared";
 import type { ContestPrizeMode, ContestRankReward } from "./types";
-import type { PlanType } from "~/features/payments/types";
 
 function buildContestLockConfigHash(payload: Record<string, unknown>): string {
   const canonical = JSON.stringify(payload);
@@ -29,9 +31,14 @@ export function quoteContestFinalization(input: {
     snapshotId?: string | null;
   };
   planType: PlanType;
+  /** Server deployment. Callers omit this so the process environment is used. */
+  deployment?: PublicDeployment;
 }) {
   const plannedPayoutSats = computePlannedPayoutSats(input.contest);
-  const feeRateBps = getContestFinalizationFeeRateBps(input.planType);
+  const feeRateBps = getContestFinalizationFeeRateBps(
+    input.planType,
+    input.deployment ?? currentDeployment()
+  );
   const { feeSats, waivedByPlan } = computeContestFinalizationFeeSats(
     plannedPayoutSats,
     feeRateBps
@@ -58,4 +65,3 @@ export function quoteContestFinalization(input: {
     lockConfigHash,
   };
 }
-/* eslint-enable import/order */

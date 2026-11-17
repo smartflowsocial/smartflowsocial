@@ -61,6 +61,9 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm exec prisma generate
 
+      - name: Generate React Router types
+        run: pnpm exec react-router typegen
+
       - name: Check PR title (conventional commits)
         if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
         uses: amannn/action-semantic-pull-request@v6
@@ -155,6 +158,8 @@ jobs:
           database: smartflow_test
           user: postgres
 
+      # Schema push is the fast path for this suite. It does not prove migration
+      # order. The migrate job is the clean-install release gate.
       - name: Push Prisma schema
         run: pnpm exec prisma db push
 
@@ -252,6 +257,41 @@ jobs:
             | Branches | ${{ steps.coverage.outputs.branches }}% | 60% |
 
             [Run details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  migrate:
+    name: Clean install migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_migrate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup empty PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 17
+          database: smartflow_migrate
+          user: postgres
+
+      - name: Apply migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Verify schema, plans, and payout index
+        run: pnpm exec tsx scripts/verify-migrated-database.ts
 
   build:
     name: Build & Bundle Budget

@@ -14,7 +14,7 @@ import {
   CampaignActionRail,
   type CampaignActionRailSnapshotRow,
 } from "~/features/campaign-ui";
-import type { PlanType } from "~/features/payments/types";
+import { useDeployment, type PlanType } from "~/features/payments/types";
 import { RailSegmentedTabGroup } from "~/features/posts/components/publishing-rail/RailSegmentedTabGroup";
 import {
   clampDateTimeLocalToMin,
@@ -113,6 +113,7 @@ export function ContestBuilderSummaryRail({
   className?: string;
 }) {
   const [now] = useState(() => Date.now());
+  const deployment = useDeployment();
 
   const rankRewardsJson: ContestRankReward[] = useMemo(
     () =>
@@ -134,12 +135,21 @@ export function ContestBuilderSummaryRail({
     [prizeMode, winnerCount, equalRewardSats, rankRewardsJson]
   );
 
-  const feeRateBps = getContestFinalizationFeeRateBps(planType);
-  const { feeSats } = computeContestFinalizationFeeSats(
-    plannedPayoutSats,
-    feeRateBps
-  );
-  const feePct = feeRateBps > 0 ? `${(feeRateBps / 100).toFixed(1)}%` : "0%";
+  const feePreview = useMemo(() => {
+    try {
+      const feeRateBps = getContestFinalizationFeeRateBps(planType, deployment);
+      const { feeSats } = computeContestFinalizationFeeSats(
+        plannedPayoutSats,
+        feeRateBps
+      );
+      const feePct =
+        feeRateBps > 0 ? `${(feeRateBps / 100).toFixed(1)}%` : "0%";
+      return { feeSats, feePct };
+    } catch {
+      return { feeSats: 0, feePct: "unavailable" };
+    }
+  }, [deployment, planType, plannedPayoutSats]);
+  const { feeSats, feePct } = feePreview;
 
   const end = contestEndAt.trim() ? new Date(contestEndAt) : null;
   const endValid = end != null && Number.isFinite(end.getTime());

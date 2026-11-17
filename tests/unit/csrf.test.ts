@@ -3,6 +3,7 @@
  * Tests app/lib/csrf.server.ts
  */
 
+import { RouterContextProvider } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -45,7 +46,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -65,7 +66,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -94,7 +95,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -120,7 +121,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -144,7 +145,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -168,7 +169,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -195,7 +196,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -229,7 +230,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -262,7 +263,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -287,7 +288,7 @@ describe("CSRF Protection Middleware", () => {
       const args: ActionFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };

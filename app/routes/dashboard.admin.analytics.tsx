@@ -24,12 +24,11 @@ import { requireUser } from "~/features/auth/auth.server";
 import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
     return data({ error: "Forbidden" }, { status: 403 });
   }
-  const url = new URL(request.url);
   const preset = parseRangePreset(
     url.searchParams.get("range"),
     defaultRangeForAdminPath(url.pathname)

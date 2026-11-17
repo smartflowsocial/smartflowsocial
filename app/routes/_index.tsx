@@ -18,7 +18,7 @@ const CACHE_CONTROL = "no-cache, no-store, must-revalidate";
  * Marketing landing lives at smartflow.social (static site).
  * Referral: on ?ref=npub1... (valid npub), set HTTP-only referral context cookie (7 days).
  */
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, url }: LoaderFunctionArgs) => {
   try {
     const user = await getUser(request);
     if (user) {
@@ -27,7 +27,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       });
     }
 
-    const url = new URL(request.url);
     const refParam = url.searchParams.get("ref");
     const referrerNpub = validateAndNormalizeRefNpub(refParam);
 

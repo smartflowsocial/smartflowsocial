@@ -1,18 +1,10 @@
 /// <reference types="vite/client" />
 /// <reference types="@react-router/node" />
 
-declare module "react-router" {
-  interface AppLoadContext {
-    nonce?: string;
-  }
+declare module "#nonce-context" {
+  import type { RouterContext } from "react-router";
 
-  interface LoaderFunctionArgs {
-    context: AppLoadContext;
-  }
-
-  interface ActionFunctionArgs {
-    context: AppLoadContext;
-  }
+  export const nonceContext: RouterContext<string | null>;
 }
 
 declare global {

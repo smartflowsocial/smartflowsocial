@@ -161,7 +161,7 @@ export function buildRootDefaultMeta(siteOrigin: string): MetaDescriptor[] {
 /** Match slice used to read root `siteOrigin` from loader data (meta `matches` or `useMatches()`). */
 export type SiteOriginMatchLike = Readonly<{
   id: string;
-  data?: unknown;
+  loaderData?: unknown;
 }>;
 
 /** Read `siteOrigin` from root loader data (for child route `meta`). */
@@ -169,6 +169,6 @@ export function siteOriginFromMatches(
   matches: readonly SiteOriginMatchLike[]
 ): string {
   const root = matches.find((m) => m.id === "root" || m.id === "routes/root");
-  const d = root?.data as { siteOrigin?: string } | undefined;
+  const d = root?.loaderData as { siteOrigin?: string } | undefined;
   return typeof d?.siteOrigin === "string" ? d.siteOrigin : "http://localhost";
 }

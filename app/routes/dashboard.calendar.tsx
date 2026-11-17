@@ -17,9 +17,8 @@ import {
   loadCalendarValidated,
 } from "./dashboard.calendar.loader.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, url, params }: LoaderFunctionArgs) {
   try {
-    const url = new URL(request.url);
     const parsedRange = parseCalendarPastRangeSearch(url.searchParams);
     if (parsedRange.kind !== "full") {
       return await loadCalendarRange(request, params);

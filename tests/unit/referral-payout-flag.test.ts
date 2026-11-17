@@ -31,22 +31,27 @@ describe("referral payout flag", () => {
     ).toBe(false);
   });
 
-  it("keeps an existing production wallet install on until the flag is set", () => {
+  it("stays off in production when the flag is unset, even with a wallet", () => {
     const decision = decideReferralPayouts(undefined, {
       nodeEnv: "production",
       ownerNwc: "nostr+walletconnect://present",
     });
-    expect(decision.enabled).toBe(true);
-    expect(decision.implicitProduction).toBe(true);
+    expect(decision.enabled).toBe(false);
   });
 
-  it("does not use the production compatibility path without a wallet", () => {
+  it("stays off for blank production values", () => {
     const decision = decideReferralPayouts("   ", {
       nodeEnv: "production",
       ownerNwc: "  ",
     });
     expect(decision.enabled).toBe(false);
-    expect(decision.implicitProduction).toBe(false);
+  });
+
+  it("turns on for the explicit values only", () => {
+    expect(decideReferralPayouts("true").enabled).toBe(true);
+    expect(decideReferralPayouts("1").enabled).toBe(true);
+    expect(decideReferralPayouts("yes").enabled).toBe(true);
+    expect(decideReferralPayouts(" TRUE ").enabled).toBe(true);
   });
 
   it("lets an explicit false override a configured production wallet", () => {

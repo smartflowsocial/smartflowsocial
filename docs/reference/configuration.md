@@ -398,6 +398,11 @@ Switching it does not rewrite subscription rows. Hosted Blossom storage and Smar
 Blastr stay on the commercial plan. A self-hosted install can use Blastr only when
 `BLASTR_ADMIN_URL` and `BLASTR_ADMIN_API_TOKEN` are both set to infrastructure the operator runs.
 
+On a self-hosted install the contest and giveaway finalization commission is 0% for every plan. The
+process does not create a platform-fee invoice and does not require `OWNER_NWC` for that fee. Winner
+payouts still use a wallet the creator connects. Hosted rates stay Free 10%, Starter 7.5%, Creator
+5%, and 0% on Pro, Teams, and Founder.
+
 Optional caps, blank for no software cap and `0` or non-numeric for a closed cap:
 
 - `SELF_HOSTED_MAX_FUTURE_SCHEDULED`
@@ -412,24 +417,33 @@ Optional caps, blank for no software cap and `0` or non-numeric for a closed cap
 
 ---
 
+### NWC_PAY_TIMEOUT_MS and NWC_RECONCILE_TIMEOUT_MS
+
+`NWC_PAY_TIMEOUT_MS` bounds one `pay_invoice`. Default `45000`. `NWC_RECONCILE_TIMEOUT_MS` bounds
+`get_info` and `lookup_invoice` after that pay call times out. Default `15000`. A value that is not
+an integer from 50 through 120000 is ignored and the default is used. When both the payment and the
+lookup stay unresolved, the payout is `unknown`. The worker does not wait forever and it does not
+send a second payment.
+
 ### REFERRAL_PAYOUTS_ENABLED
 
-`true`, `1`, or `yes` allow cron, admin, and manual referral payouts to call the wallet. Any other
-value, including `false` or an empty string, keeps those routes from paying. `example.env` sets
-`false` so a new self-host does not pay anyone. A missing `OWNER_NWC` never enables payouts.
+`true`, `1`, or `yes` (case-insensitive, surrounding spaces ignored) allow cron, admin, and manual
+referral payouts to call the wallet. Any other value, including `false`, an empty string, or an
+unset variable, keeps those routes from paying. `example.env` sets `false` so a new self-host does
+not pay anyone. `OWNER_NWC` does not enable payouts.
 
-An existing production process that already has `OWNER_NWC` and leaves the flag unset still pays,
-and logs a one-time warning. That path exists so a hosted deploy is not interrupted. Set `false` on
-that process to turn payouts off. New installs and every non-production process stay off until the
-flag is explicitly on. Production boot requires `REFERRAL_MANUAL_PAYOUT_SECRET` only when the flag
-is exactly `true`.
+A deployment that previously paid because `OWNER_NWC` was set and this flag was unset must set
+`REFERRAL_PAYOUTS_ENABLED=true` before upgrading. Otherwise referral payouts stop. Production boot
+requires `REFERRAL_MANUAL_PAYOUT_SECRET` when the flag is `true`, `1`, or `yes`. Uncertain payouts
+stay claimed until reconciliation. See
+[Payout reconciliation](../security/payout-reconciliation.md).
 
 ### REFERRAL_MANUAL_PAYOUT_SECRET
 
 Not required merely to boot. `POST /api/referral/manual-payout` returns 401 when this is unset or
 wrong, and 404 when `REFERRAL_PAYOUTS_ENABLED=false`. Send it as `X-Referral-Payout-Secret`.
-Generate one with `openssl rand -base64 32`. Production requires it only when
-`REFERRAL_PAYOUTS_ENABLED=true`.
+Generate one with `openssl rand -base64 32`. Production requires it when `REFERRAL_PAYOUTS_ENABLED`
+is `true`, `1`, or `yes`.
 
 The invoice amount must equal `amount_sats`. Amountless invoices and invoices larger than the
 declared amount are rejected before the wallet is called. Successful payouts are capped at
@@ -468,9 +482,22 @@ the only caller. Campaign autopay, referral payout, and ack cleanup run only whe
 their cron route.
 
 `POST /cron/purge-retained-records` is the preferred manual call. `GET` still runs the purge when
-the secret matches, and the response sets `Deprecation: true`. A missing or wrong secret returns 401
-and deletes nothing. The 365-day window is the software's current retention setting. It is not a
+the secret matches, and the response sets `Deprecation: true`. The production scheduler's method was
+not changed, because an existing caller may still use GET. A missing or wrong secret returns 401 and
+deletes nothing. The 365-day window is the software's current retention setting. It is not a
 determination that 365 days satisfies a statute. The operator decides the period.
+
+The worker also retries owned object deletions queued during account deletion. The default interval
+is 60 seconds (`OWNED_OBJECT_DELETION_INTERVAL_SECONDS`). Set it to `0` to disable that sweep. The
+rows remain in `OwnedObjectDeletion` until a later sweep deletes the objects. Count them with:
+
+```sql
+SELECT status, COUNT(*) FROM "OwnedObjectDeletion" GROUP BY status;
+```
+
+Do not select `objectKey` into logs. `FAILED` means the fast retry budget is exhausted and the
+worker is still retrying slowly. `REJECTED` means the key failed the account-prefix check and was
+not sent to storage.
 
 ---
 

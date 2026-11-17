@@ -36,12 +36,11 @@ import { isReferralAdmin } from "~/features/referral/referral-admin.server";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { cn } from "~/lib/utils";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const user = await requireUser(request);
   if (!isReferralAdmin(user.npub)) {
     return data({ error: "Forbidden" }, { status: 403 });
   }
-  const url = new URL(request.url);
   const page = url.searchParams.get("page");
   const filter = url.searchParams.get("filter") ?? undefined;
   const sort = url.searchParams.get("sort") ?? undefined;

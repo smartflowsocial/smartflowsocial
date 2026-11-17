@@ -12,6 +12,7 @@
  *   pnpm tsx scripts/backfill-longform-post-states.ts --validate-only
  */
 
+import { error as logError, log } from "./logger.cjs";
 import {
   backfillLongFormPostCurrentState,
   fixLongFormPostStateInconsistencies,
@@ -20,11 +21,6 @@ import {
 import { logInfo } from "~/lib/error-logger.server";
 
 // Script logger (avoids console.*)
-
-const { log, error: logError } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
 
 async function main() {
   const args = process.argv.slice(2);

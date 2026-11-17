@@ -45,6 +45,14 @@ function syncPayoutStateFromLedgerItems(args: {
         updatedAt: nowIso,
         note: item.errorMessage ?? "Winner needs claim",
       };
+    } else if (item.status === "unknown" || item.status === "paying") {
+      state[w.pubkey] = {
+        status: "needs_review",
+        updatedAt: nowIso,
+        note:
+          item.errorMessage ??
+          "Payment outcome is unknown. Automatic retry is blocked until the wallet is checked.",
+      };
     } else if (item.status === "skipped") {
       state[w.pubkey] = {
         status: "skipped",

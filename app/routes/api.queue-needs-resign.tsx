@@ -6,11 +6,10 @@ import { loadNeedsResignItemsForQueue } from "~/features/posts/data/queue-needs-
 import { handleActionError } from "~/lib/error-handler.server";
 import { jsonResponse } from "~/lib/http/json-response";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   try {
     const userId = await requireUserId(request);
     await requireAnySubscription(userId);
-    const url = new URL(request.url);
     const queueTypeId = url.searchParams.get("queueTypeId");
     if (!queueTypeId || queueTypeId.length === 0) {
       return jsonResponse(

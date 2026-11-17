@@ -16,11 +16,7 @@ import {
   getDeadLetterEntries,
   retryDeadLetterJob,
 } from "../app/infra/queue/dead-letter-queue.server";
-
-const { log, error: logError } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
+import { error as logError, log } from "./logger.cjs";
 
 config({ path: resolve(process.cwd(), ".env") });
 

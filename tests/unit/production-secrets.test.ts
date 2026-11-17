@@ -21,6 +21,20 @@ describe("production secret validation", () => {
     ]);
   });
 
+  it("requires the referral secret for every explicit on value", () => {
+    for (const flag of ["1", "yes", " TRUE "]) {
+      const problems = productionSecretErrors({
+        ...base,
+        cronSecret: "c".repeat(32),
+        nostrPublisherApiToken: "p".repeat(16),
+        referralPayoutsEnabled: flag,
+      });
+      expect(problems.map((problem) => problem.key)).toContain(
+        "REFERRAL_MANUAL_PAYOUT_SECRET"
+      );
+    }
+  });
+
   it("requires the referral secret only when payouts are enabled", () => {
     const problems = productionSecretErrors({
       ...base,

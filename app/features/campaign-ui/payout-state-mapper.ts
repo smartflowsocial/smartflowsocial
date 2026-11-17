@@ -94,6 +94,7 @@ export function mapPayoutItemPhase(status: string): UnifiedPayoutItemPhase {
       return "Skipped";
     case "claim_needed":
     case "needs_review":
+    case "unknown":
       return "Needs review";
     case "pending":
     default:

@@ -26,7 +26,7 @@ architecture patterns, and best practices.
 
 ### Prerequisites
 
-- Node.js 20.0.0+
+- Node.js 22.22.0+ (`.nvmrc` is `22.22`)
 - pnpm package manager
 - PostgreSQL 14+
 - Redis 6+
@@ -48,7 +48,7 @@ cp example.env .env
 
 # Set up database
 pnpm exec prisma generate
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 
 # Start development server
 pnpm dev
@@ -192,8 +192,8 @@ See [Architecture Overview](../getting-started/architecture.md) for details.
 
 ```typescript
 // 1. External dependencies
-import { json } from "@remix-run/node";
 import { useState } from "react";
+import type { LoaderFunctionArgs } from "react-router";
 
 // 2. Internal features (public API)
 import { getUserById } from "~/features/user";
@@ -202,9 +202,6 @@ import { requireUserId } from "~/features/auth";
 // 3. Internal utilities (for date formatting prefer useFormattedDate() in components,
 //    or formatDateForServer() from ~/lib/date-formatting.server.ts on the server)
 import { formatDate } from "~/lib/helpers";
-
-// 4. Types
-import type { LoaderFunctionArgs } from "@remix-run/node";
 ```
 
 ### Feature Public APIs
@@ -357,7 +354,9 @@ const posts = await prisma.post.findMany();
 1. **HTTP caching:**
 
 ```typescript
-return json(data, {
+import { data } from "react-router";
+
+return data(payload, {
   headers: {
     "Cache-Control": "public, max-age=3600",
   },

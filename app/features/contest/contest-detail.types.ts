@@ -50,6 +50,8 @@ export interface ContestDetailPageData {
     feeRateBps: number;
     lockConfigHash: string;
     waivedByPlan: boolean;
+    /** True when a paid invoice already covers this preview. */
+    feeSettled: boolean;
   };
   sourcePost: null | {
     id: string;

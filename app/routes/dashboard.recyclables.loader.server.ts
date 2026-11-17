@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { requireUserId } from "~/features/auth/auth.server";
 import { requireAnySubscription } from "~/features/payments";
 import { getRecyclableDashboardData } from "~/features/posts/server/publishing";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   recyclablesLoaderDataSchema,
@@ -16,7 +17,7 @@ export async function loadRecyclablesValidated(
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const data = await getRecyclableDashboardData({ userId, params, url });
   return validateLoaderResponse(data, recyclablesLoaderDataSchema);
 }

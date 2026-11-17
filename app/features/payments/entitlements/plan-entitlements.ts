@@ -23,11 +23,18 @@ export interface PlanEntitlements {
  * Returns limits and capability flags for a plan tier.
  * Free (and legacy teams mapping) match browse-all + strict execution caps.
  */
-export function getPlanEntitlements(planType: string): PlanEntitlements {
+export function tryGetPlanEntitlements(
+  planType: string
+): PlanEntitlements | null {
   const commercialPlanType = parseCommercialPlanType(planType);
-  if (!commercialPlanType) {
+  if (!commercialPlanType) return null;
+  return toExecutionEntitlements(getCanonicalPlanPolicy(commercialPlanType));
+}
+
+export function getPlanEntitlements(planType: string): PlanEntitlements {
+  const entitlements = tryGetPlanEntitlements(planType);
+  if (!entitlements) {
     throw new Error(`Invalid plan type: ${planType}`);
   }
-  const policy = getCanonicalPlanPolicy(commercialPlanType);
-  return toExecutionEntitlements(policy);
+  return entitlements;
 }

@@ -234,6 +234,9 @@ export async function beginReferralPayout(input: {
       if (existing?.status === "success") {
         return { ok: false, error: "ALREADY_PAID" };
       }
+      if (existing?.status === "unknown" || existing?.status === "started") {
+        return { ok: false, error: "PAYOUT_OUTCOME_UNKNOWN" };
+      }
       if (existing) {
         return { ok: false, error: "INVOICE_ALREADY_SUBMITTED" };
       }
@@ -381,6 +384,77 @@ export async function failReferralPayoutAttempt(input: {
       data: { status: "failed", errorMessage: reason },
     });
   });
+}
+
+/**
+ * Keeps the earnings claim after a wallet call whose result was not confirmed.
+ * A later payout cannot start while `payoutClaimHash` is set.
+ */
+export async function holdReferralPayoutAsUnknown(input: {
+  auditId: string;
+  earningIds: string[];
+  paymentHash: string;
+  reason: string;
+}): Promise<void> {
+  const reason = input.reason.slice(0, 500);
+  await prisma.$transaction(async (tx) => {
+    await tx.referralEarning.updateMany({
+      where: {
+        id: { in: input.earningIds },
+        payoutClaimHash: input.paymentHash,
+        status: "PENDING",
+      },
+      data: { payoutFailureReason: reason },
+    });
+    await tx.referralPayoutAuditLog.update({
+      where: { id: input.auditId },
+      data: { status: "unknown", errorMessage: reason },
+    });
+  });
+}
+
+export async function findInProgressReferralClaim(
+  referrerNpub: string
+): Promise<
+  | {
+      ambiguous: false;
+      paymentHash: string;
+      earningIds: string[];
+      amountSats: number;
+      auditId: string | null;
+    }
+  | { ambiguous: true }
+  | null
+> {
+  const rows = await prisma.referralEarning.findMany({
+    where: {
+      referrerNpub,
+      status: "PENDING",
+      NOT: { payoutClaimHash: null },
+    },
+    select: { id: true, commissionSats: true, payoutClaimHash: true },
+  });
+  if (rows.length === 0) return null;
+  const hashes = new Set(
+    rows
+      .map((row) => row.payoutClaimHash)
+      .filter((hash): hash is string => typeof hash === "string" && hash !== "")
+  );
+  if (hashes.size !== 1) return { ambiguous: true };
+  const paymentHash = [...hashes][0];
+  if (!paymentHash) return { ambiguous: true };
+  const audit = await prisma.referralPayoutAuditLog.findUnique({
+    where: { paymentHash },
+    select: { id: true, amountSats: true },
+  });
+  const amountFromRows = rows.reduce((sum, row) => sum + row.commissionSats, 0);
+  return {
+    ambiguous: false,
+    paymentHash,
+    earningIds: rows.map((row) => row.id),
+    amountSats: audit?.amountSats ?? amountFromRows,
+    auditId: audit?.id ?? null,
+  };
 }
 
 function isUniqueConflict(error: unknown): boolean {

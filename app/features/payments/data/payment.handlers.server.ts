@@ -2,6 +2,7 @@
  * Payment event/webhook-style handlers: completion and timeout.
  */
 
+import { completeContestFinalizationPayment } from "~/features/contest/repositories/contest-finalization-payment.server";
 import { completeGiveawayFinalizationPayment } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import { logError } from "~/lib/error-logger.server";
@@ -32,6 +33,11 @@ export async function handlePaymentCompleted(
 
     if (existing?.purpose === "GIVEAWAY_FINALIZATION") {
       await completeGiveawayFinalizationPayment(paymentId);
+      return;
+    }
+
+    if (existing?.purpose === "CONTEST_FINALIZATION") {
+      await completeContestFinalizationPayment(paymentId);
       return;
     }
 
@@ -100,6 +106,10 @@ export async function handlePaymentTimeout(paymentId: string): Promise<void> {
     });
 
     await prisma.giveawayFinalizationPayment.updateMany({
+      where: { paymentId, status: "PENDING" },
+      data: { status: "EXPIRED" },
+    });
+    await prisma.contestFinalizationPayment.updateMany({
       where: { paymentId, status: "PENDING" },
       data: { status: "EXPIRED" },
     });

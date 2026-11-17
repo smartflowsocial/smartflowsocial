@@ -1,4 +1,5 @@
 /* eslint-disable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/consistent-type-assertions -- Contest v1 domain scaffolding will be hardened in follow-up cleanup. */
+import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
 import { getUserSubscription } from "~/features/payments/data";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
@@ -15,7 +16,11 @@ import { resolveContestEntries } from "./contest-resolver.server";
 import { DEFAULT_TIE_BREAK_RULE } from "./contest-actions-constants.server";
 import { getContestById } from "./contest-actions-queries.server";
 import { updateContest as updateContestRow } from "./repositories/contest-actions-data.server";
-import { findPaidContestFinalizationForLock } from "./repositories/contest-finalization-payment.server";
+import {
+  expireContestFinalizationByIds,
+  findPaidContestFinalizationForLock,
+  listContestFinalizationRecords,
+} from "./repositories/contest-finalization-payment.server";
 import type { ContestRankReward } from "./types";
 
 export async function launchContest(
@@ -204,7 +209,7 @@ export async function lockContest(
   if (!srcNote) {
     return { success: false, error: "Contest is missing a source note id." };
   }
-  const quote = quoteContestFinalization({
+  const policyQuote = quoteContestFinalization({
     contest: {
       sourceNoteId: srcNote,
       rankingMetric: contest.rankingMetric,
@@ -219,6 +224,16 @@ export async function lockContest(
     },
     planType,
   });
+  const records = await listContestFinalizationRecords(contestId, userId);
+  const collection = resolveFinalizationCollection({
+    current: policyQuote,
+    records,
+    nowMs: Date.now(),
+  });
+  const quote = collection.quote;
+  if (collection.kind === "waived") {
+    await expireContestFinalizationByIds(collection.expireIds);
+  }
 
   if (
     options?.lockConfigHash &&

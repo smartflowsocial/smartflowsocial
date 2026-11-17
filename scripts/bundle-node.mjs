@@ -3,9 +3,12 @@ import { fileURLToPath } from "node:url";
 
 import * as esbuild from "esbuild";
 
-// Resolved from build/server.js and build/worker.js. scripts/load-env.cjs has no
-// dependency on the bundle, and it runs before any bundled module initializes.
-export const envBanner = 'require("../scripts/load-env.cjs");';
+// Resolved from build/server.js and build/worker.js. The import is the first
+// statement so it runs before the external React Router imports initialize.
+export const envBanner = `import { createRequire as __createRequire } from "node:module";
+import "../scripts/load-env.cjs";
+var require = __createRequire(import.meta.url);
+`;
 
 const sharedExternal = [
   "fsevents",
@@ -14,7 +17,24 @@ const sharedExternal = [
   "@prisma/client",
   "@prisma/engines",
   "vite",
+  "react-router",
+  "react-router/dom",
+  "@react-router/dev",
+  "@react-router/express",
+  "@react-router/fs-routes",
+  "@react-router/node",
+  "#nonce-context",
 ];
+
+const externalReactRouter = {
+  name: "external-react-router",
+  setup(build) {
+    build.onResolve(
+      { filter: /^(?:react-router(?:\/|$)|@react-router\/)/ },
+      (args) => ({ path: args.path, external: true })
+    );
+  },
+};
 
 export function bundleOptions(entry, { watch }) {
   const external = [...sharedExternal];
@@ -24,10 +44,11 @@ export function bundleOptions(entry, { watch }) {
   return {
     entryPoints: [entry],
     platform: "node",
-    format: "cjs",
+    format: "esm",
     outdir: "build",
     bundle: true,
     external,
+    plugins: [externalReactRouter],
     banner: { js: envBanner },
     logLevel: "info",
   };
