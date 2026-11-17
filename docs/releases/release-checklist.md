@@ -32,7 +32,7 @@ deploy, or a legal review as done from a source change.
 - [ ] An invalid preimage does not confirm a payout
 - [ ] Two concurrent claims of one winner produce one `paying` row
 - [ ] Referral payouts stay off when `REFERRAL_PAYOUTS_ENABLED` is unset
-- [ ] A fresh `paying` row cannot be marked unpaid inside the two-minute hold
+- [ ] A `paying` row cannot be marked unpaid before its stored resolution deadline
 
 ## Product
 
@@ -47,8 +47,9 @@ deploy, or a legal review as done from a source change.
 
 ## Human
 
-- [ ] Landing pull request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2)
-      is revised so Starter stays 7.5% and then merged by someone who can write to that repository
+- [ ] A follow-up landing change sets Starter commission to 7.5%. Pull request
+      [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2) is already merged and
+      is the page that published Starter at 0%
 - [ ] Companion repository handoff in [companion-handoff.md](../security/companion-handoff.md) is
       applied or explicitly deferred
 - [ ] Production `REFERRAL_PAYOUTS_ENABLED` is set if payouts should continue

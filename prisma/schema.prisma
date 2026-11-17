@@ -2081,6 +2081,10 @@ model PayoutAttempt {
 
   startedAt  DateTime @default(now())
   finishedAt DateTime?
+  /// Earliest time an operator may mark this attempt unpaid.
+  /// Null on rows created before the column existed; those use the maximum
+  /// permitted pay and reconciliation budget.
+  resolutionNotBefore DateTime?
 
   item PayoutItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   run  PayoutRun  @relation(fields: [runId], references: [id], onDelete: Cascade)

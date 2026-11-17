@@ -1,5 +1,6 @@
 import { NWCClient } from "@getalby/sdk";
 
+import { MAX_NWC_TIMEOUT_MS } from "~/features/payments/campaign-payout-resolution";
 import {
   normalizePaymentHex,
   verifiedPreimage,
@@ -25,6 +26,8 @@ const DEFINITIVE_REJECTION_CODES = new Set([
 
 export const DEFAULT_NWC_PAY_TIMEOUT_MS = 45_000;
 export const DEFAULT_NWC_RECONCILE_TIMEOUT_MS = 15_000;
+
+export { MAX_NWC_TIMEOUT_MS };
 
 export interface AuthorizedNwcClient {
   payInvoice(request: { invoice: string }): Promise<unknown>;
@@ -83,7 +86,11 @@ export function readPositiveTimeoutMs(
 ): number {
   if (value == null || !/^\d+$/.test(value.trim())) return fallback;
   const parsed = Number(value.trim());
-  if (!Number.isSafeInteger(parsed) || parsed < 50 || parsed > 120_000) {
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < 50 ||
+    parsed > MAX_NWC_TIMEOUT_MS
+  ) {
     return fallback;
   }
   return parsed;
@@ -390,6 +397,9 @@ export async function payAuthorizedBolt11(args: {
   const payPromise = capturePay(client, checked.invoice);
   swallow(payPromise);
 
+  // Active window, in order: this pay wait, the reconciliation race below,
+  // and one more lookup inside settlePayAttempt. The payout resolution
+  // active window must stay equal to that sum. A hanging lookup ends here.
   try {
     const first = await withTimeout(payPromise, args.timeoutMs);
     if (first !== "timeout") {

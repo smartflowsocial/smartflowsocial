@@ -9,6 +9,7 @@ import {
   sumPayableSats,
   type BudgetWinner,
 } from "~/features/payments/campaign-payout-budget";
+import { resolutionHoldMs } from "~/features/payments/campaign-payout-resolution";
 import {
   lookupAuthorizedPayment,
   nwcTimeouts,
@@ -252,6 +253,7 @@ async function processOneWinnerForCampaignPayout(args: {
     return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
   }
 
+  const timeouts = nwcTimeouts();
   const claim = await claimCampaignPayoutItem({
     runId,
     winnerPubkey: w.winnerPubkeyHex,
@@ -263,6 +265,7 @@ async function processOneWinnerForCampaignPayout(args: {
     lnAddressSnapshot: inv.lnAddressSnapshot,
     requestedSpendCapSats: spendCapSats,
     requestedWinners: requestedWinners(input.winners),
+    resolutionHoldMs: resolutionHoldMs(timeouts),
   });
   if (!claim.ok) {
     if (claim.reason === "already_paid" || claim.reason === "skipped") {
@@ -290,7 +293,6 @@ async function processOneWinnerForCampaignPayout(args: {
     return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
   }
 
-  const timeouts = nwcTimeouts();
   const payRes = await payAuthorizedBolt11({
     nwcUrl: nwc,
     invoice: decoded.invoice,

@@ -60,10 +60,17 @@ what the wallet showed.
 - `confirmed_unpaid` sets the row to `failed`, clears `paymentHash`, and stores the old hash as
   `releasedPaymentHash` on the destination snapshot. A later run may then pay a new invoice for the
   same winner. Use this only after the wallet shows that hash was not paid.
-- `confirmed_unpaid` is refused for two minutes after the latest attempt started
-  (`ACTIVE_PAYOUT_RESOLUTION_HOLD_MS`). That covers the pay timeout, the lookup timeout, and a slow
-  worker. `confirmed_paid` is still allowed during the hold, because that decision does not create
-  another payment.
+- `confirmed_unpaid` is refused until the attempt's resolution deadline. That deadline is stored on
+  the attempt when the claim is taken. It is the longest path through the payer for the timeouts in
+  effect: the `pay_invoice` wait (`NWC_PAY_TIMEOUT_MS`), the reconciliation race after that wait
+  (`NWC_RECONCILE_TIMEOUT_MS`), a second lookup when a late or preimage-less pay response arrives
+  (another `NWC_RECONCILE_TIMEOUT_MS`), and a 30 second margin for scheduling and the settle write.
+  Defaults are 45 seconds, 15 seconds, and 15 seconds, so the hold is 105 seconds. The maximum
+  accepted timeouts are 120 seconds each, so the hold is 390 seconds. An attempt saved before this
+  deadline existed uses the 390 second maximum, even if the current timeouts are shorter.
+  `confirmed_paid` is still allowed during the hold, because that decision does not create another
+  payment. Rewriting `startedAt` does not open the gate while `resolutionNotBefore` is still in the
+  future.
 
 Run it from a machine that has the application environment and `DATABASE_URL`:
 

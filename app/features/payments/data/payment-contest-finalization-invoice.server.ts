@@ -10,13 +10,20 @@ import {
 } from "~/features/contest/repositories/contest-finalization-payment.server";
 import type { ContestRankReward } from "~/features/contest/types";
 import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
+import {
+  acceptFinalizationWalletInvoice,
+  acceptedStoredFinalizationInvoice,
+} from "~/features/payments/finalization-invoice-guard";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
-import { prisma } from "~/lib/prisma.server";
 
+import {
+  isUniqueConstraintError,
+  runLockedFinalizationCreate,
+} from "./finalization-invoice-lock.server";
 import {
   OWNER_NWC_MISSING,
   withOwnerWalletInvoiceRequestTimeout,
@@ -26,15 +33,35 @@ import {
   isLikelyWebsocketRelayError,
 } from "./payment-shared.server";
 import {
-  extractAmountFromRequest,
-  extractInvoiceFromRequest,
-  extractPaymentHashFromRequest,
-} from "./payment-utils.server";
-import {
   handlePaymentCompleted,
   handlePaymentTimeout,
 } from "./payment.handlers.server";
 import { getUserSubscription } from "./payment.queries.server";
+
+const NO_CONTEST_FINALIZATION_FEE =
+  "No finalization fee is due for this contest";
+
+async function recoverContestFinalizationRace(args: {
+  contestId: string;
+  userId: string;
+  current: Parameters<typeof resolveFinalizationCollection>[0]["current"];
+}): Promise<ContestFinalizationInvoiceResponse | null> {
+  const again = resolveFinalizationCollection({
+    current: args.current,
+    records: await listContestFinalizationRecords(args.contestId, args.userId),
+    nowMs: Date.now(),
+  });
+  if (again.kind !== "honor_pending") return null;
+  const existing = acceptedStoredFinalizationInvoice(
+    await findReusableContestFinalizationInvoice(again.paymentId),
+    again.quote.feeSats
+  );
+  if (!existing) return null;
+  return {
+    ...existing,
+    lockConfigHash: again.quote.lockConfigHash,
+  };
+}
 
 export interface ContestFinalizationInvoiceResponse {
   invoice: string;
@@ -97,28 +124,19 @@ export async function createContestFinalizationInvoice(params: {
     await expireContestFinalizationByIds(
       collection.kind === "waived" ? collection.expireIds : []
     );
-    throw new Error("No finalization fee is due for this contest");
+    throw new Error(NO_CONTEST_FINALIZATION_FEE);
   }
   if (collection.kind === "settled") {
     throw new Error("The finalization fee for this preview is already paid");
   }
   if (collection.kind === "honor_pending") {
-    const existing = await findReusableContestFinalizationInvoice(
-      collection.paymentId
+    const existing = acceptedStoredFinalizationInvoice(
+      await findReusableContestFinalizationInvoice(collection.paymentId),
+      collection.quote.feeSats
     );
-    if (
-      existing?.expiresAt &&
-      existing.expiresAt.getTime() > Date.now() &&
-      existing.amount === collection.quote.feeSats &&
-      existing.invoice &&
-      existing.paymentHash
-    ) {
+    if (existing) {
       return {
-        invoice: existing.invoice,
-        paymentHash: existing.paymentHash,
-        amount: existing.amount,
-        expiresAt: existing.expiresAt,
-        paymentId: existing.id,
+        ...existing,
         lockConfigHash: collection.quote.lockConfigHash,
       };
     }
@@ -127,7 +145,7 @@ export async function createContestFinalizationInvoice(params: {
 
   const due = collection.quote;
   if (due.feeSats <= 0) {
-    throw new Error("No finalization fee is due for this contest");
+    throw new Error(NO_CONTEST_FINALIZATION_FEE);
   }
 
   const credentials = env.OWNER_NWC;
@@ -143,81 +161,130 @@ export async function createContestFinalizationInvoice(params: {
     }>;
   };
 
+  const lockKey = `contest-finalization:${contestId}:${due.lockConfigHash}`;
   try {
-    if (collection.kind === "collect") {
-      await expireContestFinalizationByIds(collection.expireIds);
-    }
-    const request = await withOwnerWalletInvoiceRequestTimeout(
-      ln.requestPayment(SATS(due.feeSats) as unknown as { amount: number })
-    );
-    const paymentId = `cf_${contestId}_${Date.now()}_${userId}`;
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-    const invoiceString = extractInvoiceFromRequest(request);
-    const paymentHashString = extractPaymentHashFromRequest(request);
-    const amountSats = await extractAmountFromRequest(
-      request,
-      invoiceString,
-      0,
-      async () => due.feeSats
-    );
-    if (!invoiceString || !paymentHashString) {
-      throw new Error(
-        "Invalid response from payment provider - missing invoice or paymentHash"
+    const created = await runLockedFinalizationCreate(lockKey, async (tx) => {
+      const again = resolveFinalizationCollection({
+        current: due,
+        records: await listContestFinalizationRecords(contestId, userId),
+        nowMs: Date.now(),
+      });
+      if (again.kind === "settled") {
+        throw new Error(
+          "The finalization fee for this preview is already paid"
+        );
+      }
+      if (again.kind === "honor_pending") {
+        const existing = acceptedStoredFinalizationInvoice(
+          await findReusableContestFinalizationInvoice(again.paymentId),
+          again.quote.feeSats
+        );
+        if (existing) {
+          return {
+            response: {
+              ...existing,
+              lockConfigHash: again.quote.lockConfigHash,
+            },
+            attach() {
+              return;
+            },
+          };
+        }
+      }
+      if (again.kind !== "collect" || again.quote.feeSats !== due.feeSats) {
+        throw new Error(NO_CONTEST_FINALIZATION_FEE);
+      }
+      await expireContestFinalizationByIds(again.expireIds);
+      const request = await withOwnerWalletInvoiceRequestTimeout(
+        ln.requestPayment(SATS(due.feeSats) as unknown as { amount: number })
       );
-    }
-    const planLabel = getPlanDisplayName(
-      subscription as UserSubscription | null
-    );
-    await prisma.payment.create({
-      data: {
-        id: paymentId,
+      const accepted = acceptFinalizationWalletInvoice({
+        request,
+        authorizedSats: due.feeSats,
+      });
+      if (!accepted.ok) {
+        throw new Error(
+          `Invalid response from payment provider - ${accepted.error}`
+        );
+      }
+      const paymentId = `cf_${contestId}_${Date.now()}_${userId}`;
+      const expiresAtMs = Math.min(
+        accepted.expiresAtMs,
+        Date.now() + 30 * 60 * 1000
+      );
+      const expiresAt = new Date(expiresAtMs);
+      const planLabel = getPlanDisplayName(
+        subscription as UserSubscription | null
+      );
+      await tx.payment.create({
+        data: {
+          id: paymentId,
+          userId,
+          amount: accepted.amountSats,
+          amountUsd: null,
+          invoice: accepted.invoice,
+          paymentHash: accepted.paymentHash,
+          status: "PENDING",
+          purpose: "CONTEST_FINALIZATION",
+          description: `Contest finalization: ${contestId}`,
+          expiresAt,
+        },
+      });
+      await tx.contestFinalizationPayment.create({
+        data: {
+          contestId,
+          userId,
+          planName: planLabel,
+          feeRateBps: due.feeRateBps,
+          plannedPayoutSats: due.plannedPayoutSats,
+          feeSats: due.feeSats,
+          lockConfigHash: due.lockConfigHash,
+          status: "PENDING",
+          paymentId,
+        },
+      });
+      await appendContestEventLog(
         userId,
-        amount: amountSats,
-        amountUsd: null,
-        invoice: invoiceString,
-        paymentHash: paymentHashString,
-        status: "PENDING",
-        purpose: "CONTEST_FINALIZATION",
-        description: `Contest finalization: ${contestId}`,
-        expiresAt,
-      },
+        contestId,
+        "fee_quoted",
+        "Finalization fee invoice created",
+        { feeSats: due.feeSats, feeRateBps: due.feeRateBps }
+      );
+      const timeoutSeconds = Math.max(
+        1,
+        Math.floor((expiresAtMs - Date.now()) / 1000)
+      );
+      return {
+        response: {
+          invoice: accepted.invoice,
+          paymentHash: accepted.paymentHash,
+          amount: accepted.amountSats,
+          expiresAt,
+          paymentId,
+          lockConfigHash: due.lockConfigHash,
+        },
+        attach: () => {
+          request
+            .onPaid(() => {
+              void handlePaymentCompleted(paymentId, userId, "");
+            })
+            .onTimeout(timeoutSeconds, () => {
+              void handlePaymentTimeout(paymentId);
+            });
+        },
+      };
     });
-    await prisma.contestFinalizationPayment.create({
-      data: {
+    created.attach();
+    return created.response;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const recovered = await recoverContestFinalizationRace({
         contestId,
         userId,
-        planName: planLabel,
-        feeRateBps: due.feeRateBps,
-        plannedPayoutSats: due.plannedPayoutSats,
-        feeSats: due.feeSats,
-        lockConfigHash: due.lockConfigHash,
-        status: "PENDING",
-        paymentId,
-      },
-    });
-    await appendContestEventLog(
-      userId,
-      contestId,
-      "fee_quoted",
-      "Finalization fee invoice created",
-      { feeSats: due.feeSats, feeRateBps: due.feeRateBps }
-    );
-    request
-      .onPaid(() => {
-        void handlePaymentCompleted(paymentId, userId, "");
-      })
-      .onTimeout(1800, () => {
-        void handlePaymentTimeout(paymentId);
+        current: due,
       });
-    return {
-      invoice: invoiceString,
-      paymentHash: paymentHashString,
-      amount: amountSats,
-      expiresAt,
-      paymentId,
-      lockConfigHash: due.lockConfigHash,
-    };
-  } catch (error) {
+      if (recovered) return recovered;
+    }
     if (error instanceof ExternalServiceError) throw error;
     const err = error instanceof Error ? error : new Error(String(error));
     logError(err, {

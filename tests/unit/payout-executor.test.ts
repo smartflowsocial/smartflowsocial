@@ -123,7 +123,17 @@ describe("executeCampaignPayoutBatch", () => {
     const res = await executeCampaignPayoutBatch(input(123));
     expect(res.totals.paid).toBe(1);
     expect(payApi.payAuthorizedBolt11).toHaveBeenCalledWith(
-      expect.objectContaining({ invoice, authorizedSats: 123 })
+      expect.objectContaining({
+        invoice,
+        authorizedSats: 123,
+        timeoutMs: 45_000,
+        reconcileTimeoutMs: 15_000,
+      })
+    );
+    expect(claimApi.claimCampaignPayoutItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolutionHoldMs: 45_000 + 15_000 + 15_000 + 30_000,
+      })
     );
     expect(claimApi.settleCampaignPayoutAttempt).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: "paid", itemId: "item_1" })
@@ -193,7 +203,7 @@ describe("executeCampaignPayoutBatch", () => {
     expect(payApi.payAuthorizedBolt11).not.toHaveBeenCalled();
   });
 
-  it("marks a timeout unknown and does not pay it again", async () => {
+  it("does not call payInvoice again after an ambiguous outcome", async () => {
     vi.mocked(fetchLnurlPayInvoice).mockResolvedValue({
       ok: true,
       invoice: freshInvoiceForSats(100, HASH),
