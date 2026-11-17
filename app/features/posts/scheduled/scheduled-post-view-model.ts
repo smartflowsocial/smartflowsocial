@@ -21,13 +21,7 @@ export type ScheduledPostEntityKind = "post" | "longform";
 
 /** Display kind for header chips (canonical labels). */
 export type ScheduledPostDisplayKind =
-  | "Post"
-  | "Reply"
-  | "Quote"
-  | "Repost"
-  | "Poll"
-  | "Article"
-  | "Thread item";
+  "Post" | "Reply" | "Quote" | "Repost" | "Poll" | "Article" | "Thread item";
 
 export interface ScheduledPostTechnicalDetails {
   eventId?: string | null;

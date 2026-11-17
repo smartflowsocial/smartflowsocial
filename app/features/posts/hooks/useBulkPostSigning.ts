@@ -168,8 +168,7 @@ export function useBulkPostSigning({
             ? eventData.scheduledFor
             : 0;
         const mainSigned = signedEntry.signedEvent as
-          | { tags?: string[][] }
-          | undefined;
+          { tags?: string[][] } | undefined;
         const tagArray = Array.isArray(mainSigned?.tags) ? mainSigned.tags : [];
 
         const repostSched = posts[i]?.repostSchedules;

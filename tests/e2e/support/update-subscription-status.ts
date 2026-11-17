@@ -12,11 +12,7 @@ import { PrismaClient, SubscriptionStatus } from "@prisma/client";
 import { Pool } from "pg";
 
 type TestSubscriptionStatus =
-  | "FREE"
-  | "ACTIVE"
-  | "EXPIRED"
-  | "CANCELED"
-  | "PAST_DUE";
+  "FREE" | "ACTIVE" | "EXPIRED" | "CANCELED" | "PAST_DUE";
 
 async function updateSubscriptionStatus(
   npub: string,

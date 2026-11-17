@@ -49,5 +49,4 @@ export interface ContestLivePreviewRow {
 }
 
 export type ContestLeaderboardRow =
-  | ContestLeaderboardEntryRow
-  | ContestLivePreviewRow;
+  ContestLeaderboardEntryRow | ContestLivePreviewRow;

@@ -22,7 +22,6 @@ export function EngagementResolvedLoaderProvider({
 
 /** Resolved engagement payload from a deferred loader (only set inside &lt;Await&gt;). */
 export function useEngagementResolvedLoaderData():
-  | EngagementLoaderData
-  | undefined {
+  EngagementLoaderData | undefined {
   return useContext(EngagementResolvedLoaderContext);
 }

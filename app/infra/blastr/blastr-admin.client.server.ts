@@ -10,10 +10,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
 const CONTENT_TYPE_JSON = "application/json";
 
 export type BlastrEntitlementStatus =
-  | "active"
-  | "grace"
-  | "expired"
-  | "suspended";
+  "active" | "grace" | "expired" | "suspended";
 
 export interface BlastrUserPolicy {
   mode: "blacklist" | "whitelist";

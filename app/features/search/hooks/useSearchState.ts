@@ -120,9 +120,7 @@ export function useSearchState({
 
   const isSearching = fetcher.state !== "idle";
   const dataSource = (fetcherData ?? loaderSearchResult) as
-    | SearchResultData
-    | null
-    | undefined;
+    SearchResultData | null | undefined;
   const searchResult = dataSource?.event;
   const searchStats = dataSource?.stats;
   const searchReplies = dataSource?.replies ?? [];

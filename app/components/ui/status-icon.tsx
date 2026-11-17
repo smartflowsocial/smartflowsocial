@@ -45,12 +45,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 
 export type StatusTone =
-  | "success"
-  | "warning"
-  | "danger"
-  | "info"
-  | "neutral"
-  | "pending";
+  "success" | "warning" | "danger" | "info" | "neutral" | "pending";
 
 export type StatusIconSize = "xs" | "sm" | "md" | "lg" | "xl";
 

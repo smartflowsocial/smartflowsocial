@@ -439,9 +439,7 @@ export interface CreateInvoiceParams {
   billingCadence?: "monthly" | "yearly";
   accessDurationMonths?: number;
   billingPaymentMethod?:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 }
 
 /** Lightning bolt11 vs BTCPay hosted checkout URL */

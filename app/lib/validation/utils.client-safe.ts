@@ -78,8 +78,7 @@ function createSSRForm<TSchema extends z.ZodTypeAny>(
     touchedFields: {},
     dirtyFields: {},
     defaultValues: defaultValues as unknown as
-      | Readonly<DeepPartial<FormValues>>
-      | undefined,
+      Readonly<DeepPartial<FormValues>> | undefined,
     submitCount: 0,
     isSubmitting: false,
     disabled: false,

@@ -257,8 +257,7 @@ export default function LongFormDraftEditPage() {
           typeof actionData === "object" &&
           "success" in actionData
             ? ((actionData as { success?: unknown }).success as
-                | boolean
-                | undefined)
+                boolean | undefined)
             : undefined
         }
       />

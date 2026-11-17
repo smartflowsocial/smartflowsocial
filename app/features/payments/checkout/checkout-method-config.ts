@@ -3,9 +3,7 @@
  */
 
 export type CheckoutPaymentMethodId =
-  | "auto_renew"
-  | "lightning_one_time"
-  | "btc_onchain";
+  "auto_renew" | "lightning_one_time" | "btc_onchain";
 
 export function defaultCheckoutPaymentMethod(): CheckoutPaymentMethodId {
   return "auto_renew";

@@ -120,11 +120,7 @@ function parseQueueType(qt: unknown): string | QueueType {
           queueTypeObj.status
         )
           ? (queueTypeObj.status as
-              | "active"
-              | "paused"
-              | "archived"
-              | "full"
-              | "manual")
+              "active" | "paused" | "archived" | "full" | "manual")
           : undefined,
       isEnabled:
         typeof queueTypeObj["isEnabled"] === "boolean"

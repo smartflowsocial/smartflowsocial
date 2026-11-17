@@ -11,12 +11,7 @@ export interface ConnectionLogEntry {
   id: string;
   timestamp: number;
   type:
-    | "connect"
-    | "disconnect"
-    | "error"
-    | "health_check"
-    | "reconnect"
-    | "sign";
+    "connect" | "disconnect" | "error" | "health_check" | "reconnect" | "sign";
   status: "success" | "failure" | "timeout";
   message: string;
   details?: Record<string, unknown>;

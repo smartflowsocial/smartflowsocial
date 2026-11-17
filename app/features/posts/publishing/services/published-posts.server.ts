@@ -178,15 +178,11 @@ export async function getPublishedDashboardData({
       // Validate Prisma JsonValue with Zod schemas
       const signedEventValue = validateSignedEvent(
         ("signedEvent" in postObj ? postObj["signedEvent"] : undefined) as
-          | Prisma.JsonValue
-          | null
-          | undefined
+          Prisma.JsonValue | null | undefined
       );
       const nostrEventValue = validateNostrEvent(
         ("nostrEvent" in postObj ? postObj["nostrEvent"] : undefined) as
-          | Prisma.JsonValue
-          | null
-          | undefined
+          Prisma.JsonValue | null | undefined
       );
       const queueTypeValue =
         "queueType" in postObj &&
@@ -233,8 +229,7 @@ export async function getPublishedDashboardData({
     toLongFormPostDTOArray(longformPostsData);
 
   const longformPaginationObj = longformResult.pagination as
-    | { total?: number }
-    | undefined;
+    { total?: number } | undefined;
   const totalLongform =
     longformPaginationObj && typeof longformPaginationObj.total === "number"
       ? longformPaginationObj.total

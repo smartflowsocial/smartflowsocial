@@ -8,11 +8,7 @@ import {
 } from "~/lib/errors";
 
 export type LookupLoaderErrorCode =
-  | "INVALID_INPUT"
-  | "NOT_FOUND"
-  | "UNSUPPORTED"
-  | "EXTERNAL_ERROR"
-  | "UNKNOWN";
+  "INVALID_INPUT" | "NOT_FOUND" | "UNSUPPORTED" | "EXTERNAL_ERROR" | "UNKNOWN";
 
 export interface LookupLoaderErrorPayload {
   code: LookupLoaderErrorCode;

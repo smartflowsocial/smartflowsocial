@@ -1,8 +1,5 @@
 export type BuilderScopeType =
-  | "PERIOD"
-  | "SINGLE_POST"
-  | "FOLLOWERS"
-  | "FOLLOWING";
+  "PERIOD" | "SINGLE_POST" | "FOLLOWERS" | "FOLLOWING";
 
 export const GIVEAWAY_SINGLE_POST_SOURCE_OPTIONS = [
   {

@@ -273,8 +273,7 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { userId?: string; currentState?: string } }
-        | undefined;
+        { where?: { userId?: string; currentState?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.currentState).toBe("PUBLISHED");
       expect(result.posts).toEqual(mockPosts);
@@ -300,8 +299,7 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { userId?: string; currentState?: string } }
-        | undefined;
+        { where?: { userId?: string; currentState?: string } } | undefined;
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(callArgs?.where?.currentState).toBe("SCHEDULED");
       expect(result.posts).toEqual(mockPosts);
@@ -332,8 +330,7 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { id?: { in?: string[] }; userId?: string } }
-        | undefined;
+        { where?: { id?: { in?: string[] }; userId?: string } } | undefined;
       expect(callArgs?.where?.id?.in).toEqual(["longform-1", "longform-2"]);
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPosts);
@@ -419,8 +416,7 @@ describe("Longform Post Queries - Extended", () => {
       const callArgs = (
         prisma.longFormPost.findMany as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { queueType?: { name?: string } } }
-        | undefined;
+        { where?: { queueType?: { name?: string } } } | undefined;
       expect(callArgs?.where?.queueType).toEqual({ name: "Queue 1" });
     });
   });

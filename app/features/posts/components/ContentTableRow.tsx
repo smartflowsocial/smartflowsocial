@@ -468,16 +468,14 @@ export function ContentRowActions({
                               fetcher.state !== "idle" ||
                               (formData
                                 ? (formData.get(FORM_FIELD_POST_ID) as
-                                    | string
-                                    | null) === item.id
+                                    string | null) === item.id
                                 : false)
                             }
                           >
                             {fetcher.state !== "idle" &&
                             (formData
                               ? (formData.get(FORM_FIELD_POST_ID) as
-                                  | string
-                                  | null) === item.id
+                                  string | null) === item.id
                               : false)
                               ? REPOST_IN_PROGRESS_LABEL
                               : REPOST_ACTION_LABEL}
@@ -498,16 +496,14 @@ export function ContentRowActions({
                               fetcher.state !== "idle" ||
                               (formData
                                 ? (formData.get(FORM_FIELD_POST_ID) as
-                                    | string
-                                    | null) === item.id
+                                    string | null) === item.id
                                 : false)
                             }
                           >
                             {fetcher.state !== "idle" &&
                             (formData
                               ? (formData.get(FORM_FIELD_POST_ID) as
-                                  | string
-                                  | null) === item.id
+                                  string | null) === item.id
                               : false)
                               ? QUOTE_IN_PROGRESS_LABEL
                               : QUOTE_ACTION_LABEL}
@@ -560,16 +556,14 @@ export function ContentRowActions({
                             fetcher.state !== "idle" ||
                             (formData
                               ? (formData.get(FORM_FIELD_POST_ID) as
-                                  | string
-                                  | null) === item.id
+                                  string | null) === item.id
                               : false)
                           }
                         >
                           {fetcher.state !== "idle" &&
                           (formData
                             ? (formData.get(FORM_FIELD_POST_ID) as
-                                | string
-                                | null) === item.id
+                                string | null) === item.id
                             : false)
                             ? REPOST_IN_PROGRESS_LABEL
                             : REPOST_ACTION_LABEL}
@@ -602,16 +596,14 @@ export function ContentRowActions({
                             fetcher.state !== "idle" ||
                             (formData
                               ? (formData.get(FORM_FIELD_POST_ID) as
-                                  | string
-                                  | null) === item.id
+                                  string | null) === item.id
                               : false)
                           }
                         >
                           {fetcher.state !== "idle" &&
                           (formData
                             ? (formData.get(FORM_FIELD_POST_ID) as
-                                | string
-                                | null) === item.id
+                                string | null) === item.id
                             : false)
                             ? QUOTE_IN_PROGRESS_LABEL
                             : QUOTE_ACTION_LABEL}
@@ -682,16 +674,14 @@ export function ContentRowActions({
                                       fetcher.state !== "idle" ||
                                       (formData
                                         ? (formData.get(FORM_FIELD_POST_ID) as
-                                            | string
-                                            | null) === child.id
+                                            string | null) === child.id
                                         : false)
                                     }
                                   >
                                     {fetcher.state !== "idle" &&
                                     (formData
                                       ? (formData.get(FORM_FIELD_POST_ID) as
-                                          | string
-                                          | null) === child.id
+                                          string | null) === child.id
                                       : false)
                                       ? REPOST_IN_PROGRESS_LABEL
                                       : REPOST_ACTION_LABEL}
@@ -716,16 +706,14 @@ export function ContentRowActions({
                                       fetcher.state !== "idle" ||
                                       (formData
                                         ? (formData.get(FORM_FIELD_POST_ID) as
-                                            | string
-                                            | null) === child.id
+                                            string | null) === child.id
                                         : false)
                                     }
                                   >
                                     {fetcher.state !== "idle" &&
                                     (formData
                                       ? (formData.get(FORM_FIELD_POST_ID) as
-                                          | string
-                                          | null) === child.id
+                                          string | null) === child.id
                                       : false)
                                       ? QUOTE_IN_PROGRESS_LABEL
                                       : QUOTE_ACTION_LABEL}
@@ -771,8 +759,7 @@ export function ContentRowActions({
                       {deleteFetcher.state !== "idle" &&
                       (deleteFetcher.formData
                         ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                            | string
-                            | null) === child.id
+                            string | null) === child.id
                         : false)
                         ? DELETE_IN_PROGRESS_LABEL
                         : DELETE_ACTION_LABEL}
@@ -877,8 +864,7 @@ export function ContentRowActions({
                       deleteFetcher.formData?.get("_action") ===
                         "moveToDraft" &&
                       (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                        | string
-                        | null) === child.id
+                        string | null) === child.id
                         ? "Moving..."
                         : "Move to drafts"}
                     </DropdownMenuItem>
@@ -902,8 +888,7 @@ export function ContentRowActions({
                       {deleteFetcher.state !== "idle" &&
                       (deleteFetcher.formData
                         ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                            | string
-                            | null) === child.id
+                            string | null) === child.id
                         : false)
                         ? DELETE_IN_PROGRESS_LABEL
                         : DELETE_ACTION_LABEL}
@@ -930,8 +915,7 @@ export function ContentRowActions({
               {deleteFetcher.state !== "idle" &&
               deleteFetcher.formData?.get("_action") === "moveToDraft" &&
               (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                | string
-                | null) === item.id
+                string | null) === item.id
                 ? "Moving..."
                 : "Move to drafts"}
             </DropdownMenuItem>
@@ -1017,8 +1001,7 @@ export function ContentRowActions({
           {deleteFetcher.state !== "idle" &&
           (deleteFetcher.formData
             ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                | string
-                | null) === item.id
+                string | null) === item.id
             : false)
             ? DELETE_IN_PROGRESS_LABEL
             : type === "draft"

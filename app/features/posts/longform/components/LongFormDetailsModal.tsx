@@ -574,15 +574,13 @@ export default function LongFormDetailsModal({
           : [];
         return eTags.some((t) => t[1] === rootId);
       })
-      .map(
-        (event): ChildReply => ({
-          id: event.id ?? "",
-          pubkey: event.pubkey ?? "",
-          content: event.content ?? "",
-          created_at: event.created_at ?? 0,
-          tags: event.tags,
-        })
-      );
+      .map((event): ChildReply => ({
+        id: event.id ?? "",
+        pubkey: event.pubkey ?? "",
+        content: event.content ?? "",
+        created_at: event.created_at ?? 0,
+        tags: event.tags,
+      }));
   }, [eventIdForThread, threadData?.events]);
 
   const threadMetadata = threadData?.metadata ?? {};

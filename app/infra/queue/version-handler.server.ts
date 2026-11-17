@@ -152,8 +152,7 @@ export function normalizePayload(
       "scheduledFor" in payload
     ) {
       const normalized = payload as
-        | PostScheduledPayload
-        | LongFormPostScheduledPayload;
+        PostScheduledPayload | LongFormPostScheduledPayload;
 
       // Ensure schemaVersion is set
       if (!normalized.schemaVersion) {

@@ -347,16 +347,14 @@ export function LongFormTableDesktop({
                                           fetcher.state !== "idle" ||
                                           (formData
                                             ? (formData.get("postId") as
-                                                | string
-                                                | null) === post.id
+                                                string | null) === post.id
                                             : false)
                                         }
                                       >
                                         {fetcher.state !== "idle" &&
                                         (formData
                                           ? (formData.get("postId") as
-                                              | string
-                                              | null) === post.id
+                                              string | null) === post.id
                                           : false)
                                           ? "Reposting..."
                                           : "Repost"}
@@ -389,16 +387,14 @@ export function LongFormTableDesktop({
                                           fetcher.state !== "idle" ||
                                           (formData
                                             ? (formData.get("postId") as
-                                                | string
-                                                | null) === post.id
+                                                string | null) === post.id
                                             : false)
                                         }
                                       >
                                         {fetcher.state !== "idle" &&
                                         (formData
                                           ? (formData.get("postId") as
-                                              | string
-                                              | null) === post.id
+                                              string | null) === post.id
                                           : false)
                                           ? "Quoting..."
                                           : "Quote Post"}

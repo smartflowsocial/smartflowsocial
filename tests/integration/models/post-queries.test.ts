@@ -382,8 +382,7 @@ describe("Post Queries", () => {
 
       const callArgs = (prisma.post.findMany as ReturnType<typeof vi.fn>).mock
         .calls[0]?.[0] as
-        | { where?: { queueType?: { name?: string } } }
-        | undefined;
+        { where?: { queueType?: { name?: string } } } | undefined;
       expect(callArgs?.where?.queueType).toEqual({ name: "queue1" });
     });
   });

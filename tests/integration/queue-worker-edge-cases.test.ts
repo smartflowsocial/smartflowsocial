@@ -96,6 +96,7 @@ vi.mock("~/features/user", () => ({
 vi.mock("~/infra/queue", () => ({
   getQueueInstance: vi.fn(() => ({
     add: vi.fn(),
+    upsertJobScheduler: vi.fn(),
   })),
   redis: {
     quit: vi.fn(),

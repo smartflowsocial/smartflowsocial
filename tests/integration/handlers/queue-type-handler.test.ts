@@ -77,8 +77,7 @@ describe("Queue Type Handler Integration Tests", () => {
 
       expect(setPosts).toHaveBeenCalled();
       const updatedPosts = setPosts.mock.calls[0]?.[0] as
-        | BulkPost[]
-        | undefined;
+        BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.queueType).toBe("Morning");
     });
 
@@ -209,8 +208,7 @@ describe("Queue Type Handler Integration Tests", () => {
       // Should still update the queue type even if API fails
       expect(setPosts).toHaveBeenCalled();
       const updatedPosts = setPosts.mock.calls[0]?.[0] as
-        | BulkPost[]
-        | undefined;
+        BulkPost[] | undefined;
       expect(updatedPosts?.[0]?.queueType).toBe("Morning");
     });
 

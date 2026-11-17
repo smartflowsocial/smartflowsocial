@@ -18,9 +18,7 @@ export interface AuthorPage {
 }
 
 export type EventLookup =
-  | { status: "present" }
-  | { status: "missing" }
-  | { status: "error" };
+  { status: "present" } | { status: "missing" } | { status: "error" };
 
 export interface EventCountsSnapshot {
   reactionCount: number;

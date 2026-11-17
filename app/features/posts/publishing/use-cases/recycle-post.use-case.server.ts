@@ -150,11 +150,9 @@ export class RecyclePostUseCase {
         hashTagPresetId: originalPost.hashTagPresetId,
         isRecyclable: originalPost.isRecyclable, // Inherit recyclable status
         signedEvent: originalPost.signedEvent as unknown as
-          | SignedEvent
-          | undefined,
+          SignedEvent | undefined,
         nostrEvent: originalPost.nostrEvent as unknown as
-          | NostrEvent
-          | undefined,
+          NostrEvent | undefined,
         scheduledAtUtc: input.scheduledFor
           ? (toPrismaDate(fromUnixTimestamp(input.scheduledFor, "UTC")) ??
             new Date(input.scheduledFor * 1000))

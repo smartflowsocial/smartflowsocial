@@ -10,10 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useOptionalUser } from "~/lib/remix-utils";
 
 export type Nip07Readiness =
-  | "unknown"
-  | "ready"
-  | "unresponsive"
-  | "account_mismatch";
+  "unknown" | "ready" | "unresponsive" | "account_mismatch";
 
 const NIP07_CHECK_INTERVAL_MS = 30 * 1000; // 30 seconds so account switch is detected sooner
 

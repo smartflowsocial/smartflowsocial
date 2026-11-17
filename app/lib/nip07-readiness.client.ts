@@ -4,10 +4,7 @@
  */
 
 export type Nip07Readiness =
-  | "unknown"
-  | "ready"
-  | "unresponsive"
-  | "account_mismatch";
+  "unknown" | "ready" | "unresponsive" | "account_mismatch";
 
 /** Give extension time to respond; avoid false "unresponsive" from slow extensions. */
 const NIP07_CHECK_TIMEOUT_MS = 10_000;

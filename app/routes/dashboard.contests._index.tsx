@@ -50,9 +50,7 @@ export async function loader({ request, url }: LoaderFunctionArgs) {
   const metric = url.searchParams.get("metric") ?? "all";
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const sort = (url.searchParams.get("sort") ?? "newest") as
-    | "newest"
-    | "ending"
-    | "completed";
+    "newest" | "ending" | "completed";
 
   const [contests, kpiCounts] = await Promise.all([
     listContestsFiltered(userId, { status, metric, sort }),

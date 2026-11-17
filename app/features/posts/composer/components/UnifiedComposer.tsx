@@ -963,8 +963,7 @@ export function UnifiedComposer({
     if (fetcher.state !== "idle" || !embedContext || !onEmbedPublishSuccess)
       return;
     const data = fetcher.data as
-      | Partial<ContestEmbedPublishPayload>
-      | undefined;
+      Partial<ContestEmbedPublishPayload> | undefined;
     if (
       !data?.ok ||
       data.embedContext !== "contest" ||

@@ -17,10 +17,7 @@ const NWC_PROBE_TIMEOUT_MS = 15_000;
 const NWC_PAY_TIMEOUT_MS = 55_000;
 
 export type NwcChargeFailureKind =
-  | "connection_dead"
-  | "wallet_rejected"
-  | "invoice_failed"
-  | "unconfirmed";
+  "connection_dead" | "wallet_rejected" | "invoice_failed" | "unconfirmed";
 
 export class NwcChargeError extends Error {
   readonly kind: NwcChargeFailureKind;

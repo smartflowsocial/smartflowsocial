@@ -190,8 +190,7 @@ class BullMQClient implements QueueClient {
         const jobData: unknown = job.data;
         const id = typeof jobId === "string" ? jobId : String(jobId ?? "");
         const data: PostJobData | LongFormPostJobData = jobData as
-          | PostJobData
-          | LongFormPostJobData;
+          PostJobData | LongFormPostJobData;
         const status: JobStatus =
           job.opts.delay && job.opts.delay > 0 ? "delayed" : "waiting";
         return { id, data, status };

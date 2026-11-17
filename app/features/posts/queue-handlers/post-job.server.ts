@@ -676,9 +676,7 @@ export async function runScheduledPostJob(input: {
   };
 
   const conditions = repostMeta?.repostConditions as
-    | RepostConditions
-    | null
-    | undefined;
+    RepostConditions | null | undefined;
   const hasConditions =
     repostMeta?.postKind === "REPOST" &&
     repostMeta.repostOfPostId &&

@@ -165,15 +165,13 @@ export default function PostDetailsModal({
           : [];
         return eTags.some((t) => t[1] === eventId);
       })
-      .map(
-        (event): ChildReply => ({
-          id: event.id ?? "",
-          pubkey: event.pubkey ?? "",
-          content: event.content ?? "",
-          created_at: event.created_at ?? 0,
-          tags: event.tags,
-        })
-      );
+      .map((event): ChildReply => ({
+        id: event.id ?? "",
+        pubkey: event.pubkey ?? "",
+        content: event.content ?? "",
+        created_at: event.created_at ?? 0,
+        tags: event.tags,
+      }));
   }, [eventId, threadData?.events]);
 
   const threadMetadata = useMemo(

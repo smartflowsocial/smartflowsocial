@@ -8,11 +8,7 @@ import {
 } from "./repositories/giveaway-display-data.server";
 
 export type GiveawayScopeType =
-  | "PERIOD"
-  | "SINGLE_POST"
-  | "QUEUE"
-  | "FOLLOWERS"
-  | "FOLLOWING";
+  "PERIOD" | "SINGLE_POST" | "QUEUE" | "FOLLOWERS" | "FOLLOWING";
 
 /**
  * Resolve queue id from scopeReference to queue name for display.

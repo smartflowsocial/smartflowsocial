@@ -213,8 +213,7 @@ function getDeleteSignerSecret(): string {
 
 async function enqueueScheduledEvent(params: {
   queueName:
-    | typeof QUEUE_SCHEDULED_POSTS
-    | typeof QUEUE_SCHEDULED_LONGFORM_POSTS;
+    typeof QUEUE_SCHEDULED_POSTS | typeof QUEUE_SCHEDULED_LONGFORM_POSTS;
   jobName: typeof JOB_PUBLISH_POST | typeof JOB_PUBLISH_LONGFORM_POST;
   event: ProcessableOutboxEvent;
   postId: string;

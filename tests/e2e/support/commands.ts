@@ -11,11 +11,7 @@ export const TEST_FILES = [
 
 // Subscription status for testing different plan states
 export type TestSubscriptionStatus =
-  | "FREE"
-  | "ACTIVE"
-  | "EXPIRED"
-  | "CANCELED"
-  | "PAST_DUE";
+  "FREE" | "ACTIVE" | "EXPIRED" | "CANCELED" | "PAST_DUE";
 
 declare global {
   namespace Cypress {
@@ -324,8 +320,7 @@ function cleanupNostrUser({ npub }: { npub?: string } = {}) {
         state: (key: string) => unknown;
       }
       const aliases = (cy as unknown as CypressState).state("aliases") as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       if (aliases?.user) {
         cy.get("@user", { log: false }).then((user) => {
           const userNpub = (user as { npub?: string }).npub;

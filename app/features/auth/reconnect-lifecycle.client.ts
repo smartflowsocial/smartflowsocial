@@ -1,7 +1,5 @@
 export type ExistingReconnectTrigger =
-  | "initial"
-  | "foreground_resume"
-  | "manual_retry";
+  "initial" | "foreground_resume" | "manual_retry";
 
 export function isConnectionLifecycleErrorMessage(message: string): boolean {
   const msgLower = message.toLowerCase();

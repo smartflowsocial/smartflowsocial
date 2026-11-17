@@ -67,11 +67,7 @@ interface GiveawayFinalizationQuotePayload {
 }
 
 type GiveawayStatus =
-  | "DRAFT"
-  | "PREVIEWED"
-  | "LOCKED"
-  | "PAID_OUT"
-  | "CANCELLED";
+  "DRAFT" | "PREVIEWED" | "LOCKED" | "PAID_OUT" | "CANCELLED";
 
 export type { GiveawayPayoutProgress, WinnerProfileDisplay };
 
