@@ -10,10 +10,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import {
+  effectiveCampaignFinalizationFeeRateBps,
+  formatCampaignCommissionPercent,
+} from "~/features/payments/campaign-fee-policy";
+import type { PublicDeployment } from "~/features/payments/entitlements/deployment-mode";
 import { getPlanEntitlements } from "~/features/payments/entitlements/plan-entitlements";
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
 import { mapLegacyPlanIdToCommercialPlanType } from "~/features/payments/plan-mapping";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
+import { useDeployment } from "~/features/payments/types";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 
 interface FeatureComparisonTableProps {
@@ -31,15 +37,20 @@ interface ComparisonRow {
   label: string;
   /** Short helper for infrastructure rows; hidden on small screens via trigger. */
   tooltip?: string;
-  getValue: (plan: PricingPagePlan) => boolean | string | number | null;
+  getValue: (
+    plan: PricingPagePlan,
+    deployment: PublicDeployment
+  ) => boolean | string | number | null;
 }
 
-function campaignCommissionPercent(planId: string): string | null {
+function campaignCommissionLabel(
+  planId: string,
+  deployment: PublicDeployment
+): string {
   const planType = mapLegacyPlanIdToCommercialPlanType(planId);
-  const pct =
-    getCanonicalPlanPolicy(planType).campaigns.campaignCommissionPercent;
-  if (pct == null) return null;
-  return Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(1)}%`;
+  return formatCampaignCommissionPercent(
+    effectiveCampaignFinalizationFeeRateBps(planType, deployment)
+  );
 }
 
 const COMPARISON_ROWS: ComparisonRow[] = [
@@ -180,9 +191,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     group: GROUP_CAMPAIGNS,
     label: "Campaign commission",
-    getValue: (plan) => {
+    getValue: (plan, deployment) => {
       if (plan.isTeamsPlaceholder) return null;
-      return campaignCommissionPercent(plan.id) ?? "-";
+      return campaignCommissionLabel(plan.id, deployment);
     },
   },
   {
@@ -235,6 +246,7 @@ function renderCell(plan: PricingPagePlan, value: unknown): React.ReactNode {
 }
 
 export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
+  const deployment = useDeployment();
   const groupOrder = [
     ...new Set(COMPARISON_ROWS.map((r) => r.group)),
   ] as string[];
@@ -314,7 +326,7 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                           key={plan.id}
                           className="px-4 py-3 text-center align-middle"
                         >
-                          {renderCell(plan, feature.getValue(plan))}
+                          {renderCell(plan, feature.getValue(plan, deployment))}
                         </td>
                       ))}
                     </tr>

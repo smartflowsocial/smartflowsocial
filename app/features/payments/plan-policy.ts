@@ -26,8 +26,13 @@ export interface CanonicalPlanPolicy {
     maxGiveawayWinnerCount: number;
     canUseGiveawayQueueScope: boolean;
     canUseGiveawayPresets: boolean;
-    /** Null means “not modeled as a percent right now.” */
-    campaignCommissionPercent: number | null;
+    /**
+     * Hosted campaign finalization commission in basis points.
+     * 1000 is 10%, 750 is 7.5%, 500 is 5%, and 0 is no commission.
+     * Self-hosted installs do not use this number. See
+     * `effectiveCampaignFinalizationFeeRateBps`.
+     */
+    campaignCommissionBps: number;
   };
 
   broadcasts: {
@@ -74,7 +79,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 10,
       canUseGiveawayQueueScope: false,
       canUseGiveawayPresets: false,
-      campaignCommissionPercent: 10,
+      campaignCommissionBps: 1000,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 0,
@@ -113,9 +118,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      // The invoice charges 0% for Starter. The public terms page still says
-      // 7.5%. Do not raise this without an explicit decision to charge that fee.
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 750,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -154,7 +157,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 5,
+      campaignCommissionBps: 500,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -193,7 +196,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 500,
@@ -234,8 +237,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      // The invoice charges 0% for Teams. An older policy value said 5%.
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 75,
@@ -277,7 +279,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxGiveawayWinnerCount: 50,
       canUseGiveawayQueueScope: true,
       canUseGiveawayPresets: true,
-      campaignCommissionPercent: 0,
+      campaignCommissionBps: 0,
     },
     broadcasts: {
       maxRecipientsPerCampaign: 500,
@@ -309,16 +311,15 @@ export function getCanonicalPlanPolicy(
 }
 
 /**
- * Basis points charged on a contest or giveaway prize pool.
- * Unknown plan names charge nothing. A positive rate is what the invoice uses.
+ * Hosted basis points charged on a contest or giveaway prize pool.
+ * Unknown plan names charge nothing. Self-hosted installs must not use this
+ * function as the amount due. Use `effectiveCampaignFinalizationFeeRateBps`.
  */
 export function campaignFinalizationFeeRateBps(planType: string): number {
   const commercial = parseCommercialPlanType(planType);
   if (!commercial) return 0;
-  const percent = POLICIES[commercial].campaigns.campaignCommissionPercent;
-  if (percent == null || !Number.isFinite(percent) || percent <= 0) return 0;
-  const bps = Math.round(percent * 100);
-  if (Math.abs(percent * 100 - bps) > 1e-6) return 0;
+  const bps = POLICIES[commercial].campaigns.campaignCommissionBps;
+  if (!Number.isSafeInteger(bps) || bps <= 0 || bps > 10_000) return 0;
   return bps;
 }
 

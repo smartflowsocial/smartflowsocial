@@ -1,8 +1,10 @@
 # Data inventory
 
 This is an engineering inventory of what the application stores and where it goes. It is not a
-privacy notice and it does not name a legal controller. The owner has to approve any text that is
-published to users.
+privacy notice and it does not name a legal controller. The owner decided that the public contact is
+the Nostr account `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0` and that no
+legal name or postal address will be published. That decision does not make this inventory a GDPR
+notice.
 
 Reviewed against the Prisma schema, the account export and deletion routes, and the campaign fee
 code on 16 November 2026. The live pages at https://smartflow.social/privacy,
@@ -131,8 +133,16 @@ acknowledgement.
 
 A GDPR Article 13 notice has to say who the controller is, the purposes, the legal bases, the
 recipients, the retention periods, and the rights to access, rectify, erase, restrict, and complain
-to a supervisory authority. Those sentences need the owner's legal identity. They are not in this
-repository. The live privacy page, updated 15 November 2026, also leaves that identity blank.
+to a supervisory authority. The owner chose not to publish a legal name or address. The Nostr
+contact does not fill that gap. Article 5 of Directive 2000/31/EC can separately require a service
+provider's identity. Those duties, where they apply to the commercial hosted service, are an
+owner-accepted gap. They are not marked compliant.
 
-Hosted pricing claims that do not match the fee code are listed in
-[hosted service disclosures](../legal/hosted-service-disclosures.md).
+This application does not embed a Cloudflare Web Analytics beacon. If the host or the marketing site
+sits behind Cloudflare, that account can still see connection metadata. Operational logs may include
+IP addresses. `PUBLIC_STATS_ENABLED` (on unless set to `false`) keeps a caller IP in Redis for about
+60 seconds and does not write it to Postgres.
+
+Hosted and self-hosted commission wording is in
+[hosted service disclosures](../legal/hosted-service-disclosures.md). The marketing site is a
+separate repository and was not updated by the application change that corrected the fee code.

@@ -378,11 +378,17 @@ provide scheduling services. We do not store private keys, and we minimize corre
 
 ## Compliance Considerations
 
-### GDPR
+### Privacy requests
 
-- Users can request data export (all their posts, drafts, preferences)
-- Users can request deletion (cascade delete all user data)
-- We minimize data collection (only what's needed)
+A signed-in user can export JSON from `/dashboard/account/export` and can delete the account from
+Settings. Deletion removes the account, drafts, schedules, sessions, and the encrypted NWC
+connection. It does not remove events relays already accepted, Blossom blobs on other servers, or
+the payment amount, status, purpose, and payment hash kept in `RetainedFinancialRecord` for 365
+days. That copy has no public key, invoice, or preimage.
+
+This section does not say the hosted service complies with GDPR. The public contact is a Nostr
+account, not a named controller. See
+[hosted service disclosures](../legal/hosted-service-disclosures.md).
 
 ### Nostr Protocol
 

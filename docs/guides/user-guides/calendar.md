@@ -114,7 +114,7 @@ model Post {
 ### Migration
 
 ```bash
-pnpm exec prisma db push
+pnpm exec prisma migrate deploy
 ```
 
 ## API Endpoints

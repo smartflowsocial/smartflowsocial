@@ -25,7 +25,11 @@ whether that payment hash settled.
 - Lookup is used when `getInfo` lists `lookup_invoice`, or when the wallet does not return a method
   list.
 - A settled lookup counts only when the millisatoshi amount converts to the exact authorized sats
-  and a preimage is present.
+  and the preimage is 32 bytes whose SHA-256 is the invoice payment hash. A long unrelated string
+  does not confirm the payment. A returned payment hash that does not match the invoice is ignored.
+- `pay_invoice` is bounded by `NWC_PAY_TIMEOUT_MS` (default 45 seconds). The lookup that follows,
+  including `get_info`, is bounded by `NWC_RECONCILE_TIMEOUT_MS` (default 15 seconds). If both stay
+  unresolved, the result is `unknown` and the worker continues.
 - `state: failed` with no preimage and no settle time is a definitive failure for that attempt.
 - A missing method, a lookup error, a pending payment, or a settled payment without a preimage stays
   unknown. The application does not guess.
@@ -56,9 +60,23 @@ what the wallet showed.
 - `confirmed_unpaid` sets the row to `failed`, clears `paymentHash`, and stores the old hash as
   `releasedPaymentHash` on the destination snapshot. A later run may then pay a new invoice for the
   same winner. Use this only after the wallet shows that hash was not paid.
+- `confirmed_unpaid` is refused for two minutes after the latest attempt started
+  (`ACTIVE_PAYOUT_RESOLUTION_HOLD_MS`). That covers the pay timeout, the lookup timeout, and a slow
+  worker. `confirmed_paid` is still allowed during the hold, because that decision does not create
+  another payment.
 
-There is no dashboard button for this decision yet. Do not clear `paymentHash` with a direct SQL
-update. That bypasses the lock and can allow a second payment.
+Run it from a machine that has the application environment and `DATABASE_URL`:
+
+```bash
+pnpm exec tsx scripts/resolve-campaign-payout.ts \
+  --item=<payout item id> \
+  --decision=confirmed_paid \
+  --note="wallet showed this payment hash settled"
+```
+
+Use `--decision=confirmed_unpaid` only with a note of what the wallet showed, and only after the
+hold. There is no HTTP route for this decision. Do not clear `paymentHash` with a direct SQL update.
+That bypasses the lock and can allow a second payment.
 
 ## Referral payouts
 

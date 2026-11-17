@@ -398,6 +398,11 @@ Switching it does not rewrite subscription rows. Hosted Blossom storage and Smar
 Blastr stay on the commercial plan. A self-hosted install can use Blastr only when
 `BLASTR_ADMIN_URL` and `BLASTR_ADMIN_API_TOKEN` are both set to infrastructure the operator runs.
 
+On a self-hosted install the contest and giveaway finalization commission is 0% for every plan. The
+process does not create a platform-fee invoice and does not require `OWNER_NWC` for that fee. Winner
+payouts still use a wallet the creator connects. Hosted rates stay Free 10%, Starter 7.5%, Creator
+5%, and 0% on Pro, Teams, and Founder.
+
 Optional caps, blank for no software cap and `0` or non-numeric for a closed cap:
 
 - `SELF_HOSTED_MAX_FUTURE_SCHEDULED`
@@ -411,6 +416,14 @@ Optional caps, blank for no software cap and `0` or non-numeric for a closed cap
 - `SELF_HOSTED_MAX_GIVEAWAY_WINNERS`
 
 ---
+
+### NWC_PAY_TIMEOUT_MS and NWC_RECONCILE_TIMEOUT_MS
+
+`NWC_PAY_TIMEOUT_MS` bounds one `pay_invoice`. Default `45000`. `NWC_RECONCILE_TIMEOUT_MS` bounds
+`get_info` and `lookup_invoice` after that pay call times out. Default `15000`. A value that is not
+an integer from 50 through 120000 is ignored and the default is used. When both the payment and the
+lookup stay unresolved, the payout is `unknown`. The worker does not wait forever and it does not
+send a second payment.
 
 ### REFERRAL_PAYOUTS_ENABLED
 

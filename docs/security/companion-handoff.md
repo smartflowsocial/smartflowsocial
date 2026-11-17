@@ -1,44 +1,63 @@
 # Companion repository handoff
 
-Reviewed on 16 November 2026 through GitHub. These repositories were not edited in this pass.
+Reviewed again on 17 November 2026. The application token can read these public repositories and
+cannot push to them. `git push` returned
+`Permission to smartflowsocial/smartflowsocial-cache-worker.git denied to cursor[bot]`. The same
+token is what the other companion remotes use. Nothing in those repositories was updated on GitHub.
 
-| Repository                                     | Visibility | What was checked                                                                                                                         |
-| ---------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `smartflowsocial/smartflowsocial`              | Public     | This working tree                                                                                                                        |
-| `smartflowsocial/smartflowsocial-publisher`    | Public     | README secret example                                                                                                                    |
-| `smartflowsocial/smartflowsocial-blastr`       | Public     | README versus `wrangler.toml`                                                                                                            |
-| `smartflowsocial/smartflowsocial-blossom`      | Public     | Name and description only                                                                                                                |
-| `smartflowsocial/smartflowsocial-cache-worker` | Public     | `src/index.ts` body limit                                                                                                                |
-| `smartflowsocial/smartflowsocial-landing`      | Private    | Pricing, terms, and privacy. Pull request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2) is open and not merged |
+Apply the patches in [companion-patches](./companion-patches/) from each repository's `main`, then
+open the pull request there. The patches were tested or reviewed as noted below. They are not merged
+and not deployed.
+
+| Repository                                     | Patch                                                                              | Local check                                                                                        | GitHub status                             |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `smartflowsocial/smartflowsocial-publisher`    | [publisher-readme.patch](./companion-patches/publisher-readme.patch)               | Diff reviewed. No Worker tests were run in that clone.                                             | Not pushed                                |
+| `smartflowsocial/smartflowsocial-blastr`       | [blastr-readme.patch](./companion-patches/blastr-readme.patch)                     | Diff reviewed against current `wrangler.toml`. No deploy.                                          | Not pushed                                |
+| `smartflowsocial/smartflowsocial-cache-worker` | [cache-worker-body-limit.patch](./companion-patches/cache-worker-body-limit.patch) | `pnpm exec vitest run test/index.spec.ts`: 31 passed, including chunked and lying `Content-Length` | Not pushed. Push denied for `cursor[bot]` |
+| `smartflowsocial/smartflowsocial-blossom`      | None                                                                               | `.env` is gitignored. `.env.example` has empty secret values. No new critical issue in this pass.  | Unchanged                                 |
+| `smartflowsocial/smartflowsocial-landing`      | None in this workspace                                                             | Private repository was not readable. Revise pull request #2. See the legal disclosures.            | Not updated                               |
 
 ## Publisher
 
-`README.md` still tells an operator to put `API_TOKEN` in `wrangler.toml` under
-`[env.production.vars]`. That file is committed. Replace that example with:
+The live README still puts `API_TOKEN` in a committed `wrangler.toml` example. The patch removes
+that example and tells the operator:
 
 ```bash
 wrangler secret put API_TOKEN
+wrangler secret put API_TOKEN --env production
 ```
 
-Leave `wrangler.toml` with bindings only. `.dev.vars` is the local file, and it should stay
-gitignored. Do not commit a live token.
+`.dev.vars` is added to `.gitignore`. `.env*` does not match that filename. The KV section matches
+the current file: binding `PROFILES`, no id, Wrangler 4 provisions it. The "production ready"
+feature line is removed. This Worker's `package.json` still says Node `>=20`. That is its own
+toolchain. The SmartFlowSocial app requires Node 22.22 or newer.
 
 ## Blastr
 
-`wrangler.toml` no longer contains `REPLACE_WITH_*` resource ids. KV bindings have no id, and the
-comment says Wrangler 4 provisions them on deploy. The README still says deploy fails until those
-placeholder ids are replaced. Update the README setup section so it matches the current file.
-`API_TOKEN` is described as a secret or an env var. Prefer `wrangler secret put API_TOKEN`.
+`wrangler.toml` already has KV bindings without ids, D1 names `blastr-db` and `blastr-db-staging`,
+and the queue `blastr-publish-jobs` for both production and staging. The README still told operators
+to replace `REPLACE_WITH_*` ids. The patch deletes that instruction. `API_TOKEN` is
+`wrangler secret put API_TOKEN`, including `--env staging`. `.dev.vars` is already gitignored. No
+Cloudflare account change was made. Staging uses the same queue name as production in the checked-in
+file. Do not invent a second queue unless an operator chooses to.
 
 ## Cache worker
 
-`readBodyWithLimit` rejects a `Content-Length` above 256 KiB before reading. If the header is
-missing, or smaller than the body, `request.arrayBuffer()` still buffers the whole body and only
-then returns 413. A chunked request can force that allocation. Read the stream and stop once the
-byte count passes 256 KiB. Do not claim a Cloudflare dashboard rate limit unless it is checked in
-the account. This pass did not check the dashboard.
+`readBodyWithLimit` used `request.arrayBuffer()` whenever `Content-Length` was missing or not above
+256 KiB. The patch reads the stream, stops when the byte count would pass 256 KiB, cancels the
+reader, and returns 413. A numeric `Content-Length` above the limit is still rejected before
+reading. A non-numeric or too-small length is not trusted. The README says this repository does not
+configure a Cloudflare dashboard rate limit. The dashboard was not checked.
 
 ## Blossom
 
-Not reviewed beyond the repository name, public visibility, and description. No change is requested
-from this pass.
+README, `.gitignore`, and `.env.example` were read. Secrets are empty placeholders. `.env` is
+ignored. There is no committed Wrangler token. No code change is included. Node 20 in that README
+matches that repository's own engine and is not the app's Node 22.22 requirement.
+
+## Landing
+
+`https://github.com/smartflowsocial/smartflowsocial-landing/pull/2` is the open change to revise.
+Hosted Starter stays 7.5%. Replacement text is in
+[hosted service disclosures](../legal/hosted-service-disclosures.md). The live site was not edited
+and was not re-checked in this pass.

@@ -3,7 +3,14 @@
  * Tests app/features/referral/referral-payout.server.ts
  */
 
+import { createHash } from "node:crypto";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const REFERRAL_PREIMAGE = "cd".repeat(32);
+const REFERRAL_HASH = createHash("sha256")
+  .update(Buffer.from(REFERRAL_PREIMAGE, "hex"))
+  .digest("hex");
 
 const mockAggregatePendingCommissionByReferrer = vi.fn();
 const mockFindPendingEarningsWithAttemptCount = vi.fn();
@@ -82,7 +89,7 @@ vi.mock("~/features/referral/bolt11-invoice.server", async (importOriginal) => {
     return {
       ok: true as const,
       amountSats: 5000,
-      paymentHash: "aa".repeat(32),
+      paymentHash: REFERRAL_HASH,
       invoice,
       expiresAtMs: Date.now() + 60_000,
     };
@@ -160,7 +167,7 @@ describe("referral-payout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     envState.REFERRAL_PAYOUTS_ENABLED = "true";
-    payInvoice.mockResolvedValue({ preimage: "cd".repeat(32) });
+    payInvoice.mockResolvedValue({ preimage: REFERRAL_PREIMAGE });
     lookupInvoice.mockRejectedValue(new Error("lookup unavailable"));
     mockFindInProgressReferralClaim.mockResolvedValue(null);
     mockHoldReferralPayout.mockResolvedValue(undefined);
@@ -330,7 +337,7 @@ describe("referral-payout", () => {
         expect.objectContaining({
           auditId: "audit-1",
           earningIds: ["e1", "e2"],
-          paymentHash: "aa".repeat(32),
+          paymentHash: REFERRAL_HASH,
         })
       );
     });
@@ -367,7 +374,7 @@ describe("referral-payout", () => {
       });
       mockFindInProgressReferralClaim.mockResolvedValue({
         ambiguous: false,
-        paymentHash: "aa".repeat(32),
+        paymentHash: REFERRAL_HASH,
         earningIds: ["e1", "e2"],
         amountSats: 5000,
         auditId: "audit-1",
@@ -388,14 +395,15 @@ describe("referral-payout", () => {
       });
       mockFindInProgressReferralClaim.mockResolvedValue({
         ambiguous: false,
-        paymentHash: "aa".repeat(32),
+        paymentHash: REFERRAL_HASH,
         earningIds: ["e1", "e2"],
         amountSats: 5000,
         auditId: "audit-1",
       });
       lookupInvoice.mockResolvedValue({
         state: "settled",
-        preimage: "ab".repeat(32),
+        preimage: REFERRAL_PREIMAGE,
+        payment_hash: REFERRAL_HASH,
         amount: 5_000_000,
         settled_at: 20,
       });
@@ -407,7 +415,7 @@ describe("referral-payout", () => {
       expect(result.success).toBe(true);
       expect(payInvoice).not.toHaveBeenCalled();
       expect(mockCompleteReferralPayout).toHaveBeenCalledWith(
-        expect.objectContaining({ paymentHash: "aa".repeat(32) })
+        expect.objectContaining({ paymentHash: REFERRAL_HASH })
       );
     });
   });

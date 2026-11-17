@@ -1,0 +1,90 @@
+From ab5c5a2dd5a92cf0d91aa031e11566aa8ac7b1e2 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 16 Nov 2026 22:32:30 +0000
+Subject: [PATCH] docs: match Blastr setup instructions to wrangler.toml
+
+Remove the obsolete REPLACE_WITH resource ids. KV is provisioned by Wrangler 4, and API_TOKEN is a wrangler secret.
+---
+ README.md | 33 +++++++++++++++++----------------
+ 1 file changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/README.md b/README.md
+index 0aeada4..7ed478c 100644
+--- a/README.md
++++ b/README.md
+@@ -231,22 +231,22 @@ See [docs/API.md](docs/API.md) for request/response details.
+ 
+ ## First-time setup (before first deploy)
+ 
+-Checked-in `wrangler.toml` ids are placeholders. `wrangler deploy` fails until you replace `REPLACE_WITH_PUBLISHED_NOTES_KV_ID`, `REPLACE_WITH_PUBLISHED_NOTES_KV_PREVIEW_ID`, `REPLACE_WITH_BLASTR_RATE_LIMIT_KV_ID`, `REPLACE_WITH_BLASTR_RATE_LIMIT_KV_PREVIEW_ID`, `REPLACE_WITH_BLASTR_D1_ID`, and the `REPLACE_WITH_STAGING_*` values under `[env.staging]`.
++Checked-in `wrangler.toml` does not contain Cloudflare resource ids. KV bindings are `PUBLISHED_NOTES` and `BLASTR_RATE_LIMIT` with no id. Wrangler 4 provisions those namespaces on deploy and keeps the ids in the account. D1 is binding `DB`, database name `blastr-db` (staging: `blastr-db-staging`). The queue name in both the top-level config and `[env.staging]` is `blastr-publish-jobs`. Do not put `REPLACE_WITH_*` ids back into the file.
+ 
+-**Production deploy checklist:** (1) Create Queue and KV namespaces in the same Cloudflare account you deploy from; (2) Create D1, run migrations, add IDs to `wrangler.toml`; (3) Set `API_TOKEN` (and optionally `CORS_ORIGINS`) as secrets or in env; (4) Run `pnpm deploy`. See [docs/OPERATIONS.md](docs/OPERATIONS.md) for runbooks.
++**Production deploy checklist:** (1) Create the queue in the account you deploy from; (2) Create the D1 database with the name in `wrangler.toml` and apply the migrations below; (3) Set `API_TOKEN` with `wrangler secret put API_TOKEN` (and `--env staging` for that environment). Do not write the token into `wrangler.toml`; (4) Run `pnpm deploy`. See [docs/OPERATIONS.md](docs/OPERATIONS.md) for runbooks.
+ 
+-**Deploy will fail** if the Queue and KV namespaces don’t exist. Do this once before deploying (or before connecting Git to Cloudflare):
++**Deploy will fail** if the queue or D1 database named in `wrangler.toml` does not exist. Do this once before deploying:
+ 
+-1. **Create the Queue** (required; deploy fails without it):
++1. **Create the queue** (the file uses this name for production and staging):
+    ```bash
+    wrangler queues create blastr-publish-jobs
+    ```
+-2. **Create KV namespaces** and put their IDs in `wrangler.toml` (see [Setup (D1, KV, Queues)](#setup-d1-kv-queues)).
+-3. **Create D1 database**, run migrations, and add `database_id` to `wrangler.toml`.
++2. Leave the KV bindings without ids. Wrangler 4 provisions `PUBLISHED_NOTES` and `BLASTR_RATE_LIMIT`.
++3. **Create the D1 databases** named in the file and run migrations. Do not add `database_id` unless you are pinning an existing database on purpose.
+ 
+ Then run `pnpm deploy` or use the Git integration.
+ 
+-**If deploy says "KV namespace '...' not found":** The IDs in `wrangler.toml` are from a different Cloudflare account than the one running the deploy. In the **same account** that is connected to your Git (the deploy account), create the KV namespaces and optionally D1/Queue, then put the **new** IDs from that account into `wrangler.toml`.
++**If deploy says a KV namespace was not found:** Deploy from the Cloudflare account that should own the namespaces. Wrangler 4 creates `PUBLISHED_NOTES` and `BLASTR_RATE_LIMIT` in that account. Do not copy ids from another account into `wrangler.toml`.
+ 
+ **Wrangler 4 (multiple environments):** To deploy production from Git, set the deploy command to `npx wrangler deploy --env=""`. For staging: `npx wrangler deploy --env=staging`.
+ 
+@@ -258,7 +258,7 @@ Then run `pnpm deploy` or use the Git integration.
+ 
+ ```bash
+ wrangler d1 create blastr-db
+-# Add the database_id to wrangler.toml under [[d1_databases]]
++wrangler d1 create blastr-db-staging
+ 
+ wrangler d1 execute blastr-db --remote --file=./migrations/0002_blastr_tables.sql
+ wrangler d1 execute blastr-db --remote --file=./migrations/0003_seed_system_relays.sql
+@@ -278,15 +278,16 @@ Two KV namespaces are required:
+ - **PUBLISHED_NOTES** — Event dedupe (published event IDs).
+ - **BLASTR_RATE_LIMIT** — Rate-limit state (per-pubkey and admin).
+ 
+-```bash
+-wrangler kv:namespace create PUBLISHED_NOTES
+-wrangler kv:namespace create PUBLISHED_NOTES --preview
++The checked-in bindings have no ids. Wrangler 4 creates `PUBLISHED_NOTES` and `BLASTR_RATE_LIMIT` on deploy. You do not copy ids into `wrangler.toml`.
++
++`API_TOKEN` is a secret:
+ 
+-wrangler kv:namespace create BLASTR_RATE_LIMIT
+-wrangler kv:namespace create BLASTR_RATE_LIMIT --preview
++```bash
++wrangler secret put API_TOKEN
++wrangler secret put API_TOKEN --env staging
+ ```
+ 
+-Add the IDs to `wrangler.toml` under `kv_namespaces`.
++Local values go in `.dev.vars`, which is gitignored. Do not commit them.
+ 
+ ### Queue
+ 
+@@ -360,8 +361,8 @@ Coverage thresholds are enforced in `vitest.config.ts`.
+ | Issue                                             | What to check                                                                                                                                                                                      |
+ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+ | **Clone / install fails**                         | Node.js ≥20 and pnpm 10.x. Run `pnpm install` in the project root.                                                                                                                                 |
+-| **`pnpm start` fails or bindings missing**        | Ensure `wrangler.toml` has D1, KV, and Queue bindings; for local dev use `--local` in D1 execute and add preview IDs for KV. See [Setup (D1, KV, Queues)](#setup-d1-kv-queues).                    |
+-| **GET /ready returns 503**                        | D1, KV, or queue binding unreachable. Check names and IDs in `wrangler.toml`, run migrations for D1, confirm queue exists. See [docs/OPERATIONS.md](docs/OPERATIONS.md#health--readiness-failing). |
++| **`pnpm start` fails or bindings missing**        | Ensure `wrangler.toml` has the D1, KV, and queue bindings already in the file. For local D1, use `--local`. Do not add placeholder KV ids. See [Setup (D1, KV, Queues)](#setup-d1-kv-queues). |
++| **GET /ready returns 503**                        | D1, KV, or queue binding unreachable. Check the binding names in `wrangler.toml`, run migrations for D1, and confirm the queue `blastr-publish-jobs` exists. See [docs/OPERATIONS.md](docs/OPERATIONS.md#health--readiness-failing). |
+ | **POST /event rejected: "subscription required"** | The event’s `pubkey` must exist in `blastr_entitlements` with `status` `active` or `grace`. Add an entitlement via the admin API or seed the table.                                                |
+ | **Events not reaching downstream relays**         | Check queue consumer logs and `blastr_publish_attempts` in D1. Fanout failures and poison messages are described in [docs/OPERATIONS.md](docs/OPERATIONS.md#fanout-failing-repeatedly).            |
+ | **Rate limit or duplicate errors**                | Adjust `RATE_LIMIT_*` env vars; duplicate events are rejected by design (see dedupe in ingress).                                                                                                   |
+-- 
+2.43.0
+
