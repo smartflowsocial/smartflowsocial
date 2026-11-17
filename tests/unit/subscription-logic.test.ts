@@ -288,9 +288,9 @@ describe("Subscription & Plan Enforcement Unit Tests", () => {
       expect(result).toBe("free");
     });
 
-    it("should return 'starter' for bulkScheduling", () => {
+    it("should return 'free' for bulkScheduling", () => {
       const result = getMinimumPlanForFeature("bulkScheduling");
-      expect(result).toBe("starter");
+      expect(result).toBe("free");
     });
 
     it("should return 'free' for longformPosts", () => {

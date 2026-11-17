@@ -29,7 +29,7 @@ import { featureFlags } from "~/lib/feature-flags.server";
 const GRID_CALLOUTS: Record<string, string[]> = {
   free: [
     "Full product access with strict hard caps",
-    "10 scheduled items",
+    "Bulk scheduling, up to 10 scheduled items",
     "1 queue",
     "Browse broadcasts (no sending)",
     "Paid plans unlock full send volume",
@@ -39,12 +39,12 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "2 queues",
     "5 GB storage / 20 GB uploads",
     "50 MB max file size",
-    "Bulk workflows enabled",
+    "Up to 50 scheduled items",
   ],
   creator: [
     "Up to 2 accounts",
     "More scheduling and queue headroom",
-    "Bulk workflows + broadcast sending",
+    "Broadcast sending included",
     "Hosted media included",
   ],
   pro: [
@@ -359,6 +359,7 @@ export async function loadPlansData(request: Request) {
     comparisonTablePlans,
     founderOffering,
     user: user ? { id: user.id, isEnabled: user.isEnabled } : null,
+    linkedChildAccount: Boolean(user?.isChild),
     nwc: user ? nwc : null,
     subscriptionCheckoutV2Enabled: featureFlags.subscriptionCheckoutV2Enabled,
     btcpayYearlyOnChainEnabled: true,

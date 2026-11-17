@@ -24,6 +24,12 @@ const { mockPrisma } = vi.hoisted(() => {
         Plan: { id: "creator", name: "Creator" },
       }),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({
+        isChild: false,
+        parentNpub: null,
+      }),
+    },
     $queryRawUnsafe: vi.fn(), // Add raw query support for idempotency checks
   };
   return { mockPrisma };

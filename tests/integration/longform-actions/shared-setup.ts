@@ -32,6 +32,12 @@ const { mockPrisma } = vi.hoisted(() => {
         Plan: { id: "creator", name: "Creator" },
       }),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({
+        isChild: false,
+        parentNpub: null,
+      }),
+    },
   };
   return { mockPrisma: mockPrisma2 };
 });

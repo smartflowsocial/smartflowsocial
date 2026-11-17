@@ -22,7 +22,7 @@ export function broadcastSendBlockedMessage(): string {
 }
 
 export function bulkBlockedMessage(): string {
-  return "Bulk workflows start on Creator.";
+  return "Bulk scheduling is not available for this plan.";
 }
 
 export function sfsBlossomBlockedMessage(): string {

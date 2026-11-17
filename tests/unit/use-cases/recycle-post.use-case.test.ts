@@ -48,6 +48,12 @@ vi.mock("~/lib/prisma.server", () => ({
         Plan: { id: "creator", name: "Creator" },
       }),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({
+        isChild: false,
+        parentNpub: null,
+      }),
+    },
   },
 }));
 

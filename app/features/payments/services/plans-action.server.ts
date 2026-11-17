@@ -15,6 +15,7 @@ import {
   manuallyVerifyPayment,
   PlanBillingModel,
 } from "~/features/payments/data";
+import { LINKED_CHILD_BILLING_ERROR } from "~/features/payments/linked-account-subscription";
 import {
   NwcChargeError,
   nwcChargeFailureNotice,
@@ -214,6 +215,14 @@ async function handleSelectPlanIntent(
   request: Request
 ) {
   const user = await requireUser(request);
+
+  if (user.isChild) {
+    return {
+      success: false,
+      error: LINKED_CHILD_BILLING_ERROR,
+      status: 400,
+    };
+  }
 
   trackProductEvent("checkout_lane_selected", {
     userId: user.id,

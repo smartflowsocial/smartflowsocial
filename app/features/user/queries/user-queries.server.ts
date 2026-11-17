@@ -10,6 +10,7 @@ import {
   findUsersByNpubs,
   updateUserDisabled,
 } from "../repositories/user-queries-data.server";
+import { parseStoredNostrProfile } from "../stored-nostr-profile";
 
 /**
  * Gets basic user info (npub, isChild, parentNpub) by userId
@@ -32,7 +33,7 @@ export async function getUsersByNpubs(
   const users = await findUsersByNpubs(npubs);
   return users.map((user) => ({
     npub: user.npub,
-    nostrProfile: user.nostrProfile ? (user.nostrProfile as ProfileData) : null,
+    nostrProfile: parseStoredNostrProfile(user.nostrProfile),
   }));
 }
 
@@ -46,12 +47,7 @@ export async function getUserByNpubWithProfile(
   if (!user) return null;
   return {
     npub: user.npub,
-    nostrProfile:
-      user.nostrProfile &&
-      typeof user.nostrProfile === "object" &&
-      !Array.isArray(user.nostrProfile)
-        ? (user.nostrProfile as ProfileData)
-        : null,
+    nostrProfile: parseStoredNostrProfile(user.nostrProfile),
   };
 }
 
