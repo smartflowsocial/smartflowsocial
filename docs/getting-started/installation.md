@@ -25,8 +25,9 @@ Complete installation guide for SmartFlowSocial, covering all platforms and depl
 
 ### Required
 
-- **Node.js** 20.0.0 or higher ([Download](https://nodejs.org/))
-- **pnpm** 10.27.0 via Corepack (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
+- **Node.js** 26.13.1 or higher ([Download](https://nodejs.org/)). `.nvmrc` is `26.13.1`.
+- **pnpm** 10.27.0. Node 26 does not ship Corepack
+  (`npm install --global corepack@0.36.0 && corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - **PostgreSQL** 14+ (local or managed)
 - **Redis** 6+ (for BullMQ queues)
 

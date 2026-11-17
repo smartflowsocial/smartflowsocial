@@ -29,8 +29,8 @@ wrangler secret put API_TOKEN --env production
 
 `.dev.vars` is added to `.gitignore`. `.env*` does not match that filename. The KV section matches
 the current file: binding `PROFILES`, no id, Wrangler 4 provisions it. The "production ready"
-feature line is removed. This Worker's `package.json` still says Node `>=20`. That is its own
-toolchain. The SmartFlowSocial app requires Node 22.22 or newer.
+feature line is removed. Companion repositories require Node 26.13.1 or newer, the same pin as the
+SmartFlowSocial app.
 
 ## Blastr
 
@@ -52,8 +52,8 @@ repository does not configure a Cloudflare dashboard rate limit. The dashboard w
 ## Blossom
 
 README, `.gitignore`, and `.env.example` were read. Secrets are empty placeholders. `.env` is
-ignored. There is no committed Wrangler token. No code change is included. Node 20 in that README
-matches that repository's own engine and is not the app's Node 22.22 requirement.
+ignored. There is no committed Wrangler token. No code change is included in that pass. Blossom
+requires Node 26.13.1, the same pin as the app.
 
 ## Landing
 

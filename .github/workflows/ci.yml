@@ -10,6 +10,7 @@ name: CI
 #            security, performance) + DB index governance, all on one
 #            runner that already has Postgres and the schema pushed
 #   build  - production build + bundle budget
+#   image  - production image build, boot, and /healthcheck
 
 on:
   pull_request:
@@ -320,3 +321,69 @@ jobs:
 
       - name: Enforce frontend bundle budgets
         run: node scripts/check-performance-budgets.mjs --source=bundle
+
+  image:
+    name: Docker image boots
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: smartflow_image
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d smartflow_image"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Build production image
+        run: docker build --tag smartflowsocial:ci .
+
+      - name: Boot the image against Postgres and Redis
+        run: |
+          set -euo pipefail
+          docker run --detach --name smartflow-ci \
+            --add-host=host.docker.internal:host-gateway \
+            --publish 3000:3000 \
+            --env DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/smartflow_image \
+            --env REDIS_URL=redis://host.docker.internal:6379 \
+            --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
+            --env NOSTR_PUBLISHER_URL=http://127.0.0.1:9/publish \
+            smartflowsocial:ci
+          for _ in $(seq 1 60); do
+            if curl --silent --show-error --fail --max-time 5 http://127.0.0.1:3000/healthcheck; then
+              echo
+              echo "healthcheck ok"
+              exit 0
+            fi
+            if ! docker inspect --format '{{.State.Running}}' smartflow-ci | grep -qx true; then
+              echo "container exited before healthcheck passed"
+              docker logs smartflow-ci
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "healthcheck did not succeed"
+          docker logs smartflow-ci
+          exit 1
+
+      - name: Show container logs
+        if: failure()
+        run: docker logs smartflow-ci || true
