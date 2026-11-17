@@ -16,6 +16,7 @@ import {
   PlanBillingModel,
 } from "~/features/payments/data";
 import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
+import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
 import { isSubscriptionPeriodExpired } from "~/features/payments/types";
 import type {
   FounderOfferingPayload,
@@ -204,7 +205,9 @@ export async function loadPlansData(request: Request) {
   }
 
   const dbPlans = await getAllPlans();
-  const visiblePlans = dbPlans.filter((p) => p.visibleOnPricingPage);
+  const visiblePlans = dbPlans.filter(
+    (p) => p.visibleOnPricingPage && parseCommercialPlanType(p.id) !== null
+  );
 
   const founderPlan = visiblePlans.find(
     (p) =>
