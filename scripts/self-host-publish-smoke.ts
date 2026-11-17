@@ -3,7 +3,7 @@
  * path against the local signature-checking publisher.
  *
  * Requires Postgres and Redis from `pnpm docker`, and a schema applied with
- * `pnpm exec prisma db push`. Does not use a browser signer, a public relay,
+ * `pnpm exec prisma migrate deploy`. Does not use a browser signer, a public relay,
  * or a Lightning wallet.
  *
  *   pnpm smoke:publish

@@ -30,6 +30,7 @@ import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-lo
 import { runPaidPostAnalyticsSweep } from "./app/features/analytics/run-sweep.server";
 import { checkAndRenewSubscriptions } from "./app/features/payments/services/subscription-renewal.server";
 import { purgeRetainedRecords } from "./app/features/user/data/account-data.server";
+import { processDueOwnedObjectDeletions } from "./app/features/user/data/account-object-cleanup.server";
 import {
   expireBlossomReservations,
   getBlossomReservationDriftStats,
@@ -312,6 +313,51 @@ if (
   );
 }
 
+const ownedObjectDeletionIntervalSeconds = parseInt(
+  env.OWNED_OBJECT_DELETION_INTERVAL_SECONDS ?? "60",
+  10
+);
+let ownedObjectDeletionInterval: ReturnType<typeof setInterval> | null = null;
+let ownedObjectDeletionInFlight = false;
+const runOwnedObjectDeletionSweep = () => {
+  if (ownedObjectDeletionInFlight) return;
+  ownedObjectDeletionInFlight = true;
+  void (async () => {
+    try {
+      await processDueOwnedObjectDeletions();
+    } catch {
+      logWarning("Owned object deletion sweep failed", {
+        error: "sweep_error",
+      });
+    } finally {
+      ownedObjectDeletionInFlight = false;
+    }
+  })();
+};
+if (
+  Number.isFinite(ownedObjectDeletionIntervalSeconds) &&
+  ownedObjectDeletionIntervalSeconds > 0
+) {
+  const ownedObjectDeletionIntervalMs =
+    ownedObjectDeletionIntervalSeconds * 1000;
+  const ownedObjectDeletionStartupDelay = setTimeout(
+    runOwnedObjectDeletionSweep,
+    15_000
+  );
+  ownedObjectDeletionStartupDelay.unref?.();
+  ownedObjectDeletionInterval = setInterval(
+    runOwnedObjectDeletionSweep,
+    ownedObjectDeletionIntervalMs
+  );
+  logInfo("Owned object deletion sweep scheduled", {
+    intervalSeconds: ownedObjectDeletionIntervalSeconds,
+  });
+} else {
+  logInfo(
+    "Owned object deletion sweep disabled (OWNED_OBJECT_DELETION_INTERVAL_SECONDS=0)"
+  );
+}
+
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
   scheduledPostsWorker: !!scheduledPostsWorker,
@@ -445,6 +491,9 @@ process.on("SIGTERM", () => {
   if (financialRecordPurgeInterval) {
     clearInterval(financialRecordPurgeInterval);
   }
+  if (ownedObjectDeletionInterval) {
+    clearInterval(ownedObjectDeletionInterval);
+  }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
@@ -472,6 +521,9 @@ process.on("SIGINT", () => {
   }
   if (financialRecordPurgeInterval) {
     clearInterval(financialRecordPurgeInterval);
+  }
+  if (ownedObjectDeletionInterval) {
+    clearInterval(ownedObjectDeletionInterval);
   }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);

@@ -2,23 +2,23 @@
 
 ## Supported Versions
 
-The supported line is the default branch. `package.json` is `0.1.0-alpha.1` and the notes for that
-tag are prepared. The tag is not published until the owner creates it.
+The supported line is the default branch. `package.json` is `1.0.0-beta.1`. That is a prerelease.
+The tag is not published until the owner creates it. It is not a stable `1.0.0`.
 
-This repository starts at `0.1.0-alpha.1`. `v0.1.0-alpha.0` was published from an earlier
-repository, and so was a `v1.0.0` release that was withdrawn on the day it was published, 14
-November 2026. The changelog also has an older `1.0.0` heading dated 1 January 2024, which was a
-placeholder. None of those is a supported version.
+`v0.1.0-alpha.0` was published from an earlier repository, and so was a `v1.0.0` release that was
+withdrawn on the day it was published, 14 November 2026. The changelog also has an older `1.0.0`
+heading dated 1 January 2024, which was a placeholder. None of those is a supported version of this
+repository. Local notes for `0.1.0-alpha.1` through `0.1.0-alpha.3` were prepared here and were not
+published as GitHub releases.
 
-Security fixes land on the default branch. There is no commitment to backport fixes onto older tags
-during this alpha.
+Security fixes land on the default branch. There is no commitment to backport fixes onto older tags.
 
-| Version                               | Supported                |
-| ------------------------------------- | ------------------------ |
-| `main` (package `0.1.0-alpha.1`)      | Security fixes land here |
-| `v0.1.0-alpha.0`                      | Not supported            |
-| `v1.0.0` (withdrawn 14 November 2026) | Not supported            |
-| Anything older                        | Not supported            |
+| Version                               | Supported                             |
+| ------------------------------------- | ------------------------------------- |
+| `main` (package `1.0.0-beta.1`)       | Security fixes land here. Prerelease. |
+| `v0.1.0-alpha.0`                      | Not supported                         |
+| `v1.0.0` (withdrawn 14 November 2026) | Not supported                         |
+| Anything older                        | Not supported                         |
 
 ## Reporting a Vulnerability
 

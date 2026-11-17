@@ -2081,6 +2081,10 @@ model PayoutAttempt {
 
   startedAt  DateTime @default(now())
   finishedAt DateTime?
+  /// Earliest time an operator may mark this attempt unpaid.
+  /// Null on rows created before the column existed; those use the maximum
+  /// permitted pay and reconciliation budget.
+  resolutionNotBefore DateTime?
 
   item PayoutItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   run  PayoutRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
@@ -2103,4 +2107,34 @@ model RetainedFinancialRecord {
   paymentCreatedAt DateTime
 
   @@index([retainedAt])
+}
+
+enum OwnedObjectDeletionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REJECTED
+}
+
+/// Object keys that must be deleted after the account row is gone.
+/// No foreign key: the row has to survive user deletion and a process restart.
+/// The row is removed after storage deletion succeeds. Failed and rejected rows
+/// stay so a later sweep can retry them. `objectKey` is not a URL. Do not log it.
+model OwnedObjectDeletion {
+  id              String                     @id @default(cuid())
+  accountId       String
+  objectKey       String
+  idempotencyKey  String                     @unique
+  status          OwnedObjectDeletionStatus  @default(PENDING)
+  attempts        Int                        @default(0)
+  lastErrorCode   String?
+  nextAttemptAt   DateTime                   @default(now())
+  lockedUntil     DateTime?
+  lastAttemptAt   DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([accountId, status])
 }

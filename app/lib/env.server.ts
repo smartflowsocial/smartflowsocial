@@ -97,6 +97,12 @@ interface EnvConfig {
    */
   FINANCIAL_RECORD_PURGE_INTERVAL_HOURS?: string;
   /**
+   * How often (seconds) the worker retries owned object deletions left behind
+   * by account deletion. Defaults to 60. Set to "0" to disable the sweep.
+   * Pending rows stay in the database either way.
+   */
+  OWNED_OBJECT_DELETION_INTERVAL_SECONDS?: string;
+  /**
    * Shared secret for cron routes. Required in production. Routes reject
    * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
    */
@@ -296,6 +302,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
     "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
     "FINANCIAL_RECORD_PURGE_INTERVAL_HOURS",
+    "OWNED_OBJECT_DELETION_INTERVAL_SECONDS",
     "CRON_SECRET",
     "FLY_REGION",
     "PRIMARY_REGION",

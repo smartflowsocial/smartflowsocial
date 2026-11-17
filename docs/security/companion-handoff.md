@@ -1,26 +1,26 @@
 # Companion repository handoff
 
-Reviewed again on 17 November 2026. The application token can read these public repositories and
-cannot push to them. `git push` returned
-`Permission to smartflowsocial/smartflowsocial-cache-worker.git denied to cursor[bot]`. The same
-token is what the other companion remotes use. Nothing in those repositories was updated on GitHub.
+Reviewed again on 17 November 2026 during the `1.0.0-beta.1` pass. The earlier patches in
+[companion-patches](./companion-patches/) described work that is now present in the local clones.
+Those clones are not the published GitHub history until the owner commits and pushes them. Nothing
+in this pass was deployed.
 
-Apply the patches in [companion-patches](./companion-patches/) from each repository's `main`, then
-open the pull request there. The patches were tested or reviewed as noted below. They are not merged
-and not deployed.
+| Repository   | What the local tree now contains                                                                                                                                                                                                                                            | GitHub                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Publisher    | README no longer puts `API_TOKEN` in `wrangler.toml`. `pnpm test:worker` runs the Worker in local `wrangler` against a loopback relay. Private relays require `ENVIRONMENT=test` or `development`. A failed publish releases the replay claim.                              | Not pushed by this pass                                                                  |
+| Blastr       | Production deploy is `workflow_dispatch` and requires `confirm=deploy-production`. Staging uses `blastr-publish-jobs-staging`. The older note that said not to add a second queue is superseded: staging and production must not share a queue.                             | Not pushed. The running worker still has the previous configuration                      |
+| Cache worker | `readBodyWithLimit` reads the stream and stops at 256 KiB. A Gitleaks workflow was added.                                                                                                                                                                                   | Not pushed by this pass                                                                  |
+| Blossom      | `/ready` classifies a missing probe object separately from access, timeout, and network errors. `docs/ops/r2-readiness.md` is the operator check. The live `/ready` response on 17 November 2026 did not include `storageError`, so production is still the previous build. | Not deployed                                                                             |
+| Landing      | Source on `fix/hosted-commission-copy` and the live `/pricing/` page both say Starter commission is 7.5%.                                                                                                                                                                   | Live pricing was read on 17 November 2026. The landing commit is not tagged with the app |
 
-| Repository                                     | Patch                                                                              | Local check                                                                                        | GitHub status                             |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `smartflowsocial/smartflowsocial-publisher`    | [publisher-readme.patch](./companion-patches/publisher-readme.patch)               | Diff reviewed. No Worker tests were run in that clone.                                             | Not pushed                                |
-| `smartflowsocial/smartflowsocial-blastr`       | [blastr-readme.patch](./companion-patches/blastr-readme.patch)                     | Diff reviewed against current `wrangler.toml`. No deploy.                                          | Not pushed                                |
-| `smartflowsocial/smartflowsocial-cache-worker` | [cache-worker-body-limit.patch](./companion-patches/cache-worker-body-limit.patch) | `pnpm exec vitest run test/index.spec.ts`: 31 passed, including chunked and lying `Content-Length` | Not pushed. Push denied for `cursor[bot]` |
-| `smartflowsocial/smartflowsocial-blossom`      | None                                                                               | `.env` is gitignored. `.env.example` has empty secret values. No new critical issue in this pass.  | Unchanged                                 |
-| `smartflowsocial/smartflowsocial-landing`      | None in this workspace                                                             | Private repository was not readable. Revise pull request #2. See the legal disclosures.            | Not updated                               |
+The patch files remain as the record of the earlier diff. They are not a second set of outstanding
+changes.
 
 ## Publisher
 
-The live README still puts `API_TOKEN` in a committed `wrangler.toml` example. The patch removes
-that example and tells the operator:
+The local README tells the operator to set the token as a secret. It does not put `API_TOKEN` in
+`wrangler.toml`. The published GitHub README matches that only after this tree is pushed. The
+operator commands are:
 
 ```bash
 wrangler secret put API_TOKEN
@@ -35,19 +35,19 @@ toolchain. The SmartFlowSocial app requires Node 22.22 or newer.
 ## Blastr
 
 `wrangler.toml` already has KV bindings without ids, D1 names `blastr-db` and `blastr-db-staging`,
-and the queue `blastr-publish-jobs` for both production and staging. The README still told operators
-to replace `REPLACE_WITH_*` ids. The patch deletes that instruction. `API_TOKEN` is
+and, before this pass, the queue `blastr-publish-jobs` for both production and staging. The README
+no longer tells operators to replace `REPLACE_WITH_*` ids. `API_TOKEN` is
 `wrangler secret put API_TOKEN`, including `--env staging`. `.dev.vars` is already gitignored. No
-Cloudflare account change was made. Staging uses the same queue name as production in the checked-in
-file. Do not invent a second queue unless an operator chooses to.
+Cloudflare account change was made. The `1.0.0-beta.1` working tree gives staging its own queue,
+`blastr-publish-jobs-staging`. Create that queue before the next staging deploy. Until that deploy,
+a worker built from the previous file can still consume production jobs.
 
 ## Cache worker
 
-`readBodyWithLimit` used `request.arrayBuffer()` whenever `Content-Length` was missing or not above
-256 KiB. The patch reads the stream, stops when the byte count would pass 256 KiB, cancels the
-reader, and returns 413. A numeric `Content-Length` above the limit is still rejected before
-reading. A non-numeric or too-small length is not trusted. The README says this repository does not
-configure a Cloudflare dashboard rate limit. The dashboard was not checked.
+The local `readBodyWithLimit` reads the request stream, stops when the byte count would pass 256
+KiB, cancels the reader, and returns 413. A numeric `Content-Length` above the limit is still
+rejected before reading. A non-numeric or too-small length is not trusted. The README says this
+repository does not configure a Cloudflare dashboard rate limit. The dashboard was not checked.
 
 ## Blossom
 
@@ -57,7 +57,7 @@ matches that repository's own engine and is not the app's Node 22.22 requirement
 
 ## Landing
 
-`https://github.com/smartflowsocial/smartflowsocial-landing/pull/2` is the open change to revise.
-Hosted Starter stays 7.5%. Replacement text is in
-[hosted service disclosures](../legal/hosted-service-disclosures.md). The live site was not edited
-and was not re-checked in this pass.
+Pull request #2 is merged. Hosted Starter stays 7.5%. The live page
+`https://smartflow.social/pricing/` said that on 17 November 2026: Free 10%, Starter 7.5%, Creator
+5%, and 0% on Pro and Founder, with self-hosted commission at 0%. The disclosure text is in
+[hosted service disclosures](../legal/hosted-service-disclosures.md).

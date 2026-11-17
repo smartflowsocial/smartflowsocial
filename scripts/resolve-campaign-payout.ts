@@ -2,8 +2,9 @@
  * Resolve one campaign payout that stayed `paying` or `unknown`.
  *
  * This is a local operator command. It is not an HTTP route. It does not call
- * a wallet and it does not send a payment. `confirmed_unpaid` is refused while
- * the attempt is still inside the active hold.
+ * a wallet and it does not send a payment. `confirmed_unpaid` is refused until
+ * the attempt's stored resolution deadline. That deadline covers the pay
+ * timeout, both reconciliation lookups, and a safety margin.
  *
  * Requires the application environment, including DATABASE_URL.
  *

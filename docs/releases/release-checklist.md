@@ -1,8 +1,8 @@
 # Release checklist
 
-Use this for a public alpha. A green CI run is not the whole gate. Leave a box unchecked until that
-command has been run on the commit you intend to tag. Do not mark a live website, a production
-deploy, or a legal review as done from a source change.
+Use this for the `1.0.0-beta.1` prerelease. A green CI run is not the whole gate. Leave a box
+unchecked until that command has been run on the commit you intend to tag. Do not mark a live
+website, a production deploy, or a legal review as done from a source change.
 
 ## Automated
 
@@ -17,7 +17,9 @@ deploy, or a legal review as done from a source change.
 - [ ] `pnpm audit --prod` reviewed, including a written note if it is not empty
 - [ ] `pnpm exec prisma migrate deploy` on an empty database, then
       `pnpm exec tsx scripts/verify-migrated-database.ts`
-- [ ] `pnpm test:relay-publish` against disposable Postgres, Redis, and a loopback relay
+- [ ] `pnpm test:relay-publish` against disposable Postgres, Redis, and a loopback relay. This uses
+      the in-repo relay publisher, not the Cloudflare Worker
+- [ ] `pnpm test:worker` in `smartflowsocial-publisher` against `wrangler` and a loopback relay
 - [ ] `pnpm build`
 - [ ] Secret scanning in CI
 - [ ] The CI `migrate` job is green on the commit to tag
@@ -32,7 +34,7 @@ deploy, or a legal review as done from a source change.
 - [ ] An invalid preimage does not confirm a payout
 - [ ] Two concurrent claims of one winner produce one `paying` row
 - [ ] Referral payouts stay off when `REFERRAL_PAYOUTS_ENABLED` is unset
-- [ ] A fresh `paying` row cannot be marked unpaid inside the two-minute hold
+- [ ] A `paying` row cannot be marked unpaid before its stored resolution deadline
 
 ## Product
 
@@ -47,8 +49,10 @@ deploy, or a legal review as done from a source change.
 
 ## Human
 
-- [ ] Landing pull request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2)
-      is revised so Starter stays 7.5% and then merged by someone who can write to that repository
+- [x] Live `https://smartflow.social/pricing/` on 17 November 2026 says hosted commission is 10% on
+      Free, 7.5% on Starter, 5% on Creator, and 0% on Pro and Founder, and self-hosted commission is
+      0%. Pull request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2) had
+      published Starter at 0% and is superseded by that page
 - [ ] Companion repository handoff in [companion-handoff.md](../security/companion-handoff.md) is
       applied or explicitly deferred
 - [ ] Production `REFERRAL_PAYOUTS_ENABLED` is set if payouts should continue
@@ -59,7 +63,7 @@ deploy, or a legal review as done from a source change.
 
 ## Not part of the engineering pass
 
-- Creating or pushing `v0.1.0-alpha.3`
+- Creating or pushing `v1.0.0-beta.1`
 - Publishing a GitHub Release
 - Deploying production
 - Changing production Cloudflare resources

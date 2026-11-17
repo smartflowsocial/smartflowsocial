@@ -10,7 +10,11 @@ import {
   type BudgetItem,
   type BudgetWinner,
 } from "~/features/payments/campaign-payout-budget";
-import { unpaidResolutionAllowed } from "~/features/payments/campaign-payout-resolution";
+import {
+  PAYOUT_RESOLUTION_SAFETY_MARGIN_MS,
+  resolutionHoldMs,
+  unpaidResolutionAllowed,
+} from "~/features/payments/campaign-payout-resolution";
 import { isNonNegativeWholeSats } from "~/features/referral/bolt11-invoice.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -27,6 +31,11 @@ export interface ClaimCampaignPayoutItemArgs {
   lnAddressSnapshot: string;
   requestedSpendCapSats: number | null;
   requestedWinners: readonly BudgetWinner[];
+  /**
+   * How long this attempt may still be executing, including the safety margin.
+   * Omitted values use the maximum permitted NWC budget.
+   */
+  resolutionHoldMs?: number;
 }
 
 export type CampaignClaimResult =
@@ -64,6 +73,50 @@ interface LockedItem {
 
 function stableHash(input: string): string {
   return crypto.createHash("sha256").update(input).digest("hex");
+}
+
+function safeResolutionHoldMs(value: number | undefined): number {
+  if (
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= PAYOUT_RESOLUTION_SAFETY_MARGIN_MS
+  ) {
+    return value;
+  }
+  return resolutionHoldMs();
+}
+
+/**
+ * A stored deadline is authoritative only when every attempt has one.
+ * A missing deadline falls back to the maximum budget from the latest start,
+ * so an older row cannot be released on a shorter current timeout.
+ */
+function attemptResolutionClock(
+  attempts: ReadonlyArray<{
+    startedAt: Date;
+    resolutionNotBefore: Date | null;
+  }>
+): {
+  attemptStartedAtMs: number | null;
+  resolutionNotBeforeMs: number | null;
+} {
+  let startedAtMs: number | null = null;
+  let deadlineMs: number | null = null;
+  let missingDeadline = attempts.length === 0;
+  for (const attempt of attempts) {
+    const started = attempt.startedAt.getTime();
+    if (startedAtMs === null || started > startedAtMs) startedAtMs = started;
+    if (attempt.resolutionNotBefore === null) {
+      missingDeadline = true;
+      continue;
+    }
+    const deadline = attempt.resolutionNotBefore.getTime();
+    if (deadlineMs === null || deadline > deadlineMs) deadlineMs = deadline;
+  }
+  return {
+    attemptStartedAtMs: startedAtMs,
+    resolutionNotBeforeMs: missingDeadline ? null : deadlineMs,
+  };
 }
 
 function isUniqueViolation(error: unknown): boolean {
@@ -263,6 +316,8 @@ export async function claimCampaignPayoutItem(
 
       const attemptNumber = item.attemptCount + 1;
       const attemptKey = stableHash(`${item.id}:attempt:${attemptNumber}`);
+      const startedAt = new Date();
+      const holdMs = safeResolutionHoldMs(args.resolutionHoldMs);
       const updated = await tx.payoutItem.updateMany({
         where: {
           id: item.id,
@@ -295,7 +350,8 @@ export async function claimCampaignPayoutItem(
           attemptNumber,
           idempotencyKey: attemptKey,
           status: "started",
-          startedAt: new Date(),
+          startedAt,
+          resolutionNotBefore: new Date(startedAt.getTime() + holdMs),
         },
       });
       return { ok: true, itemId: item.id, attemptKey, attemptNumber };
@@ -486,14 +542,13 @@ export async function resolveUnknownCampaignPayoutItem(args: {
       };
     }
     if (args.decision === "confirmed_unpaid") {
-      const attempt = await tx.payoutAttempt.findFirst({
+      const attempts = await tx.payoutAttempt.findMany({
         where: { itemId: item.id },
-        orderBy: { startedAt: "desc" },
-        select: { startedAt: true },
+        select: { startedAt: true, resolutionNotBefore: true },
       });
       const gate = unpaidResolutionAllowed({
         status: item.status,
-        attemptStartedAtMs: attempt?.startedAt.getTime() ?? null,
+        ...attemptResolutionClock(attempts),
         nowMs: Date.now(),
       });
       if (!gate.ok) return gate;

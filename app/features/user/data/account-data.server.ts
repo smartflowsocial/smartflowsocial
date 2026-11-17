@@ -7,6 +7,7 @@ import {
   ACCOUNT_DELETE_RELAY_ACK,
   FINANCIAL_RECORD_RETENTION_DAYS,
 } from "~/features/user/account-data.constants";
+import { enqueueOwnedObjectDeletions } from "~/features/user/data/account-object-cleanup.server";
 import { prisma } from "~/lib/prisma.server";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -171,7 +172,10 @@ export async function exportAccountData(userId: string) {
  * and removes the public key from referral rows. Does not remove events from
  * relays.
  */
-export async function deleteAccountData(userId: string): Promise<boolean> {
+export async function deleteAccountData(
+  userId: string,
+  options?: { ownedObjectKeys?: readonly string[] }
+): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, npub: true },
@@ -192,6 +196,9 @@ export async function deleteAccountData(userId: string): Promise<boolean> {
   });
 
   await prisma.$transaction(async (tx) => {
+    if (options?.ownedObjectKeys && options.ownedObjectKeys.length > 0) {
+      await enqueueOwnedObjectDeletions(tx, userId, options.ownedObjectKeys);
+    }
     if (payments.length > 0) {
       await tx.retainedFinancialRecord.createMany({
         data: payments.map((payment) =>

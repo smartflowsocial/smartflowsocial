@@ -98,6 +98,13 @@ The same command also checks a publisher that is down, recovery after it returns
 an already published post, a bad signature, and a relay that is not running. A wrong publisher token
 is checked by `pnpm exec vitest run tests/integration/relay-publisher.contract.test.ts`.
 
+That publisher is `scripts/relay-publisher.mjs`. It checks the token and the signature, then writes
+the event to the loopback relay. It is not the Cloudflare Worker. To exercise the Worker runtime,
+clone [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) and
+run `pnpm test:worker`. That command starts `wrangler`'s local worker and a `ws://127.0.0.1` relay.
+It does not use a public relay or a production token. `ALLOW_PRIVATE_RELAYS` is ignored unless
+`ENVIRONMENT` is `test` or `development`.
+
 6. Start the app:
 
 ```bash

@@ -43,21 +43,34 @@ it at production and do not use a personal Nostr key.
    npx wrangler dev --port 8787
    ```
 
-3. Point this app at it and run the smoke, still with an ephemeral key and a loopback relay:
+3. Do not treat `pnpm test:relay-publish` as this check. That command starts the publisher bundled
+   in this repository. With the Worker listening, probe it directly:
 
    ```bash
-   NOSTR_PUBLISHER_URL=http://127.0.0.1:8787 \
-   NOSTR_PUBLISHER_API_TOKEN="$(sed -n 's/^API_TOKEN=//p' ../smartflowsocial-publisher/.dev.vars)" \
-   pnpm test:relay-publish
+   TOKEN="$(sed -n 's/^API_TOKEN=//p' ../smartflowsocial-publisher/.dev.vars)"
+   curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8787/health
+   curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "API-TOKEN: not-the-token" \
+     -H 'content-type: application/json' \
+     -d '{"event":{}}' \
+     http://127.0.0.1:8787/publish
+   curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "API-TOKEN: $TOKEN" \
+     -H 'content-type: application/json' \
+     -d '{"event":{}}' \
+     http://127.0.0.1:8787/publish
    ```
 
-   `pnpm test:relay-publish` starts its own publisher process. To exercise the Worker instead, set
-   the same URL and token in `.env` and run `pnpm smoke:publish` only after you have confirmed the
-   Worker is the process listening on that port. Record which binary answered.
+   Pass: `/health` is 200. The wrong token is 403 with body `INVALID_TOKEN`. The right token is
+   not 403. A malformed event can still be 400. That is authentication, not a successful publish.
 
-4. Send one request with the wrong bearer token and confirm the Worker returns 401.
-5. Stop the Worker mid-job, start it again, and confirm the waiting job is delivered once.
-6. Submit the same published event again and confirm the relay still has one copy.
+4. Publish one event signed by an ephemeral key to a disposable local relay through the Worker. The
+   relay must acknowledge that event id. This repository's relay test does not do this step.
+5. Stop the Worker, queue one more signed event from the app, start the Worker, and confirm that
+   event arrives once.
+6. Submit the same event again and confirm the relay still has one copy.
+7. Stop the disposable relay and confirm the Worker reports the delivery failure instead of marking
+   the event published.
 
 Until that staging check is written down with its result, do not describe the Cloudflare publisher
 as production-proven by the in-repo relay test.

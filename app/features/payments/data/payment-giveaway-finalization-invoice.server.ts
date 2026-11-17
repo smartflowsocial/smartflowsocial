@@ -9,13 +9,20 @@ import {
   listGiveawayFinalizationRecords,
 } from "~/features/giveaway/repositories/giveaway-finalization-payment.server";
 import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
+import {
+  acceptFinalizationWalletInvoice,
+  acceptedStoredFinalizationInvoice,
+} from "~/features/payments/finalization-invoice-guard";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
-import { prisma } from "~/lib/prisma.server";
 
+import {
+  isUniqueConstraintError,
+  runLockedFinalizationCreate,
+} from "./finalization-invoice-lock.server";
 import {
   OWNER_NWC_MISSING,
   withOwnerWalletInvoiceRequestTimeout,
@@ -25,15 +32,13 @@ import {
   isLikelyWebsocketRelayError,
 } from "./payment-shared.server";
 import {
-  extractInvoiceFromRequest,
-  extractPaymentHashFromRequest,
-  extractAmountFromRequest,
-} from "./payment-utils.server";
-import {
   handlePaymentCompleted,
   handlePaymentTimeout,
 } from "./payment.handlers.server";
 import { getUserSubscription } from "./payment.queries.server";
+
+const NO_GIVEAWAY_FINALIZATION_FEE =
+  "No finalization fee is due for this giveaway";
 
 export interface GiveawayFinalizationInvoiceResponse {
   invoice: string;
@@ -99,7 +104,7 @@ export async function createGiveawayFinalizationInvoice(params: {
     await expireGiveawayFinalizationByIds(
       collection.kind === "waived" ? collection.expireIds : []
     );
-    throw new Error("No finalization fee is due for this giveaway");
+    throw new Error(NO_GIVEAWAY_FINALIZATION_FEE);
   }
 
   if (collection.kind === "settled") {
@@ -107,23 +112,14 @@ export async function createGiveawayFinalizationInvoice(params: {
   }
 
   if (collection.kind === "honor_pending") {
-    const existing = await findReusableGiveawayFinalizationInvoice(
-      collection.paymentId
+    const existing = acceptedStoredFinalizationInvoice(
+      await findReusableGiveawayFinalizationInvoice(collection.paymentId),
+      collection.quote.feeSats
     );
-    if (
-      existing?.expiresAt &&
-      existing.expiresAt.getTime() > Date.now() &&
-      existing.amount === collection.quote.feeSats &&
-      existing.invoice &&
-      existing.paymentHash
-    ) {
+    if (existing) {
       return {
-        invoice: existing.invoice,
-        paymentHash: existing.paymentHash,
-        amount: existing.amount,
+        ...existing,
         amountUsd: null,
-        expiresAt: existing.expiresAt,
-        paymentId: existing.id,
         lockConfigHash: collection.quote.lockConfigHash,
       };
     }
@@ -132,7 +128,7 @@ export async function createGiveawayFinalizationInvoice(params: {
 
   const due = collection.quote;
   if (due.feeSats <= 0) {
-    throw new Error("No finalization fee is due for this giveaway");
+    throw new Error(NO_GIVEAWAY_FINALIZATION_FEE);
   }
 
   const credentials = env.OWNER_NWC;
@@ -151,107 +147,149 @@ export async function createGiveawayFinalizationInvoice(params: {
     }>;
   };
 
+  const lockKey = `giveaway-finalization:${giveawayId}:${due.lockConfigHash}`;
   try {
-    if (collection.kind === "collect") {
-      await expireGiveawayFinalizationByIds(collection.expireIds);
-    }
-
-    const request = await withOwnerWalletInvoiceRequestTimeout(
-      ln.requestPayment(SATS(due.feeSats) as unknown as { amount: number })
-    );
-
-    const paymentId = `gf_${giveawayId}_${Date.now()}_${userId}`;
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-    const invoiceString = extractInvoiceFromRequest(request);
-    const paymentHashString = extractPaymentHashFromRequest(request);
-    const amountSats = await extractAmountFromRequest(
-      request,
-      invoiceString,
-      0,
-      async () => due.feeSats
-    );
-
-    if (!invoiceString || !paymentHashString) {
-      logError(
-        new Error("Failed to extract invoice or paymentHash from request"),
-        {
-          invoiceString,
-          paymentHashString,
+    const created = await runLockedFinalizationCreate(lockKey, async (tx) => {
+      const again = resolveFinalizationCollection({
+        current: due,
+        records: await listGiveawayFinalizationRecords(giveawayId, userId),
+        nowMs: Date.now(),
+      });
+      if (again.kind === "settled") {
+        throw new Error(
+          "The finalization fee for this preview is already paid"
+        );
+      }
+      if (again.kind === "honor_pending") {
+        const existing = acceptedStoredFinalizationInvoice(
+          await findReusableGiveawayFinalizationInvoice(again.paymentId),
+          again.quote.feeSats
+        );
+        if (existing) {
+          return {
+            response: {
+              ...existing,
+              amountUsd: null,
+              lockConfigHash: again.quote.lockConfigHash,
+            },
+            attach() {
+              return;
+            },
+          };
+        }
+      }
+      if (again.kind !== "collect" || again.quote.feeSats !== due.feeSats) {
+        throw new Error(NO_GIVEAWAY_FINALIZATION_FEE);
+      }
+      await expireGiveawayFinalizationByIds(again.expireIds);
+      const request = await withOwnerWalletInvoiceRequestTimeout(
+        ln.requestPayment(SATS(due.feeSats) as unknown as { amount: number })
+      );
+      const accepted = acceptFinalizationWalletInvoice({
+        request,
+        authorizedSats: due.feeSats,
+      });
+      if (!accepted.ok) {
+        throw new Error(
+          `Invalid response from payment provider - ${accepted.error}`
+        );
+      }
+      const paymentId = `gf_${giveawayId}_${Date.now()}_${userId}`;
+      const expiresAtMs = Math.min(
+        accepted.expiresAtMs,
+        Date.now() + 30 * 60 * 1000
+      );
+      const expiresAt = new Date(expiresAtMs);
+      const planLabel = getPlanDisplayName(
+        subscription as UserSubscription | null
+      );
+      await tx.payment.create({
+        data: {
+          id: paymentId,
+          userId,
+          amount: accepted.amountSats,
+          amountUsd: null,
+          invoice: accepted.invoice,
+          paymentHash: accepted.paymentHash,
+          status: "PENDING",
+          purpose: "GIVEAWAY_FINALIZATION",
+          description: `Giveaway finalization: ${giveawayId}`,
+          expiresAt,
+        },
+      });
+      await tx.giveawayFinalizationPayment.create({
+        data: {
           giveawayId,
           userId,
-        }
-      );
-      throw new Error(
-        "Invalid response from payment provider - missing invoice or paymentHash"
-      );
-    }
-
-    const planLabel = getPlanDisplayName(
-      subscription as UserSubscription | null
-    );
-
-    await prisma.payment.create({
-      data: {
-        id: paymentId,
-        userId,
-        amount: amountSats,
-        amountUsd: null,
-        invoice: invoiceString,
-        paymentHash: paymentHashString,
-        status: "PENDING",
-        purpose: "GIVEAWAY_FINALIZATION",
-        description: `Giveaway finalization: ${giveawayId}`,
-        expiresAt,
-      },
-    });
-
-    await prisma.giveawayFinalizationPayment.create({
-      data: {
-        giveawayId,
-        userId,
-        planName: planLabel,
-        feeRateBps: due.feeRateBps,
-        plannedPayoutSats: due.plannedPayoutSats,
-        feeSats: due.feeSats,
-        lockConfigHash: due.lockConfigHash,
-        status: "PENDING",
-        paymentId,
-      },
-    });
-
-    await prisma.giveaway.update({
-      where: { id: giveawayId },
-      data: {
-        activityLog: appendGiveawayActivityLog(g.activityLog, "fee_quoted", {
-          feeSats: due.feeSats,
+          planName: planLabel,
           feeRateBps: due.feeRateBps,
           plannedPayoutSats: due.plannedPayoutSats,
-          planName: planLabel,
+          feeSats: due.feeSats,
           lockConfigHash: due.lockConfigHash,
-        }),
-      },
+          status: "PENDING",
+          paymentId,
+        },
+      });
+      await tx.giveaway.update({
+        where: { id: giveawayId },
+        data: {
+          activityLog: appendGiveawayActivityLog(g.activityLog, "fee_quoted", {
+            feeSats: due.feeSats,
+            feeRateBps: due.feeRateBps,
+            plannedPayoutSats: due.plannedPayoutSats,
+            planName: planLabel,
+            lockConfigHash: due.lockConfigHash,
+          }),
+        },
+      });
+      const timeoutSeconds = Math.max(
+        1,
+        Math.floor((expiresAtMs - Date.now()) / 1000)
+      );
+      return {
+        response: {
+          invoice: accepted.invoice,
+          paymentHash: accepted.paymentHash,
+          amount: accepted.amountSats,
+          amountUsd: null,
+          expiresAt,
+          paymentId,
+          lockConfigHash: due.lockConfigHash,
+        },
+        attach: () => {
+          request
+            .onPaid(() => {
+              void handlePaymentCompleted(paymentId, userId, "");
+            })
+            .onTimeout(timeoutSeconds, () => {
+              void handlePaymentTimeout(paymentId);
+            });
+        },
+      };
     });
-
-    const onPaid = () => {
-      void handlePaymentCompleted(paymentId, userId, "");
-    };
-    const onTimeoutCb = () => {
-      void handlePaymentTimeout(paymentId);
-    };
-
-    request.onPaid(onPaid).onTimeout(1800, onTimeoutCb);
-
-    return {
-      invoice: invoiceString,
-      paymentHash: paymentHashString,
-      amount: amountSats,
-      amountUsd: null,
-      expiresAt,
-      paymentId,
-      lockConfigHash: due.lockConfigHash,
-    };
+    created.attach();
+    return created.response;
   } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const again = resolveFinalizationCollection({
+        current: due,
+        records: await listGiveawayFinalizationRecords(giveawayId, userId),
+        nowMs: Date.now(),
+      });
+      if (again.kind === "honor_pending") {
+        const existing = acceptedStoredFinalizationInvoice(
+          await findReusableGiveawayFinalizationInvoice(again.paymentId),
+          again.quote.feeSats
+        );
+        if (existing) {
+          return {
+            ...existing,
+            amountUsd: null,
+            lockConfigHash: again.quote.lockConfigHash,
+          };
+        }
+      }
+    }
     if (error instanceof ExternalServiceError) {
       logError(error, {
         giveawayId,
