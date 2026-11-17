@@ -35,7 +35,7 @@ end as part of that check. Treat them as starting points and test them before yo
 
 Before deploying, ensure you have:
 
-- ✅ Node.js 20.0.0 or higher
+- ✅ Node.js 22.22.0 or higher (`.nvmrc` is `22.22`)
 - ✅ PostgreSQL database (managed or self-hosted)
 - ✅ Redis instance (for BullMQ queues)
 - ✅ S3-compatible storage (for image uploads)
@@ -66,7 +66,7 @@ Before deploying, ensure you have:
 
 ### Fly.io
 
-Fly.io is well-suited for Remix applications with built-in PostgreSQL and Redis support.
+Fly.io is well-suited for this React Router app, with built-in PostgreSQL and Redis support.
 
 #### 1. Install Fly CLI
 
@@ -218,7 +218,7 @@ railway add
 
 ### Vercel
 
-Vercel is optimized for frontend deployments but can run Remix applications.
+Vercel is optimized for frontend deployments but can run this React Router app.
 
 **Note**: Vercel has limitations for long-running processes. Consider using Vercel for the main app
 and a separate service for the worker.
@@ -455,6 +455,8 @@ Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can op
 
 **Payouts from the UI** use the same logic as the cron job:
 
+- **`REFERRAL_PAYOUTS_ENABLED`** must be `true`, `1`, or `yes`. A configured wallet does not enable
+  payouts by itself.
 - **`OWNER_NWC`** must be set; otherwise payout buttons stay disabled.
 - **Batch payout** processes referrers with **≥ 1000 sats** pending commission, **https/http LNURL**
   payout destination, and valid invoice fetch - see `runReferralPayoutBatch` in the codebase

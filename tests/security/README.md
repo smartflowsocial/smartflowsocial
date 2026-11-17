@@ -52,7 +52,7 @@ Tests that the application properly authenticates and authorizes users:
 
 Tests that the application protects against CSRF attacks:
 
-- Remix's built-in CSRF protection
+- `withCSRFProtection` origin checks on state-changing actions
 - SameSite cookie usage
 - Request origin validation
 - POST method for state-changing operations
@@ -188,7 +188,7 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 
 **Prevention:**
 
-- Use Remix's built-in CSRF protection
+- Use `withCSRFProtection` from `~/lib/csrf.server`
 - Use SameSite cookies
 - Validate request origin
 - Use POST for state-changing operations
@@ -209,4 +209,4 @@ const user = await prisma.user.findUnique({ where: { id: userId } });
 - [OWASP XSS Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
 - [OWASP SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
-- [Remix Security](https://remix.run/docs/en/main/guides/security)
+- [React Router](https://reactrouter.com/start/framework/routing)

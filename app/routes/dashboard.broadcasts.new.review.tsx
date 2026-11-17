@@ -162,11 +162,10 @@ type BroadcastReviewLoaderData = Awaited<
   ReturnType<typeof getBroadcastReviewData>
 >;
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const campaignId = url.searchParams.get("campaignId");
   if (!campaignId) {
     return redirect("/dashboard/broadcasts/new");

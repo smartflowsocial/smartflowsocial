@@ -13,8 +13,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
  * Returns display name for a Nostr pubkey (used on login panel: "Signing in as username").
  * No auth required.
  */
-export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
+export async function loader({ url }: LoaderFunctionArgs) {
   const raw = url.searchParams.get("pubkey")?.trim();
   if (!raw) {
     return jsonResponse({ displayName: null });

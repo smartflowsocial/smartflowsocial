@@ -7,6 +7,7 @@ import {
   loadCalendarData,
   loadCalendarPublishedRange,
 } from "~/features/posts/server/calendar";
+import { appUrlFromRequest } from "~/lib/app-url";
 import { validateLoaderResponse } from "~/lib/validation/loader-responses.server";
 import {
   calendarLoaderDataSchema,
@@ -21,7 +22,7 @@ export async function loadCalendarValidated(
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const queueType =
     params["queueType"] ?? url.searchParams.get("queueType") ?? "all";
 
@@ -33,7 +34,7 @@ export async function loadCalendarRange(
   request: Request,
   params: LoaderFunctionArgs["params"]
 ) {
-  const url = new URL(request.url);
+  const url = appUrlFromRequest(request);
   const search = new URLSearchParams(url.searchParams);
   if (!search.has("pastRange")) search.set("pastRange", "1");
   const parsedRange = parseCalendarPastRangeSearch(search);

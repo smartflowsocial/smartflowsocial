@@ -7,6 +7,7 @@
  * Migrated from: tests/e2e/loaders/queues-loader.cy.ts (Drafts Queue Loader section)
  */
 
+import { RouterContextProvider } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock Prisma to prevent $use errors
@@ -76,7 +77,7 @@ describe("Drafts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -128,7 +129,7 @@ describe("Drafts Loader Integration", () => {
       const response = await loader({
         request,
         params: { queueType: "posts" },
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       });
@@ -176,7 +177,7 @@ describe("Drafts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -215,7 +216,7 @@ describe("Drafts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -257,7 +258,7 @@ describe("Drafts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(request.url),
         pattern: "*",
       };
@@ -299,7 +300,7 @@ describe("Drafts Loader Integration", () => {
       const loaderArgs: LoaderFunctionArgs = {
         request: _request,
         params: {},
-        context: {},
+        context: new RouterContextProvider(),
         url: new URL(_request.url),
         pattern: "*",
       };

@@ -27,7 +27,7 @@ export const meta: MetaFunction = ({ matches }) =>
     { siteOrigin: siteOriginFromMatches(matches) }
   );
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const secret = request.headers.get("x-internal-secret") ?? "";
   if (!BLOSSOM_INTERNAL_SECRET || secret !== BLOSSOM_INTERNAL_SECRET) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -36,7 +36,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const url = new URL(request.url);
   const pubkeyParam =
     url.searchParams.get("pubkey") ?? request.headers.get("x-pubkey") ?? "";
   const pubkeyHex = pubkeyParam.trim().toLowerCase();

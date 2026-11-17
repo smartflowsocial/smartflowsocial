@@ -17,11 +17,10 @@ import type { EngagementLoaderData } from "~/lib/validation/schemas/loader-respo
 
 import { loadEngagementValidatedOrThrow } from "./dashboard.engagement.loader.server";
 
-async function loaderImpl({ request }: LoaderFunctionArgs) {
+async function loaderImpl({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
 
-  const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") ?? "1", 10);
   const limit = ENGAGEMENT_FEED_PAGE_SIZE;
 

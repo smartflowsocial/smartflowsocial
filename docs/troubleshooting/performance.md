@@ -148,14 +148,16 @@ console.log(`Endpoint took ${duration}ms`);
 1. **Cache responses:**
 
 ```typescript
-// Cache expensive operations
+import { jsonResponse } from "~/lib/http/json-response";
+
+// Cache expensive operations on a JSON resource route
 const cacheKey = `user:${userId}:posts`;
 const cached = await cache.get(cacheKey);
-if (cached) return json(cached);
+if (cached) return jsonResponse(cached);
 
-const data = await fetchData(userId);
-await cache.set(cacheKey, data, 3600); // 1 hour
-return json(data);
+const payload = await fetchData(userId);
+await cache.set(cacheKey, payload, 3600); // 1 hour
+return jsonResponse(payload);
 ```
 
 2. **Parallel requests:**

@@ -7,9 +7,8 @@ import { jsonResponse } from "~/lib/http/json-response";
 /**
  * GET ?pool=followers|mutuals  -  eligible pubkey list for recipient picker (cache-based).
  */
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
-  const url = new URL(request.url);
   const pool = url.searchParams.get("pool");
   if (pool !== "followers" && pool !== "mutuals") {
     return jsonResponse({ error: "Invalid pool" }, { status: 400 });

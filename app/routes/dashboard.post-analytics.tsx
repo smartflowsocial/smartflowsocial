@@ -10,11 +10,10 @@ import {
   requireAnySubscription,
 } from "~/features/payments";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, url }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
   const indexUnavailable = await collectViewerPostAnalytics(userId);
-  const url = new URL(request.url);
   const selected = url.searchParams.get("event")?.trim() ?? "";
   return await loadPostAnalyticsPage({
     userId,

@@ -2,6 +2,7 @@
  * Aggregates all data for the contest detail dashboard (loader-friendly JSON).
  */
 
+import { resolveFinalizationCollection } from "~/features/payments/campaign-finalization-charge";
 import { getUserSubscription } from "~/features/payments/data";
 import { getEffectiveGiveawayPlanLimits } from "~/features/payments/entitlements/deployment-mode.server";
 import { getPlanDisplayName, getUserPlanType } from "~/features/payments/types";
@@ -29,6 +30,7 @@ import {
   findContestWinnersWithEntries,
   findLatestContestSnapshot,
 } from "./repositories/contest-detail-queries.server";
+import { listContestFinalizationRecords } from "./repositories/contest-finalization-payment.server";
 import type { ContestRankReward } from "./types";
 
 export type { ContestDetailPageData } from "./contest-detail.types";
@@ -77,7 +79,7 @@ export async function getContestDetailPageData(
 
   const quoteSourceTrim = contest.sourceNoteId?.trim() ?? "";
   const quoteSourceId = quoteSourceTrim !== "" ? quoteSourceTrim : "pending";
-  const quote = quoteContestFinalization({
+  const policyQuote = quoteContestFinalization({
     contest: {
       sourceNoteId: quoteSourceId,
       rankingMetric: contest.rankingMetric,
@@ -92,6 +94,23 @@ export async function getContestDetailPageData(
     },
     planType,
   });
+  const finalizationRecords = await listContestFinalizationRecords(
+    contest.id,
+    userId
+  );
+  const finalizationCollection = resolveFinalizationCollection({
+    current: policyQuote,
+    records: finalizationRecords,
+    nowMs: Date.now(),
+  });
+  const quote = {
+    ...policyQuote,
+    feeRateBps: finalizationCollection.quote.feeRateBps,
+    feeSats: finalizationCollection.quote.feeSats,
+    waivedByPlan: finalizationCollection.quote.waivedByPlan,
+    lockConfigHash: finalizationCollection.quote.lockConfigHash,
+    feeSettled: finalizationCollection.kind === "settled",
+  };
 
   const sourcePost = contest.sourcePostId
     ? await getPostById({ id: contest.sourcePostId, userId })
@@ -388,6 +407,7 @@ export async function getContestDetailPageData(
       feeRateBps: quote.feeRateBps,
       lockConfigHash: quote.lockConfigHash,
       waivedByPlan: quote.waivedByPlan,
+      feeSettled: quote.feeSettled,
     },
     sourcePost: sourcePost
       ? {

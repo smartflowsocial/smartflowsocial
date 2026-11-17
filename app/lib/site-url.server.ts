@@ -1,3 +1,4 @@
+import { appUrlFromRequest } from "~/lib/app-url";
 import { env } from "~/lib/env.server";
 
 /**
@@ -13,5 +14,5 @@ export function getSiteOrigin(request: Request): string {
       // fall through
     }
   }
-  return new URL(request.url).origin;
+  return appUrlFromRequest(request).origin;
 }

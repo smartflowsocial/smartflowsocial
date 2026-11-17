@@ -271,9 +271,10 @@ try {
 
 ```typescript
 import { createErrorResponse } from "~/lib/error-handler.server";
+import { jsonResponse } from "~/lib/http/json-response";
 
 const [errorResponse, statusCode] = createErrorResponse(error);
-return json(errorResponse, { status: statusCode });
+return jsonResponse(errorResponse, { status: statusCode });
 ```
 
 ### Client-Side Error Handling

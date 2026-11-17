@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FIXTURE_NOW_MS,
+  invoiceForSats,
+  makeBolt11,
+} from "../helpers/bolt11-fixture";
+
+import {
   amountSatsFromMillisatoshis,
+  assertBolt11MatchesAuthorizedAmount,
+  millisatsFromSats,
   readBolt11ForPayout,
 } from "~/features/referral/bolt11-invoice.server";
 
@@ -53,3 +61,86 @@ describe("bolt11 invoice reading", () => {
     expect(whole).toEqual({ ok: true, amountSats: 2000 });
   });
 });
+
+describe("authorized BOLT11 payout checks", () => {
+  it("accepts an invoice for the exact authorized amount", () => {
+    const invoice = invoiceForSats(125);
+    const result = assertBolt11MatchesAuthorizedAmount({
+      invoice,
+      authorizedSats: 125,
+      nowMs: FIXTURE_NOW_MS,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.amountSats).toBe(125);
+    expect(result.paymentHash).toHaveLength(64);
+  });
+
+  it("rejects one sat above and one sat below the authorized amount", () => {
+    const invoice = invoiceForSats(100);
+    const above = assertBolt11MatchesAuthorizedAmount({
+      invoice,
+      authorizedSats: 99,
+      nowMs: FIXTURE_NOW_MS,
+    });
+    const below = assertBolt11MatchesAuthorizedAmount({
+      invoice,
+      authorizedSats: 101,
+      nowMs: FIXTURE_NOW_MS,
+    });
+    expect(above.ok).toBe(false);
+    expect(below.ok).toBe(false);
+  });
+
+  it("accepts a large whole-sat amount and rejects one past the safe integer range", () => {
+    const large = invoiceForSats(21_000_000n * 100_000_000n);
+    const accepted = readBolt11ForPayout(large, FIXTURE_NOW_MS);
+    expect(accepted.ok).toBe(true);
+    if (accepted.ok) expect(accepted.amountSats).toBe(2_100_000_000_000_000);
+
+    const tooLarge = makeBolt11({
+      amountSats: BigInt(Number.MAX_SAFE_INTEGER) + 1n,
+    });
+    const rejected = readBolt11ForPayout(tooLarge, FIXTURE_NOW_MS);
+    expect(rejected.ok).toBe(false);
+  });
+
+  it("rejects sub-sat millisatoshi boundaries and amountless invoices", () => {
+    expect(millisatsFromSats(1)).toBe(1000n);
+    expect(millisatsFromSats(1.5)).toBeNull();
+    expect(millisatsFromSats(0)).toBeNull();
+    const oneMillisat = makeBolt11({ millisats: 1n });
+    const almostOneSat = makeBolt11({ millisats: 999n });
+    const exactOneSat = makeBolt11({ millisats: 1000n });
+    expect(readBolt11ForPayout(oneMillisat, FIXTURE_NOW_MS).ok).toBe(false);
+    expect(readBolt11ForPayout(almostOneSat, FIXTURE_NOW_MS).ok).toBe(false);
+    const whole = readBolt11ForPayout(exactOneSat, FIXTURE_NOW_MS);
+    expect(whole.ok).toBe(true);
+    if (whole.ok) expect(whole.amountSats).toBe(1);
+    expect(
+      readBolt11ForPayout(makeBolt11({ amountSats: null }), FIXTURE_NOW_MS).ok
+    ).toBe(false);
+  });
+
+  it("rejects expired, wrong-network, corrupt, and hashless invoices", () => {
+    const invoice = invoiceForSats(50);
+    expect(readBolt11ForPayout(invoice, FIXTURE_TIMESTAMP_MS()).ok).toBe(false);
+    expect(
+      readBolt11ForPayout(
+        makeBolt11({ amountSats: 50, network: "tb" }),
+        FIXTURE_NOW_MS
+      ).ok
+    ).toBe(false);
+    expect(readBolt11ForPayout("lnbc1notvalid", FIXTURE_NOW_MS).ok).toBe(false);
+    expect(
+      readBolt11ForPayout(
+        makeBolt11({ amountSats: 50, paymentHashHex: null }),
+        FIXTURE_NOW_MS
+      ).ok
+    ).toBe(false);
+  });
+});
+
+function FIXTURE_TIMESTAMP_MS(): number {
+  return (1_700_000_000 + 3600) * 1000;
+}

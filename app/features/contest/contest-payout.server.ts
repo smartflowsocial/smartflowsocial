@@ -4,6 +4,7 @@ export type ContestPayoutEntryStatus =
   | "failed"
   | "marked_paid"
   | "claim_needed"
+  | "needs_review"
   | "skipped";
 
 export interface ContestPayoutEntryState {
@@ -20,6 +21,7 @@ const VALID: ContestPayoutEntryStatus[] = [
   "failed",
   "marked_paid",
   "claim_needed",
+  "needs_review",
   "skipped",
 ];
 

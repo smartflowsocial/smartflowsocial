@@ -104,7 +104,7 @@ k6 run tests/performance/bulk-operations.js
 
 #### Loader Performance Test
 
-Test Remix loader performance:
+Test route loader performance:
 
 ```bash
 k6 run tests/performance/loader-performance.js
@@ -207,7 +207,7 @@ npm run test:performance:all
 
 ### 3. Loader Performance Test
 
-**Purpose**: Test Remix loader performance under load
+**Purpose**: Test route loader performance under load
 
 **Scenarios**:
 

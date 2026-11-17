@@ -11,13 +11,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { config } from "dotenv";
 import { Pool } from "pg";
+import { error as logError, log } from "./logger.cjs";
 
 // Script logger (avoids console.*)
-
-const { log, error: logError } = require("./logger") as {
-  log: (..._args: unknown[]) => void;
-  error: (..._args: unknown[]) => void;
-};
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env") });
@@ -44,7 +40,7 @@ async function applyConstraints() {
     log("Applying database constraints...");
 
     const migrationPath = resolve(
-      __dirname,
+      import.meta.dirname,
       "../prisma/migrations/20250102000000_add_database_constraints/migration.sql"
     );
     const sql = readFileSync(migrationPath, "utf-8");

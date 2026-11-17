@@ -3,8 +3,8 @@
 // npx tsx ./tests/e2e/support/delete-nostr-user.ts npub1xxx
 
 // Load environment variables FIRST using require to ensure it runs before any imports
-require("./load-env.js");
 
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { Pool } from "pg";

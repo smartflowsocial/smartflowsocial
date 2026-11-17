@@ -3,8 +3,8 @@
 // npx tsx ./tests/e2e/support/create-scheduled-post.ts npub1xxx "caption text"
 
 // Load environment variables before Prisma import initialization.
-require("./load-env.js");
 
+import "./load-env.cjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";

@@ -519,13 +519,13 @@ The application includes error tracking in `app/lib/error-metrics.server.ts`:
 1. **Install Sentry**
 
 ```bash
-pnpm add @sentry/remix
+pnpm add @sentry/react-router
 ```
 
 2. **Configure in `app/entry.server.tsx`**
 
 ```typescript
-import * as Sentry from "@sentry/remix";
+import * as Sentry from "@sentry/react-router";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,

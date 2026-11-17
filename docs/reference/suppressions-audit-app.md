@@ -29,13 +29,13 @@ output as the backlog.
 
 | Rule / area                                                                       | Typical category               | Action                                                                                                                     |
 | --------------------------------------------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `@typescript-eslint/no-unnecessary-condition` (Remix/runtime guards)              | Acceptable                     | Keep; ensure comment says "Runtime type guard" or "Runtime safety".                                                        |
+| `@typescript-eslint/no-unnecessary-condition` (router/runtime guards)             | Acceptable                     | Keep; ensure comment says "Runtime type guard" or "Runtime safety".                                                        |
 | `sonarjs/cognitive-complexity`                                                    | Temporary                      | Add TODO linking to UI/file breakup; accept as Acceptable only if file already split and complexity is orchestration-only. |
 | `react-hooks/exhaustive-deps`                                                     | Acceptable if comment explains | Comment must state why deps are intentionally limited (e.g. "avoid infinite loop").                                        |
 | `react-hooks/incompatible-library`                                                | Acceptable                     | Comment must name library (e.g. TanStack Virtual) and that it is not memoization-safe by design.                           |
 | `react/no-array-index-key`                                                        | Acceptable if justified        | Comment must explain no stable id (e.g. "Stable list of tags, no unique ID").                                              |
 | `jsx-a11y/*`                                                                      | Acceptable if justified        | Comment must explain wrapper role / keyboard handled inside or drag-only.                                                  |
-| `@typescript-eslint/consistent-type-assertions`, `no-explicit-any`, `no-unsafe-*` | Acceptable for interop         | One-line Prisma/BullMQ/Remix/web-push explanation.                                                                         |
+| `@typescript-eslint/consistent-type-assertions`, `no-explicit-any`, `no-unsafe-*` | Acceptable for interop         | One-line Prisma/BullMQ/React Router/web-push explanation.                                                                  |
 | `@ts-ignore`                                                                      | Must fix → Acceptable          | Replace with `@ts-expect-error` and short comment.                                                                         |
 
 ## Counts (update when re-auditing)

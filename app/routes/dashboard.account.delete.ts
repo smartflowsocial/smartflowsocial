@@ -6,8 +6,8 @@ import {
   deleteAccountData,
 } from "~/features/user/data/account-data.server";
 import {
-  deletePlannedAccountObjects,
   planUnsharedOwnedObjects,
+  processDueOwnedObjectDeletions,
 } from "~/features/user/data/account-object-cleanup.server";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { logError } from "~/lib/error-logger.server";
@@ -40,11 +40,13 @@ export const action = withCSRFProtection(
     let objectPlan: Awaited<ReturnType<typeof planUnsharedOwnedObjects>>;
     try {
       objectPlan = await planUnsharedOwnedObjects(userId);
-    } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        message: "Account deletion stopped before removing the account",
-        userId,
-      });
+    } catch {
+      logError(
+        new Error("Account deletion stopped before removing the account"),
+        {
+          message: "Could not inspect stored media.",
+        }
+      );
       return jsonResponse(
         {
           error: "Could not inspect stored media. The account was not deleted.",
@@ -52,17 +54,41 @@ export const action = withCSRFProtection(
         { status: 500 }
       );
     }
-    const deleted = await deleteAccountData(userId);
+    let deleted = false;
+    try {
+      deleted = await deleteAccountData(userId, {
+        ownedObjectKeys: objectPlan.deleteKeys,
+      });
+    } catch {
+      logError(new Error("Account deletion rolled back"), {
+        message: "The account row and queued object deletions were not kept.",
+      });
+      return jsonResponse(
+        {
+          error: "Could not delete the account. Nothing was removed.",
+        },
+        { status: 500 }
+      );
+    }
     if (!deleted) {
       return jsonResponse({ error: "Account not found" }, { status: 404 });
     }
     try {
-      await deletePlannedAccountObjects(userId, objectPlan);
-    } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
+      const sweep = await processDueOwnedObjectDeletions({
+        accountId: userId,
+      });
+      if (sweep.retrying + sweep.failed + sweep.rejected > 0) {
+        logError(new Error("Owned object deletion needs another attempt"), {
+          message: "Queued keys remain until storage accepts the delete.",
+          retrying: sweep.retrying,
+          failed: sweep.failed,
+          rejected: sweep.rejected,
+        });
+      }
+    } catch {
+      logError(new Error("Owned object deletion sweep failed"), {
         message:
-          "Account was deleted. Some owned objects could not be removed.",
-        userId,
+          "The account was removed. Queued object keys remain for the worker.",
       });
     }
     return logout(request);

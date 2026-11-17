@@ -34,6 +34,7 @@ describe("load-env", () => {
       const { stdout } = await execFileAsync(
         process.execPath,
         [
+          "--input-type=commonjs",
           "-e",
           `require(${JSON.stringify(loadEnvPath)}); process.stdout.write((process.env.FROM_FILE ?? "") + " " + (process.env.FROM_ENV ?? ""));`,
         ],
@@ -50,7 +51,11 @@ describe("load-env", () => {
     try {
       const result = await execFileAsync(
         process.execPath,
-        ["-e", `require(${JSON.stringify(loadEnvPath)})`],
+        [
+          "--input-type=commonjs",
+          "-e",
+          `require(${JSON.stringify(loadEnvPath)})`,
+        ],
         { cwd: dir, env: childEnv() }
       );
       expect(result.stderr).toBe("");
@@ -62,7 +67,11 @@ describe("load-env", () => {
 
 describe("node bundle env order", () => {
   it("keeps sharp external, and ioredis external only for the watched worker", () => {
-    expect(envBanner).toBe('require("../scripts/load-env.cjs");');
+    expect(envBanner)
+      .toBe(`import { createRequire as __createRequire } from "node:module";
+import "../scripts/load-env.cjs";
+var require = __createRequire(import.meta.url);
+`);
     expect(bundleOptions("worker.ts", { watch: true }).external).toEqual([
       "fsevents",
       "file-type",
@@ -70,8 +79,16 @@ describe("node bundle env order", () => {
       "@prisma/client",
       "@prisma/engines",
       "vite",
+      "react-router",
+      "react-router/dom",
+      "@react-router/dev",
+      "@react-router/express",
+      "@react-router/fs-routes",
+      "@react-router/node",
+      "#nonce-context",
       "ioredis",
     ]);
+    expect(bundleOptions("server.ts", { watch: false }).format).toBe("esm");
     expect(bundleOptions("worker.ts", { watch: false }).external).not.toContain(
       "ioredis"
     );
@@ -100,7 +117,7 @@ describe("node bundle env order", () => {
           outfile,
           bundle: true,
           platform: "node",
-          format: "cjs",
+          format: "esm",
           banner: banner ? { js: envBanner } : undefined,
           logLevel: "silent",
         });

@@ -23,6 +23,7 @@ import {
   computeFinalizationFeeSats,
   getFinalizationFeeRateBps,
 } from "~/features/giveaway/giveaway-finalization-fee.shared";
+import { useDeployment } from "~/features/payments/types";
 import type { ContestEmbedPublishPayload } from "~/features/posts/composer";
 import { getNowForDateTimeLocal } from "~/lib/temporal";
 import { cn } from "~/lib/utils";
@@ -59,6 +60,7 @@ export function GiveawayNewBuilder({
   userTimezone,
   actionError,
 }: GiveawayNewBuilderProps) {
+  const deployment = useDeployment();
   const navigation = useNavigation();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
@@ -247,13 +249,17 @@ export function GiveawayNewBuilder({
     effectiveRewardMode === "simple" ? winnerCount * simpleSats : null;
   const feePreview = useMemo(() => {
     if (plannedPayoutForFee == null) return null;
-    const rateBps = getFinalizationFeeRateBps(planType);
-    const { feeSats, waivedByPlan } = computeFinalizationFeeSats(
-      plannedPayoutForFee,
-      rateBps
-    );
-    return { feeSats, waivedByPlan, rateBps };
-  }, [plannedPayoutForFee, planType]);
+    try {
+      const rateBps = getFinalizationFeeRateBps(planType, deployment);
+      const { feeSats, waivedByPlan } = computeFinalizationFeeSats(
+        plannedPayoutForFee,
+        rateBps
+      );
+      return { feeSats, waivedByPlan, rateBps };
+    } catch {
+      return { feeSats: 0, waivedByPlan: false, rateBps: 0, rejected: true };
+    }
+  }, [deployment, plannedPayoutForFee, planType]);
 
   const toggleEngagement = (key: string, checked: boolean) => {
     setEngagement((prev) => {

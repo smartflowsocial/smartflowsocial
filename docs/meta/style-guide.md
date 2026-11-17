@@ -138,13 +138,14 @@ getUserById(id) {
 
 ```typescript
 // app/routes/dashboard.posts.tsx
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
+
 import { getUserById } from "~/features/user";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // Fetch user from database
+  // Page loaders return plain objects. JSON resource routes use jsonResponse.
   const user = await getUserById(userId);
-  return json({ user });
+  return { user };
 }
 ````
 

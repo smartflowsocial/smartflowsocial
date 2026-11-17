@@ -20,19 +20,18 @@ not prove the running process has the variable set.
 - Every external cron call sends `X-Cron-Secret` or `Authorization: Bearer`. POST is preferred.
 - The secret is not in a query string, a shell history file, or a repository.
 - `REFERRAL_PAYOUTS_ENABLED` is `false` unless this install pays referral commissions. `true`, `1`,
-  and `yes` are the only on values. A missing wallet never enables payouts. An existing production
-  process that already has `OWNER_NWC` and leaves the flag unset still pays and logs a warning. Set
-  `true` to keep those payouts on purpose, or `false` to stop them. The compatibility path stays
-  until that variable is set. When the flag is exactly `true`, `REFERRAL_MANUAL_PAYOUT_SECRET` is
-  set, at least 32 characters, and different from `CRON_SECRET`. When payouts are off, the manual
-  route still does not pay.
+  and `yes` are the only on values. `OWNER_NWC` does not enable payouts. A deployment that
+  previously paid with only the wallet set must set the flag to `true` before this upgrade. When the
+  flag is on, `REFERRAL_MANUAL_PAYOUT_SECRET` is set, at least 32 characters, and different from
+  `CRON_SECRET`. When payouts are off, the manual route still does not pay. A timed-out payout stays
+  blocked until it is reconciled. See [Payout reconciliation](../security/payout-reconciliation.md).
 - `BLOSSOM_INTERNAL_SECRET` matches the Blossom server, and is not the upload-token secret unless
   you have chosen that fallback on purpose.
 - `BLASTR_ADMIN_API_TOKEN` matches Blastr `API_TOKEN` when Blastr sync is enabled.
 - Production boot refuses to start when `CRON_SECRET` or the publisher token is missing. It also
-  refuses to start without `REFERRAL_MANUAL_PAYOUT_SECRET` when `REFERRAL_PAYOUTS_ENABLED=true`. A
-  process that is already running was started before that check and must be restarted after the
-  variables are set.
+  refuses to start without `REFERRAL_MANUAL_PAYOUT_SECRET` when `REFERRAL_PAYOUTS_ENABLED` is
+  `true`, `1`, or `yes`. A process that is already running was started before that check and must be
+  restarted after the variables are set.
 
 ## Blastr administration
 
@@ -70,9 +69,10 @@ not prove the running process has the variable set.
   and Blastr `API_TOKEN` on a schedule you can actually keep, and immediately after a suspected
   leak.
 - Alert on HTTP 401 bursts to `/cron/` and `/api/referral/manual-payout`.
-- Alert on referral audit rows whose status is `failed` or that stay `started`. A `started` row
-  means the wallet may have been called. Do not resubmit that invoice until the wallet history is
-  checked.
+- Alert on referral audit rows whose status is `failed`, `unknown`, or that stay `started`. A
+  `started` or `unknown` row means the wallet may have been called. Do not resubmit that invoice
+  until the wallet history is checked. Campaign rows in `paying` or `unknown` are the same kind of
+  hold. See [Payout reconciliation](../security/payout-reconciliation.md).
 - Keep dependency audit and secret scanning in CI. A clean historical scan is not a permanent state.
 
 ## What this checklist does not prove
@@ -80,3 +80,9 @@ not prove the running process has the variable set.
 - It does not prove Cloudflare or the reverse proxy is configured. Check the live host.
 - It does not prove the NWC wallet budget inside the wallet provider. Check that provider.
 - It does not rotate secrets by itself.
+- It does not prove GitHub organization 2FA, branch protection, or who can push to `main`. Check the
+  organization settings.
+- It does not prove the Cloudflare API token's scopes. A token that can edit DNS and Workers is
+  broader than a token that can only deploy one worker. Review the token in the Cloudflare dashboard
+  and revoke unused tokens. Do not paste a token into the repository.
+- It does not prove backups. Confirm the database host takes a backup you have restored once.

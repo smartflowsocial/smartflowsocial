@@ -1,3 +1,11 @@
+import {
+  computeCampaignFinalizationFeeSats,
+  effectiveCampaignFinalizationFeeRateBps,
+} from "~/features/payments/campaign-fee-policy";
+import {
+  HOSTED_DEPLOYMENT,
+  type PublicDeployment,
+} from "~/features/payments/entitlements/deployment-mode";
 import type { PlanType } from "~/features/payments/types";
 
 import type { ContestPrizeMode, ContestRankReward } from "./types";
@@ -26,23 +34,16 @@ export function computePlannedPayoutSats(input: {
     .reduce((sum, row) => sum + Math.max(0, row.sats), 0);
 }
 
-export function getContestFinalizationFeeRateBps(planType: PlanType): number {
-  if (planType === "free") return 1000;
-  if (planType === "creator") return 500;
-  return 0;
+export function getContestFinalizationFeeRateBps(
+  planType: PlanType,
+  deployment: PublicDeployment = HOSTED_DEPLOYMENT
+): number {
+  return effectiveCampaignFinalizationFeeRateBps(planType, deployment);
 }
 
 export function computeContestFinalizationFeeSats(
   plannedPayoutSats: number,
   feeRateBps: number
 ): { feeSats: number; waivedByPlan: boolean } {
-  if (feeRateBps <= 0) {
-    return { feeSats: 0, waivedByPlan: plannedPayoutSats > 0 };
-  }
-  if (plannedPayoutSats <= 0) {
-    return { feeSats: 0, waivedByPlan: false };
-  }
-  let feeSats = Math.floor((plannedPayoutSats * feeRateBps) / 10000);
-  if (feeSats <= 0) feeSats = 1;
-  return { feeSats, waivedByPlan: false };
+  return computeCampaignFinalizationFeeSats(plannedPayoutSats, feeRateBps);
 }
