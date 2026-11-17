@@ -3,7 +3,7 @@ import type { InvoiceResponse } from "~/features/payments/types";
 import { prisma } from "~/lib/prisma.server";
 
 import { updateUserSubscription } from "./payment-subscription.server";
-import { getUserSubscription } from "./payment.queries.server";
+import { getOwnUserSubscription } from "./payment.queries.server";
 
 /** Minimal free plan data so dashboard can assign new users even if seed wasn't run. */
 export const FREE_PLAN_SEED = {
@@ -14,7 +14,7 @@ export const FREE_PLAN_SEED = {
   features: {
     basicScheduling: true,
     multipleQueues: false,
-    bulkScheduling: false,
+    bulkScheduling: true,
     repostsAndQuotes: false,
     engagementFeed: true,
     giveaways: true,
@@ -35,7 +35,7 @@ export const FREE_PLAN_SEED = {
   maxLongFormPosts: 2,
   enableBasicScheduling: true,
   enableMultipleQueues: false,
-  enableBulkScheduling: false,
+  enableBulkScheduling: true,
   enableRepostsAndQuotes: false,
   enableEngagementFeed: true,
   enableGiveaways: true,
@@ -102,7 +102,7 @@ export async function ensureUserHasFreePlan(userId: string): Promise<void> {
       where: { id: userId },
       select: { id: true, isEnabled: true },
     }),
-    getUserSubscription(userId),
+    getOwnUserSubscription(userId),
     prisma.plan.findUnique({
       where: { id: FREE_PLAN_ID },
       select: { id: true, price: true },

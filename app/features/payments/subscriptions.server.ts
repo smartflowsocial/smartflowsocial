@@ -78,7 +78,9 @@ export async function getSubscriptionData(
   ]);
 
   let billingContext: SubscriptionData["billingContext"];
-  if (user && currentSubscription) {
+  const inheritedFromParent =
+    currentSubscription != null && currentSubscription.userId !== userId;
+  if (user && currentSubscription && !inheritedFromParent) {
     billingContext = deriveBillingContext({
       user: {
         id: user.id,

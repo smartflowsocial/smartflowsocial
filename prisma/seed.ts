@@ -86,7 +86,7 @@ async function main() {
       features: {
         basicScheduling: true,
         multipleQueues: false,
-        bulkScheduling: false,
+        bulkScheduling: true,
         repostsAndQuotes: false,
         engagementFeed: false,
         giveaways: true,
@@ -106,7 +106,7 @@ async function main() {
       maxLongFormPosts: 2,
       enableBasicScheduling: true,
       enableMultipleQueues: false,
-      enableBulkScheduling: false,
+      enableBulkScheduling: true,
       enableRepostsAndQuotes: false,
       enableEngagementFeed: false,
       enableGiveaways: true,

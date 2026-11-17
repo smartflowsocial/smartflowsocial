@@ -32,7 +32,7 @@ async function ensureFreePlanExists(prisma: PrismaClient): Promise<void> {
       features: {
         basicScheduling: true,
         multipleQueues: false,
-        bulkScheduling: false,
+        bulkScheduling: true,
         repostsAndQuotes: false,
         engagementFeed: true,
         giveaways: true,
@@ -60,7 +60,7 @@ async function ensureFreePlanExists(prisma: PrismaClient): Promise<void> {
       sortOrder: 10,
       enableBasicScheduling: true,
       enableMultipleQueues: false,
-      enableBulkScheduling: false,
+      enableBulkScheduling: true,
       enableRepostsAndQuotes: false,
       enableEngagementFeed: true,
       enableGiveaways: true,

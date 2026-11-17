@@ -135,14 +135,14 @@ function UpgradePlanSection() {
       <div>
         <p className="font-medium">Upgrade plan</p>
         <p className="text-text-secondary mt-1 text-sm">
-          Paid plans add calendars, drafts and templates, bulk scheduling, and
-          premium infrastructure - choose what fits you.
+          Paid plans raise the scheduled-item cap and add broadcast sending and
+          premium infrastructure.
         </p>
       </div>
       <ul className="text-text-secondary list-inside list-disc space-y-1 text-sm">
-        <li>Advanced scheduling and calendar</li>
-        <li>Drafts, templates, and bulk tools</li>
-        <li>Higher limits and premium features</li>
+        <li>More posts scheduled at the same time</li>
+        <li>Broadcast sending</li>
+        <li>Hosted media and higher limits</li>
       </ul>
       <div className="stack-tight sm:flex-row sm:flex-wrap sm:items-center">
         <Link

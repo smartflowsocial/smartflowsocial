@@ -15,6 +15,7 @@ export async function findUsersForBillingNotifications(now: Date) {
   return prisma.user.findMany({
     where: {
       isEnabled: true,
+      isChild: false,
       Subscription: {
         is: {
           Plan: { is: { enableLifetimeAccess: false } },
