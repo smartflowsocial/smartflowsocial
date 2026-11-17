@@ -64,6 +64,8 @@ model User {
   landingNoticeSeenAt        DateTime?
   // Account-level theme preference; null = no account override (use device/local default)
   themePreference            String?
+  /// Set for the duration of the account-deletion transaction. Uploads take the same row lock and then fail.
+  deletionStartedAt          DateTime?
   // Child/parent self-relation via npub
   isChild                    Boolean        @default(false)
   parentNpub                 String?

@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from "react-router";
 
 import { logout, requireUserId } from "~/features/auth/auth.server";
+import { StorageCleanupUnavailableError } from "~/features/user/account-object-cleanup";
 import {
   deletionRequestIsConfirmed,
   deleteAccountData,
@@ -40,7 +41,10 @@ export const action = withCSRFProtection(
     let objectPlan: Awaited<ReturnType<typeof planUnsharedOwnedObjects>>;
     try {
       objectPlan = await planUnsharedOwnedObjects(userId);
-    } catch {
+    } catch (error) {
+      if (error instanceof StorageCleanupUnavailableError) {
+        return jsonResponse({ error: error.message }, { status: 503 });
+      }
       logError(
         new Error("Account deletion stopped before removing the account"),
         {
@@ -59,7 +63,10 @@ export const action = withCSRFProtection(
       deleted = await deleteAccountData(userId, {
         ownedObjectKeys: objectPlan.deleteKeys,
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof StorageCleanupUnavailableError) {
+        return jsonResponse({ error: error.message }, { status: 503 });
+      }
       logError(new Error("Account deletion rolled back"), {
         message: "The account row and queued object deletions were not kept.",
       });

@@ -234,3 +234,134 @@ export function planOwnedObjectDeletion(input: {
 
   return { deleteKeys, skippedShared, skippedForeign };
 }
+
+export class StorageCleanupUnavailableError extends Error {
+  constructor() {
+    super(
+      "Stored media could not be identified, so the account was not deleted. Restore storage configuration and try again."
+    );
+    this.name = "StorageCleanupUnavailableError";
+  }
+}
+
+export class AccountDeletionInProgressError extends Error {
+  constructor() {
+    super("This account is being deleted, so the upload was not saved.");
+    this.name = "AccountDeletionInProgressError";
+  }
+}
+
+/** A missing row or a started deletion must not accept new media. */
+export function accountAcceptsContentWrite(
+  row: { deletionStartedAt: Date | null } | null
+): boolean {
+  return row !== null && row.deletionStartedAt === null;
+}
+
+/**
+ * Object key embedded in a URL path. This does not need bucket configuration
+ * because every owned key contains `clients/<accountId>/`.
+ */
+export function ownedKeyEmbeddedInPath(
+  url: string,
+  userId: string
+): string | null {
+  if (!SAFE_USER_ID.test(userId)) return null;
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    return null;
+  }
+  const marker = `/clients/${userId}/`;
+  const index = pathname.indexOf(marker);
+  if (index < 0) return null;
+  let key = pathname.slice(index + 1);
+  try {
+    key = decodeURIComponent(key);
+  } catch {
+    return null;
+  }
+  return isSafeAccountObjectKey(userId, key) ? key : null;
+}
+
+/** Reads the account id from an owned object URL when the caller no longer has the row. */
+export function ownedObjectIdentityFromUrl(
+  url: string
+): { userId: string; key: string } | null {
+  let pathname: string;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    return null;
+  }
+  const match = /\/clients\/([A-Za-z0-9_-]+)\//.exec(pathname);
+  const userId = match?.[1];
+  if (!userId) return null;
+  const key = ownedKeyEmbeddedInPath(url, userId);
+  if (!key) return null;
+  return { userId, key };
+}
+
+function hostLooksLikeObjectStorage(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return (
+      host.endsWith(".amazonaws.com") ||
+      host.includes(".s3.") ||
+      host.endsWith(".r2.cloudflarestorage.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export interface AccountObjectCleanupPlan extends ObjectDeletionPlan {
+  storageUnavailable: boolean;
+}
+
+/**
+ * Plans owned keys. Without bucket settings, keys are taken from the URL
+ * path. An object-storage URL that does not yield a safe key blocks deletion
+ * instead of dropping the obligation. Blossom and other third-party URLs stay
+ * foreign.
+ */
+export function planAccountObjectCleanup(input: {
+  userId: string;
+  urls: readonly string[];
+  sharedUrls: ReadonlySet<string>;
+  bucket?: string;
+  region?: string;
+  cdnBase?: string;
+}): AccountObjectCleanupPlan {
+  const bucket = input.bucket?.trim();
+  const region = input.region?.trim();
+  if (bucket && region) {
+    return {
+      ...planOwnedObjectDeletion({ ...input, bucket, region }),
+      storageUnavailable: false,
+    };
+  }
+
+  const deleteKeys: string[] = [];
+  const skippedShared: string[] = [];
+  let skippedForeign = 0;
+  let storageUnavailable = false;
+  const seen = new Set<string>();
+  for (const url of input.urls) {
+    const key = ownedKeyEmbeddedInPath(url, input.userId);
+    if (!key) {
+      if (hostLooksLikeObjectStorage(url)) storageUnavailable = true;
+      else skippedForeign += 1;
+      continue;
+    }
+    if (input.sharedUrls.has(url) || url.length < 16) {
+      skippedShared.push(key);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deleteKeys.push(key);
+  }
+  return { deleteKeys, skippedShared, skippedForeign, storageUnavailable };
+}
