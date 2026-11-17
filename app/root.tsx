@@ -16,6 +16,7 @@ import {
   useLoaderData,
   useLocation,
   useRouteError,
+  useRouteLoaderData,
 } from "react-router";
 
 import { LifecycleHandler } from "~/components/lifecycle/LifecycleHandler";
@@ -144,7 +145,7 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
         NODE_ENV: "development",
         SIGNING_MULTI_SLOT: null,
       },
-      nonce: undefined,
+      nonce: readRequestNonce(context),
     });
   }
 };
@@ -236,11 +237,13 @@ export default function App() {
         <Meta />
         <Links />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `window.__SFS_ACCOUNT_THEME__=${accountThemeScriptLiteral(userForTheme)};`,
           }}
         />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -322,8 +325,8 @@ export default function App() {
             <GlobalSigningResumeController />
             <GlobalSignRecoveryBanner />
             <Outlet />
-            <ScrollRestoration />
-            <Scripts />
+            <ScrollRestoration nonce={nonce} />
+            <Scripts nonce={nonce} />
             {nonce ? (
               <script
                 nonce={nonce}
@@ -346,6 +349,9 @@ export default function App() {
  */
 export function ErrorBoundary() {
   const error = useRouteError();
+  const rootData = useRouteLoaderData<typeof loader>("root");
+  const nonce =
+    rootData && typeof rootData.nonce === "string" ? rootData.nonce : undefined;
 
   // Determine error details
   let statusCode = 500;
@@ -424,7 +430,7 @@ export function ErrorBoundary() {
             </div>
           </main>
         </div>
-        <Scripts />
+        <Scripts nonce={nonce} />
       </body>
     </html>
   );

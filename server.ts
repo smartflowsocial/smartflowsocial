@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { webcrypto as nodeWebcrypto } from "node:crypto";
 import path from "node:path";
 import url from "node:url";
@@ -8,7 +7,6 @@ import { RouterContextProvider, type ServerBuild } from "react-router";
 import compression from "compression";
 import { config } from "dotenv";
 import express from "express";
-import helmet from "helmet";
 import * as ipaddr from "ipaddr.js";
 import morgan from "morgan";
 import * as promClient from "prom-client";
@@ -21,6 +19,7 @@ config({ path: path.resolve(process.cwd(), ".env"), quiet: true });
 import rateLimit from "express-rate-limit";
 
 import { env } from "./app/lib/env.server";
+import { applySecurityHeaders } from "./app/lib/security-headers.server";
 import { logInfo, logWarning } from "./app/lib/error-logger.server";
 import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
 import {
@@ -381,88 +380,11 @@ async function run() {
   // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
   app.disable("x-powered-by");
 
-  // Generate CSP nonce for each request (better security than unsafe-eval)
-  app.use((req, res, next) => {
-    const nonce = randomBytes(16).toString("base64");
-    (res.locals as Record<string, unknown>)["nonce"] = nonce;
-    next();
+  // Production script-src is nonce-only. Development still allows the Vite client.
+  applySecurityHeaders(app, {
+    production: !serveWithVite,
+    port: env.PORT ?? "3000",
   });
-
-  // Security headers with Helmet
-  // Configure CSP to work with Remix (which uses inline scripts/styles)
-  // Remix doesn't support nonces natively, so we use 'unsafe-inline' for Remix's generated content
-  // Nonces are still generated and used for our custom inline scripts (e.g., window.ENV)
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: false,
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: [
-            "'self'",
-            "'unsafe-inline'", // Required for Remix's generated scripts
-            "'unsafe-eval'", // Required for some third-party client libraries
-            "https://cdn.jsdelivr.net", // Required for nostr-zap library
-          ],
-          styleSrc: [
-            "'self'",
-            "'unsafe-inline'", // Required for Remix's generated styles
-            "https://fonts.googleapis.com", // Required for Google Fonts (Kanit)
-          ],
-          imgSrc: ["'self'", "data:", "https:", "blob:"],
-          connectSrc: [
-            "'self'",
-            "wss:", // WebSocket connections for Nostr
-            "https:", // External API calls
-            "http://127.0.0.1:7242", // Debug logging server
-            ...(serveWithVite
-              ? [
-                  `ws://localhost:${env.PORT ?? "3000"}`,
-                  `ws://127.0.0.1:${env.PORT ?? "3000"}`,
-                ]
-              : []),
-          ],
-          workerSrc: [
-            "'self'",
-            "blob:", // Required for Sentry workers
-          ],
-          fontSrc: [
-            "'self'",
-            "data:",
-            "https://fonts.gstatic.com", // Required for Google Fonts (Kanit) font files
-          ],
-          objectSrc: ["'none'"],
-          // Allow local previews (blob:) and external video hosts (e.g. Blossom)
-          mediaSrc: ["'self'", "blob:", "https:"],
-          frameSrc: ["'none'"],
-          baseUri: ["'self'"],
-          formAction: ["'self'"],
-          upgradeInsecureRequests: serveWithVite ? null : [],
-        },
-      },
-      hsts: {
-        maxAge: 31536000, // 1 year
-        includeSubDomains: true,
-        preload: true,
-      },
-      frameguard: {
-        action: "deny",
-      },
-      noSniff: true,
-      xssFilter: true,
-      referrerPolicy: {
-        policy: "strict-origin-when-cross-origin",
-      },
-      // @ts-expect-error - permissionsPolicy may not be in helmet types but is valid
-      permissionsPolicy: {
-        features: {
-          geolocation: ["'none'"],
-          microphone: ["'none'"],
-          camera: ["'none'"],
-        },
-      },
-    })
-  );
 
   // Additional custom security headers
   app.use((req, res, next) => {
