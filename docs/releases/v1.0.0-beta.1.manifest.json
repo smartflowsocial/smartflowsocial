@@ -1,58 +1,57 @@
 {
   "version": "1.0.0-beta.1",
   "status": "prerelease-candidate",
-  "preparedOn": "2026-11-17",
   "tagPublished": false,
   "productionDeployed": false,
-  "note": "parentCommit is the HEAD that was checked out before the uncommitted release work. It is not the commit to tag. productionSha is unknown because the running services were not read.",
+  "shaPolicy": "This file names repositories and branches. It does not store the commit that contains it, a release tag, or a production deployment. Resolve those with node scripts/release-manifest.mjs --online when the tag is cut. A printed SHA is an observation, not a claim that production runs it.",
   "components": [
     {
       "name": "app",
       "repository": "smartflowsocial/smartflowsocial",
       "branch": "main",
-      "parentCommit": "8d29d3bd69874a06f0372cb12231ce058fc5263c",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "publisher",
       "repository": "smartflowsocial/smartflowsocial-publisher",
-      "branch": "docs/wrangler-secrets",
-      "parentCommit": "392d20522aa033c20601c4b8d1765a2b7455fa78",
+      "branch": "main",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "blossom",
       "repository": "smartflowsocial/smartflowsocial-blossom",
       "branch": "main",
-      "parentCommit": "ba53a238c01be606a7962815a28dcb436f136f13",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "blastr",
       "repository": "smartflowsocial/smartflowsocial-blastr",
-      "branch": "docs/wrangler-setup",
-      "parentCommit": "5c786ba7732dc26d21dc17f6efd7f9867e3f9b9a",
+      "branch": "main",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "cache-worker",
       "repository": "smartflowsocial/smartflowsocial-cache-worker",
-      "branch": "fix/stream-body-limit",
-      "parentCommit": "ee438a60537eef04494e263c2520466ce7bc2b42",
+      "branch": "main",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "organization-profile",
       "repository": "smartflowsocial/.github",
       "branch": "main",
-      "parentCommit": "1c187ea820d9354201eeeaab7eff73ce51b2620a",
+      "releaseSha": null,
       "productionSha": null
     },
     {
       "name": "landing",
       "repository": "smartflowsocial/smartflowsocial-landing",
-      "branch": "fix/hosted-commission-copy",
-      "parentCommit": "f5afa4abffb7d43f8d257fcb67f5fdc31b02b7f8",
+      "branch": "main",
+      "releaseSha": null,
       "productionSha": null
     }
   ]

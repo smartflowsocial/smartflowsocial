@@ -1,26 +1,24 @@
 # Companion repository handoff
 
-Reviewed again on 17 November 2026 during the `1.0.0-beta.1` pass. The earlier patches in
-[companion-patches](./companion-patches/) described work that is now present in the local clones.
-Those clones are not the published GitHub history until the owner commits and pushes them. Nothing
-in this pass was deployed.
+Reviewed again on 18 November 2026. The earlier patches in [companion-patches](./companion-patches/)
+are historical. The work they described is on each repository's default branch. Nothing in this
+review was deployed, and no production SHA was read from a running service.
 
-| Repository   | What the local tree now contains                                                                                                                                                                                                                                            | GitHub                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Publisher    | README no longer puts `API_TOKEN` in `wrangler.toml`. `pnpm test:worker` runs the Worker in local `wrangler` against a loopback relay. Private relays require `ENVIRONMENT=test` or `development`. A failed publish releases the replay claim.                              | Not pushed by this pass                                                                  |
-| Blastr       | Production deploy is `workflow_dispatch` and requires `confirm=deploy-production`. Staging uses `blastr-publish-jobs-staging`. The older note that said not to add a second queue is superseded: staging and production must not share a queue.                             | Not pushed. The running worker still has the previous configuration                      |
-| Cache worker | `readBodyWithLimit` reads the stream and stops at 256 KiB. A Gitleaks workflow was added.                                                                                                                                                                                   | Not pushed by this pass                                                                  |
-| Blossom      | `/ready` classifies a missing probe object separately from access, timeout, and network errors. `docs/ops/r2-readiness.md` is the operator check. The live `/ready` response on 17 November 2026 did not include `storageError`, so production is still the previous build. | Not deployed                                                                             |
-| Landing      | Source on `fix/hosted-commission-copy` and the live `/pricing/` page both say Starter commission is 7.5%.                                                                                                                                                                   | Live pricing was read on 17 November 2026. The landing commit is not tagged with the app |
+| Repository   | On the default branch                                                                                                                                                                                                                        | Still not verified                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Publisher    | README does not put `API_TOKEN` in `wrangler.toml`. `pnpm test:worker` runs the Worker in local `wrangler` against a loopback relay. Private relays require `ENVIRONMENT=test` or `development`. A failed publish releases the replay claim. | The suite is not yet a required status check on `main`. The deployed Worker was not called.               |
+| Blastr       | Production deploy is `workflow_dispatch` and requires `confirm=deploy-production`. Staging is configured for `blastr-publish-jobs-staging`.                                                                                                  | The staging queue was not created from here. The running worker's configuration was not read.             |
+| Cache worker | `readBodyWithLimit` stops at 256 KiB. A full-history Gitleaks workflow is on the default branch.                                                                                                                                             | The deployed worker was not called.                                                                       |
+| Blossom      | `/ready` classifies a missing probe object separately from access, timeout, and network errors.                                                                                                                                              | On 17 November 2026 at 22:38 UTC the public `/ready` was HTTP 200. Upload, read, and delete were not run. |
+| Landing      | `main` includes the hosted Starter 7.5% copy.                                                                                                                                                                                                | The live pricing page was not re-read in this pass. The landing commit is not tagged with the app.        |
 
 The patch files remain as the record of the earlier diff. They are not a second set of outstanding
 changes.
 
 ## Publisher
 
-The local README tells the operator to set the token as a secret. It does not put `API_TOKEN` in
-`wrangler.toml`. The published GitHub README matches that only after this tree is pushed. The
-operator commands are:
+The README on `main` tells the operator to set the token as a secret. It does not put `API_TOKEN` in
+`wrangler.toml`. The operator commands are:
 
 ```bash
 wrangler secret put API_TOKEN
@@ -34,13 +32,13 @@ SmartFlowSocial app.
 
 ## Blastr
 
-`wrangler.toml` already has KV bindings without ids, D1 names `blastr-db` and `blastr-db-staging`,
-and, before this pass, the queue `blastr-publish-jobs` for both production and staging. The README
-no longer tells operators to replace `REPLACE_WITH_*` ids. `API_TOKEN` is
-`wrangler secret put API_TOKEN`, including `--env staging`. `.dev.vars` is already gitignored. No
-Cloudflare account change was made. The `1.0.0-beta.1` working tree gives staging its own queue,
+`wrangler.toml` on `main` has KV bindings without ids and D1 names `blastr-db` and
+`blastr-db-staging`. The README no longer tells operators to replace `REPLACE_WITH_*` ids.
+`API_TOKEN` is `wrangler secret put API_TOKEN`, including `--env staging`. `.dev.vars` is
+gitignored. No Cloudflare account change was made. `main` gives staging its own queue name,
 `blastr-publish-jobs-staging`. Create that queue before the next staging deploy. Until that deploy,
-a worker built from the previous file can still consume production jobs.
+a worker built from the previous configuration can still consume production jobs. The running
+configuration was not read.
 
 ## Cache worker
 

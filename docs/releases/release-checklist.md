@@ -53,6 +53,9 @@ website, a production deploy, or a legal review as done from a source change.
       Free, 7.5% on Starter, 5% on Creator, and 0% on Pro and Founder, and self-hosted commission is
       0%. Pull request [#2](https://github.com/smartflowsocial/smartflowsocial-landing/pull/2) had
       published Starter at 0% and is superseded by that page
+- [x] `GET https://blossom-api.smartflow.social/ready` on 17 November 2026 at 22:38 UTC returned
+      HTTP 200 with storage ready and the probe object missing. Upload, read, delete, and the
+      deployed commit were not checked
 - [ ] Companion repository handoff in [companion-handoff.md](../security/companion-handoff.md) is
       applied or explicitly deferred
 - [ ] Production `REFERRAL_PAYOUTS_ENABLED` is set if payouts should continue
