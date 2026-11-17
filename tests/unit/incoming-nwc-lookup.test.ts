@@ -30,7 +30,11 @@ describe("incoming NWC invoice lookup", () => {
         payment_hash: HASH,
         settled_at: 5,
       })
-    ).toEqual({ kind: "settled", preimage: PREIMAGE });
+    ).toEqual({
+      kind: "settled",
+      assurance: "preimage",
+      preimage: PREIMAGE,
+    });
   });
 
   it("confirms a settled invoice when the wallet does not return a preimage", () => {
@@ -40,12 +44,39 @@ describe("incoming NWC invoice lookup", () => {
         amount: 100_000,
         payment_hash: HASH.toUpperCase(),
       })
-    ).toEqual({ kind: "settled", preimage: null });
+    ).toEqual({
+      kind: "settled",
+      assurance: "wallet_reported",
+      preimage: null,
+    });
+  });
+
+  it("confirms a NIP-47 settled_at with no state field as a wallet report", () => {
+    expect(
+      lookup({
+        settled_at: 1_700_000_000,
+        amount: 100_000,
+        payment_hash: HASH,
+      })
+    ).toEqual({
+      kind: "settled",
+      assurance: "wallet_reported",
+      preimage: null,
+    });
+  });
+
+  it("keeps a bare settled state when amount and hash are omitted", () => {
+    expect(lookup({ state: "settled" })).toEqual({
+      kind: "settled",
+      assurance: "wallet_reported",
+      preimage: null,
+    });
   });
 
   it("confirms settlement when the amount field is omitted", () => {
     expect(lookup({ state: "settled", payment_hash: HASH })).toEqual({
       kind: "settled",
+      assurance: "wallet_reported",
       preimage: null,
     });
   });
