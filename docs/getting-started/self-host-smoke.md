@@ -28,7 +28,7 @@ point production processes at the same Redis as a development session.
 ## Steps
 
 1. Install Node.js 26.13.1 or newer. `.nvmrc` is `26.13.1`. Node 26 does not ship Corepack. Install
-   Corepack and activate pnpm 10.27.0 (`package.json` `packageManager`).
+   Corepack and activate pnpm 12.21.0 (`package.json` `packageManager`).
 2. Clone the repository and install:
 
 ```bash
@@ -36,7 +36,7 @@ git clone https://github.com/smartflowsocial/smartflowsocial.git
 cd smartflowsocial
 npm install --global corepack@0.36.0
 corepack enable
-corepack prepare pnpm@10.27.0 --activate
+corepack prepare pnpm@12.21.0 --activate
 pnpm install
 cp example.env .env
 ```
