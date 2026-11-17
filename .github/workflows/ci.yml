@@ -365,7 +365,9 @@ jobs:
             --env DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/smartflow_image \
             --env REDIS_URL=redis://host.docker.internal:6379 \
             --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
+            --env CRON_SECRET=test-cron-secret-very-long-and-secure-32-chars \
             --env NOSTR_PUBLISHER_URL=http://127.0.0.1:9/publish \
+            --env NOSTR_PUBLISHER_API_TOKEN=test-publisher-token \
             smartflowsocial:ci
           for _ in $(seq 1 60); do
             if curl --silent --show-error --fail --max-time 5 http://127.0.0.1:3000/healthcheck; then
