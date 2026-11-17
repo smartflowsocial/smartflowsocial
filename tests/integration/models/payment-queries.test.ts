@@ -45,7 +45,6 @@ const { mockPrisma } = vi.hoisted(() => {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
-      findUnique: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
       const tx = {

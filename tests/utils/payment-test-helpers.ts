@@ -36,7 +36,6 @@ export function createMockPaymentPrisma() {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
-      findUnique: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
       // Create a transaction client that has the same methods as mockPrisma
