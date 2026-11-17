@@ -1,8 +1,12 @@
 # Proposed privacy notice
 
-Draft for the owner. Do not publish this on smartflow.social until the owner fills in the controller
-identity, the contact address, the actual subprocessors, and the retention periods. The engineering
-inventory is [data-inventory.md](./data-inventory.md).
+Replacement text for the landing site. The owner decided the public contact is the Nostr account
+below and that no legal name or postal address will be published. Do not add one. Do not write that
+the hosted service is GDPR-compliant. The engineering inventory is
+[data-inventory.md](./data-inventory.md).
+
+This file is not the live page. The landing repository was not updated from the application
+workspace.
 
 The current marketing page says the service stores the public key, signed posts, uploaded media,
 queue settings, and billing details. That is true and incomplete. It does not mention draft text,
@@ -10,7 +14,13 @@ draft version history, encrypted wallet connections, referral records, or the pr
 
 ## Draft text
 
-**Who we are.** [Legal name and address of the controller. Not invented here.]
+**Who we are.** SmartFlowSocial communicates publicly under its Nostr identity
+npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0
+(https://njump.me/npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0). That account is
+a public contact. It is not a registered company, a legal name, or a postal address. Publishing it
+does not by itself identify a data controller under GDPR Article 13 or a service provider under
+Article 5 of Directive 2000/31/EC. Where those duties apply to the commercial hosted service, they
+are not met by this notice.
 
 **Signing keys.** SmartFlowSocial does not store your Nostr signing key. You sign with a browser
 extension or a remote signer on a device you control. We store the public key and the events you
@@ -49,8 +59,8 @@ delete events that relays already accepted. When the operator enables delete eve
 are signed by the operator key in `NOSTR_NSEC`, which is not the user's key. Unshared objects in
 this install's bucket are deleted. Blossom blobs and files on other servers may remain.
 
-**Contact.** [A contact that is not only a Nostr profile, if Article 13 requires an identity people
-can use. The existing Nostr contact can stay as an additional channel.]
+**Contact.** The public contact is the Nostr account above. There is no separate support email or
+privacy officer published with this service.
 
 ## What changed relative to the 8 November 2026 page
 
@@ -61,4 +71,5 @@ can use. The existing Nostr contact can stay as an additional channel.]
 - Replace the single "billing details" sentence with the processors the hosted service actually
   uses.
 - Add retention and the limits of deletion once an event is on a relay.
-- Leave the controller's legal name blank until the owner supplies it.
+- The owner decided not to publish a legal name or address. Do not invent one, and do not describe
+  the Nostr account as a company.

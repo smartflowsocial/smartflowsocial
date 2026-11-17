@@ -90,9 +90,13 @@ From contest detail:
 1. Review entries and leaderboard
 2. Freeze snapshot at deadline
 3. Validate winner set and alternates
-4. Lock the contest to finalize winners
+4. Pay the platform commission if this install charges one, then lock the contest
 
-After lock, winner selection is treated as final for payout tracking.
+The hosted commission is 10% on Free, 7.5% on Starter, 5% on Creator, and 0% on Pro, Teams, and
+Founder. A self-hosted install charges 0% and does not ask for an operator wallet in order to lock.
+The screen shows the exact sat amount before a payable action. Winner payouts are a separate payment
+from a wallet the creator connects. After lock, winner selection is treated as final for payout
+tracking.
 
 ---
 

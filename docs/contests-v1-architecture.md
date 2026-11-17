@@ -21,7 +21,8 @@
 - `ContestEntry` stores immutable scored rows at snapshot time.
 - `ContestWinner` stores winner and alternate sets.
 - `ContestEventLog` stores contest lifecycle/audit events.
-- `ContestFinalizationPayment` supports paid lock flows when enabled later.
+- `ContestFinalizationPayment` records the hosted commission invoice. A zero fee does not create
+  one.
 
 ## Lifecycle
 

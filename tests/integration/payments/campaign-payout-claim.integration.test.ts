@@ -256,6 +256,10 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
         errorCode: "UNCONFIRMED",
         errorMessage: "timeout",
       });
+      await prisma.payoutAttempt.updateMany({
+        where: { itemId: claimed.itemId },
+        data: { startedAt: new Date(Date.now() - 10 * 60 * 1000) },
+      });
       const resolved = await resolveUnknownCampaignPayoutItem({
         itemId: claimed.itemId,
         decision: "confirmed_unpaid",
@@ -279,6 +283,35 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       expect(items).toHaveLength(1);
       expect(items[0]?.status).toBe("paying");
       expect(items[0]?.paymentHash).toBe("99".repeat(32));
+    });
+
+    it("refuses to mark a fresh paying attempt unpaid", async () => {
+      const run = await createRun(1000);
+      const winner = "ee".repeat(32);
+      const requested = [{ winnerPubkey: winner, amountSats: 100 }];
+      const claimed = await claimCampaignPayoutItem(
+        claimArgs({
+          runId: run.id,
+          winner,
+          amountSats: 100,
+          paymentHash: "ab".repeat(32),
+          spendCapSats: 1000,
+          requested,
+        })
+      );
+      expect(claimed.ok).toBe(true);
+      if (!claimed.ok) return;
+      const resolved = await resolveUnknownCampaignPayoutItem({
+        itemId: claimed.itemId,
+        decision: "confirmed_unpaid",
+        note: "Wallet history has no payment for this hash",
+      });
+      expect(resolved.ok).toBe(false);
+      const row = await prisma.payoutItem.findUnique({
+        where: { id: claimed.itemId },
+      });
+      expect(row?.status).toBe("paying");
+      expect(row?.paymentHash).toBe("ab".repeat(32));
     });
   }
 );

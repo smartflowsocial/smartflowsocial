@@ -18,6 +18,7 @@ const claimApi = vi.hoisted(() => ({
 const payApi = vi.hoisted(() => ({
   payAuthorizedBolt11: vi.fn(),
   lookupAuthorizedPayment: vi.fn(),
+  nwcTimeouts: vi.fn(() => ({ payMs: 45_000, reconcileMs: 15_000 })),
 }));
 
 vi.mock(

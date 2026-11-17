@@ -1,31 +1,29 @@
 /**
  * Pure finalization fee math (client + server). UI: "Finalization fee".
+ * Pass the server deployment. The default is hosted, which is the rate a
+ * page shows when the root loader did not include a deployment.
  */
 
-import { campaignFinalizationFeeRateBps } from "~/features/payments/plan-policy";
+import {
+  computeCampaignFinalizationFeeSats,
+  effectiveCampaignFinalizationFeeRateBps,
+} from "~/features/payments/campaign-fee-policy";
+import {
+  HOSTED_DEPLOYMENT,
+  type PublicDeployment,
+} from "~/features/payments/entitlements/deployment-mode";
 import type { PlanType } from "~/features/payments/types";
 
-/** Rates live on the plan policy. Free is 10%, Creator is 5%, other known plans are 0%. */
-export function getFinalizationFeeRateBps(planType: PlanType): number {
-  return campaignFinalizationFeeRateBps(planType);
+export function getFinalizationFeeRateBps(
+  planType: PlanType,
+  deployment: PublicDeployment = HOSTED_DEPLOYMENT
+): number {
+  return effectiveCampaignFinalizationFeeRateBps(planType, deployment);
 }
 
 export function computeFinalizationFeeSats(
   plannedPayoutSats: number,
   feeRateBps: number
 ): { feeSats: number; waivedByPlan: boolean } {
-  if (feeRateBps <= 0) {
-    return {
-      feeSats: 0,
-      waivedByPlan: plannedPayoutSats > 0,
-    };
-  }
-  if (plannedPayoutSats <= 0) {
-    return { feeSats: 0, waivedByPlan: false };
-  }
-  let feeSats = Math.floor((plannedPayoutSats * feeRateBps) / 10000);
-  if (feeSats === 0) {
-    feeSats = 1;
-  }
-  return { feeSats, waivedByPlan: false };
+  return computeCampaignFinalizationFeeSats(plannedPayoutSats, feeRateBps);
 }

@@ -9,8 +9,8 @@ signing key stays in the signer.
 
 The same code is the hosted service and a self-hosted install. There is no private edition of the
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
-[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.2`. Release notes are in
-[docs/releases/v0.1.0-alpha.2.md](./docs/releases/v0.1.0-alpha.2.md). The tag is not published.
+[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.3`. Release notes are in
+[docs/releases/v0.1.0-alpha.3.md](./docs/releases/v0.1.0-alpha.3.md). The tag is not published.
 `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository. Neither is a
 supported version.
 

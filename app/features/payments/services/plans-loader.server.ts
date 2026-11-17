@@ -5,12 +5,17 @@
 
 import { requireUser } from "~/features/auth/session.server";
 import {
+  campaignCommissionCallout,
+  effectiveCampaignFinalizationFeeRateBps,
+} from "~/features/payments/campaign-fee-policy";
+import {
   countActiveSubscriptionsForPlan,
   getAllPlans,
   getUserSubscription,
   listActivePlanPricesForPlans,
   PlanBillingModel,
 } from "~/features/payments/data";
+import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 import { isSubscriptionPeriodExpired } from "~/features/payments/types";
 import type {
   FounderOfferingPayload,
@@ -26,7 +31,6 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "10 scheduled items",
     "1 queue",
     "Browse broadcasts (no sending)",
-    "10% fee on Lightning campaign prize pools",
     "Paid plans unlock full send volume",
   ],
   starter: [
@@ -35,23 +39,29 @@ const GRID_CALLOUTS: Record<string, string[]> = {
     "5 GB storage / 20 GB uploads",
     "50 MB max file size",
     "Bulk workflows enabled",
-    "0% campaign commission",
   ],
   creator: [
     "Up to 2 accounts",
     "More scheduling and queue headroom",
     "Bulk workflows + broadcast sending",
     "Hosted media included",
-    "5% campaign commission",
   ],
   pro: [
     "Up to 5 accounts",
     "Highest workflow and queue capacity",
     "Largest hosted media allocation",
     "Blastr fanout distribution included",
-    "0% campaign commission",
   ],
 };
+
+function calloutsForPlan(planId: string): string[] {
+  const base = GRID_CALLOUTS[planId] ?? [];
+  const bps = effectiveCampaignFinalizationFeeRateBps(
+    planId,
+    currentDeployment()
+  );
+  return [...base, campaignCommissionCallout(bps, planId)];
+}
 
 const FOUNDER_BENEFITS = [
   "Permanent access to the top individual tier",
@@ -60,6 +70,7 @@ const FOUNDER_BENEFITS = [
   "Priority support",
   "Early access to major features",
   "Founder recognition in-product",
+  "0% campaign commission",
 ];
 
 const PLAN_SUBTITLES: Record<string, string> = {
@@ -273,7 +284,7 @@ export async function loadPlansData(request: Request) {
       purchasable: plan.purchasable,
       isComingSoon: plan.isComingSoon,
       isTeamsPlaceholder: isTeams,
-      callouts: GRID_CALLOUTS[plan.id] ?? [],
+      callouts: calloutsForPlan(plan.id),
     };
   };
 

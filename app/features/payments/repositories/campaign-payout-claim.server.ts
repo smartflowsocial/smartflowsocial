@@ -10,6 +10,7 @@ import {
   type BudgetItem,
   type BudgetWinner,
 } from "~/features/payments/campaign-payout-budget";
+import { unpaidResolutionAllowed } from "~/features/payments/campaign-payout-resolution";
 import { isNonNegativeWholeSats } from "~/features/referral/bolt11-invoice.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -483,6 +484,19 @@ export async function resolveUnknownCampaignPayoutItem(args: {
         ok: false,
         error: "Only an in-flight or unknown payout can be resolved by hand",
       };
+    }
+    if (args.decision === "confirmed_unpaid") {
+      const attempt = await tx.payoutAttempt.findFirst({
+        where: { itemId: item.id },
+        orderBy: { startedAt: "desc" },
+        select: { startedAt: true },
+      });
+      const gate = unpaidResolutionAllowed({
+        status: item.status,
+        attemptStartedAtMs: attempt?.startedAt.getTime() ?? null,
+        nowMs: Date.now(),
+      });
+      if (!gate.ok) return gate;
     }
     const previous =
       item.destinationSnapshot &&

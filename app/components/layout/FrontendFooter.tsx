@@ -2,12 +2,8 @@ import { Link } from "react-router";
 
 import { Logo } from "~/components/ui/Logo";
 import { BRAND_MARKETING_URL, BRAND_NAME } from "~/lib/brand";
+import { SMARTFLOW_PUBLIC_CONTACT_PROFILE_URL } from "~/lib/public-contact";
 import { cn } from "~/lib/utils";
-
-// Public Nostr profile URL (not a secret; long nprofile path triggers entropy heuristic)
-const PRIMAL_NOSTR_PROFILE_URL =
-  // eslint-disable-next-line no-secrets/no-secrets -- public profile link only
-  "https://primal.net/p/nprofile1qqsvtq05wq8m4kggcdhzrsl6w8d57c8m48nslqnmcz4yt77p5td3ppcja7k2u";
 
 export interface FrontendFooterProps {
   /** When true, “Home” opens the marketing site (use on app login where `/` is still login). */
@@ -57,7 +53,7 @@ export default function Footer({
             Plans
           </Link>
           <a
-            href={PRIMAL_NOSTR_PROFILE_URL}
+            href={SMARTFLOW_PUBLIC_CONTACT_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="text-text-secondary hover:text-text motion-fast"

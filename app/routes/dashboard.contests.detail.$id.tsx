@@ -30,8 +30,10 @@ import {
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import { requireAnySubscription } from "~/features/payments";
+import { createContestFinalizationInvoice } from "~/features/payments/data/payment.commands.server";
 import { PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED } from "~/features/payments/payout-skip-messages.server";
 import { hasUsableNwc } from "~/features/user";
+import { ExternalServiceError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
 import {
   DeferredRouteLoaderProvider,
@@ -129,6 +131,37 @@ async function handleContestDetailIntent(args: {
       if (!result.success)
         return routeData({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
+    }
+    case "createFinalizationInvoice": {
+      const hashRaw = formData.get("lockConfigHash");
+      if (typeof hashRaw !== "string" || !hashRaw.trim()) {
+        return routeData(
+          { error: "Missing lock preview state" },
+          { status: 400 }
+        );
+      }
+      try {
+        const inv = await createContestFinalizationInvoice({
+          contestId,
+          userId,
+          lockConfigHash: hashRaw.trim(),
+        });
+        return {
+          success: true,
+          invoice: inv.invoice,
+          paymentHash: inv.paymentHash,
+          amount: inv.amount,
+          paymentId: inv.paymentId,
+          expiresAt: inv.expiresAt.toISOString(),
+          lockConfigHash: inv.lockConfigHash,
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to create invoice";
+        const status =
+          error instanceof ExternalServiceError ? error.statusCode : 500;
+        return routeData({ error: message }, { status });
+      }
     }
     case "payout": {
       const winnerPubkey = String(formData.get("winnerPubkey") ?? "");

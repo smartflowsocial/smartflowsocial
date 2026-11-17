@@ -11,6 +11,7 @@ import {
 } from "~/features/payments/campaign-payout-budget";
 import {
   lookupAuthorizedPayment,
+  nwcTimeouts,
   payAuthorizedBolt11,
 } from "~/features/payments/nwc-authorized-pay.server";
 import {
@@ -30,8 +31,6 @@ import { fetchLnurlPayInvoice } from "~/features/referral/lnurl-pay.server";
 import { getDecryptedUserNWC } from "~/features/user";
 import { logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
-
-const CAMPAIGN_PAY_TIMEOUT_MS = 45_000;
 
 export type CampaignPayoutScope = "CONTEST" | "GIVEAWAY";
 export type CampaignWalletMode = "manual" | "nwc_creator";
@@ -153,6 +152,7 @@ async function reconcileHeldWinner(args: {
           nwcUrl: args.nwc,
           paymentHash: args.claim.paymentHash,
           authorizedSats: amountSats,
+          timeoutMs: nwcTimeouts().reconcileMs,
         })
       : { kind: "inconclusive" as const };
   if (lookup.kind === "settled" && lookup.preimage) {
@@ -290,11 +290,13 @@ async function processOneWinnerForCampaignPayout(args: {
     return { paid: 0, failed: 1, claimNeeded: 0, skipped: 0 };
   }
 
+  const timeouts = nwcTimeouts();
   const payRes = await payAuthorizedBolt11({
     nwcUrl: nwc,
     invoice: decoded.invoice,
     authorizedSats: amountSats,
-    timeoutMs: CAMPAIGN_PAY_TIMEOUT_MS,
+    timeoutMs: timeouts.payMs,
+    reconcileTimeoutMs: timeouts.reconcileMs,
   });
   if (!payRes.ok) {
     logError(new Error(payRes.message), {

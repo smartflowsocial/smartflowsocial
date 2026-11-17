@@ -1,0 +1,198 @@
+From 5fb8a5d44a5f96e30e34d0e6ea2c57f60b45deca Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Mon, 16 Nov 2026 22:32:18 +0000
+Subject: [PATCH] fix: stop reading request bodies past 256 KiB
+
+A missing or low Content-Length no longer buffers the whole body before the 413. The reader is cancelled once the limit is passed.
+---
+ .gitignore         |  2 ++
+ README.md          |  2 ++
+ src/index.ts       | 50 ++++++++++++++++++++++++------
+ test/index.spec.ts | 77 ++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 122 insertions(+), 9 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index 74a81ce..3be39a7 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -5,5 +5,7 @@ node_modules/
+ .env
+ .env.*
+ !.env.example
++.dev.vars
++.dev.vars.*
+ dist/
+ *.log
+diff --git a/README.md b/README.md
+index c625c17..3b0e82b 100644
+--- a/README.md
++++ b/README.md
+@@ -29,6 +29,8 @@ The GitHub repository is `smartflowsocial-cache-worker`. The Cloudflare script n
+ - Support for 80+ Primal cache request types
+ - Automatic connection retry with timeout handling
+ 
++POST bodies are limited to 256 KiB. The worker counts bytes as it reads and stops when the body passes that limit, including when `Content-Length` is missing or smaller than the body. A larger declared length is rejected before the body is read. This repository does not configure a Cloudflare dashboard rate limit. Do not assume one exists unless it is set on the account.
++
+ ## Deployment
+ 
+ ### Prerequisites
+diff --git a/src/index.ts b/src/index.ts
+index b25534f..95a1d30 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -54,23 +54,55 @@ function jsonResponse(traceId: string, status: number, payload: Record<string, u
+ 	});
+ }
+ 
++function declaredLengthOverLimit(header: string | null, maxBytes: number): boolean {
++	if (header === null) return false;
++	const trimmed = header.trim();
++	if (!/^\d+$/.test(trimmed)) return false;
++	const declared = Number(trimmed);
++	return Number.isSafeInteger(declared) && declared > maxBytes;
++}
++
++/**
++ * Stops once the body passes `maxBytes`. A missing, non-numeric, or too-small
++ * Content-Length is not trusted. The overflowing chunk is not kept.
++ */
+ async function readBodyWithLimit(
+ 	request: Request,
+ 	maxBytes: number,
+ 	traceId: string,
+ ): Promise<ArrayBuffer> {
+-	const cl = request.headers.get('content-length');
+-	if (cl !== null) {
+-		const n = Number(cl);
+-		if (Number.isFinite(n) && n > maxBytes) {
+-			throw new WorkerHttpError(413, 'Request body too large', traceId);
++	if (declaredLengthOverLimit(request.headers.get('content-length'), maxBytes)) {
++		throw new WorkerHttpError(413, 'Request body too large', traceId);
++	}
++	const stream = request.body;
++	if (!stream) return new ArrayBuffer(0);
++
++	const reader = stream.getReader();
++	const chunks: Uint8Array[] = [];
++	let total = 0;
++	try {
++		while (true) {
++			const { done, value } = await reader.read();
++			if (done) break;
++			if (!value || value.byteLength === 0) continue;
++			if (total + value.byteLength > maxBytes) {
++				await reader.cancel();
++				throw new WorkerHttpError(413, 'Request body too large', traceId);
++			}
++			chunks.push(value);
++			total += value.byteLength;
+ 		}
++	} finally {
++		reader.releaseLock();
+ 	}
+-	const buf = await request.arrayBuffer();
+-	if (buf.byteLength > maxBytes) {
+-		throw new WorkerHttpError(413, 'Request body too large', traceId);
++
++	const body = new Uint8Array(total);
++	let offset = 0;
++	for (const chunk of chunks) {
++		body.set(chunk, offset);
++		offset += chunk.byteLength;
+ 	}
+-	return buf;
++	return body.buffer;
+ }
+ 
+ async function loadCache(
+diff --git a/test/index.spec.ts b/test/index.spec.ts
+index e1b1248..c1b3235 100644
+--- a/test/index.spec.ts
++++ b/test/index.spec.ts
+@@ -240,6 +240,83 @@ describe('Primal cache worker', () => {
+ 		expect(json.error).toContain('requestType');
+ 	});
+ 
++	it('stops a chunked body at the limit and does not keep reading', async () => {
++		let pulled = 0;
++		let cancelled = false;
++		const chunk = new Uint8Array(64 * 1024);
++		const stream = new ReadableStream<Uint8Array>({
++			pull(controller) {
++				if (cancelled) return;
++				pulled += chunk.byteLength;
++				controller.enqueue(chunk);
++			},
++			cancel() {
++				cancelled = true;
++			},
++		});
++		const ctx = createExecutionContext();
++		const response = await worker.fetch!(
++			new Request('http://example.com', {
++				method: 'POST',
++				headers: { 'Content-Type': 'application/json' },
++				body: stream,
++				duplex: 'half',
++			} as RequestInit),
++			env,
++			ctx,
++		);
++		await waitOnExecutionContext(ctx);
++		expect(response.status).toBe(413);
++		expect(pulled).toBeLessThanOrEqual(256 * 1024 + chunk.byteLength);
++		expect(cancelled).toBe(true);
++	});
++
++	it('does not trust a small Content-Length when the stream is larger', async () => {
++		let pulled = 0;
++		const chunk = new Uint8Array(64 * 1024);
++		const stream = new ReadableStream<Uint8Array>({
++			pull(controller) {
++				pulled += chunk.byteLength;
++				controller.enqueue(chunk);
++			},
++		});
++		const ctx = createExecutionContext();
++		const response = await worker.fetch!(
++			new Request('http://example.com', {
++				method: 'POST',
++				headers: {
++					'Content-Type': 'application/json',
++					'Content-Length': '16',
++				},
++				body: stream,
++				duplex: 'half',
++			} as RequestInit),
++			env,
++			ctx,
++		);
++		await waitOnExecutionContext(ctx);
++		expect(response.status).toBe(413);
++		expect(pulled).toBeLessThanOrEqual(256 * 1024 + chunk.byteLength);
++	});
++
++	it('accepts a small body when Content-Length is not a number', async () => {
++		const ctx = createExecutionContext();
++		const response = await worker.fetch!(
++			new Request('http://example.com', {
++				method: 'POST',
++				headers: {
++					'Content-Type': 'application/json',
++					'Content-Length': 'not-a-length',
++				},
++				body: JSON.stringify({ requestType: 'network_stats' }),
++			}),
++			env,
++			ctx,
++		);
++		await waitOnExecutionContext(ctx);
++		expect(response.status).toBe(200);
++	});
++
+ 	it('returns 413 when Content-Length exceeds limit before reading body', async () => {
+ 		const ctx = createExecutionContext();
+ 		const smallBody = JSON.stringify({ requestType: 'network_stats' });
+-- 
+2.43.0
+
