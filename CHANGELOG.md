@@ -9,6 +9,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-11-17
+
+First coordinated open-source prerelease. SmartFlowSocial was already in open beta before this
+repository was public. This is not a first launch, and it is not a stable `1.0.0`. Notes:
+[docs/releases/v1.0.0-beta.1.md](docs/releases/v1.0.0-beta.1.md). The tag is not published.
+`v0.1.0-alpha.0` and the withdrawn `v1.0.0` came from an earlier repository and are not supported
+releases of this one.
+
+### Security
+
+- Account deletion writes owned object-storage keys into `OwnedObjectDeletion` in the same
+  transaction that removes the account. A storage outage or a worker restart can still delete those
+  objects. Shared objects, Blossom blobs, and keys outside `clients/<account id>/` are not deleted.
+- Blossom `/ready` treats a missing probe object as healthy storage and reports `storageError` for
+  access, timeout, and network failures. `NODE_ENV=test` no longer skips the check.
+- The publisher keeps loopback `ws://` only when `ENVIRONMENT` is `test` or `development` and
+  `ALLOW_PRIVATE_RELAYS=true`. A failed publish releases the replay claim so the same event can be
+  tried again. A successful publish still rejects a duplicate for 24 hours.
+
+### Changed
+
+- Package version is `1.0.0-beta.1`. `"private": true` stays, so the package is not published to
+  npm.
+- Blastr production deploy is a manual workflow. Staging uses `blastr-publish-jobs-staging`.
+- Publisher, Blossom, Blastr, and the cache worker gain a full-history Gitleaks workflow.
+
 ## [0.1.0-alpha.3] - 2026-11-17
 
 Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.0-alpha.2`. Notes:

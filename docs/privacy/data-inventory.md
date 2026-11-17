@@ -118,10 +118,17 @@ Deletion also removes the account's public key from referral rows:
   365 days. The payment hash is what stops the same invoice from being paid twice, so payout
   invoices that stay valid for more than 365 days are refused.
 
-Objects in this install's own bucket are deleted when the URL is under `clients/<user id>/` and no
-other account references that URL. Blossom blobs and files on other servers are not deleted. Events
-a relay has already accepted stay on that relay. Scheduled jobs whose post row is gone are skipped.
-Sessions and the encrypted NWC connection are on the user row and go with it.
+Objects in this install's own bucket are queued for deletion when the URL is under
+`clients/<user id>/` and no other account references that URL. The object key is written to
+`OwnedObjectDeletion` in the same database transaction that removes the account. The row has no
+foreign key to the user, so it is still there if object storage is down or the worker restarts. The
+worker retries those rows. A failed attempt stays `PENDING`, then `FAILED` after eight attempts, and
+keeps being retried at a longer interval until storage accepts the delete. The row is removed after
+a successful delete. A key that does not match that account's prefix is marked `REJECTED` and is not
+sent to storage. Blossom blobs and files on other servers are not deleted. SmartFlowSocial does not
+control externally hosted Blossom servers. Events a relay has already accepted stay on that relay.
+Scheduled jobs whose post row is gone are skipped. Sessions and the encrypted NWC connection are on
+the user row and go with it.
 
 `ENABLE_NOSTR_DELETE_EVENTS`, when set, lets the server publish a kind 5 deletion signed by the
 operator key in `NOSTR_NSEC`. That key is not the user's Nostr key. Relays may ignore the deletion.

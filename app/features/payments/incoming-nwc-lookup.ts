@@ -8,8 +8,20 @@ import { normalizePaymentHex, verifiedPreimage } from "./payment-preimage";
  * must hash to the expected payment hash. This is not the outgoing payout
  * check: a settled incoming invoice does not need a preimage to be accepted.
  */
+/**
+ * `preimage` means the wallet returned a preimage that hashes to the invoice.
+ * `wallet_reported` means the wallet said the invoice settled and did not return
+ * a preimage. NIP-47 does not require a preimage on every lookup. Callers that
+ * pay out must not treat `wallet_reported` as proof a payment was sent.
+ */
+export type IncomingSettlementAssurance = "preimage" | "wallet_reported";
+
 export type IncomingLookupVerdict =
-  | { kind: "settled"; preimage: string | null }
+  | {
+      kind: "settled";
+      assurance: IncomingSettlementAssurance;
+      preimage: string | null;
+    }
   | { kind: "unpaid" }
   | { kind: "inconclusive"; reason: string };
 
@@ -82,7 +94,11 @@ export function interpretIncomingInvoiceLookup(args: {
     return { kind: "inconclusive", reason: "contradictory_settlement" };
   }
   if (settled && !failed) {
-    return { kind: "settled", preimage };
+    return {
+      kind: "settled",
+      assurance: preimage ? "preimage" : "wallet_reported",
+      preimage,
+    };
   }
   if (failed && preimage === null && settledAtMs <= 0) {
     return { kind: "unpaid" };

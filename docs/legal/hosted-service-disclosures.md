@@ -1,7 +1,8 @@
 # Hosted service disclosures
 
-Owner decisions recorded for the 0.1.0-alpha.3 engineering pass. These supersede the 16 November
-2026 notes that set Starter to 0% and asked for a legal name.
+Owner decisions recorded for the 0.1.0-alpha.3 engineering pass and kept for `1.0.0-beta.1`. These
+supersede the 16 November 2026 notes that set Starter to 0% and asked for a legal name. The fee
+table below was not changed for the prerelease.
 
 The public contact is the SmartFlowSocial Nostr account:
 

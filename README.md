@@ -9,10 +9,13 @@ signing key stays in the signer.
 
 The same code is the hosted service and a self-hosted install. There is no private edition of the
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
-[Unlicense](LICENSE). `package.json` is `0.1.0-alpha.3`. Release notes are in
-[docs/releases/v0.1.0-alpha.3.md](./docs/releases/v0.1.0-alpha.3.md). The tag is not published.
-`v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier repository. Neither is a
-supported version.
+[Unlicense](LICENSE).
+
+**SmartFlowSocial v1 — Now Open Source.** `package.json` is `1.0.0-beta.1`, a prerelease. It is the
+first coordinated open-source release candidate, not a claim that the service just launched and not
+a stable `1.0.0`. Notes are in [docs/releases/v1.0.0-beta.1.md](./docs/releases/v1.0.0-beta.1.md).
+The tag is not published. `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier
+repository. Neither is a supported version of this repository.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
@@ -63,7 +66,9 @@ You need Node.js 22.22 or newer, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis.
 running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads need
 S3-compatible storage. First-time setup is about 30–60 minutes.
 [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
-signed event reaches a publisher.
+signed event reaches a loopback relay. `pnpm smoke:publish` stops at a signature check.
+`pnpm test:relay-publish` delivers the event. The Cloudflare Worker itself is `pnpm test:worker` in
+the publisher repository.
 
 ```bash
 git clone https://github.com/smartflowsocial/smartflowsocial.git

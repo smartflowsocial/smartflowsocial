@@ -57,7 +57,9 @@ submitted for payment, stay without the public key until the retention purge. Pa
 the amount and payment hash without the public key for 365 days. Deleting the account does not
 delete events that relays already accepted. When the operator enables delete events, those events
 are signed by the operator key in `NOSTR_NSEC`, which is not the user's key. Unshared objects in
-this install's bucket are deleted. Blossom blobs and files on other servers may remain.
+this install's bucket are queued and deleted, including when storage is briefly unavailable. The
+queue does not depend on the account row remaining. Blossom blobs and files on other servers may
+remain, and this service does not delete blobs on a Blossom server it does not operate.
 
 **Contact.** The public contact is the Nostr account above. There is no separate support email or
 privacy officer published with this service.

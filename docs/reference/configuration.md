@@ -482,9 +482,22 @@ the only caller. Campaign autopay, referral payout, and ack cleanup run only whe
 their cron route.
 
 `POST /cron/purge-retained-records` is the preferred manual call. `GET` still runs the purge when
-the secret matches, and the response sets `Deprecation: true`. A missing or wrong secret returns 401
-and deletes nothing. The 365-day window is the software's current retention setting. It is not a
+the secret matches, and the response sets `Deprecation: true`. The production scheduler's method was
+not changed, because an existing caller may still use GET. A missing or wrong secret returns 401 and
+deletes nothing. The 365-day window is the software's current retention setting. It is not a
 determination that 365 days satisfies a statute. The operator decides the period.
+
+The worker also retries owned object deletions queued during account deletion. The default interval
+is 60 seconds (`OWNED_OBJECT_DELETION_INTERVAL_SECONDS`). Set it to `0` to disable that sweep. The
+rows remain in `OwnedObjectDeletion` until a later sweep deletes the objects. Count them with:
+
+```sql
+SELECT status, COUNT(*) FROM "OwnedObjectDeletion" GROUP BY status;
+```
+
+Do not select `objectKey` into logs. `FAILED` means the fast retry budget is exhausted and the
+worker is still retrying slowly. `REJECTED` means the key failed the account-prefix check and was
+not sent to storage.
 
 ---
 

@@ -15,7 +15,11 @@ These public repositories have an active ruleset named `Protect main` on `refs/h
 - `nostrmash/nostrmash-web`
 
 Each ruleset blocks deleting `main` and blocks non-fast-forward pushes. Classic branch protection is
-not enabled. The ruleset does not require a pull request, a review, or status checks.
+not enabled. On 15 November 2026 the ruleset did not require a pull request, a review, or status
+checks. That sentence is a snapshot, not a current claim. Read the ruleset again before a release
+and record the date. The check names that exist in the main repository, if the owner chooses to
+require them, are CI, E2E Tests, and Secret scan. Companion repositories now also have a Secret scan
+workflow in their working trees. Do not require a check the workflow does not run.
 
 `smartflowsocial/smartflowsocial` `develop` is not covered by that ruleset. Classic protection on
 `develop` is off.
@@ -34,9 +38,8 @@ Repository and environment secret lists were empty, including `production` on
 - Organization **Settings → Authentication security**: require two-factor authentication for both
   organizations.
 - On each `Protect main` ruleset, add the rules the owner wants: pull request required, required
-  status checks, and no admin bypass unless a named break-glass path is intended. For
-  `smartflowsocial/smartflowsocial`, the existing check names are CI, E2E Tests, and Secret scan. Do
-  not require a check the workflow does not run.
+  status checks, and no admin bypass unless a named break-glass path is intended. Confirm the live
+  ruleset before treating the 15 November 2026 reading as current.
 - Decide whether `develop` gets the same deletion and force-push rules.
 - For the private landing repository, open **Settings → Rules** in the browser. The API cannot read
   it on the free plan.
