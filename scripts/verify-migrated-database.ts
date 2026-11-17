@@ -53,6 +53,12 @@ async function main(): Promise<number> {
         `migrate deploy did not insert plan rows: ${missing.join(", ")}`
       );
     }
+    const legacy = ["basic", "premium"].filter((id) => ids.has(id));
+    if (legacy.length > 0) {
+      throw new Error(
+        `legacy plan ids are still present: ${legacy.join(", ")}`
+      );
+    }
 
     const index = await client.query<{ indexdef: string }>(
       `SELECT indexdef

@@ -19,11 +19,14 @@ import sourceMapSupport from "source-map-support";
 config({ path: path.resolve(process.cwd(), ".env"), quiet: true });
 
 import rateLimit from "express-rate-limit";
-import { PlanBillingModel } from "@prisma/client";
 
 import { env } from "./app/lib/env.server";
 import { logInfo, logWarning } from "./app/lib/error-logger.server";
 import { updateRelayMetrics } from "./app/lib/metrics/relay-metrics.server";
+import {
+  prismaMigrateDeployCommand,
+  reportableMigrationStderr,
+} from "./app/lib/prisma-migrate-cli";
 import {
   apiLimiter,
   strictLimiter,
@@ -602,21 +605,31 @@ async function run() {
   const port = parseInt(env.PORT ?? "3000", 10);
   const host = env.HOST ?? "0.0.0.0"; // Listen on all interfaces for Docker
 
-  // Run database migrations and seed plans on startup
+  // Run database migrations on startup. Plan rows come from migrations.
   async function initializeDatabase() {
     try {
-      // Run pending migrations
       const { exec } = await import("node:child_process");
       const { promisify } = await import("node:util");
       const execAsync = promisify(exec);
       logInfo("Running database migrations...");
       try {
-        const { stdout, stderr } = await execAsync("npx prisma migrate deploy");
+        const { stdout, stderr } = await execAsync(
+          prismaMigrateDeployCommand(),
+          {
+            env: {
+              ...process.env,
+              PRISMA_HIDE_UPDATE_MESSAGE: "1",
+            },
+          }
+        );
         if (stdout) {
           logInfo("Database migrations output", { stdout });
         }
-        if (stderr) {
-          logWarning("Database migrations stderr output", { stderr });
+        const reportableStderr = reportableMigrationStderr(stderr);
+        if (reportableStderr) {
+          logWarning("Database migrations stderr output", {
+            stderr: reportableStderr,
+          });
         }
         logInfo("Migrations applied successfully");
       } catch (migrationErr) {
@@ -630,166 +643,20 @@ async function run() {
 
       const { prisma } = await import("./app/lib/prisma.server");
       const existingPlans = await prisma.plan.count();
+      const legacyPlans = await prisma.plan.count({
+        where: { id: { in: ["basic", "premium"] } },
+      });
       if (existingPlans === 0) {
-        logInfo("No plans found, seeding...");
-        const plans = [
-          {
-            id: "free",
-            name: "Free",
-            price: 0,
-            description: "Learn the system",
-            sortOrder: 10,
-            planBillingModel: PlanBillingModel.free,
-            purchasable: false,
-            visibleOnPricingPage: true,
-            isComingSoon: false,
-            isSpecialOffering: false,
-            founderSeatCap: null,
-            features: { basicScheduling: true },
-            maxPostsPerMonth: 10,
-            maxQueueTypes: 1,
-            maxTemplates: 3,
-            maxLongFormPosts: 2,
-            enableBasicScheduling: true,
-            enableEngagementFeed: false,
-            enableGiveaways: true,
-          },
-          {
-            id: "basic",
-            name: "Creator",
-            price: 28,
-            description: "Run your content properly",
-            sortOrder: 20,
-            planBillingModel: PlanBillingModel.recurring,
-            purchasable: true,
-            visibleOnPricingPage: true,
-            isComingSoon: false,
-            isSpecialOffering: false,
-            founderSeatCap: null,
-            features: { basicScheduling: true, multipleQueues: true },
-            maxPostsPerMonth: 100,
-            maxQueueTypes: 5,
-            maxTemplates: 20,
-            maxLongFormPosts: 10,
-            enableBasicScheduling: true,
-            enableMultipleQueues: true,
-            enableBulkScheduling: true,
-            enableRepostsAndQuotes: true,
-            enableEngagementFeed: true,
-            enableGiveaways: true,
-            enableLeaderboards: true,
-            enableWolfFilteringAndVortex: true,
-            enableNativeS3BlossomStorage: true,
-          },
-          {
-            id: "premium",
-            name: "Pro",
-            price: 69,
-            description: "Operate at full power",
-            sortOrder: 30,
-            planBillingModel: PlanBillingModel.recurring,
-            purchasable: true,
-            visibleOnPricingPage: true,
-            isComingSoon: false,
-            isSpecialOffering: false,
-            founderSeatCap: null,
-            features: {
-              basicScheduling: true,
-              multipleQueues: true,
-              advancedAnalytics: true,
-            },
-            maxPostsPerMonth: 500,
-            maxQueueTypes: 15,
-            maxTemplates: 50,
-            maxLongFormPosts: 25,
-            enableBasicScheduling: true,
-            enableMultipleQueues: true,
-            enableBulkScheduling: true,
-            enableRepostsAndQuotes: true,
-            enableEngagementFeed: true,
-            enableGiveaways: true,
-            enableLeaderboards: true,
-            enableAdvancedAnalytics: true,
-            enableMultiAccountSwitching: true,
-            enableWolfFilteringAndVortex: true,
-            enableNativeS3BlossomStorage: true,
-            enableRelayBlast: true,
-          },
-          {
-            id: "teams",
-            name: "Teams",
-            price: 0,
-            description: "Built for collaborative publishing",
-            sortOrder: 40,
-            planBillingModel: PlanBillingModel.disabled,
-            purchasable: false,
-            visibleOnPricingPage: true,
-            isComingSoon: true,
-            isSpecialOffering: false,
-            founderSeatCap: null,
-            features: { basicScheduling: true, multipleQueues: true },
-            maxPostsPerMonth: null,
-            maxQueueTypes: null,
-            maxTemplates: null,
-            maxLongFormPosts: null,
-            enableBasicScheduling: true,
-            enableMultipleQueues: true,
-            enableBulkScheduling: true,
-            enableRepostsAndQuotes: true,
-            enableEngagementFeed: true,
-            enableGiveaways: true,
-            enableLeaderboards: true,
-            enableAdvancedAnalytics: true,
-            enableMultiAccountSwitching: true,
-            enableWolfFilteringAndVortex: true,
-            enableNativeS3BlossomStorage: true,
-            enableRelayBlast: true,
-          },
-          {
-            id: "founder",
-            name: "Founder",
-            price: 2600,
-            description: "Lifetime access for early believers",
-            sortOrder: 100,
-            planBillingModel: PlanBillingModel.lifetime,
-            purchasable: true,
-            visibleOnPricingPage: true,
-            isComingSoon: false,
-            isSpecialOffering: true,
-            founderSeatCap: 21,
-            features: {
-              basicScheduling: true,
-              multipleQueues: true,
-              lifetimeAccess: true,
-            },
-            maxPostsPerMonth: null,
-            maxQueueTypes: null,
-            maxTemplates: null,
-            maxLongFormPosts: null,
-            enableBasicScheduling: true,
-            enableMultipleQueues: true,
-            enableBulkScheduling: true,
-            enableRepostsAndQuotes: true,
-            enableEngagementFeed: true,
-            enableGiveaways: true,
-            enableLeaderboards: true,
-            enableAdvancedAnalytics: true,
-            enableMultiAccountSwitching: true,
-            enableWolfFilteringAndVortex: true,
-            enableNativeS3BlossomStorage: true,
-            enableRelayBlast: true,
-            enableVisualPerks: true,
-            enableLifetimeAccess: true,
-          },
-        ];
-        for (const plan of plans) {
-          await prisma.plan.create({
-            data: { ...plan, isActive: true, updatedAt: new Date() },
-          });
-        }
-        logInfo("Plans seeded successfully");
+        logWarning(
+          "No plan rows after migrations. Refusing to insert legacy plan ids."
+        );
+      } else if (legacyPlans > 0) {
+        logWarning("Legacy plan ids are still present", {
+          existingPlans,
+          legacyPlans,
+        });
       } else {
-        logInfo("Plans already exist, skipping seed", { existingPlans });
+        logInfo("Plan catalog present", { existingPlans });
       }
     } catch (err) {
       logWarning("Failed to initialize database (non-fatal)", {
@@ -810,7 +677,7 @@ async function run() {
     });
   }
 
-  // Initialize database (migrations + seeding) before starting the server
+  // Initialize database migrations before starting the server
   void initializeDatabase();
 
   app.listen(port, host, () => {
