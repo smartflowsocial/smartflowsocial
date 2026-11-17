@@ -73,8 +73,8 @@ to set up the development environment:
 ### Prerequisites
 
 - **Node.js**: Version 26.13.1 or higher (`package.json` `engines`, `.nvmrc`)
-- **pnpm**: `10.27.0`. Node 26 does not ship Corepack, so install it first
-  (`npm install --global corepack@0.36.0 && corepack enable && corepack prepare pnpm@10.27.0 --activate`)
+- **pnpm**: `12.21.0`. Node 26 does not ship Corepack, so install it first
+  (`npm install --global corepack@0.36.0 && corepack enable && corepack prepare pnpm@12.21.0 --activate`)
 - **PostgreSQL**: Database server (local or remote)
 - **Git**: For version control
 

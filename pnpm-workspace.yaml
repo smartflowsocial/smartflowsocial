@@ -1,0 +1,44 @@
+# pnpm 12 waits a day before installing a newly published package. This project
+# does not use that delay.
+minimumReleaseAge: 0
+
+catalog:
+  vite: ^8.3.8
+
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  sharp: true
+  cypress: true
+  esbuild: true
+  "@sentry/cli": true
+  bufferutil: false
+  utf-8-validate: false
+  msgpackr-extract: false
+  unrs-resolver: false
+
+overrides:
+  "esbuild@<=0.24.2": 0.25.12
+  "@vanilla-extract/integration>esbuild": 0.25.12
+  "esbuild@>=0.27.3 <0.28.1": 0.28.2
+  tar: 7.5.22
+  "body-parser@<1.20.9": 1.20.9
+  "body-parser@>=2.0.0 <2.4.0": 2.4.0
+  "follow-redirects@<1.16.2": 1.16.2
+  "joi@<18.3.1": 18.3.1
+  toml: 5.0.1
+  estree-util-value-to-estree: 3.5.0
+  "@vanilla-extract/integration>vite": 6.4.5
+  "vite-node@1>vite": 6.4.5
+  "vite-node@3>vite": "catalog:"
+
+peerDependencyRules:
+  allowedVersions:
+    nostr-tools: ^2.17.0
+    express: "5"
+  allowAny:
+    - nostr-tools
+
+patchedDependencies:
+  "nostr-tools@2.26.1": patches/nostr-tools@2.26.1.patch

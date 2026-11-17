@@ -32,7 +32,7 @@
     "decentralized",
     "web3"
   ],
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@12.21.0",
   "sideEffects": [
     "**/*.css",
     "**/*.server.ts",
@@ -264,50 +264,5 @@
   },
   "engines": {
     "node": ">=26.13.1"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "sharp",
-      "cypress",
-      "esbuild",
-      "@sentry/cli"
-    ],
-    "ignoredBuiltDependencies": [
-      "bufferutil",
-      "utf-8-validate",
-      "msgpackr-extract",
-      "unrs-resolver"
-    ],
-    "overrides": {
-      "esbuild@<=0.24.2": "0.25.12",
-      "@vanilla-extract/integration>esbuild": "0.25.12",
-      "esbuild@>=0.27.3 <0.28.1": "0.28.2",
-      "tar": "7.5.22",
-      "body-parser@<1.20.9": "1.20.9",
-      "body-parser@>=2.0.0 <2.4.0": "2.4.0",
-      "follow-redirects@<1.16.2": "1.16.2",
-      "joi@<18.3.1": "18.3.1",
-      "toml": "5.0.1",
-      "estree-util-value-to-estree": "3.5.0",
-      "@vanilla-extract/integration>vite": "6.4.5",
-      "vite-node@1>vite": "6.4.5",
-      "vite-node@3>vite": "$vite"
-    },
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "nostr-tools": "^2.17.0",
-        "express": "5"
-      },
-      "ignoreMissing": [],
-      "allowedAnyPeerVersion": [
-        "nostr-tools"
-      ]
-    },
-    "patchedDependencies": {
-      "nostr-tools@2.26.1": "patches/nostr-tools@2.26.1.patch"
-    }
   }
 }
