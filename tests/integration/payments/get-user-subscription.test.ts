@@ -115,18 +115,15 @@ describe("getUserSubscription", () => {
       planId: "creator",
       userId: TEST_USER_ID,
     });
-    const parentSubscription = createMockSubscription({
-      planId: "pro",
-      userId: "parent-user",
-    });
-    (parentSubscription as { status: string }).status = "ACTIVE";
-    (parentSubscription as { currentPeriodEnd: Date }).currentPeriodEnd =
-      new Date("2099-12-06T20:13:50.175Z");
-    (
-      parentSubscription as {
-        Plan: { name: string; enableLifetimeAccess: boolean };
-      }
-    ).Plan = { name: "Pro", enableLifetimeAccess: false };
+    const parentSubscription = {
+      ...createMockSubscription({
+        planId: "pro",
+        userId: "parent-user",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date("2099-12-06T20:13:50.175Z"),
+      }),
+      Plan: { name: "Pro", enableLifetimeAccess: false },
+    };
 
     (mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(childSubscription)
