@@ -11,14 +11,14 @@ RUN apt-get update && apt-get install -y openssl wget python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 RUN npm install --global corepack@0.36.0 \
   && corepack enable \
-  && corepack prepare pnpm@10.27.0 --activate
+  && corepack prepare pnpm@12.21.0 --activate
 
 # Install all node_modules, including dev dependencies
 FROM base AS deps
 
 WORKDIR /myapp
 
-COPY package.json pnpm-lock.yaml prisma.config.ts ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
 COPY patches ./patches
 COPY prisma ./prisma
 # prisma.config.ts imports this module, and postinstall runs prisma generate.
@@ -32,7 +32,7 @@ FROM base AS production-deps
 WORKDIR /myapp
 
 COPY --from=deps /myapp/node_modules /myapp/node_modules
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
 RUN pnpm prune --prod --ignore-scripts
 

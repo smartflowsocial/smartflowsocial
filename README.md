@@ -21,7 +21,7 @@ repository. Neither is a supported version of this repository.
 
 [![CI](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/smartflowsocial/smartflowsocial/actions/workflows/ci.yml)
 [![Node 26.13.1+](https://img.shields.io/badge/node-26.13.1%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![pnpm 12](https://img.shields.io/badge/pnpm-12.21.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![React Router 8.5](https://img.shields.io/badge/React_Router-8.5.1-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-primary-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/redis-jobs-DC382D?logo=redis&logoColor=white)](https://redis.io/)
@@ -62,7 +62,7 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 
 ## Run it yourself
 
-You need Node.js 26.13.1 or newer, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs
+You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis. Publishing needs
 a running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads
 need S3-compatible storage. First-time setup is about 30–60 minutes.
 [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
