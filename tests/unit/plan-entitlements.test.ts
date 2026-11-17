@@ -14,7 +14,7 @@ describe("getPlanEntitlements", () => {
     expect(e.maxDrafts).toBe(5);
     expect(e.maxTemplates).toBe(5);
     expect(e.canSendBroadcast).toBe(false);
-    expect(e.canExecuteBulkActions).toBe(false);
+    expect(e.canExecuteBulkActions).toBe(true);
   });
 
   it("applies concrete caps for creator", () => {

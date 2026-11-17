@@ -73,7 +73,7 @@ const POLICIES: Record<CommercialPlanType, CanonicalPlanPolicy> = {
       maxDrafts: 5,
       maxTemplates: 5,
       canSendBroadcast: false,
-      canExecuteBulkActions: false,
+      canExecuteBulkActions: true,
     },
     campaigns: {
       maxGiveawayWinnerCount: 10,

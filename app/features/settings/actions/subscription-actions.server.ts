@@ -13,8 +13,9 @@ import {
   manuallyVerifyPayment,
   updateUserSubscription,
 } from "~/features/payments/data";
+import { LINKED_CHILD_BILLING_ERROR } from "~/features/payments/linked-account-subscription";
 import type { InvoiceResponse } from "~/features/payments/types";
-import { getDecryptedUserNWC } from "~/features/user";
+import { getDecryptedUserNWC, getUserBasicInfo } from "~/features/user";
 import { subscriptionTopUpDescription } from "~/lib/brand";
 import { logError } from "~/lib/error-logger.server";
 import { ExternalServiceError } from "~/lib/errors";
@@ -30,6 +31,12 @@ import {
   updateSubscriptionCancelAtPeriodEnd,
   updateSubscriptionCancelAtPeriodEndAndMetadata,
 } from "../repositories/subscription-actions-data.server";
+
+async function rejectLinkedChildBilling(userId: string) {
+  const me = await getUserBasicInfo(userId);
+  if (!me?.isChild) return null;
+  return data({ error: LINKED_CHILD_BILLING_ERROR }, { status: 400 });
+}
 
 const ERROR_NO_ACTIVE_SUBSCRIPTION = "No active subscription found";
 const ERROR_SUBSCRIPTION_PLAN_NOT_FOUND = "Subscription plan not found";
@@ -172,6 +179,9 @@ function topUpInvoiceJsonPayload(params: {
 }
 
 async function handleCancelAtPeriodEnd(userId: string, formData: FormData) {
+  const linkedChild = await rejectLinkedChildBilling(userId);
+  if (linkedChild) return linkedChild;
+
   const result = validateFormDataOrRespond(formData, cancelAtPeriodEndSchema);
   if (!result.success) {
     return result.response;
@@ -213,6 +223,9 @@ async function handleCancelAtPeriodEnd(userId: string, formData: FormData) {
 }
 
 async function handleScheduleDowngrade(userId: string, formData: FormData) {
+  const linkedChild = await rejectLinkedChildBilling(userId);
+  if (linkedChild) return linkedChild;
+
   const result = validateFormDataOrRespond(formData, scheduleDowngradeSchema);
   if (!result.success) {
     return result.response;
@@ -260,6 +273,9 @@ async function handleScheduleDowngrade(userId: string, formData: FormData) {
 }
 
 async function handleSwitchToFreePlan(userId: string, formData: FormData) {
+  const linkedChild = await rejectLinkedChildBilling(userId);
+  if (linkedChild) return linkedChild;
+
   const result = validateFormDataOrRespond(formData, switchToFreePlanSchema);
   if (!result.success) {
     return result.response;
@@ -290,6 +306,9 @@ async function handleSwitchToFreePlan(userId: string, formData: FormData) {
 
 async function handleTopUpSubscription(userId: string, formData: FormData) {
   try {
+    const linkedChild = await rejectLinkedChildBilling(userId);
+    if (linkedChild) return linkedChild;
+
     const result = validateFormDataOrRespond(formData, topUpSubscriptionSchema);
     if (!result.success) {
       return result.response;

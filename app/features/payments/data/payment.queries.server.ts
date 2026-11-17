@@ -2,6 +2,7 @@
  * Payment read-only queries: plans, subscription, payment history, status.
  */
 
+import { parentSubscriptionCoversLinkedChild } from "~/features/payments/linked-account-subscription";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -82,15 +83,39 @@ export async function getPlanPriceUsd(params: {
 }
 
 /**
- * Gets user's current subscription info
+ * The subscription row stored for this user. Billing writes and renewal use
+ * this. Feature access uses `getUserSubscription`, which may follow a parent.
  */
-export async function getUserSubscription(userId: string) {
+export async function getOwnUserSubscription(userId: string) {
   return await prisma.subscription.findUnique({
     where: { userId },
     include: {
       Plan: true,
     },
   });
+}
+
+/**
+ * Subscription that decides plan access. A linked child follows the parent's
+ * active multi-account plan instead of the child's own expired row.
+ */
+export async function getUserSubscription(userId: string) {
+  const own = await getOwnUserSubscription(userId);
+  const link = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isChild: true, parentNpub: true },
+  });
+  if (!link?.isChild || !link.parentNpub) return own;
+
+  const parent = await prisma.user.findUnique({
+    where: { npub: link.parentNpub },
+    select: { id: true },
+  });
+  if (!parent || parent.id === userId) return own;
+
+  const parentSubscription = await getOwnUserSubscription(parent.id);
+  if (!parentSubscriptionCoversLinkedChild(parentSubscription)) return own;
+  return parentSubscription;
 }
 
 /**

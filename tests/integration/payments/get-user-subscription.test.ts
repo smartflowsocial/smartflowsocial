@@ -37,6 +37,7 @@ const { mockPrisma } = vi.hoisted(() => {
     },
     user: {
       update: vi.fn(),
+      findUnique: vi.fn(),
     },
     $transaction: vi.fn(async (callback) => {
       const tx = {
@@ -81,6 +82,10 @@ describe("getUserSubscription", () => {
     (
       mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
     ).mockResolvedValue(mockSubscription);
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      isChild: false,
+      parentNpub: null,
+    });
 
     const result = await getUserSubscription(TEST_USER_ID);
 
@@ -95,9 +100,43 @@ describe("getUserSubscription", () => {
 
   it("should return null when user has no subscription", async () => {
     mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      isChild: false,
+      parentNpub: null,
+    });
 
     const result = await getUserSubscription(TEST_USER_ID);
 
     expect(result).toBeNull();
+  });
+
+  it("should use the parent plan for a linked child", async () => {
+    const childSubscription = createMockSubscription({
+      planId: "creator",
+      userId: TEST_USER_ID,
+    });
+    const parentSubscription = {
+      ...createMockSubscription({
+        planId: "pro",
+        userId: "parent-user",
+        status: "ACTIVE",
+        currentPeriodEnd: new Date("2099-12-06T20:13:50.175Z"),
+      }),
+      Plan: { name: "Pro", enableLifetimeAccess: false },
+    };
+
+    (mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(childSubscription)
+      .mockResolvedValueOnce(parentSubscription);
+    (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        isChild: true,
+        parentNpub: "parent-npub",
+      })
+      .mockResolvedValueOnce({ id: "parent-user" });
+
+    const result = await getUserSubscription(TEST_USER_ID);
+
+    expect(result).toEqual(parentSubscription);
   });
 });
