@@ -10,10 +10,7 @@ import {
 
 export type PostDetailContentVariant = "text" | "media" | "poll" | "thread";
 export type PostDetailHeightMode =
-  | "compact"
-  | "medium"
-  | "large"
-  | "ultraCompact";
+  "compact" | "medium" | "large" | "ultraCompact";
 
 function pollItemArgs(
   post: PostDetailModalPost

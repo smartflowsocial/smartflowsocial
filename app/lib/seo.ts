@@ -18,9 +18,7 @@ export const SEO_PUBLIC_CONTEST_FALLBACK_DESCRIPTION =
   "View this public contest powered by SmartFlowSocial, the Nostr-native publishing operating system.";
 
 export type SeoRobots =
-  | "index, follow"
-  | "noindex, follow"
-  | "noindex, nofollow";
+  "index, follow" | "noindex, follow" | "noindex, nofollow";
 
 const SEO_ROBOTS_INDEX_FOLLOW: SeoRobots = "index, follow";
 

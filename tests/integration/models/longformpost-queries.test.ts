@@ -113,8 +113,7 @@ describe("Longform Post Queries", () => {
       const callArgs = (
         prisma.longFormPost.findFirst as ReturnType<typeof vi.fn>
       ).mock.calls[0]?.[0] as
-        | { where?: { nostrEventId?: string; userId?: string } }
-        | undefined;
+        { where?: { nostrEventId?: string; userId?: string } } | undefined;
       expect(callArgs?.where?.nostrEventId).toBe("event-123");
       expect(callArgs?.where?.userId).toBe(TEST_USER_ID);
       expect(result).toEqual(mockPost);

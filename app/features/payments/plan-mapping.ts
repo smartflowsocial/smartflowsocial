@@ -1,18 +1,8 @@
 export type CommercialPlanType =
-  | "free"
-  | "starter"
-  | "creator"
-  | "pro"
-  | "teams"
-  | "founder";
+  "free" | "starter" | "creator" | "pro" | "teams" | "founder";
 
 export type CommercialPublicPlanName =
-  | "Free"
-  | "Starter"
-  | "Creator"
-  | "Pro"
-  | "Teams"
-  | "Founder";
+  "Free" | "Starter" | "Creator" | "Pro" | "Teams" | "Founder";
 
 /**
  * Parse a plan id/name to canonical commercial plan type.

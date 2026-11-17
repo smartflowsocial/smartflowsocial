@@ -62,10 +62,7 @@ import {
 } from "./signing-attempts.client";
 
 export type RecoverableSignFailureReason =
-  | "fatal"
-  | "expired"
-  | "cancelled"
-  | "evicted";
+  "fatal" | "expired" | "cancelled" | "evicted";
 
 export type RecoverableSignResult =
   | {

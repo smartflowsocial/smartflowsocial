@@ -23,11 +23,7 @@ function getOrCreateClientSessionId(): string {
 }
 
 function deviceCoarse():
-  | "mobile"
-  | "desktop"
-  | "tablet"
-  | "unknown"
-  | undefined {
+  "mobile" | "desktop" | "tablet" | "unknown" | undefined {
   if (typeof navigator === "undefined") return undefined;
   const ua = navigator.userAgent;
   if (/iPad|iPhone|iPod/.test(ua)) return "mobile";

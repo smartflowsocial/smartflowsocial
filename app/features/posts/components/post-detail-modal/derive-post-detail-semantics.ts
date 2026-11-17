@@ -19,11 +19,7 @@ import { isPostPoll } from "./resolve-post-detail-variant";
 export type PostDetailContentType = "post" | "poll" | "article";
 
 export type PostDetailRelationshipType =
-  | "original"
-  | "reply"
-  | "quote"
-  | "repost"
-  | "thread_item";
+  "original" | "reply" | "quote" | "repost" | "thread_item";
 
 /** Spec labels for header chip (relationship); omit when original. */
 export const RELATIONSHIP_CHIP_LABEL: Record<

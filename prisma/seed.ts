@@ -403,9 +403,7 @@ async function main() {
     billingCadence: "monthly" | "yearly";
     accessDurationMonths: number;
     paymentMethod:
-      | "nwc_auto_renew"
-      | "lightning_one_time"
-      | "btc_btcpay_onchain";
+      "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
     priceUsd: number;
   }> = [];
 

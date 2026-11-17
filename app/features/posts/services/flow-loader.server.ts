@@ -217,17 +217,11 @@ function toLongFormPostData(post: {
 }
 
 export type FlowItemDTO =
-  | { type: "post"; data: PostDTO }
-  | { type: "longform"; data: LongFormPostDTO };
+  { type: "post"; data: PostDTO } | { type: "longform"; data: LongFormPostDTO };
 
 /** Content type filter for flow: all, posts only, reposts only, queue follow-ups, polls, or longform (articles) only. */
 export type FlowContentTab =
-  | "all"
-  | "posts"
-  | "longform"
-  | "reposts"
-  | "followups"
-  | "polls";
+  "all" | "posts" | "longform" | "reposts" | "followups" | "polls";
 
 export interface LoadFlowDataParams {
   userId: string;

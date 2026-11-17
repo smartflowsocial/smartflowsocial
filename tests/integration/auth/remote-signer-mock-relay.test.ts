@@ -213,10 +213,10 @@ describe("remote-signer-mock-relay integration", () => {
   it("(6) lazy cold rebuild defers transport errors until the first RPC", async () => {
     // Cold rebuild now mirrors `@nostrify`'s `NConnectSigner` and skips the
     // probe `getPublicKey()` round-trip on construction. So an unreachable
-    // relay no longer throws here  -  the failure surfaces on the first real
-    // RPC the user makes (which times out via the per-RPC timeout in
-    // `Nip46Signer.rpc`). This keeps boot/cold-reopen cheap and prevents the
-    // bootstrap call from racing the user's first sign for the bunker reply.
+    // relay no longer throws here. The failure surfaces on the first real
+    // RPC. nostr-tools 2.26 closes that subscription immediately instead of
+    // waiting out the per-RPC timeout. This keeps boot/cold-reopen cheap and
+    // prevents the bootstrap call from racing the user's first sign.
     const badUrl = "ws://127.0.0.1:19999";
     const config: Extract<ActiveSignerConfig, { type: "nip46" }> = {
       type: "nip46",
@@ -237,7 +237,7 @@ describe("remote-signer-mock-relay integration", () => {
     expect(result.signer).toBeDefined();
 
     await expect(result.signer.getPublicKey()).rejects.toThrow(
-      /timeout|SIGNER_TIMEOUT|signer is not open|All promises were rejected/i
+      /timeout|SIGNER_TIMEOUT|signer is not open|All promises were rejected|subscription to the remote signer was closed/i
     );
     await result.signer.close();
   });

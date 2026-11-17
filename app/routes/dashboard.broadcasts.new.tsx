@@ -52,8 +52,7 @@ interface BroadcastNewLoaderDataShape {
   notice: string | null;
   savedAudiences: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
   savedForNew:
-    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
-    | null;
+    Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number] | null;
   userTimezone: string;
   recentBroadcastMessageSnippet: Awaited<
     ReturnType<typeof getLatestBroadcastMessageSnippetForUser>

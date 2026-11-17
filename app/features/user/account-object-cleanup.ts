@@ -38,10 +38,7 @@ const CLASSIFIED_STORAGE_ERRORS = new Set([
 ]);
 
 export type OwnedObjectDeletionStatusName =
-  | "PENDING"
-  | "SUCCEEDED"
-  | "FAILED"
-  | "REJECTED";
+  "PENDING" | "SUCCEEDED" | "FAILED" | "REJECTED";
 
 /**
  * True only for a key that stays inside `clients/<accountId>/` with no empty,

@@ -8,12 +8,7 @@
 import { nowUTC, toDate } from "~/lib/temporal";
 
 export type PostState =
-  | "DRAFT"
-  | "SCHEDULED"
-  | "PUBLISHING"
-  | "PUBLISHED"
-  | "FAILED"
-  | "CANCELLED";
+  "DRAFT" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED" | "CANCELLED";
 
 export interface PostStateTransition {
   from: PostState;

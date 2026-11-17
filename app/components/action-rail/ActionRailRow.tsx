@@ -3,11 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "~/lib/utils";
 
 export type ActionRailRowTone =
-  | "default"
-  | "muted"
-  | "warning"
-  | "success"
-  | "destructive";
+  "default" | "muted" | "warning" | "success" | "destructive";
 
 /** Visual weight within a rail section (independent of tone). */
 export type ActionRailRowEmphasis = "primary" | "default" | "muted";

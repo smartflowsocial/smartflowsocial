@@ -275,8 +275,7 @@ export default function NewLongFormPostPage() {
           typeof actionData === "object" &&
           "success" in actionData
             ? ((actionData as { success?: unknown }).success as
-                | boolean
-                | undefined)
+                boolean | undefined)
             : undefined
         }
       />

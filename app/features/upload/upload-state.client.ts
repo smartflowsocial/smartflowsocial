@@ -4,11 +4,7 @@
  */
 
 export type UploadState =
-  | "idle"
-  | "validating"
-  | "uploading"
-  | "success"
-  | "error";
+  "idle" | "validating" | "uploading" | "success" | "error";
 
 export type UploadEvent =
   | { type: "START" }

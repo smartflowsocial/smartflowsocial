@@ -44,8 +44,7 @@ interface BroadcastAudiencesLoaderData {
   rows: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
   notice: string | null;
   editingRow:
-    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
-    | null;
+    Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number] | null;
 }
 
 function audienceTypeBadgeClass(t: string): string {
@@ -236,8 +235,7 @@ function BroadcastAudiencesRouteLoaded({
   rows: Awaited<ReturnType<typeof listBroadcastSavedAudiences>>;
   notice: string | null;
   editingRow:
-    | Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number]
-    | null;
+    Awaited<ReturnType<typeof listBroadcastSavedAudiences>>[number] | null;
 }) {
   const [, setSearchParams] = useSearchParams();
   const [editAudienceType, setEditAudienceType] = useState<

@@ -4,10 +4,7 @@ import { PAGE_SHELL_FLUID_CLASS } from "~/components/layout/page-layout-constant
 const DEFERRED_LIST_PAGE_SHELL_CLASS = `${PAGE_SHELL_FLUID_CLASS} py-6`;
 
 export type DeferredListPageSkeletonVariant =
-  | "list"
-  | "detail"
-  | "mediaGallery"
-  | "adminDashboard";
+  "list" | "detail" | "mediaGallery" | "adminDashboard";
 
 export function DeferredListPageSkeleton({
   title,

@@ -1,12 +1,7 @@
 import type { PublishingContentTypeFilterItem } from "./PublishingContentTypeFilter";
 
 export type DashboardFlowContentTab =
-  | "all"
-  | "posts"
-  | "longform"
-  | "reposts"
-  | "followups"
-  | "polls";
+  "all" | "posts" | "longform" | "reposts" | "followups" | "polls";
 
 function withTab(basePath: string, searchParams: URLSearchParams, tab: string) {
   const next = new URLSearchParams(searchParams);

@@ -76,9 +76,7 @@ function fallbackPriceUsd(params: {
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
   billingPaymentMethod:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
 }): number | null {
   const baseMonthly = Number(params.plan.price);
   if (!Number.isFinite(baseMonthly) || baseMonthly < 0) return null;
@@ -114,9 +112,7 @@ async function createInvoiceForSelection(params: {
   billingCadence: "monthly" | "yearly";
   accessDurationMonths: number;
   billingPaymentMethod:
-    | "nwc_auto_renew"
-    | "lightning_one_time"
-    | "btc_btcpay_onchain";
+    "nwc_auto_renew" | "lightning_one_time" | "btc_btcpay_onchain";
   priceUsd: number;
 }) {
   return createPlanInvoice({

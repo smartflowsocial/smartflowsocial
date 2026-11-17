@@ -55,11 +55,9 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
 
   const title = String(formData.get("title") ?? "");
   const sourceMode = String(formData.get("sourceMode") ?? "existing") as
-    | "create"
-    | "existing";
+    "create" | "existing";
   const launchMode = String(formData.get("launchMode") ?? "now") as
-    | "now"
-    | "schedule";
+    "now" | "schedule";
   const scheduledActivationRaw = String(
     formData.get("scheduledActivationFor") ?? ""
   ).trim();
@@ -69,8 +67,7 @@ export async function contestNewAction({ request }: ActionFunctionArgs) {
   ) as ContestRankingMetric;
   const contestEndAtRaw = String(formData.get("contestEndAt") ?? "");
   const prizeMode = String(formData.get("prizeMode") ?? "EQUAL") as
-    | "EQUAL"
-    | "RANKED";
+    "EQUAL" | "RANKED";
   const winnerCount = Math.max(
     1,
     parseInt(String(formData.get("winnerCount") ?? "1"), 10) || 1

@@ -193,8 +193,7 @@ export function validateFormDataOrRespond<T extends z.ZodTypeAny>(
   formData: FormData,
   schema: T
 ):
-  | { success: true; data: z.infer<T> }
-  | { success: false; response: Response } {
+  { success: true; data: z.infer<T> } | { success: false; response: Response } {
   try {
     const data = validateFormData(formData, schema);
     return { success: true, data };
@@ -202,8 +201,7 @@ export function validateFormDataOrRespond<T extends z.ZodTypeAny>(
     if (error instanceof ValidationError) {
       // Extract first error message from context
       const errorContext = error.context?.["errors"] as
-        | Array<{ path: string; message: string }>
-        | undefined;
+        Array<{ path: string; message: string }> | undefined;
       const errorMessage = errorContext?.[0]
         ? `${errorContext[0].path}: ${errorContext[0].message}`
         : error.message;

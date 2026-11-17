@@ -165,8 +165,7 @@ export interface SettingsLoaderData {
     isChild: boolean;
     parentNpub: string | null;
     parentUser:
-      | (UserAccountInfo & { nostrProfile?: ProfileData | null })
-      | null;
+      (UserAccountInfo & { nostrProfile?: ProfileData | null }) | null;
     confirmedChildren: UserAccountInfo[];
     pendingChildren: UserAccountInfo[];
     /** Parents who requested to link this account (when not yet linked or same shape as dashboard). */

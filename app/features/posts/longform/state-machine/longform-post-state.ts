@@ -6,12 +6,7 @@
  */
 
 export type LongFormPostState =
-  | "DRAFT"
-  | "SCHEDULED"
-  | "PUBLISHING"
-  | "PUBLISHED"
-  | "FAILED"
-  | "CANCELLED";
+  "DRAFT" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED" | "CANCELLED";
 
 export interface LongFormPostStateTransition {
   from: LongFormPostState;

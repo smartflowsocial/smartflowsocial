@@ -58,8 +58,7 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
 
     // Verify the userId was passed as a parameter, not concatenated
     const callArgs = mockUserFindUnique.mock.calls[0]?.[0] as
-      | { where: { id: string } }
-      | undefined;
+      { where: { id: string } } | undefined;
     expect(callArgs?.where.id).toBe(userId);
   });
 
@@ -86,8 +85,7 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
 
     // The malicious string should be passed as-is to Prisma (which will parameterize it)
     const callArgs = mockUserFindUnique.mock.calls[0]?.[0] as
-      | { where: { id: string } }
-      | undefined;
+      { where: { id: string } } | undefined;
     expect(callArgs?.where.id).toBe(maliciousId);
   });
 
@@ -152,8 +150,7 @@ describe("SQL Injection Prevention: Prisma Parameterized Queries", () => {
 
     // Special characters should be passed as literal values, not interpreted as SQL
     const callArgs = mockUserFindUnique.mock.calls[0]?.[0] as
-      | { where: { id: string } }
-      | undefined;
+      { where: { id: string } } | undefined;
     expect(callArgs?.where.id).toBe(specialChars);
   });
 });

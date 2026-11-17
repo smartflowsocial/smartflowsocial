@@ -290,10 +290,7 @@ export function mapPublishedPostsToPostData(
           colorToken: queueType.colorToken ?? undefined,
           description: queueType.description,
           scheduleType: queueType.scheduleType as
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined,
+            "INTERVAL" | "FIXED_SLOTS" | "WEEKLY_SLOTS" | undefined,
           scheduleConfig: convertJsonValueToScheduleConfig(
             queueType.scheduleConfig
           ),

@@ -37,8 +37,7 @@ export async function loader({ request, url }: LoaderFunctionArgs) {
 export const action = adminOperationsAction;
 
 type AdminOperationsLoaderResult =
-  | { error: string }
-  | { operations: Promise<AdminOperationsPageDTO> };
+  { error: string } | { operations: Promise<AdminOperationsPageDTO> };
 
 export default function AdminOperationsPage() {
   const raw = useLoaderData<AdminOperationsLoaderResult>();

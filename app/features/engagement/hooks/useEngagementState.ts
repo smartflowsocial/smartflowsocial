@@ -2,10 +2,7 @@ import { useState } from "react";
 
 /** Type filter: all, replies only, or mentions (quotes + mention-type) */
 export type EngagementTypeTab =
-  | "all"
-  | "replies"
-  | "mentions"
-  | "needs-response";
+  "all" | "replies" | "mentions" | "needs-response";
 
 import type { EngagementSortBy as EngagementSortByFilter } from "../engagement-filter";
 

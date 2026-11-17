@@ -114,10 +114,7 @@ export function useBlossomAwareUpload() {
 
   const createBlossomAuthHeaders = async (
     provider:
-      | "BLOSSOM_PRIMAL"
-      | "BLOSSOM_BLOSSTR"
-      | "BLOSSOM_SFS"
-      | "BLOSSOM_CUSTOM"
+      "BLOSSOM_PRIMAL" | "BLOSSOM_BLOSSTR" | "BLOSSOM_SFS" | "BLOSSOM_CUSTOM"
   ) => {
     const { getWindowNostrLikeSigner } = await import("~/features/auth/signer");
     const signer = await getWindowNostrLikeSigner();

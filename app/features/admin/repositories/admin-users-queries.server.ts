@@ -13,12 +13,7 @@ export type AdminUserSort = "createdAt" | "lastActive" | "published";
 
 /** Heuristic lifecycle bucket for operators (not persisted). */
 export type AdminUserSegment =
-  | "new"
-  | "activating"
-  | "established"
-  | "dormant"
-  | "power"
-  | "at_risk";
+  "new" | "activating" | "established" | "dormant" | "power" | "at_risk";
 
 export interface AdminUserRow {
   id: string;

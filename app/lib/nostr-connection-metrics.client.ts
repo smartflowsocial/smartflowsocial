@@ -226,9 +226,7 @@ export function getRetrySuccessRate(): {
  * Get recommended connection method based on historical data
  */
 export function getRecommendedMethod():
-  | "bunker_input"
-  | "nostrconnect_uri"
-  | null {
+  "bunker_input" | "nostrconnect_uri" | null {
   // If we have data for both methods, prefer the one with better success rate
   // For now, return null to let user choose (could be enhanced with more data)
 

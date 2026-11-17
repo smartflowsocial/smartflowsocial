@@ -1,9 +1,5 @@
 export type ContestRankingMetric =
-  | "REACTIONS"
-  | "ZAPS"
-  | "SATS_ZAPPED"
-  | "REPLIES"
-  | "REPOSTS";
+  "REACTIONS" | "ZAPS" | "SATS_ZAPPED" | "REPLIES" | "REPOSTS";
 export type ContestPrizeMode = "EQUAL" | "RANKED";
 export type ContestStatus =
   | "DRAFT"

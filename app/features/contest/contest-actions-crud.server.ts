@@ -49,8 +49,7 @@ export async function createContest(
         ? ((input.rankRewards ?? []) as unknown as Prisma.InputJsonValue)
         : Prisma.JsonNull,
     fairnessConfig: (input.fairnessConfig ?? undefined) as
-      | Prisma.InputJsonValue
-      | undefined,
+      Prisma.InputJsonValue | undefined,
     entryType: "REPLY_DIRECT",
     tieBreakRule: DEFAULT_TIE_BREAK_RULE,
     status: input.status ?? "DRAFT",

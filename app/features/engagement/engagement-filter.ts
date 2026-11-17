@@ -75,11 +75,7 @@ export function applyPowerFilters(
 }
 
 export type EngagementSortBy =
-  | "newest"
-  | "oldest"
-  | "trust"
-  | "zaps"
-  | "most_engaged";
+  "newest" | "oldest" | "trust" | "zaps" | "most_engaged";
 
 /** Engagement signal: likes, thread replies, reposts, zaps (sats weighted lightly). */
 function mostEngagedScore(n: GroupedNotification["notifications"][0]): number {

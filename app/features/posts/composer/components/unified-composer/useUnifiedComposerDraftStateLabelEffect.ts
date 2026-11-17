@@ -36,8 +36,7 @@ export function useUnifiedComposerDraftStateLabelEffect(
     if (completedNetworkRequest && pendingExplicitSaveDraftRef.current) {
       pendingExplicitSaveDraftRef.current = false;
       const data = fetcher.data as
-        | { error?: unknown; draftSaved?: boolean; draftId?: string }
-        | undefined;
+        { error?: unknown; draftSaved?: boolean; draftId?: string } | undefined;
       const jsonError =
         data &&
         typeof data === "object" &&

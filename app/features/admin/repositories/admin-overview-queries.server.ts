@@ -26,11 +26,7 @@ import { getSignerConnectHealthBundle } from "./admin-signer-connect-bundle.serv
 import { getAdminQueueHealthSnapshot } from "./admin-system-health.server";
 
 export type AdminAlertCategory =
-  | "business"
-  | "publishing"
-  | "signer"
-  | "infra"
-  | "payouts";
+  "business" | "publishing" | "signer" | "infra" | "payouts";
 
 export interface AdminAlertItem {
   id: string;

@@ -3,10 +3,7 @@
  */
 
 export type SignerReconnectFailureBucketClient =
-  | "TIMEOUT"
-  | "NETWORK"
-  | "SESSION_DROPPED"
-  | "UNKNOWN";
+  "TIMEOUT" | "NETWORK" | "SESSION_DROPPED" | "UNKNOWN";
 
 const SUCCESS_BEACON_MIN_MS = 10 * 60 * 1000;
 const SUCCESS_TS_KEY = "__sfs_signer_reconnect_ok_ts";

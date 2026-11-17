@@ -12,10 +12,7 @@ import { logInfo, logWarning } from "~/lib/error-logger.server";
  * Relay health status
  */
 export type RelayHealthStatus =
-  | "HEALTHY"
-  | "DEGRADED"
-  | "UNHEALTHY"
-  | "UNKNOWN";
+  "HEALTHY" | "DEGRADED" | "UNHEALTHY" | "UNKNOWN";
 
 /**
  * Relay health metrics

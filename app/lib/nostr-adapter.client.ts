@@ -58,11 +58,7 @@ const GET_ACTIVE_SIGNER_TIMEOUT_MS = 30_000;
 const SIGNER_NUDGE_AFTER_MS = 4_000;
 
 export type SignerNudgePhase =
-  | "start"
-  | "nudge"
-  | "reconnect"
-  | "fail"
-  | "done";
+  "start" | "nudge" | "reconnect" | "fail" | "done";
 
 export interface SignerNudgeDetail {
   phase: SignerNudgePhase;

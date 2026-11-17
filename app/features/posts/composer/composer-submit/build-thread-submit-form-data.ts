@@ -15,8 +15,7 @@ import type {
 import { appendRelayOverride } from "../services/build-publish-formdata.client";
 
 export type BuildThreadSubmitFormDataResult =
-  | { ok: true; formData: FormData }
-  | { ok: false; reason: string };
+  { ok: true; formData: FormData } | { ok: false; reason: string };
 
 /**
  * Builds FormData for thread post/schedule (no side effects).

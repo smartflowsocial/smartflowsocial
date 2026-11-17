@@ -564,8 +564,7 @@ export function ContentListCard({
                                       ? (getFetcherFormData(
                                           individualRepostFetcher
                                         )!.get(FORM_FIELD_POST_ID) as
-                                          | string
-                                          | null) === child.id
+                                          string | null) === child.id
                                       : false)
                                   }
                                   className="w-full cursor-pointer"
@@ -575,8 +574,7 @@ export function ContentListCard({
                                     ? (getFetcherFormData(
                                         individualRepostFetcher
                                       )!.get(FORM_FIELD_POST_ID) as
-                                        | string
-                                        | null) === child.id
+                                        string | null) === child.id
                                     : false)
                                     ? REPOST_IN_PROGRESS_LABEL
                                     : REPOST_ACTION_LABEL}
@@ -603,8 +601,7 @@ export function ContentListCard({
                                       ? (getFetcherFormData(
                                           individualRepostFetcher
                                         )!.get(FORM_FIELD_POST_ID) as
-                                          | string
-                                          | null) === child.id
+                                          string | null) === child.id
                                       : false)
                                   }
                                   className="w-full cursor-pointer"
@@ -614,8 +611,7 @@ export function ContentListCard({
                                     ? (getFetcherFormData(
                                         individualRepostFetcher
                                       )!.get(FORM_FIELD_POST_ID) as
-                                        | string
-                                        | null) === child.id
+                                        string | null) === child.id
                                     : false)
                                     ? QUOTE_IN_PROGRESS_LABEL
                                     : QUOTE_ACTION_LABEL}
@@ -890,8 +886,7 @@ export function ContentListCard({
               {deleteFetcher.state !== "idle" &&
               (deleteFetcher.formData
                 ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
-                    | string
-                    | null) === item.id
+                    string | null) === item.id
                 : false)
                 ? DELETE_IN_PROGRESS_LABEL
                 : type === "draft"
