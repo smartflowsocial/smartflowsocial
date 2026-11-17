@@ -258,7 +258,10 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       });
       await prisma.payoutAttempt.updateMany({
         where: { itemId: claimed.itemId },
-        data: { startedAt: new Date(Date.now() - 10 * 60 * 1000) },
+        data: {
+          startedAt: new Date(Date.now() - 10 * 60 * 1000),
+          resolutionNotBefore: new Date(Date.now() - 60 * 1000),
+        },
       });
       const resolved = await resolveUnknownCampaignPayoutItem({
         itemId: claimed.itemId,
@@ -312,6 +315,110 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       });
       expect(row?.status).toBe("paying");
       expect(row?.paymentHash).toBe("ab".repeat(32));
+      const retry = await claimCampaignPayoutItem(
+        claimArgs({
+          runId: run.id,
+          winner,
+          amountSats: 100,
+          paymentHash: "cd".repeat(32),
+          spendCapSats: 1000,
+          requested,
+        })
+      );
+      expect(retry).toMatchObject({ ok: false, reason: "paying" });
+    });
+
+    it("does not release a paying attempt by rewriting only its start time", async () => {
+      const run = await createRun(1000);
+      const winner = "dc".repeat(32);
+      const requested = [{ winnerPubkey: winner, amountSats: 100 }];
+      const claimed = await claimCampaignPayoutItem(
+        claimArgs({
+          runId: run.id,
+          winner,
+          amountSats: 100,
+          paymentHash: "de".repeat(32),
+          spendCapSats: 1000,
+          requested,
+        })
+      );
+      expect(claimed.ok).toBe(true);
+      if (!claimed.ok) return;
+      await prisma.payoutAttempt.updateMany({
+        where: { itemId: claimed.itemId },
+        data: { startedAt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      });
+      const resolved = await resolveUnknownCampaignPayoutItem({
+        itemId: claimed.itemId,
+        decision: "confirmed_unpaid",
+        note: "Wallet history has no payment for this hash",
+      });
+      expect(resolved.ok).toBe(false);
+      const row = await prisma.payoutItem.findUnique({
+        where: { id: claimed.itemId },
+      });
+      expect(row?.status).toBe("paying");
+      expect(row?.paymentHash).toBe("de".repeat(32));
+    });
+
+    it("lets only one of two concurrent unpaid resolutions release the claim", async () => {
+      const run = await createRun(1000);
+      const winner = "cd".repeat(32);
+      const requested = [{ winnerPubkey: winner, amountSats: 100 }];
+      const claimed = await claimCampaignPayoutItem(
+        claimArgs({
+          runId: run.id,
+          winner,
+          amountSats: 100,
+          paymentHash: "ef".repeat(32),
+          spendCapSats: 1000,
+          requested,
+        })
+      );
+      expect(claimed.ok).toBe(true);
+      if (!claimed.ok) return;
+      await settleCampaignPayoutAttempt({
+        itemId: claimed.itemId,
+        attemptKey: claimed.attemptKey,
+        outcome: "unknown",
+        errorCode: "reconciliation_timeout",
+        errorMessage: "lookup hung",
+      });
+      await prisma.payoutAttempt.updateMany({
+        where: { itemId: claimed.itemId },
+        data: { resolutionNotBefore: new Date(Date.now() - 1000) },
+      });
+      const note = "Wallet history has no payment for this hash";
+      const [first, second] = await Promise.all([
+        resolveUnknownCampaignPayoutItem({
+          itemId: claimed.itemId,
+          decision: "confirmed_unpaid",
+          note,
+        }),
+        resolveUnknownCampaignPayoutItem({
+          itemId: claimed.itemId,
+          decision: "confirmed_unpaid",
+          note,
+        }),
+      ]);
+      const released = [first, second].filter((result) => result.ok);
+      expect(released).toHaveLength(1);
+      const row = await prisma.payoutItem.findUnique({
+        where: { id: claimed.itemId },
+      });
+      expect(row?.status).toBe("failed");
+      expect(row?.paymentHash).toBeNull();
+      const next = await claimCampaignPayoutItem(
+        claimArgs({
+          runId: run.id,
+          winner,
+          amountSats: 100,
+          paymentHash: "fa".repeat(32),
+          spendCapSats: 1000,
+          requested,
+        })
+      );
+      expect(next.ok).toBe(true);
     });
   }
 );

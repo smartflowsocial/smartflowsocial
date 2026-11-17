@@ -23,8 +23,16 @@ Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.
   payment hash. A returned lookup payment hash that does not match is not confirmation.
 - Wallet errors are a definitive failure only for structured NIP-47 rejections. The words "payment
   failed" stay `unknown`.
-- `confirmed_unpaid` is refused for two minutes after the latest attempt. The operator command is
+- `confirmed_unpaid` waits for a stored deadline. The deadline is the payment timeout, both
+  reconciliation lookups, and a 30 second margin. Defaults are 45s, 15s, and 15s, so the hold is 105
+  seconds. At the 120 second maximum for both timeouts the hold is 390 seconds. Older rows without a
+  stored deadline use that 390 second budget. The operator command is
   `scripts/resolve-campaign-payout.ts`. There is no public resolution route.
+- Incoming payment lookups stop at the reconciliation timeout. A returned hash, amount, and preimage
+  are checked before the payment is marked paid. A settled invoice with no preimage can still be
+  accepted.
+- A contest or giveaway commission invoice is stored only when its decoded BOLT11 amount is the
+  exact authorized fee in whole sats. One pending invoice is kept per campaign configuration.
 
 ### Changed
 
@@ -41,8 +49,10 @@ Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.
 ### Documentation
 
 - Privacy and terms replacement text names the Nostr contact and does not claim GDPR or e-commerce
-  identity compliance. The landing repository was not changed here. Revise landing pull request #2
-  before merge. See [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+  identity compliance. Landing pull request #2 is already merged and still says Starter commission
+  is 0%. The live site stays wrong until a follow-up landing change is deployed. See
+  [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+- The `Protect main` ruleset requires the `Clean install migrations` status check.
 
 ## [0.1.0-alpha.2] - 2026-11-16
 
