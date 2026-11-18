@@ -7,6 +7,7 @@ import type { MediaAssetStatus, MediaVariantStatus } from "@prisma/client";
 import {
   AccountDeletionInProgressError,
   ownedObjectIdentityFromUrl,
+  RejectedUploadCleanupUnrecordedError,
 } from "~/features/user/account-object-cleanup";
 import { rememberRejectedOwnedObject } from "~/features/user/data/account-object-cleanup.server";
 import { lockAccountForWrite } from "~/features/user/data/account-write-lock.server";
@@ -47,9 +48,27 @@ export async function createMedia(data: {
     });
   } catch (error) {
     if (accountIsGone(error)) {
-      await rememberRejectedOwnedObject(data.userId, data.url);
+      await compensateRejectedUpload(error, data.userId, data.url);
     }
     throw error;
+  }
+}
+
+async function compensateRejectedUpload(
+  error: unknown,
+  userId: string,
+  url: string
+): Promise<void> {
+  try {
+    await rememberRejectedOwnedObject(userId, url);
+  } catch (compensationError) {
+    if (
+      compensationError instanceof RejectedUploadCleanupUnrecordedError &&
+      compensationError.origin === undefined
+    ) {
+      compensationError.origin = error;
+    }
+    throw compensationError;
   }
 }
 
@@ -236,7 +255,7 @@ export async function createMediaVariant(data: {
   } catch (error) {
     const owner = ownedObjectIdentityFromUrl(data.url)?.userId;
     if (accountIsGone(error) && owner) {
-      await rememberRejectedOwnedObject(owner, data.url);
+      await compensateRejectedUpload(error, owner, data.url);
     }
     throw error;
   }

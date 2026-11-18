@@ -251,6 +251,23 @@ export class AccountDeletionInProgressError extends Error {
   }
 }
 
+/**
+ * The upload was rejected and neither the outbox nor an immediate delete
+ * recorded the object. A later operator retry is required. This is not a
+ * claim that the object is gone.
+ */
+export class RejectedUploadCleanupUnrecordedError extends Error {
+  readonly code = "rejected_upload_cleanup_unrecorded";
+  origin?: unknown;
+
+  constructor() {
+    super(
+      "An upload was rejected because the account is being deleted, and its storage cleanup was not recorded."
+    );
+    this.name = "RejectedUploadCleanupUnrecordedError";
+  }
+}
+
 /** A missing row or a started deletion must not accept new media. */
 export function accountAcceptsContentWrite(
   row: { deletionStartedAt: Date | null } | null

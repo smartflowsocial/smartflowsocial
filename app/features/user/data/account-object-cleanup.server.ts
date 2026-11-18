@@ -7,6 +7,7 @@ import {
   ownedKeyEmbeddedInPath,
   ownedObjectDeletionIdempotencyKey,
   planAccountObjectCleanup,
+  RejectedUploadCleanupUnrecordedError,
   StorageCleanupUnavailableError,
   transitionOwnedObjectDeletion,
   type ObjectDeletionPlan,
@@ -101,38 +102,73 @@ export async function planUnsharedOwnedObjects(
   return { ...plan, deleted: 0, failed: [] };
 }
 
+export interface RejectedUploadCleanupOptions {
+  deleter?: (objectKey: string) => Promise<void>;
+}
+
+function logUnrecorded(reason: string): void {
+  logError(new Error("rejected_upload_cleanup_unrecorded"), {
+    code: "rejected_upload_cleanup_unrecorded",
+    reason,
+  });
+}
+
 /**
  * Records an upload that lost the race with account deletion. The database
  * transaction has already rolled back, so this write is the remaining
  * obligation. Shared and third-party URLs are not queued.
+ *
+ * If the outbox write fails, an unshared owned key is deleted immediately.
+ * If that also fails, or the key cannot be proved unshared, this throws.
+ * A database outage and a storage outage at the same time can still leave an
+ * object behind. That failure is returned to the caller instead of logged and
+ * dropped. Object keys and storage credentials are not written to the log.
  */
 export async function rememberRejectedOwnedObject(
   userId: string,
-  url: string
+  url: string,
+  options?: RejectedUploadCleanupOptions
 ): Promise<void> {
-  try {
-    const key = ownedKeyEmbeddedInPath(url, userId);
-    if (!key) {
-      if (
-        planAccountObjectCleanup({
-          userId,
-          urls: [url],
-          sharedUrls: new Set(),
-        }).storageUnavailable
-      ) {
-        logError(new StorageCleanupUnavailableError(), {
-          message: "A rejected upload has no durable object key.",
-        });
-      }
-      return;
+  const key = ownedKeyEmbeddedInPath(url, userId);
+  if (!key) {
+    if (
+      planAccountObjectCleanup({
+        userId,
+        urls: [url],
+        sharedUrls: new Set(),
+      }).storageUnavailable
+    ) {
+      logUnrecorded("storage_key_unavailable");
+      throw new RejectedUploadCleanupUnrecordedError();
     }
+    return;
+  }
+
+  try {
     if (await urlIsReferencedByAnotherAccount(prisma, userId, url)) return;
+  } catch {
+    logUnrecorded("shared_check_failed");
+    throw new RejectedUploadCleanupUnrecordedError();
+  }
+
+  try {
     await enqueueOwnedObjectDeletions(prisma, userId, [key]);
     logInfo("Recorded an upload that arrived during account deletion");
-  } catch (error) {
-    logError(asError(error), {
-      message: "Could not record a rejected upload for later deletion.",
+    return;
+  } catch {
+    logError(new Error("rejected_upload_outbox_failed"), {
+      code: "rejected_upload_outbox_failed",
     });
+  }
+
+  try {
+    await (options?.deleter ?? defaultObjectDeleter)(key);
+    logInfo(
+      "Deleted a rejected upload immediately after the outbox write failed"
+    );
+  } catch (error) {
+    logUnrecorded(classifyOwnedObjectDeletionError(error));
+    throw new RejectedUploadCleanupUnrecordedError();
   }
 }
 

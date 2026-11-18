@@ -140,7 +140,7 @@ describe("account deletion and referral rows", () => {
       .calls as unknown as Array<[{ data: Record<string, unknown> }]>) {
       expect(args.data).not.toHaveProperty("paymentHash");
     }
-    expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
+    expect(mockTx.$executeRaw).toHaveBeenCalledTimes(3);
   });
 
   it("skips the free-text scrub for a key that could contain JSON syntax", async () => {
@@ -151,7 +151,13 @@ describe("account deletion and referral rows", () => {
 
     await deleteAccountData("user_1");
 
-    expect(mockTx.$executeRaw).not.toHaveBeenCalled();
+    expect(mockTx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(mockTx.$executeRaw.mock.calls)).toContain(
+      "pg_advisory_xact_lock"
+    );
+    expect(JSON.stringify(mockTx.$executeRaw.mock.calls)).not.toContain(
+      'odd"key'
+    );
     expect(mockTx.user.delete).toHaveBeenCalledTimes(1);
   });
 
