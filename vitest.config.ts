@@ -35,6 +35,11 @@ export default defineConfig({
         "app/features/**/utils/**/*.ts",
         "app/infra/**/*.ts",
         "app/utils/**/*.ts",
+        // Pure helpers covered by unit tests. They are not *.server.ts, so the
+        // globs above would leave them out of the report and Codecov would
+        // count every changed line as uncovered.
+        "app/features/infra/deployment-identity.ts",
+        "app/features/upload/blossom-api-url.ts",
         // Auth reconnect and NIP-46 (Phase 2 tests count toward coverage)
         "app/features/auth/reconnect/**/*.ts",
         "app/features/auth/nip46/**/*.ts",
