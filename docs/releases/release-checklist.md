@@ -36,14 +36,17 @@ Required on the application SHA:
 
 - Lint, Format & Type Check
 - Tests & Coverage
+- Internal Nostr paths
 - Clean install migrations
 - Build & Bundle Budget
 - Docker image boots
 - E2E Smoke
 - Gitleaks
 - Production CSP smoke, executed by the release workflow against that SHA
+- Clean-room self-host, executed by the release workflow against that SHA
 
-Required on the publisher SHA you pass in, which must be the publisher commit you are shipping:
+`publisher_mode=internal` does not take a publisher SHA. Required on the publisher SHA only when
+`publisher_mode=http`:
 
 - Lint & Type Check
 - Unit Tests

@@ -53,6 +53,7 @@
     "worker:local": "tsx -r dotenv/config worker.ts",
     "smoke:publish": "tsx scripts/self-host-publish-smoke.ts",
     "test:relay-publish": "tsx scripts/relay-publish-integration.ts",
+    "test:self-host-acceptance": "tsx scripts/self-host-acceptance.ts",
     "check:compose": "node scripts/check-dev-compose.mjs docker-compose.yml",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

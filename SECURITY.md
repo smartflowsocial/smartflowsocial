@@ -4,7 +4,11 @@
 
 The supported line is the default branch. `package.json` is `1.0.0-beta.1`. The git tag
 `v1.0.0-beta.1` is a published prerelease at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. It is not a
-stable `1.0.0`, and security fixes are not backported onto it.
+stable `1.0.0`.
+
+Published prerelease tags, including `v1.0.0-beta.1` and any later prerelease, do not receive
+security backports. The supported upgrade path is to pull the default branch and then move to the
+next published tag when one exists. Historical tags are unsupported.
 
 `v0.1.0-alpha.0` was published from an earlier repository, and so was a `v1.0.0` release that was
 withdrawn on the day it was published, 14 November 2026. The changelog also has an older `1.0.0`
@@ -16,7 +20,8 @@ Security fixes land on the default branch. There is no commitment to backport fi
 
 | Version                               | Supported                             |
 | ------------------------------------- | ------------------------------------- |
-| `main` (package `1.0.0-beta.1`)       | Security fixes land here. Prerelease. |
+| `main`                                | Security fixes land here. Prerelease. |
+| `v1.0.0-beta.1` tag                   | Published snapshot. No backports.     |
 | `v0.1.0-alpha.0`                      | Not supported                         |
 | `v1.0.0` (withdrawn 14 November 2026) | Not supported                         |
 | Anything older                        | Not supported                         |

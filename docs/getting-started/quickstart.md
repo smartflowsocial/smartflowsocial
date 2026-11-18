@@ -5,9 +5,9 @@
 **Last updated:** 2026-11-14
 
 This is the local development setup. It is not a five-minute production install. A useful local
-scheduler needs Node.js, pnpm, PostgreSQL, Redis, and a running HTTP Nostr publisher. Uploads also
-need S3-compatible storage. Production self-hosting is covered in the
-[deployment guide](../guides/deployment.md).
+scheduler needs Node.js, pnpm, PostgreSQL, and Redis. Publishing is in this process when
+`SELF_HOSTED=true`. An HTTP publisher is optional. Uploads need S3-compatible storage. Production
+self-hosting is covered in the [deployment guide](../guides/deployment.md).
 
 ---
 

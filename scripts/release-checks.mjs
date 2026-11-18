@@ -9,6 +9,7 @@ export const SHA_RE = /^[0-9a-f]{40}$/;
 export const APP_REQUIRED_CHECKS = [
   "Lint, Format & Type Check",
   "Tests & Coverage",
+  "Internal Nostr paths",
   "Clean install migrations",
   "Build & Bundle Budget",
   "Docker image boots",
@@ -72,9 +73,46 @@ export function evaluateRequiredChecks(runs, requiredNames) {
 }
 
 /**
+ * The internal publisher is the release default. `http` still requires the
+ * external publisher commit and its checks. A blank publisher SHA is not a
+ * pass in that mode.
+ *
+ * @param {{ publisherMode?: string, publisherSha?: string }} input
+ * @returns {{ mode: "internal" | "http" | "invalid", errors: string[] }}
+ */
+export function publisherReleasePlan(input) {
+  const requested = (input.publisherMode ?? "").trim().toLowerCase();
+  /** @type {"internal" | "http" | "invalid"} */
+  let mode = "internal";
+  if (requested === "http" || requested === "internal") {
+    mode = requested;
+  } else if (requested !== "") {
+    mode = "invalid";
+  } else if ((input.publisherSha ?? "").trim() !== "") {
+    mode = "http";
+  }
+
+  /** @type {string[]} */
+  const errors = [];
+  if (mode === "invalid") {
+    errors.push("publisher_mode must be internal or http");
+  } else if (mode === "internal" && (input.publisherSha ?? "").trim() !== "") {
+    errors.push(
+      "publisher_sha must be empty when publisher_mode is internal. The HTTP publisher is not part of this release."
+    );
+  } else if (mode === "http" && !SHA_RE.test(input.publisherSha ?? "")) {
+    errors.push(
+      "publisher_sha must be the full 40-character publisher commit when publisher_mode is http. A blank value is not a pass."
+    );
+  }
+  return { mode, errors };
+}
+
+/**
  * @param {{
  *   candidateSha?: string,
  *   publisherSha?: string,
+ *   publisherMode?: string,
  *   ownerApproval?: string,
  *   headSha?: string,
  *   expectHead?: boolean,
@@ -86,11 +124,7 @@ export function releaseInputErrors(input) {
   if (!SHA_RE.test(input.candidateSha ?? "")) {
     errors.push("candidate_sha must be the full 40-character commit");
   }
-  if (!SHA_RE.test(input.publisherSha ?? "")) {
-    errors.push(
-      "publisher_sha must be the full 40-character publisher commit. A blank value is not a pass."
-    );
-  }
+  errors.push(...publisherReleasePlan(input).errors);
   if (input.ownerApproval !== OWNER_APPROVAL_PHRASE) {
     errors.push(
       "owner approval must be approve-release. This workflow does not publish or deploy."
