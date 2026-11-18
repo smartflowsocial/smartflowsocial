@@ -225,7 +225,7 @@ export async function beginReferralPayout(input: {
 }): Promise<BeginReferralPayoutResult> {
   try {
     return await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
 
       const existing = await tx.referralPayoutAuditLog.findUnique({
         where: { paymentHash: input.paymentHash },
@@ -564,7 +564,7 @@ export async function removeReferralDataForDeletedAccount(
   tx: Tx,
   npub: string
 ): Promise<void> {
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
 
   await tx.referralEarning.deleteMany({
     where: {
