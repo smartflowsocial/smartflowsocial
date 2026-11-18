@@ -1,0 +1,26 @@
+# The coverage upload is the Vitest report. Its include list is the app
+# server surface in vitest.config.ts. A merge onto main also contains docs,
+# release scripts, workflows, tests, and client files. Codecov was marking
+# those uninstrumented lines as missed and failing the patch check.
+ignore:
+  - "docs"
+  - "**/*.md"
+  - "scripts"
+  - "tests"
+  - ".github"
+  - "Dockerfile"
+  - "example.env"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "codecov.yml"
+  - "vitest.config.ts"
+  - "app/routes"
+  - "app/**/components"
+  - "app/**/*.client.ts"
+  - "app/**/*.client.tsx"
+
+coverage:
+  status:
+    patch:
+      default:
+        target: auto
