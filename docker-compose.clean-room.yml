@@ -1,0 +1,31 @@
+# Disposable Postgres and Redis for `pnpm test:self-host-acceptance --up`.
+# The project name keeps these containers off the development stack.
+# `docker compose -p sfs-cleanroom -f docker-compose.clean-room.yml down -v`
+# removes only this project.
+
+name: sfs-cleanroom
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cleanroom
+    ports:
+      - "127.0.0.1:5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cleanroom"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20

@@ -72,11 +72,39 @@ describe("release check evaluation", () => {
     ]);
   });
 
-  it("rejects a different checkout and a missing publisher SHA", () => {
+  it("accepts the internal publisher without an external publisher SHA", () => {
     expect(
       releaseInputErrors({
         candidateSha: candidate,
         publisherSha: "",
+        publisherMode: "internal",
+        ownerApproval: "approve-release",
+        headSha: candidate,
+        expectHead: true,
+      })
+    ).toEqual([]);
+    expect(APP_REQUIRED_CHECKS).toContain("Internal Nostr paths");
+  });
+
+  it("rejects a publisher SHA while the release uses the internal publisher", () => {
+    expect(
+      releaseInputErrors({
+        candidateSha: candidate,
+        publisherSha: publisher,
+        publisherMode: "internal",
+        ownerApproval: "approve-release",
+        headSha: candidate,
+        expectHead: true,
+      }).join("\n")
+    ).toMatch(/publisher_sha/);
+  });
+
+  it("rejects a different checkout and a missing HTTP publisher SHA", () => {
+    expect(
+      releaseInputErrors({
+        candidateSha: candidate,
+        publisherSha: "",
+        publisherMode: "http",
         ownerApproval: "approve-release",
         headSha: publisher,
         expectHead: true,

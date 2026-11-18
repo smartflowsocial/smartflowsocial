@@ -64,13 +64,14 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 
 ## Run it yourself
 
-You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis. Publishing needs
-a running [HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Uploads
-need S3-compatible storage. First-time setup is about 30–60 minutes.
-[Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
-signed event reaches a loopback relay. `pnpm smoke:publish` stops at a signature check.
-`pnpm test:relay-publish` delivers the event. The Cloudflare Worker itself is `pnpm test:worker` in
-the publisher repository.
+You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis.
+`SELF_HOSTED=true` publishes from this process. It does not need the
+[HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher), a publisher token,
+or a Cloudflare account. Uploads need S3-compatible storage when you use them. First-time setup is
+about 30–60 minutes. [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the short path.
+`pnpm test:self-host-acceptance` boots the built server and worker and delivers a signed note to a
+loopback relay. `pnpm smoke:publish` only checks a signature stub. `pnpm test:relay-publish` calls
+the publisher function directly. The HTTP publisher remains an optional adapter.
 
 `main` includes commits made after the published prerelease. Node.js 26.13.1 or newer and pnpm
 12.21.0. Uncomment the checkout to build the tagged source instead of `main`.

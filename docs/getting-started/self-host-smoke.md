@@ -28,6 +28,17 @@ Production is different. After `pnpm build`, `pnpm start` runs the web server an
 together. `pnpm start:server` and `pnpm start:worker` run them as two separate processes. Do not
 point production processes at the same Redis as a development session.
 
+`pnpm test:self-host-acceptance --up` is the check that the built server and worker publish a signed
+note. It starts a disposable Postgres and Redis from `docker-compose.clean-room.yml`, refuses the
+development database, and does not set a publisher URL or a cache-worker URL.
+`docker-compose.self-host.yml` is the optional container stack for web, worker, Postgres, and Redis.
+It listens on `127.0.0.1:3080` and still needs `SESSION_SECRET` and `CRON_SECRET`.
+
+```bash
+pnpm build
+pnpm test:self-host-acceptance --up
+```
+
 ## Steps
 
 1. Install Node.js 26.13.1 or newer. `.nvmrc` is `26.13.1`. Node 26 does not ship Corepack. Install

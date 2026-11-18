@@ -1,0 +1,107 @@
+# Optional production-shaped stack for an operator who wants containers.
+# It does not call Cloudflare, and it does not set a publisher URL or a cache
+# worker URL. Postgres, Redis, the web process, and the worker are the stack.
+#
+#   export SESSION_SECRET="$(openssl rand -base64 32)"
+#   export CRON_SECRET="$(openssl rand -base64 32)"
+#   export SOURCE_COMMIT="$(git rev-parse HEAD)"
+#   docker compose -f docker-compose.self-host.yml up --build
+#
+# The site listens on 127.0.0.1:3080. Change the published port if that is taken.
+# Credentials below are for this local stack. Replace them before exposing it.
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: smartflow
+      POSTGRES_PASSWORD: smartflow
+      POSTGRES_DB: smartflow
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - selfhost-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartflow -d smartflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6381:6379"
+    volumes:
+      - selfhost-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      args:
+        SOURCE_COMMIT: ${SOURCE_COMMIT:-}
+        BUILD_TIME: ${BUILD_TIME:-}
+    image: smartflowsocial-self-host
+    environment: &app-env
+      NODE_ENV: production
+      SELF_HOSTED: "true"
+      NOSTR_PUBLISHER_BACKEND: internal
+      NOSTR_READ_BACKEND: internal
+      DATABASE_URL: postgresql://smartflow:smartflow@postgres:5432/smartflow
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET to at least 32 characters}
+      CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET to at least 32 characters}
+      REFERRAL_PAYOUTS_ENABLED: "false"
+      PORT: "3000"
+      HOST: 0.0.0.0
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    image: smartflowsocial-self-host
+    environment:
+      <<: *app-env
+    command: ["node", "./build/server.js"]
+    ports:
+      - "127.0.0.1:3080:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:3000/healthcheck",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  worker:
+    image: smartflowsocial-self-host
+    environment:
+      <<: *app-env
+    command: ["node", "./build/worker.js"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      web:
+        condition: service_healthy
+
+volumes:
+  selfhost-postgres:
+  selfhost-redis:
