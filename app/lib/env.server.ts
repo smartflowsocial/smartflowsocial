@@ -9,6 +9,8 @@
  *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
  */
 
+import { resolveNostrPublisherBackend } from "~/infra/publishers/publisher-backend";
+import type { NostrPublisherBackend } from "~/infra/publishers/publisher-backend";
 import { productionSecretErrors } from "~/lib/production-secrets.server";
 import {
   safeConsoleError,
@@ -19,10 +21,22 @@ interface EnvConfig {
   // Required
   DATABASE_URL: string;
   SESSION_SECRET: string;
-  NOSTR_PUBLISHER_URL: string;
-  NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production unless the publisher is explicitly public
-  /** Set to "true" only when the publisher is intentionally unauthenticated. */
+  /**
+   * `http` posts signed events to NOSTR_PUBLISHER_URL.
+   * `internal` publishes from this process. Hosted production stays on `http`
+   * until this is set. Self-hosted installs default to `internal`.
+   */
+  NOSTR_PUBLISHER_BACKEND: NostrPublisherBackend;
+  /** Required when NOSTR_PUBLISHER_BACKEND is `http`. */
+  NOSTR_PUBLISHER_URL?: string;
+  NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production HTTP mode unless the publisher is explicitly public
+  /** Set to "true" only when the HTTP publisher is intentionally unauthenticated. */
   NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED?: string;
+  /**
+   * Set to "true" to let the internal publisher open loopback and private
+   * relay URLs. Never implied by SELF_HOSTED. Leave unset on hosted production.
+   */
+  NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS?: string;
   REDIS_URL: string;
 
   // Storage (required if any storage var is set)
@@ -252,11 +266,12 @@ function validateStorageVariables(
   return [];
 }
 
-function buildBaseConfig(): EnvConfig {
+function buildBaseConfig(publisherBackend: NostrPublisherBackend): EnvConfig {
   return {
     DATABASE_URL: process.env["DATABASE_URL"]!,
     SESSION_SECRET: process.env["SESSION_SECRET"]!,
-    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"]!,
+    NOSTR_PUBLISHER_BACKEND: publisherBackend,
+    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"],
     REDIS_URL: process.env["REDIS_URL"]!,
   };
 }
@@ -274,7 +289,9 @@ function addOptionalStorageConfig(
 }
 
 function addOptionalConfig(config: EnvConfig): void {
-  const optionalVars: Array<keyof EnvConfig> = [
+  const optionalVars: Array<
+    Exclude<keyof EnvConfig, "NOSTR_PUBLISHER_BACKEND">
+  > = [
     "PRIMAL_CACHING_URL",
     "NOSTRMASH_BASE_URL",
     "NOSTRMASH_API_TOKEN",
@@ -292,6 +309,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "FEEDBACK_INBOX_NPUB",
     "NOSTR_PUBLISHER_API_TOKEN",
     "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+    "NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS",
     "SENTRY_DSN",
     "SENTRY_TRACES_SAMPLE_RATE",
     "SENTRY_PROFILES_SAMPLE_RATE",
@@ -399,16 +417,21 @@ function validateAndGetEnv(): EnvConfig {
       "postgresql://postgres:postgres@localhost:5432/smartflow_test";
     process.env["SESSION_SECRET"] ??=
       "test-session-secret-very-long-and-secure-32-chars-minimum";
-    process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
     process.env["REDIS_URL"] ??= "redis://localhost:6379";
   }
 
-  const required = [
-    "DATABASE_URL",
-    "SESSION_SECRET",
-    "NOSTR_PUBLISHER_URL",
-    "REDIS_URL",
-  ] as const;
+  const publisherBackend = resolveNostrPublisherBackend({
+    configured: process.env["NOSTR_PUBLISHER_BACKEND"],
+    selfHosted: process.env["SELF_HOSTED"],
+  });
+  if (
+    process.env["E2E_TEST"] === "true" &&
+    (!publisherBackend.ok || publisherBackend.backend === "http")
+  ) {
+    process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
+  }
+
+  const required = ["DATABASE_URL", "SESSION_SECRET", "REDIS_URL"] as const;
 
   // Storage variables are optional - only required if using image uploads
   // If any storage variable is set, all must be set
@@ -435,6 +458,18 @@ function validateAndGetEnv(): EnvConfig {
     }
   }
 
+  if (!publisherBackend.ok) {
+    invalid.push({
+      key: "NOSTR_PUBLISHER_BACKEND",
+      reason: publisherBackend.reason,
+    });
+  } else if (publisherBackend.backend === "http") {
+    const publisherUrl = process.env["NOSTR_PUBLISHER_URL"];
+    if (!publisherUrl || publisherUrl.trim() === "") {
+      missing.push("NOSTR_PUBLISHER_URL");
+    }
+  }
+
   // Validate storage variables: if any is set, all must be set
   const storageMissing = validateStorageVariables(storageVariables);
   missing.push(...storageMissing);
@@ -449,16 +484,20 @@ function validateAndGetEnv(): EnvConfig {
       nostrPublisherApiToken: process.env["NOSTR_PUBLISHER_API_TOKEN"],
       nostrPublisherAllowUnauthenticated:
         process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"],
+      publisherBackend: publisherBackend.ok ? publisherBackend.backend : "http",
     })
   );
 
-  // Report errors
+  // Report errors. reportValidationErrors exits the process.
   if (missing.length > 0 || invalid.length > 0) {
     reportValidationErrors(missing, invalid);
   }
+  if (!publisherBackend.ok) {
+    throw new Error("NOSTR_PUBLISHER_BACKEND is invalid");
+  }
 
   // Build typed config object
-  const config = buildBaseConfig();
+  const config = buildBaseConfig(publisherBackend.backend);
 
   // Check if all storage variables are set
   const storageValues = storageVariables.map((key) => process.env[key]);
@@ -470,6 +509,15 @@ function validateAndGetEnv(): EnvConfig {
   // Add other optional variables
   addOptionalConfig(config);
 
+  safeConsoleLog(`Nostr publisher backend: ${publisherBackend.backend}`);
+  if (
+    publisherBackend.backend === "internal" &&
+    process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] === "true"
+  ) {
+    safeConsoleLog(
+      "WARNING: NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true lets the internal publisher open private-network relay URLs. Do not set this on hosted production."
+    );
+  }
   safeConsoleLog("✅ Environment variables validated");
   return config;
 }

@@ -79,6 +79,9 @@ async function main(): Promise<void> {
       ? sessionSecret
       : "self-host-smoke-session-secret-32b";
 
+  // This smoke checks the signature-only HTTP stub. Self-hosted installs
+  // otherwise select the internal publisher, which would ignore that stub.
+  process.env["NOSTR_PUBLISHER_BACKEND"] = "http";
   const token = "self-host-smoke-publisher-token";
   const publisher = createLocalPublisher({ token });
   const port = await publisher.listen(0, "127.0.0.1");

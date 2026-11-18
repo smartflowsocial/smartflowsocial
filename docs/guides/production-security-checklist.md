@@ -43,14 +43,17 @@ not prove the running process has the variable set.
 
 ## Publisher access
 
-- The publisher is private infrastructure. `API_TOKEN` is set, and the app's
-  `NOSTR_PUBLISHER_API_TOKEN` is the same value.
-- `ALLOW_UNAUTHENTICATED_PUBLISH` is unset. Set it only for a publisher you intend to expose as a
-  public relay proxy, and then keep rate limits, signature checks, and relay host checks on.
-- `ALLOW_PRIVATE_RELAYS` is unset in production so the worker will not open relay URLs on loopback,
-  link-local, or private addresses.
-- `ENVIRONMENT=production` is set on the production worker so a missing token fails startup when
-  public mode is off.
+- Hosted production stays on `NOSTR_PUBLISHER_BACKEND=http` until the documented cutover. The HTTP
+  publisher is private infrastructure. `API_TOKEN` is set, and the app's `NOSTR_PUBLISHER_API_TOKEN`
+  is the same value.
+- `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` is unset. Set it only for an HTTP publisher you intend to
+  expose as a public relay proxy, and then keep rate limits, signature checks, and relay host checks
+  on.
+- `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS` is unset on hosted production. The internal publisher then
+  refuses loopback, link-local, and private relay URLs. `SELF_HOSTED=true` does not enable it.
+- After cutover, `NOSTR_PUBLISHER_BACKEND=internal` removes the need for the HTTP token. Rollback is
+  setting the backend back to `http` with the existing URL and token. See
+  [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 ## NWC wallet
 

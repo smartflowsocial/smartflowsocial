@@ -20,6 +20,10 @@ import {
 } from "~/features/posts/queue-payload.server";
 import { isHeldByQueue, isQueuePaused } from "~/features/posts/queue-status";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import {
+  allRelaysRejected,
+  relayPublishFailureMessage,
+} from "~/infra/publishers/publish-outcome";
 import type { PublishLease } from "~/infra/publishing/publish-lease.server";
 import {
   acquireLongFormPostPublishLease,
@@ -451,6 +455,10 @@ export async function runScheduledLongFormPostJob(input: {
         message: "Scheduled longform worker: Failed to persist publish ACKs",
       }
     );
+  }
+
+  if (allRelaysRejected(publishResult.results)) {
+    throw new Error(relayPublishFailureMessage(publishResult.results));
   }
 
   try {

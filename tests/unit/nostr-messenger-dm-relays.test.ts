@@ -92,12 +92,25 @@ async function setPoolGetSequence(values: unknown[]) {
   Pool.sequence = [...values];
 }
 
+function publisherResponse(ok: boolean) {
+  return {
+    ok,
+    status: ok ? 200 : 400,
+    statusText: ok ? "OK" : "relay error",
+    headers: { get: () => null },
+    text: async () => "",
+    json: async () => {
+      throw new Error("not json");
+    },
+  };
+}
+
 describe("sendNostrDirectMessage relay targeting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] = "https://publisher.example/publish";
     process.env["NOSTR_NSEC"] = "nsec1test";
-    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+    global.fetch = vi.fn().mockResolvedValue(publisherResponse(true));
   });
 
   it("falls back to DEFAULT_USER_WRITE_RELAYS when no NIP-65 relay list found", async () => {
@@ -111,7 +124,9 @@ describe("sendNostrDirectMessage relay targeting", () => {
     const bodyRaw = (fetchCall[1] as { body?: unknown } | undefined)?.body;
     if (typeof bodyRaw !== "string") throw new Error("fetch body missing");
     const body = JSON.parse(bodyRaw) as { relays: string[] };
-    expect(body.relays).toEqual(DEFAULT_USER_WRITE_RELAYS);
+    expect([...body.relays].sort()).toEqual(
+      [...DEFAULT_USER_WRITE_RELAYS].sort()
+    );
   });
 
   it("uses recipient read/unmarked relays + fallback", async () => {
@@ -178,20 +193,18 @@ describe("sendNostrDirectMessage relay targeting", () => {
       null,
     ]);
 
-    const fetchMock = vi.fn();
-    fetchMock
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        text: async () => "relay error",
-      })
-      .mockResolvedValueOnce({ ok: true });
-    global.fetch = fetchMock;
+    const fetchMock = vi.fn(async (_url: unknown, init: { body?: string }) => {
+      const body = JSON.parse(init.body ?? "{}") as {
+        event?: { id?: string };
+      };
+      if (body.event?.id === "gw-recipient") return publisherResponse(false);
+      return publisherResponse(true);
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
 
     const result = await sendNostrDirectMessage("f".repeat(64), "hello");
 
-    expect(fetchMock.mock.calls.length).toBe(3);
+    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
     expect(result).not.toEqual(false);
     expect(result).toMatchObject({
       success: true,

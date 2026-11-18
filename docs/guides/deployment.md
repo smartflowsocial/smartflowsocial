@@ -93,6 +93,7 @@ This will create a `fly.toml` configuration file.
 ```bash
 fly secrets set DATABASE_URL="postgresql://..."
 fly secrets set SESSION_SECRET="your-secret"
+fly secrets set NOSTR_PUBLISHER_BACKEND="http"
 fly secrets set NOSTR_PUBLISHER_URL="https://..."
 fly secrets set NOSTR_NSEC="nsec1..."
 fly secrets set PRIMAL_CACHING_URL="wss://..."
@@ -324,8 +325,11 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - SESSION_SECRET=${SESSION_SECRET}
       - CRON_SECRET=${CRON_SECRET}
-      - NOSTR_PUBLISHER_URL=${NOSTR_PUBLISHER_URL}
-      - NOSTR_PUBLISHER_API_TOKEN=${NOSTR_PUBLISHER_API_TOKEN}
+      - SELF_HOSTED=${SELF_HOSTED:-true}
+      - NOSTR_PUBLISHER_BACKEND=${NOSTR_PUBLISHER_BACKEND:-internal}
+      # HTTP backend only. Leave empty when NOSTR_PUBLISHER_BACKEND=internal.
+      - NOSTR_PUBLISHER_URL=${NOSTR_PUBLISHER_URL:-}
+      - NOSTR_PUBLISHER_API_TOKEN=${NOSTR_PUBLISHER_API_TOKEN:-}
       - NOSTR_NSEC=${NOSTR_NSEC}
       - PRIMAL_CACHING_URL=${PRIMAL_CACHING_URL}
       - REDIS_URL=${REDIS_URL}
@@ -396,8 +400,12 @@ out of the image. Pass them with your platform's secret settings, `docker run --
 example below is that file. Never commit it.
 
 With `NODE_ENV=production` the app refuses to boot unless `CRON_SECRET` is at least 32 characters.
-It also requires a `NOSTR_PUBLISHER_API_TOKEN` of at least 16 characters, except when
-`NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED=true` is set on purpose. The full list is in
+The HTTP publisher backend also requires a `NOSTR_PUBLISHER_API_TOKEN` of at least 16 characters,
+except when `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED=true` is set on purpose.
+`NOSTR_PUBLISHER_BACKEND=internal` does not require that token or `NOSTR_PUBLISHER_URL`. Hosted
+production stays on `http` until the cutover in
+[Internal Nostr publisher](../operations/internal-nostr-publisher.md). A self-hosted install sets
+`SELF_HOSTED=true` and uses `internal`. The full list is in
 [Configuration](../reference/configuration.md).
 
 ```env
@@ -414,9 +422,10 @@ SESSION_SECRET=your-super-secret-session-key-min-32-chars
 # Cron endpoints (required in production, at least 32 characters)
 CRON_SECRET=generate-with-openssl-rand-base64-32
 
-# Nostr
+# Nostr. Hosted production keeps http until cutover. Self-hosted uses internal and omits the URL.
+NOSTR_PUBLISHER_BACKEND=http
 NOSTR_PUBLISHER_URL=https://your-publisher.example.com
-# Required in production, at least 16 characters, same value as the publisher's API_TOKEN
+# HTTP backend only. Required in production, at least 16 characters.
 NOSTR_PUBLISHER_API_TOKEN=same-token-as-the-publisher
 NOSTR_NSEC=nsec1...
 PRIMAL_CACHING_URL=wss://cache.example.com/v1
@@ -753,7 +762,13 @@ Configure your monitoring service to check:
 - **Endpoint**: `https://your-domain.com/healthcheck`
 - **Interval**: 30 seconds
 - **Timeout**: 10 seconds
-- **Expected Response**: `200 OK`
+- **Expected Response**: `200 OK` with body `OK`
+
+`curl -H 'accept: application/json'` returns `publisherBackend` (`http` or `internal`) with the
+deployment identity. Relay outcomes are
+`nostr_publisher_relay_total{backend,result,failure_category}` and
+`nostr_publisher_relay_latency_ms` on the metrics endpoint. Open sockets are
+`nostr_publisher_open_sockets`.
 
 ### Metrics Endpoint
 

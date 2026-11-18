@@ -83,33 +83,41 @@ SESSION_SECRET=your-random-32-character-secret-string-here
 
 ---
 
+### NOSTR_PUBLISHER_BACKEND
+
+Selects where signed events are sent.
+
+| Value      | Behavior                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------- |
+| `internal` | This process opens relay WebSockets. No publisher URL or token.                          |
+| `http`     | `POST` the signed event to `NOSTR_PUBLISHER_URL`.                                        |
+| unset      | `internal` when `SELF_HOSTED` is enabled. `http` otherwise, including hosted production. |
+
+An unknown value stops boot. The process does not fall back from one backend to the other.
+
+```env
+NOSTR_PUBLISHER_BACKEND=internal
+```
+
+`NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` lets the internal publisher open loopback and
+private-network relays, including `ws://` on those hosts. It is not implied by `SELF_HOSTED`. Leave
+it unset on hosted production. Link-local and metadata addresses stay blocked.
+
 ### NOSTR_PUBLISHER_URL
 
-URL to your HTTP Nostr Publisher service.
-
-**Format:**
-
-```
-https://your-publisher.example.com
-```
+URL of an external HTTP publisher. Required only when the backend is `http`.
 
 **Example:**
 
 ```env
 NOSTR_PUBLISHER_URL=https://publisher.example.com
+NOSTR_PUBLISHER_API_TOKEN=
 ```
 
-**Required for:**
-
-- Publishing posts to Nostr relays
-- Signing events server-side (when needed)
-
-**Setup:**
-
-1. Deploy [SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
-2. Set this variable to the worker URL
-3. If that worker has `API_TOKEN` set, set the same value as `NOSTR_PUBLISHER_API_TOKEN` here. The
-   app sends it as the `API-TOKEN` header.
+The app sends the token as `API-TOKEN`. The internal backend ignores both values. The optional HTTP
+adapter can be the
+[SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) worker.
+That worker is not required to publish.
 
 ---
 
@@ -977,13 +985,13 @@ docker run -d \
 
 These are separate repositories. The app talks to them over HTTP.
 
-| Service      | Repository                                                                                      | App variables                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Publisher    | [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)       | `NOSTR_PUBLISHER_URL`, `NOSTR_PUBLISHER_API_TOKEN`                              |
-| Blastr       | [smartflowsocial-blastr](https://github.com/smartflowsocial/smartflowsocial-blastr)             | `BLASTR_ADMIN_URL`, `BLASTR_ADMIN_API_TOKEN`                                    |
-| Blossom      | [smartflowsocial-blossom](https://github.com/smartflowsocial/smartflowsocial-blossom)           | `BLOSSOM_SFS_API_URL`, `BLOSSOM_INTERNAL_SECRET`, `BLOSSOM_UPLOAD_TOKEN_SECRET` |
-| Cache worker | [smartflowsocial-cache-worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) | `PRIMAL_CACHING_URL`, `NOSTRMASH_BASE_URL`, `NOSTRMASH_API_TOKEN`               |
-| NostrMash    | [nostrmash](https://github.com/nostrmash/nostrmash)                                             | `NOSTRMASH_BASE_URL` (default `https://api.nostrmash.com`)                      |
+| Service        | Repository                                                                                      | App variables                                                                                |
+| -------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| HTTP publisher | [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)       | Optional. `NOSTR_PUBLISHER_BACKEND=http`, `NOSTR_PUBLISHER_URL`, `NOSTR_PUBLISHER_API_TOKEN` |
+| Blastr         | [smartflowsocial-blastr](https://github.com/smartflowsocial/smartflowsocial-blastr)             | `BLASTR_ADMIN_URL`, `BLASTR_ADMIN_API_TOKEN`                                                 |
+| Blossom        | [smartflowsocial-blossom](https://github.com/smartflowsocial/smartflowsocial-blossom)           | `BLOSSOM_SFS_API_URL`, `BLOSSOM_INTERNAL_SECRET`, `BLOSSOM_UPLOAD_TOKEN_SECRET`              |
+| Cache worker   | [smartflowsocial-cache-worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) | `PRIMAL_CACHING_URL`, `NOSTRMASH_BASE_URL`, `NOSTRMASH_API_TOKEN`                            |
+| NostrMash      | [nostrmash](https://github.com/nostrmash/nostrmash)                                             | `NOSTRMASH_BASE_URL` (default `https://api.nostrmash.com`)                                   |
 
 Blastr sync is a no-op when `BLASTR_ADMIN_URL` is unset. Profile lookups use public Primal sockets
 when `PRIMAL_CACHING_URL` is unset. The cache worker itself reads NostrMash before Primal.
@@ -994,52 +1002,59 @@ when `PRIMAL_CACHING_URL` is unset. The cache worker itself reads NostrMash befo
 
 Read in `app/lib/env.server.ts` and not given their own section above.
 
-| Variable                                | Default                     | Purpose                                                                                       |
-| --------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
-| `PORT`                                  | `3000`                      | HTTP listen port.                                                                             |
-| `HOST`                                  | `0.0.0.0`                   | HTTP listen host.                                                                             |
-| `NOSTR_PUBLISHER_API_TOKEN`             | unset                       | Sent as `API-TOKEN`. Required in production unless public publisher mode is explicit.         |
-| `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` | unset                       | `true` only when the publisher is intentionally public.                                       |
-| `REFERRAL_PAYOUT_MAX_SATS`              | `1000000`                   | Maximum sats in one referral invoice.                                                         |
-| `REFERRAL_PAYOUT_DAILY_CAP_SATS`        | `5000000`                   | Maximum sats marked successful in one UTC day.                                                |
-| `NOSTRMASH_BASE_URL`                    | `https://api.nostrmash.com` | NostrMash HTTP origin.                                                                        |
-| `NOSTRMASH_API_TOKEN`                   | unset                       | Bearer token for NostrMash, only when that deployment requires one.                           |
-| `BLASTR_ADMIN_URL`                      | unset                       | Blastr origin. Unset disables entitlement and policy sync.                                    |
-| `BLASTR_ADMIN_API_TOKEN`                | unset                       | Sent as `X-API-TOKEN` to Blastr admin routes.                                                 |
-| `OWNER_NWC_RELAY`                       | unset                       | One relay URL that overrides relays embedded in `OWNER_NWC`.                                  |
-| `OWNER_NWC_RELAYS`                      | unset                       | Comma-separated relay override. Used before `OWNER_NWC_RELAY`.                                |
-| `POST_ANALYTICS_INTERVAL_MINUTES`       | `60`                        | Worker sweep interval. `0` disables it.                                                       |
-| `POST_ANALYTICS_BATCH_SIZE`             | `40`                        | Notes per analytics sweep.                                                                    |
-| `POST_ANALYTICS_CONCURRENCY`            | `4`                         | Concurrent NostrMash calls inside one sweep.                                                  |
-| `PRIMAL_HTTP_TIMEOUT_MS`                | `8000`                      | Per-attempt timeout for the HTTP Primal proxy.                                                |
-| `PRIMAL_HTTP_MAX_RETRIES`               | `0`                         | Extra retries after the first HTTP Primal attempt.                                            |
-| `RELAY_HEALTH_STORE`                    | `memory`                    | `memory` or `redis`.                                                                          |
-| `RUNWAY_LOW_CRON_INTERVAL_MINUTES`      | `60`                        | Runway-low sweep interval. `0` disables the worker scheduler.                                 |
-| `DISABLE_RATE_LIMIT`                    | unset                       | `true` disables rate limits (tests and local debugging).                                      |
-| `SIGNING_MULTI_SLOT`                    | unset                       | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`. |
-| `PUBLIC_STATS_ENABLED`                  | enabled                     | `false` disables `GET /api/public/stats` and the avatar proxy.                                |
-| `LANDING_STATS_ORIGINS`                 | `https://smartflow.social`  | Extra comma-separated CORS origins for public stats.                                          |
-| `REFERRAL_LANDING_URL`                  | `https://smartflow.social`  | Base URL used in referral links.                                                              |
-| `FLY_REGION`                            | unset                       | Set by Fly.io. Returned on responses as `x-fly-region`.                                       |
-| `PRIMARY_REGION`                        | unset                       | Fly primary region. With `FLY_REGION`, used to route database connections.                    |
-| `ENABLE_SOURCE_MAPS`                    | unset                       | `true` enables source maps outside production. Production always enables them.                |
-| `E2E_TEST`                              | unset                       | `true` fills missing required variables with test defaults.                                   |
-| `CYPRESS`                               | unset                       | Set by Cypress. Bypasses rate limits during end-to-end tests.                                 |
-| `COOLIFY_URL`                           | unset                       | Used as an allowed origin when `APP_URL` is unset.                                            |
+| Variable                                | Default                             | Purpose                                                                                        |
+| --------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `PORT`                                  | `3000`                              | HTTP listen port.                                                                              |
+| `HOST`                                  | `0.0.0.0`                           | HTTP listen host.                                                                              |
+| `NOSTR_PUBLISHER_BACKEND`               | hosted `http`, self-host `internal` | `http` or `internal`. Unset follows `SELF_HOSTED`.                                             |
+| `NOSTR_PUBLISHER_API_TOKEN`             | unset                               | HTTP backend only. Sent as `API-TOKEN`. Required in production unless public mode is explicit. |
+| `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` | unset                               | `true` only when the HTTP publisher is intentionally public.                                   |
+| `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS`  | unset                               | `true` allows the internal publisher to open private and loopback relays.                      |
+| `REFERRAL_PAYOUT_MAX_SATS`              | `1000000`                           | Maximum sats in one referral invoice.                                                          |
+| `REFERRAL_PAYOUT_DAILY_CAP_SATS`        | `5000000`                           | Maximum sats marked successful in one UTC day.                                                 |
+| `NOSTRMASH_BASE_URL`                    | `https://api.nostrmash.com`         | NostrMash HTTP origin.                                                                         |
+| `NOSTRMASH_API_TOKEN`                   | unset                               | Bearer token for NostrMash, only when that deployment requires one.                            |
+| `BLASTR_ADMIN_URL`                      | unset                               | Blastr origin. Unset disables entitlement and policy sync.                                     |
+| `BLASTR_ADMIN_API_TOKEN`                | unset                               | Sent as `X-API-TOKEN` to Blastr admin routes.                                                  |
+| `OWNER_NWC_RELAY`                       | unset                               | One relay URL that overrides relays embedded in `OWNER_NWC`.                                   |
+| `OWNER_NWC_RELAYS`                      | unset                               | Comma-separated relay override. Used before `OWNER_NWC_RELAY`.                                 |
+| `POST_ANALYTICS_INTERVAL_MINUTES`       | `60`                                | Worker sweep interval. `0` disables it.                                                        |
+| `POST_ANALYTICS_BATCH_SIZE`             | `40`                                | Notes per analytics sweep.                                                                     |
+| `POST_ANALYTICS_CONCURRENCY`            | `4`                                 | Concurrent NostrMash calls inside one sweep.                                                   |
+| `PRIMAL_HTTP_TIMEOUT_MS`                | `8000`                              | Per-attempt timeout for the HTTP Primal proxy.                                                 |
+| `PRIMAL_HTTP_MAX_RETRIES`               | `0`                                 | Extra retries after the first HTTP Primal attempt.                                             |
+| `RELAY_HEALTH_STORE`                    | `memory`                            | `memory` or `redis`.                                                                           |
+| `RUNWAY_LOW_CRON_INTERVAL_MINUTES`      | `60`                                | Runway-low sweep interval. `0` disables the worker scheduler.                                  |
+| `DISABLE_RATE_LIMIT`                    | unset                               | `true` disables rate limits (tests and local debugging).                                       |
+| `SIGNING_MULTI_SLOT`                    | unset                               | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`.  |
+| `PUBLIC_STATS_ENABLED`                  | enabled                             | `false` disables `GET /api/public/stats` and the avatar proxy.                                 |
+| `LANDING_STATS_ORIGINS`                 | `https://smartflow.social`          | Extra comma-separated CORS origins for public stats.                                           |
+| `REFERRAL_LANDING_URL`                  | `https://smartflow.social`          | Base URL used in referral links.                                                               |
+| `FLY_REGION`                            | unset                               | Set by Fly.io. Returned on responses as `x-fly-region`.                                        |
+| `PRIMARY_REGION`                        | unset                               | Fly primary region. With `FLY_REGION`, used to route database connections.                     |
+| `ENABLE_SOURCE_MAPS`                    | unset                               | `true` enables source maps outside production. Production always enables them.                 |
+| `E2E_TEST`                              | unset                               | `true` fills missing required variables with test defaults.                                    |
+| `CYPRESS`                               | unset                               | Set by Cypress. Bypasses rate limits during end-to-end tests.                                  |
+| `COOLIFY_URL`                           | unset                               | Used as an allowed origin when `APP_URL` is unset.                                             |
 
 ---
 
 ## External Services
 
-### HTTP Nostr Publisher
+### Nostr publisher
 
-**Required:** Yes  
-**Purpose:** Publish signed Nostr events to relays
-
-**Deploy:**
-[SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
+**Required:** The internal publisher is part of this app.  
+**Purpose:** Publish already signed Nostr events to relays.
 
 ```env
+SELF_HOSTED=true
+NOSTR_PUBLISHER_BACKEND=internal
+```
+
+Use the HTTP adapter only when an operator explicitly wants another process to open the relays:
+
+```env
+NOSTR_PUBLISHER_BACKEND=http
 NOSTR_PUBLISHER_URL=https://publisher.example.com
 NOSTR_PUBLISHER_API_TOKEN=
 ```

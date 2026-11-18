@@ -57,6 +57,7 @@ graph TB
         Routes[Route Handlers<br/>Loaders & Actions]
         Models[Data Models<br/>Prisma Wrappers]
         Services[Business Logic<br/>Services]
+        Publisher[Internal Nostr publisher]
     end
 
     subgraph "Background Processing"
@@ -71,7 +72,7 @@ graph TB
     end
 
     subgraph "External Services"
-        Publisher[SmartFlowSocial Publisher<br/>Event Publishing]
+        HttpPublisher[Optional HTTP publisher]
         Primal[Cache worker<br/>NostrMash then Primal]
         Storage[SmartFlowSocial Blossom<br/>Image Uploads]
         Relays[Nostr Relays<br/>Event Distribution]
@@ -88,8 +89,10 @@ graph TB
     Services -->|Enqueue Jobs| Queue
     Worker -->|Process Jobs| Queue
     Worker -->|Publish Events| Publisher
+    App -->|Publish Events| Publisher
     Worker -->|Update Status| DB
     Publisher --> Relays
+    HttpPublisher -.-> Relays
     Routes -->|Fetch Profiles| Primal
     Routes -->|Upload Images| Storage
     Routes -->|Process Payments| NWC
@@ -103,16 +106,18 @@ graph TB
     style DB fill:#f3e5f5
     style Redis fill:#ffcdd2
     style Publisher fill:#e0f2f1
+    style HttpPublisher fill:#eceff1
     style Relays fill:#fff9c4
 ```
 
-Publisher, Blossom, and the cache worker in that diagram are the other SmartFlowSocial repositories,
-not generic third-party boxes. Blastr is the managed fan-out relay in front of the publisher path.
+The publisher in that diagram runs inside this process. Blossom and the cache worker are the other
+SmartFlowSocial repositories, not generic third-party boxes. Blastr is optional managed fan-out.
 [NostrMash](https://github.com/nostrmash/nostrmash) is the cache worker's first read source.
 
-- [Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) (`NOSTR_PUBLISHER_URL`)
-  is required for notes to reach relays. `pnpm publisher:local` is a local stand-in that only checks
-  signatures.
+- The internal Nostr publisher sends signed events to relays. `SELF_HOSTED=true` selects it.
+  `NOSTR_PUBLISHER_BACKEND=http` keeps an external HTTP publisher, including the
+  [Cloudflare worker](https://github.com/smartflowsocial/smartflowsocial-publisher), as an optional
+  adapter. `pnpm publisher:local` only checks signatures.
 - [Blastr](https://github.com/smartflowsocial/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`) is
   optional managed fan-out.
 - [Blossom](https://github.com/smartflowsocial/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`) is
@@ -122,8 +127,8 @@ not generic third-party boxes. Blastr is the managed fan-out relay in front of t
 - [NostrMash](https://github.com/nostrmash/nostrmash) (`NOSTRMASH_BASE_URL`) is an optional read
   source for paid post analytics. The scheduler runs without it.
 
-Mandatory for a local scheduler: this repository, PostgreSQL, Redis, and a publisher. `pnpm dev`
-runs the web process and the worker. In production `pnpm start` runs both under one supervisor, or
+Mandatory for a local scheduler: this repository, PostgreSQL, and Redis. `pnpm dev` runs the web
+process and the worker. In production `pnpm start` runs both under one supervisor, or
 `pnpm start:server` and `pnpm start:worker` run them separately.
 
 ## Project Structure

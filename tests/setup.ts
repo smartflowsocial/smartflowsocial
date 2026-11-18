@@ -82,7 +82,10 @@ process.env["SKIP_DATABASE_TESTS"] ??= "false";
 process.env["SESSION_SECRET"] ??=
   "test-session-secret-very-long-and-secure-32-chars-minimum";
 
-// Required by centralized env validation
+// Required by centralized env validation when the HTTP publisher is selected.
+// Force HTTP here so a developer .env with SELF_HOSTED=true does not send the
+// suite at live relays. Tests construct InternalNostrPublisher directly.
+process.env["NOSTR_PUBLISHER_BACKEND"] = "http";
 process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
 process.env["REDIS_URL"] ??= "redis://localhost:6379";
 

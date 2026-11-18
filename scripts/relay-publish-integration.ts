@@ -2,8 +2,8 @@
  * Release check: a scheduled signed event reaches a local Nostr relay.
  *
  * `pnpm smoke:publish` stays the fast check. It stops at a signature-checking
- * publisher. This script starts a loopback relay and a publisher that actually
- * writes the event there.
+ * HTTP stub. This script starts a loopback relay and publishes through the
+ * internal Nostr publisher.
  *
  * Requires Postgres and Redis (`pnpm docker`) and a schema (`pnpm exec prisma
  * migrate deploy`). It creates an ephemeral key. It does not use a public relay, a
@@ -14,21 +14,21 @@
  * CI runs this on the test job after the disposable schema push. Postgres and
  * Redis must be loopback addresses.
  *
- * Covered here: successful delivery, publisher down then recovery, a second
- * job for the same published post, an invalid signature, and a relay that is
- * not running. A wrong publisher token is covered by
- * tests/integration/relay-publisher.contract.test.ts because the app reads
- * the token once at startup.
+ * Covered here: successful delivery and an independent relay read, relay
+ * recovery, a second job for the same published post, an invalid signature,
+ * and a relay that is not running.
  */
 import "dotenv/config";
 
 import { randomBytes } from "node:crypto";
 import { connect as connectNet } from "node:net";
 
+import Redis from "ioredis";
 import { finalizeEvent, getPublicKey } from "nostr-tools";
+import WebSocket from "ws";
 
 import { startEphemeralRelay } from "./ephemeral-relay.mjs";
-import { createRelayPublisher } from "./relay-publisher.mjs";
+import { canonicalRelayKey } from "~/infra/publishers/relay-target";
 import {
   isLoopbackHost,
   parseDatabaseTarget,
@@ -72,6 +72,43 @@ function signedNote(content: string) {
   return { secretKey, pubkey: getPublicKey(secretKey), event };
 }
 
+function readFromRelay(
+  url: string,
+  eventId: string
+): Promise<{ content?: string } | null> {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(url);
+    const timer = setTimeout(() => {
+      socket.terminate();
+      reject(new Error("timed out reading the event back from the relay"));
+    }, 3000);
+    socket.on("error", () => undefined);
+    socket.on("open", () => {
+      socket.send(JSON.stringify(["REQ", "readback", { ids: [eventId] }]));
+    });
+    socket.on("message", (raw) => {
+      const message = JSON.parse(raw.toString()) as unknown[];
+      if (
+        message[0] === "EVENT" &&
+        message[2] &&
+        typeof message[2] === "object"
+      ) {
+        const event = message[2] as { id?: string; content?: string };
+        if (event.id === eventId) {
+          clearTimeout(timer);
+          socket.close();
+          resolve(event);
+        }
+      }
+      if (message[0] === "EOSE") {
+        clearTimeout(timer);
+        socket.close();
+        resolve(null);
+      }
+    });
+  });
+}
+
 async function main(): Promise<void> {
   const databaseUrl = process.env["DATABASE_URL"]?.trim() ?? "";
   const redisUrl = process.env["REDIS_URL"]?.trim() ?? "";
@@ -98,18 +135,14 @@ async function main(): Promise<void> {
   const sessionSecret = process.env["SESSION_SECRET"]?.trim() ?? "";
   process.env["NODE_ENV"] = "test";
   process.env["E2E_TEST"] = "true";
+  process.env["NOSTR_PUBLISHER_BACKEND"] = "internal";
+  process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] = "true";
   process.env["SESSION_SECRET"] =
     sessionSecret.length >= 32
       ? sessionSecret
       : "relay-publish-integration-secret-32";
 
   const relay = await startEphemeralRelay();
-  const token = "relay-publish-integration-token";
-  const publisher = createRelayPublisher({ token });
-  const port = await publisher.listen(0, "127.0.0.1");
-  await publisher.close();
-  process.env["NOSTR_PUBLISHER_URL"] = `http://127.0.0.1:${port}/publish`;
-  process.env["NOSTR_PUBLISHER_API_TOKEN"] = token;
 
   const { prisma } = await import("~/lib/prisma.server");
   const { runScheduledPostJob } =
@@ -176,21 +209,28 @@ async function main(): Promise<void> {
       },
     });
 
-    let publisherDownThrew = false;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { userRelays: ["ws://127.0.0.1:1"] },
+    });
+    let relayDownFirst = false;
     try {
-      await runJob(downPost.id, good.event, "relay-publisher-down");
+      await runJob(downPost.id, good.event, "relay-down-first");
     } catch {
-      publisherDownThrew = true;
+      relayDownFirst = true;
     }
-    if (!publisherDownThrew || relay.events.has(good.event.id)) {
-      fail("Publisher-down case did not fail closed.");
+    if (!relayDownFirst || relay.events.has(good.event.id)) {
+      fail("Relay-down case did not fail closed.");
     }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { userRelays: [relay.url] },
+    });
     await prisma.post.update({
       where: { id: downPost.id },
       data: { currentState: "SCHEDULED" },
     });
 
-    await publisher.listen(port, "127.0.0.1");
     const recovered = await runJob(
       downPost.id,
       good.event,
@@ -200,14 +240,26 @@ async function main(): Promise<void> {
       where: { id: downPost.id },
       select: { currentState: true, nostrEventId: true },
     });
+    const readBack = await readFromRelay(relay.url, good.event.id);
+    const redisClient = new Redis(redisUrl, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+      lazyConnect: false,
+    });
+    const ackKey = `nostr-publish:v1:${good.event.id}:${canonicalRelayKey(relay.url)}`;
+    const ack = await redisClient.get(ackKey);
+    await redisClient.del(ackKey);
+    await redisClient.quit();
     if (
       recovered.skipped ||
       stored?.currentState !== "PUBLISHED" ||
       stored.nostrEventId !== good.event.id ||
-      relay.events.get(good.event.id)?.content !== good.event.content
+      relay.events.get(good.event.id)?.content !== good.event.content ||
+      readBack?.content !== good.event.content ||
+      ack !== "1"
     ) {
       fail(
-        `Relay delivery failed. state=${stored?.currentState ?? "missing"} eventStored=${String(relay.events.has(good.event.id))}`
+        `Relay delivery failed. skipped=${String(recovered.skipped)} state=${stored?.currentState ?? "missing"} eventIdRecorded=${String(stored?.nostrEventId === good.event.id)} eventStored=${String(relay.events.has(good.event.id))} readBack=${readBack?.content ?? "missing"} ledgerAck=${ack ?? "missing"}`
       );
     }
 
@@ -290,7 +342,7 @@ async function main(): Promise<void> {
         .catch(() => undefined);
     }
     await Promise.race([
-      Promise.all([prisma.$disconnect(), publisher.close(), relay.close()]),
+      Promise.all([prisma.$disconnect(), relay.close()]),
       new Promise((resolve) => setTimeout(resolve, 3000)),
     ]);
   }
