@@ -49,6 +49,12 @@ RUN pnpm exec prisma generate && pnpm run build
 # Finally, build the production image with minimal footprint
 FROM base
 
+# Empty unless the image build passes them. Unknown stays unknown at runtime.
+ARG SOURCE_COMMIT=
+ARG BUILD_TIME=
+ENV SOURCE_COMMIT=${SOURCE_COMMIT}
+ENV BUILD_TIME=${BUILD_TIME}
+
 WORKDIR /myapp
 
 COPY --from=production-deps /myapp/node_modules /myapp/node_modules

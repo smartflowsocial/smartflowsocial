@@ -120,8 +120,10 @@ curl http://localhost:3010/metrics
 curl http://localhost:3011/metrics
 ```
 
-`/healthcheck` returns `200 OK`. `/` returns success or a redirect. `/metrics` returns Prometheus
-text.
+`/healthcheck` returns `200` and `OK`. `X-Source-Commit` is the commit baked into that build, or
+`unknown` when the image was built without one. A green CI run does not fill that header on a server
+that was not built from the same commit. `Accept: application/json` returns the same fields in a
+body. `/` returns success or a redirect. `/metrics` returns Prometheus text.
 
 Next: [Quickstart](./docs/getting-started/quickstart.md) ·
 [Installation](./docs/getting-started/installation.md) · [Deployment](./docs/guides/deployment.md) ·
