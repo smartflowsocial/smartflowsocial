@@ -1,237 +1,108 @@
-/**
- * Security Headers Tests
- *
- * Tests to verify that security headers are properly configured.
- * Note: Full integration tests would require starting the server and making HTTP requests.
- */
+import type { AddressInfo } from "node:net";
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import express from "express";
+import { describe, expect, it } from "vitest";
 
-// Mock helmet to capture configuration
-let _capturedConfig: unknown = null;
+import {
+  applySecurityHeaders,
+  readResponseNonce,
+} from "~/lib/security-headers.server";
 
-vi.mock("helmet", () => {
+function directive(policy: string, name: string): string {
+  const match = policy
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part === name || part.startsWith(`${name} `));
+  if (!match) throw new Error(`CSP is missing ${name}`);
+  return match;
+}
+
+async function startApp(production: boolean): Promise<{
+  origin: string;
+  close: () => Promise<void>;
+}> {
+  const app = express();
+  applySecurityHeaders(app, { production, port: "5173" });
+  app.get("/", (_req, res) => {
+    const nonce = readResponseNonce(res);
+    res
+      .type("html")
+      .send(`<script nonce="${nonce}">window.__hydrated = true</script>`);
+  });
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise<void>((resolve) =>
+    server.once("listening", () => resolve())
+  );
+  const address = server.address() as AddressInfo;
   return {
-    default: (config: unknown) => {
-      _capturedConfig = config;
-      return (_req: unknown, _res: unknown, next: () => void) => {
-        next();
-      };
-    },
+    origin: `http://127.0.0.1:${address.port}`,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
   };
-});
+}
 
-describe("Security Headers: Configuration", () => {
-  beforeEach(() => {
-    _capturedConfig = null;
-    vi.clearAllMocks();
-  });
+describe("production security headers", () => {
+  it("sends a fresh nonce that matches the inline script and omits development exceptions", async () => {
+    const app = await startApp(true);
+    try {
+      const first = await fetch(`${app.origin}/`);
+      const second = await fetch(`${app.origin}/`);
+      const firstPolicy = first.headers.get("content-security-policy") ?? "";
+      const secondPolicy = second.headers.get("content-security-policy") ?? "";
+      const firstScript = directive(firstPolicy, "script-src");
+      const secondScript = directive(secondPolicy, "script-src");
+      const firstHtml = await first.text();
+      const nonce = firstScript.match(/'nonce-([^']+)'/)?.[1] ?? "";
 
-  it("should configure Content-Security-Policy", async () => {
-    // Import server to trigger helmet configuration
-    // Note: This is a simplified test - full integration would require server startup
-    const helmetConfig = {
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", "data:", "https:", "blob:"],
-          connectSrc: ["'self'", "wss:", "https:"],
-          frameSrc: ["'none'"],
-        },
-      },
-    };
-
-    // Verify expected CSP structure
-    expect(helmetConfig.contentSecurityPolicy).toBeDefined();
-    expect(helmetConfig.contentSecurityPolicy.directives.defaultSrc).toContain(
-      "'self'"
-    );
-    expect(helmetConfig.contentSecurityPolicy.directives.frameSrc).toContain(
-      "'none'"
-    );
-  });
-
-  it("should configure X-Frame-Options to DENY", () => {
-    const frameguardConfig = {
-      action: "deny" as const,
-    };
-
-    expect(frameguardConfig.action).toBe("deny");
-  });
-
-  it("should configure X-Content-Type-Options to nosniff", () => {
-    const noSniffConfig = true;
-
-    expect(noSniffConfig).toBe(true);
-  });
-
-  it("should configure Referrer-Policy", () => {
-    const referrerPolicyConfig = {
-      policy: "strict-origin-when-cross-origin" as const,
-    };
-
-    expect(referrerPolicyConfig.policy).toBe("strict-origin-when-cross-origin");
-  });
-
-  it("should configure HSTS with appropriate settings", () => {
-    const hstsConfig = {
-      maxAge: 31536000, // 1 year
-      includeSubDomains: true,
-      preload: true,
-    };
-
-    expect(hstsConfig.maxAge).toBeGreaterThan(0);
-    expect(hstsConfig.includeSubDomains).toBe(true);
-    expect(hstsConfig.preload).toBe(true);
-  });
-
-  it("should configure Permissions-Policy to disable sensitive features", () => {
-    const permissionsPolicyConfig = {
-      features: {
-        geolocation: ["'none'"],
-        microphone: ["'none'"],
-        camera: ["'none'"],
-      },
-    };
-
-    expect(permissionsPolicyConfig.features.geolocation).toContain("'none'");
-    expect(permissionsPolicyConfig.features.microphone).toContain("'none'");
-    expect(permissionsPolicyConfig.features.camera).toContain("'none'");
+      expect(nonce).not.toBe("");
+      expect(Buffer.from(nonce, "base64")).toHaveLength(16);
+      expect(firstHtml).toContain(`nonce="${nonce}"`);
+      expect(firstScript).not.toBe(secondScript);
+      expect(firstScript).not.toContain("'unsafe-inline'");
+      expect(firstScript).not.toContain("'unsafe-eval'");
+      expect(firstScript).not.toContain("jsdelivr.net");
+      expect(firstPolicy).not.toContain("127.0.0.1");
+      expect(firstPolicy).not.toContain("localhost");
+      expect(firstPolicy).not.toContain(":7242");
+      expect(directive(firstPolicy, "connect-src")).toContain("wss:");
+      expect(directive(firstPolicy, "connect-src")).toContain("https:");
+      expect(directive(firstPolicy, "style-src")).toContain("'unsafe-inline'");
+      expect(directive(firstPolicy, "style-src")).not.toContain("nonce-");
+      expect(firstPolicy).toContain("upgrade-insecure-requests");
+      expect(first.headers.get("x-frame-options")).toBe("DENY");
+      expect(first.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(first.headers.get("referrer-policy")).toBe(
+        "strict-origin-when-cross-origin"
+      );
+      expect(first.headers.get("strict-transport-security")).toContain(
+        "max-age=31536000"
+      );
+    } finally {
+      await app.close();
+    }
   });
 });
 
-describe("Security Headers: CSP Directives", () => {
-  it("should allow 'self' for default sources", () => {
-    const cspDirectives = {
-      defaultSrc: ["'self'"],
-    };
+describe("development security headers", () => {
+  it("allows the Vite client without opening those exceptions in production", async () => {
+    const app = await startApp(false);
+    try {
+      const response = await fetch(`${app.origin}/`);
+      const policy = response.headers.get("content-security-policy") ?? "";
+      const script = directive(policy, "script-src");
+      const connect = directive(policy, "connect-src");
 
-    expect(cspDirectives.defaultSrc).toContain("'self'");
-  });
-
-  it("should allow unsafe-inline for scripts (Remix requirement)", () => {
-    const cspDirectives = {
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-    };
-
-    expect(cspDirectives.scriptSrc).toContain("'unsafe-inline'");
-  });
-
-  it("should allow unsafe-inline for styles (Remix requirement)", () => {
-    const cspDirectives = {
-      styleSrc: ["'self'", "'unsafe-inline'"],
-    };
-
-    expect(cspDirectives.styleSrc).toContain("'unsafe-inline'");
-  });
-
-  it("should allow WebSocket connections for Nostr", () => {
-    const cspDirectives = {
-      connectSrc: ["'self'", "wss:", "https:"],
-    };
-
-    expect(cspDirectives.connectSrc).toContain("wss:");
-  });
-
-  it("should deny frame embedding", () => {
-    const cspDirectives = {
-      frameSrc: ["'none'"],
-    };
-
-    expect(cspDirectives.frameSrc).toContain("'none'");
-  });
-
-  it("should allow data URIs for images", () => {
-    const cspDirectives = {
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-    };
-
-    expect(cspDirectives.imgSrc).toContain("data:");
-  });
-
-  it("should restrict object sources to none", () => {
-    const cspDirectives = {
-      objectSrc: ["'none'"],
-    };
-
-    expect(cspDirectives.objectSrc).toContain("'none'");
-  });
-
-  it("should restrict form actions to self", () => {
-    const cspDirectives = {
-      formAction: ["'self'"],
-    };
-
-    expect(cspDirectives.formAction).toContain("'self'");
+      expect(script).toContain("'unsafe-inline'");
+      expect(script).toContain("'unsafe-eval'");
+      expect(script).toMatch(/'nonce-[^']+'/);
+      expect(connect).toContain("ws://localhost:5173");
+      expect(connect).toContain("ws://127.0.0.1:5173");
+      expect(policy).not.toContain(":7242");
+      expect(policy).not.toContain("upgrade-insecure-requests");
+    } finally {
+      await app.close();
+    }
   });
 });
-
-describe("Security Headers: Environment-Specific Configuration", () => {
-  it("should include unsafe-eval only in development", () => {
-    const isDevelopment = true;
-    const scriptSrc = [
-      "'self'",
-      "'unsafe-inline'",
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional CSP directive
-      ...(isDevelopment ? ["'unsafe-eval'"] : []),
-    ];
-
-    expect(scriptSrc).toContain("'unsafe-eval'");
-
-    // Production should not have unsafe-eval
-    const isProduction = false;
-    const productionScriptSrc = [
-      "'self'",
-      "'unsafe-inline'",
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional CSP directive
-      ...(isProduction ? ["'unsafe-eval'"] : []),
-    ];
-
-    expect(productionScriptSrc).not.toContain("'unsafe-eval'");
-  });
-
-  it("should enable upgradeInsecureRequests in production", () => {
-    const isDevelopment = false;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Test: testing conditional security header
-    const upgradeInsecureRequests = !isDevelopment ? [] : null;
-
-    expect(upgradeInsecureRequests).not.toBeNull();
-  });
-});
-
-/**
- * Note: These tests validate the configuration structure and expected values.
- *
- * For full integration testing that verifies headers are actually set on responses,
- * you would need to:
- * 1. Start the Express server
- * 2. Make HTTP requests to various endpoints
- * 3. Verify headers are present and have correct values
- *
- * Example integration test (requires server setup):
- *
- * ```typescript
- * import { describe, it, expect, beforeAll, afterAll } from "vitest";
- * import request from "supertest";
- * import { app } from "~/server";
- *
- * describe("Security Headers Integration", () => {
- *   it("should set X-Content-Type-Options header", async () => {
- *     const response = await request(app).get("/");
- *     expect(response.headers["x-content-type-options"]).toBe("nosniff");
- *   });
- *
- *   it("should set X-Frame-Options header", async () => {
- *     const response = await request(app).get("/");
- *     expect(response.headers["x-frame-options"]).toBe("DENY");
- *   });
- *
- *   it("should set Content-Security-Policy header", async () => {
- *     const response = await request(app).get("/");
- *     expect(response.headers["content-security-policy"]).toContain("default-src 'self'");
- *   });
- * });
- * ```
- */
