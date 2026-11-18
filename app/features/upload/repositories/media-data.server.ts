@@ -64,9 +64,9 @@ async function compensateRejectedUpload(
   } catch (compensationError) {
     if (
       compensationError instanceof RejectedUploadCleanupUnrecordedError &&
-      compensationError.cause === undefined
+      compensationError.origin === undefined
     ) {
-      compensationError.cause = error;
+      compensationError.origin = error;
     }
     throw compensationError;
   }

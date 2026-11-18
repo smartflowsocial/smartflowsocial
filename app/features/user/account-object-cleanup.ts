@@ -258,6 +258,7 @@ export class AccountDeletionInProgressError extends Error {
  */
 export class RejectedUploadCleanupUnrecordedError extends Error {
   readonly code = "rejected_upload_cleanup_unrecorded";
+  origin?: unknown;
 
   constructor() {
     super(
