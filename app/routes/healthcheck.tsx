@@ -15,7 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const host =
       request.headers.get("X-Forwarded-Host") ?? request.headers.get("host");
 
-    return performHealthCheck(host);
+    return performHealthCheck(host, request.headers.get("accept"));
   } catch (error) {
     return handleHealthCheckError(error, request.url);
   }

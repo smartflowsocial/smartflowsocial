@@ -10,11 +10,24 @@ import {
   ExternalServiceError,
   ValidationError,
 } from "~/lib/errors";
+
+import packageJson from "../../../../package.json";
+import {
+  deploymentIdentityHeaders,
+  readDeploymentIdentity,
+  wantsDeploymentJson,
+} from "../deployment-identity";
+
 /**
  * Perform health check
- * Verifies database connectivity and HTTP service availability
+ * Verifies database connectivity and HTTP service availability.
+ * Headers name the build commit when the image was given one. They do not
+ * prove that a GitHub Actions run is the process currently serving traffic.
  */
-export async function performHealthCheck(host: string | null) {
+export async function performHealthCheck(
+  host: string | null,
+  accept: string | null = null
+) {
   if (!host) {
     throw new ValidationError("Missing host header");
   }
@@ -31,7 +44,22 @@ export async function performHealthCheck(host: string | null) {
     })(),
   ]);
 
-  return new Response("OK");
+  const identity = readDeploymentIdentity(process.env, packageJson.version);
+  const headers = deploymentIdentityHeaders(identity);
+  if (wantsDeploymentJson(accept)) {
+    return Response.json(
+      {
+        status: "ok",
+        version: identity.version,
+        sourceCommit: identity.sourceCommit,
+        sourceCommitStatus: identity.sourceCommitStatus,
+        buildTime: identity.buildTime,
+        buildTimeStatus: identity.buildTimeStatus,
+      },
+      { headers }
+    );
+  }
+  return new Response("OK", { headers });
 }
 
 /**
