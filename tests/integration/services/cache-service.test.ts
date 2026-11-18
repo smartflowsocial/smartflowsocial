@@ -26,6 +26,9 @@ vi.mock("~/lib/env.server", async (importOriginal) => {
             "https://cache.example.com/api"
           );
         }
+        if (prop === "NOSTR_READ_BACKEND") {
+          return process.env["NOSTR_READ_BACKEND"] ?? "legacy_http";
+        }
         // Match pre–fail-fast production defaults so retry / timer tests stay stable.
         if (prop === "PRIMAL_HTTP_TIMEOUT_MS") {
           return process.env["PRIMAL_HTTP_TIMEOUT_MS"] ?? "15000";
@@ -64,6 +67,7 @@ import {
   fetchFromCache,
   connectToPrimalCache,
 } from "~/features/cache/primalCache.server";
+import { resetSingleFlightForTests } from "~/features/cache/single-flight";
 import { logError } from "~/lib/error-logger.server";
 
 describe("Primal Cache Service", () => {
@@ -74,6 +78,7 @@ describe("Primal Cache Service", () => {
 
   afterEach(() => {
     delete process.env["PRIMAL_CACHING_URL"];
+    resetSingleFlightForTests();
   });
 
   describe("fetchFromCache", () => {

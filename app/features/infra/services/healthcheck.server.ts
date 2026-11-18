@@ -52,6 +52,7 @@ export async function performHealthCheck(
       {
         status: "ok",
         publisherBackend: env.NOSTR_PUBLISHER_BACKEND,
+        nostrReadBackend: env.NOSTR_READ_BACKEND,
         version: identity.version,
         sourceCommit: identity.sourceCommit,
         sourceCommitStatus: identity.sourceCommitStatus,

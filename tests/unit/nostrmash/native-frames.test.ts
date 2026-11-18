@@ -65,6 +65,62 @@ describe("native Primal frames", () => {
       total_zap_count: 6,
       total_satszapped: 7,
     });
+    const statsEvent = messages?.find(
+      (message) =>
+        Array.isArray(message) &&
+        message[0] === "EVENT" &&
+        (message[2] as { kind?: number }).kind === 10000105
+    );
+    expect(Array.isArray(statsEvent) ? statsEvent[2] : null).toMatchObject({
+      synthetic: true,
+      sig: "",
+    });
+  });
+
+  it("does not treat an empty stats object as a profile", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          pubkey: PUBKEY,
+          profile: null,
+          stats: { follower_count: 0, following_count: 0 },
+        })
+      )
+    );
+    expect(
+      await tryNativePrimalFrames("user_profile", { pubkey: PUBKEY })
+    ).toBeNull();
+  });
+
+  it("keeps the requested pubkey casing on a profile batch", async () => {
+    const pubkey = "A".repeat(64);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          profiles: [
+            {
+              pubkey: pubkey.toLowerCase(),
+              metadata_event_id: "c".repeat(64),
+              metadata_created_at: 3,
+              profile: { display_name: "Ada" },
+            },
+          ],
+        })
+      )
+    );
+    const messages = await tryNativePrimalFrames("user_infos", {
+      pubkeys: [pubkey],
+    });
+    const event = messages?.find(
+      (message) => Array.isArray(message) && message[0] === "EVENT"
+    );
+    expect(
+      Array.isArray(event)
+        ? (event[2] as { pubkey?: string }).pubkey
+        : undefined
+    ).toBe(pubkey);
   });
 
   it("leaves zapped threads on the Primal fallback", async () => {

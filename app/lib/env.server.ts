@@ -9,8 +9,18 @@
  *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
  */
 
-import { resolveNostrPublisherBackend } from "~/infra/publishers/publisher-backend";
-import type { NostrPublisherBackend } from "~/infra/publishers/publisher-backend";
+import { primalSocketConfigError } from "~/infra/nostr-read/endpoints";
+import {
+  readBackendSelectionError,
+  resolveNostrReadBackend,
+  validateNostrMashWsUrl,
+  validateReadTimeoutMs,
+  type NostrReadBackend,
+} from "~/infra/nostr-read/read-backend";
+import {
+  resolveNostrPublisherBackend,
+  type NostrPublisherBackend,
+} from "~/infra/publishers/publisher-backend";
 import { productionSecretErrors } from "~/lib/production-secrets.server";
 import {
   safeConsoleError,
@@ -27,6 +37,13 @@ interface EnvConfig {
    * until this is set. Self-hosted installs default to `internal`.
    */
   NOSTR_PUBLISHER_BACKEND: NostrPublisherBackend;
+  /**
+   * `internal` reads inside this process.
+   * `legacy_http` posts to an HTTP cache proxy.
+   * `legacy_ws` uses direct Primal sockets and is not settable. It is the
+   * hosted default when `PRIMAL_CACHING_URL` is unset or is a WebSocket list.
+   */
+  NOSTR_READ_BACKEND: NostrReadBackend;
   /** Required when NOSTR_PUBLISHER_BACKEND is `http`. */
   NOSTR_PUBLISHER_URL?: string;
   NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production HTTP mode unless the publisher is explicitly public
@@ -62,6 +79,10 @@ interface EnvConfig {
   POST_ANALYTICS_BATCH_SIZE?: string;
   /** Concurrent NostrMash calls inside one sweep. Defaults to 4. */
   POST_ANALYTICS_CONCURRENCY?: string;
+  /** NostrMash Primal-compatible socket. Default wss://api.nostrmash.com/primal/ws/v1. */
+  NOSTRMASH_WS_URL?: string;
+  /** Whole in-process read budget in milliseconds. Default 15000. */
+  NOSTR_READ_TIMEOUT_MS?: string;
   /** HTTP Primal proxy: per-attempt timeout ms (default 8000). */
   PRIMAL_HTTP_TIMEOUT_MS?: string;
   /** HTTP Primal proxy: extra retries after first attempt (default 0). */
@@ -266,11 +287,15 @@ function validateStorageVariables(
   return [];
 }
 
-function buildBaseConfig(publisherBackend: NostrPublisherBackend): EnvConfig {
+function buildBaseConfig(
+  publisherBackend: NostrPublisherBackend,
+  readBackend: NostrReadBackend
+): EnvConfig {
   return {
     DATABASE_URL: process.env["DATABASE_URL"]!,
     SESSION_SECRET: process.env["SESSION_SECRET"]!,
     NOSTR_PUBLISHER_BACKEND: publisherBackend,
+    NOSTR_READ_BACKEND: readBackend,
     NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"],
     REDIS_URL: process.env["REDIS_URL"]!,
   };
@@ -290,10 +315,12 @@ function addOptionalStorageConfig(
 
 function addOptionalConfig(config: EnvConfig): void {
   const optionalVars: Array<
-    Exclude<keyof EnvConfig, "NOSTR_PUBLISHER_BACKEND">
+    Exclude<keyof EnvConfig, "NOSTR_PUBLISHER_BACKEND" | "NOSTR_READ_BACKEND">
   > = [
     "PRIMAL_CACHING_URL",
     "NOSTRMASH_BASE_URL",
+    "NOSTRMASH_WS_URL",
+    "NOSTR_READ_TIMEOUT_MS",
     "NOSTRMASH_API_TOKEN",
     "POST_ANALYTICS_INTERVAL_MINUTES",
     "POST_ANALYTICS_BATCH_SIZE",
@@ -424,6 +451,11 @@ function validateAndGetEnv(): EnvConfig {
     configured: process.env["NOSTR_PUBLISHER_BACKEND"],
     selfHosted: process.env["SELF_HOSTED"],
   });
+  const readBackend = resolveNostrReadBackend({
+    configured: process.env["NOSTR_READ_BACKEND"],
+    primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
+    selfHosted: process.env["SELF_HOSTED"],
+  });
   if (
     process.env["E2E_TEST"] === "true" &&
     (!publisherBackend.ok || publisherBackend.backend === "http")
@@ -470,6 +502,35 @@ function validateAndGetEnv(): EnvConfig {
     }
   }
 
+  const readSelectionError = readBackendSelectionError({
+    configured: process.env["NOSTR_READ_BACKEND"],
+    primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
+    selfHosted: process.env["SELF_HOSTED"],
+  });
+  if (readSelectionError) invalid.push(readSelectionError);
+  const mashWsError = validateNostrMashWsUrl(process.env["NOSTRMASH_WS_URL"]);
+  if (mashWsError) {
+    invalid.push({ key: "NOSTRMASH_WS_URL", reason: mashWsError });
+  }
+  const readTimeoutError = validateReadTimeoutMs(
+    process.env["NOSTR_READ_TIMEOUT_MS"]
+  );
+  if (readTimeoutError) {
+    invalid.push({
+      key: "NOSTR_READ_TIMEOUT_MS",
+      reason: readTimeoutError,
+    });
+  }
+  if (readBackend.ok) {
+    const socketError = primalSocketConfigError(
+      process.env["PRIMAL_CACHING_URL"],
+      readBackend.backend !== "legacy_http"
+    );
+    if (socketError) {
+      invalid.push({ key: "PRIMAL_CACHING_URL", reason: socketError });
+    }
+  }
+
   // Validate storage variables: if any is set, all must be set
   const storageMissing = validateStorageVariables(storageVariables);
   missing.push(...storageMissing);
@@ -495,9 +556,12 @@ function validateAndGetEnv(): EnvConfig {
   if (!publisherBackend.ok) {
     throw new Error("NOSTR_PUBLISHER_BACKEND is invalid");
   }
+  if (!readBackend.ok) {
+    throw new Error("NOSTR_READ_BACKEND is invalid");
+  }
 
   // Build typed config object
-  const config = buildBaseConfig(publisherBackend.backend);
+  const config = buildBaseConfig(publisherBackend.backend, readBackend.backend);
 
   // Check if all storage variables are set
   const storageValues = storageVariables.map((key) => process.env[key]);
@@ -510,6 +574,7 @@ function validateAndGetEnv(): EnvConfig {
   addOptionalConfig(config);
 
   safeConsoleLog(`Nostr publisher backend: ${publisherBackend.backend}`);
+  safeConsoleLog(`Nostr read backend: ${readBackend.backend}`);
   if (
     publisherBackend.backend === "internal" &&
     process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] === "true"
