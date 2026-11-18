@@ -129,6 +129,14 @@ curl -fsS http://localhost:3000/healthcheck
 A 200 means the app reached Postgres. It does not mean storage, Lightning, or a public relay is
 configured.
 
+## Pinned tag
+
+`node scripts/self-host-clean-room.mjs` checks this checkout's Node and pnpm against `package.json`.
+It does not clone a tag. `--migrate` runs only when both URLs are loopback.
+
+The published tag is `v1.0.0-beta.1` at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Check that
+commit out explicitly. `main` is newer and is not that release.
+
 ## What this does not prove
 
 - A browser extension signed the smoke event. The smoke signs with `nostr-tools` so the job path can
