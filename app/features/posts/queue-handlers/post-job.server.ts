@@ -169,6 +169,42 @@ export async function processPost(
 // transitionPostToFailed (internal)
 // ---------------------------------------------------------------------------
 
+/**
+ * A retryable failure has to leave the row in SCHEDULED. The next attempt
+ * enters through SCHEDULED -> PUBLISHING, and PUBLISHING -> PUBLISHING is
+ * not a legal transition. FAILED -> SCHEDULED is the allowed way back.
+ */
+async function requeueScheduledPostForRetry(input: {
+  postId: string;
+  userId: string;
+  errorMessage: string;
+  lockId?: string | null;
+}): Promise<void> {
+  const currentPost = await findPostUnique(
+    { id: input.postId },
+    { select: { currentState: true } }
+  );
+  const currentState = currentPost?.currentState;
+  if (currentState !== "PUBLISHING" && currentState !== "FAILED") return;
+
+  const stateMachine = new PostStateMachine();
+  if (currentState === "PUBLISHING") {
+    await transitionPostToFailed({
+      stateMachine,
+      postId: input.postId,
+      userId: input.userId,
+      errorMessage: input.errorMessage,
+      lockId: input.lockId,
+    });
+  }
+  await stateMachine.transition(
+    input.postId,
+    input.userId,
+    "SCHEDULED",
+    "Publish will be retried"
+  );
+}
+
 async function transitionPostToFailed(input: {
   stateMachine: PostStateMachine;
   postId: string;
@@ -301,14 +337,23 @@ export async function handleScheduledPostJobError(input: {
   }
 
   try {
-    const stateMachine = new PostStateMachine();
-    await transitionPostToFailed({
-      stateMachine,
-      postId,
-      userId,
-      errorMessage: `Publish failed: ${err.message}`,
-      lockId,
-    });
+    if (willRetry) {
+      await requeueScheduledPostForRetry({
+        postId,
+        userId,
+        errorMessage: `Publish failed: ${err.message}`,
+        lockId,
+      });
+    } else {
+      const stateMachine = new PostStateMachine();
+      await transitionPostToFailed({
+        stateMachine,
+        postId,
+        userId,
+        errorMessage: `Publish failed: ${err.message}`,
+        lockId,
+      });
+    }
   } catch (stateError) {
     logError(
       stateError instanceof Error ? stateError : new Error(String(stateError)),

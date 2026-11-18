@@ -46,6 +46,7 @@ export function gitCommit(rev) {
   try {
     return execFileSync("git", ["rev-parse", "--verify", `${rev}^{commit}`], {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
     return null;
@@ -254,7 +255,7 @@ export function emptyReleaseRecord(version) {
       component(
         "publisher",
         "smartflowsocial/smartflowsocial-publisher",
-        "required-for-relay-delivery"
+        "optional"
       ),
       component(
         "blossom",

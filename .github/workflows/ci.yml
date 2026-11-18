@@ -91,6 +91,9 @@ jobs:
       - name: Check the published release manifest
         run: node scripts/release-manifest.mjs
 
+      - name: Check the unpublished beta.2 release record
+        run: node scripts/release-record.mjs --check docs/releases/v1.0.0-beta.2.manifest.json
+
       - name: ESLint
         run: pnpm lint:ci
 
@@ -262,6 +265,55 @@ jobs:
 
             [Run details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
+  nostr-paths:
+    name: Internal Nostr paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      REDIS_URL: redis://127.0.0.1:6379
+      CLEAN_ROOM_REDIS: isolated
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 17
+          database: smartflow_test
+          user: postgres
+
+      - name: Push Prisma schema
+        run: pnpm exec prisma db push
+
+      - name: Local relay publishing integration
+        run: pnpm test:relay-publish
+
+      - name: Nostr read cache tests
+        run: pnpm exec vitest run tests/unit/nostr-read-backend.test.ts tests/unit/nostr-read-policy.test.ts tests/unit/nostr-read-socket.test.ts tests/unit/nostr-read-service.test.ts tests/integration/services/nostr-read-cache.test.ts
+
   migrate:
     name: Clean install migrations
     runs-on: ubuntu-latest
@@ -369,19 +421,20 @@ jobs:
             --env REDIS_URL=redis://host.docker.internal:6379 \
             --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
             --env CRON_SECRET=test-cron-secret-very-long-and-secure-32-chars \
-            --env NOSTR_PUBLISHER_BACKEND=http \
-            --env NOSTR_PUBLISHER_URL=http://127.0.0.1:9/publish \
-            --env NOSTR_PUBLISHER_API_TOKEN=test-publisher-token \
+            --env SELF_HOSTED=true \
+            --env NOSTR_PUBLISHER_BACKEND=internal \
+            --env NOSTR_READ_BACKEND=internal \
             smartflowsocial:ci
           for _ in $(seq 1 60); do
-            if curl --silent --show-error --fail --max-time 5 --dump-header /tmp/health-headers http://127.0.0.1:3000/healthcheck; then
+            if curl --silent --show-error --fail --max-time 5 --dump-header /tmp/health-headers --header 'accept: application/json' --output /tmp/health.json http://127.0.0.1:3000/healthcheck; then
               echo
               reported="$(awk 'tolower($1)=="x-source-commit:" { print $2 }' /tmp/health-headers | tr -d '\r')"
               if [ "$reported" != "${{ github.sha }}" ]; then
                 echo "image reported source commit '$reported'"
                 exit 1
               fi
-              echo "healthcheck ok source=$reported"
+              node -e 'const body=require("/tmp/health.json"); if (body.publisherBackend!=="internal" || body.nostrReadBackend!=="internal") { console.error(body); process.exit(1); }'
+              echo "healthcheck ok source=$reported backends=internal"
               exit 0
             fi
             if ! docker inspect --format '{{.State.Running}}' smartflow-ci | grep -qx true; then

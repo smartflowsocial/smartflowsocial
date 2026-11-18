@@ -68,19 +68,26 @@ event.
 
 ## Staging
 
-This repository has no staging deploy workflow, staging host, or staging credentials. CI builds the
-production image and health-checks it with `NOSTR_PUBLISHER_BACKEND=http`. Do not invent a staging
-target and do not point this change at production.
+CI builds the production image and health-checks it with `NOSTR_PUBLISHER_BACKEND=internal`. That
+proves the image boots. It does not prove a relay accepted an event.
 
-When a staging process exists, set only that process to:
+Read the running web process before changing it:
 
-```env
-NOSTR_PUBLISHER_BACKEND=internal
+```bash
+curl -fsS -H 'accept: application/json' https://app.smartflow.social/healthcheck
+curl -fsS -H 'accept: application/json' https://staging.smartflow.social/healthcheck
 ```
 
-Leave the publisher URL and token unset there. Leave hosted production on `http` with its current
-URL and token. Do not publish the same real user event through both backends. Use a disposable key
-and either a loopback relay or a handful of harmless public events.
+On 18 November 2026 the production web process reported commit
+`1dcf61c729635a5e7375a2d588462fba7a2e0ea4` with `publisherBackend` and `nostrReadBackend` both
+`internal`. Staging reported `0a6c87aa86f107968fa18ebf0b7c9316bca9c3cc` with the same backends.
+Those two commits have the same tree. The JSON names the web process. Confirm the worker in the host
+before treating the cutover as complete, and do not retire the legacy publisher until that worker
+has been observed.
+
+Rollback is `NOSTR_PUBLISHER_BACKEND=http` plus the previous URL and token, then restart both
+processes. Do not change the publisher and the read backend in the same step when leaving a
+known-good state. Use a disposable key for a publish test.
 
 Checks before any production change:
 

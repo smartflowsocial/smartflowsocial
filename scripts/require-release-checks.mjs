@@ -12,6 +12,7 @@ import {
   APP_REQUIRED_CHECKS,
   PUBLISHER_REQUIRED_CHECKS,
   evaluateRequiredChecks,
+  publisherReleasePlan,
   releaseInputErrors,
 } from "./release-checks.mjs";
 
@@ -68,9 +69,14 @@ function report(label, failures) {
 }
 
 async function main() {
+  const publisherPlan = publisherReleasePlan({
+    publisherMode: process.env.PUBLISHER_MODE,
+    publisherSha: process.env.PUBLISHER_SHA,
+  });
   const inputErrors = releaseInputErrors({
     candidateSha: process.env.CANDIDATE_SHA,
     publisherSha: process.env.PUBLISHER_SHA,
+    publisherMode: process.env.PUBLISHER_MODE,
     ownerApproval: process.env.OWNER_APPROVAL,
     headSha: process.argv.includes("--expect-head") ? headSha() : undefined,
     expectHead: process.argv.includes("--expect-head"),
@@ -81,18 +87,24 @@ async function main() {
   }
 
   const candidate = process.env.CANDIDATE_SHA;
-  const publisher = process.env.PUBLISHER_SHA;
-  const [appRuns, publisherRuns] = await Promise.all([
-    checkRuns(APP_REPOSITORY, candidate),
-    checkRuns(PUBLISHER_REPOSITORY, publisher),
-  ]);
+  const appRuns = await checkRuns(APP_REPOSITORY, candidate);
   const appFailures = evaluateRequiredChecks(appRuns, APP_REQUIRED_CHECKS);
-  const publisherFailures = evaluateRequiredChecks(
-    publisherRuns,
-    PUBLISHER_REQUIRED_CHECKS
-  );
   report(`${APP_REPOSITORY}@${candidate}`, appFailures);
-  report(`${PUBLISHER_REPOSITORY}@${publisher}`, publisherFailures);
+  /** @type {Array<{ name: string, result: string }>} */
+  let publisherFailures = [];
+  if (publisherPlan.mode === "http") {
+    const publisher = process.env.PUBLISHER_SHA;
+    const publisherRuns = await checkRuns(PUBLISHER_REPOSITORY, publisher);
+    publisherFailures = evaluateRequiredChecks(
+      publisherRuns,
+      PUBLISHER_REQUIRED_CHECKS
+    );
+    report(`${PUBLISHER_REPOSITORY}@${publisher}`, publisherFailures);
+  } else {
+    console.log(
+      "internal publisher: external HTTP publisher checks are not required for this release"
+    );
+  }
   if (appFailures.length > 0 || publisherFailures.length > 0) {
     process.exit(1);
   }

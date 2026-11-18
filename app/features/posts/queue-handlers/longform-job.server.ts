@@ -145,6 +145,41 @@ async function transitionLongFormPostToFailed(input: {
   );
 }
 
+/**
+ * The next attempt starts at SCHEDULED. Leaving the row in PUBLISHING makes
+ * that attempt fail its own PUBLISHING transition before it can publish.
+ */
+async function requeueLongFormAfterRetryableFailure(input: {
+  postId: string;
+  userId: string;
+  errorMessage: string;
+  lockId?: string | null;
+}): Promise<void> {
+  const currentPost = await findLongFormPostUnique(
+    { id: input.postId },
+    { select: { currentState: true } }
+  );
+  const currentState = currentPost?.currentState;
+  if (currentState !== "PUBLISHING" && currentState !== "FAILED") return;
+
+  const stateMachine = new LongFormPostStateMachine();
+  if (currentState === "PUBLISHING") {
+    await transitionLongFormPostToFailed({
+      stateMachine,
+      postId: input.postId,
+      userId: input.userId,
+      errorMessage: input.errorMessage,
+      lockId: input.lockId,
+    });
+  }
+  await stateMachine.transition(
+    input.postId,
+    input.userId,
+    "SCHEDULED",
+    "Publish will be retried"
+  );
+}
+
 // ---------------------------------------------------------------------------
 // handleScheduledLongFormPostJobError (export)
 // ---------------------------------------------------------------------------
@@ -167,6 +202,26 @@ export async function handleScheduledLongFormPostJobError(input: {
 
   if (willRetry) {
     recordJobRetry(queueName);
+    try {
+      await requeueLongFormAfterRetryableFailure({
+        postId,
+        userId,
+        errorMessage: `Publish failed: ${err.message}`,
+        lockId,
+      });
+    } catch (stateError) {
+      logError(
+        stateError instanceof Error
+          ? stateError
+          : new Error(String(stateError)),
+        {
+          postId,
+          userId,
+          correlationId,
+          message: "Failed to requeue long-form post after a retryable failure",
+        }
+      );
+    }
   }
 
   recordJobMetrics(queueName, duration, false, err);

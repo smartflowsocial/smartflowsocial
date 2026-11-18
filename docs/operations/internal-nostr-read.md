@@ -128,24 +128,20 @@ the selected reader. It does not prove an upstream answered.
 This repository has no staging deploy workflow, staging host, or staging credentials. Do not invent
 a target and do not point this change at production.
 
-When a staging process exists, set only that process to:
-
-```env
-NOSTR_READ_BACKEND=internal
-```
-
-Unset an HTTP `PRIMAL_CACHING_URL` on that process. Leave `NOSTRMASH_BASE_URL` and
-`NOSTRMASH_API_TOKEN` as they are. Leave hosted production on its current HTTP proxy URL and do not
-set `NOSTR_READ_BACKEND` there.
-
-Confirm the staging process before comparing traffic:
+Confirm the running process before comparing traffic:
 
 ```bash
-curl -sH 'accept: application/json' https://staging.example/healthcheck
+curl -fsS -H 'accept: application/json' https://staging.smartflow.social/healthcheck
+curl -fsS -H 'accept: application/json' https://app.smartflow.social/healthcheck
 ```
 
-`nostrReadBackend` must be `internal`. Then compare the same accounts against production, which
-should still report `legacy_http` or `legacy_ws`.
+`nostrReadBackend` names the web process. On 18 November 2026 staging and production both reported
+`internal`. That does not prove the worker process, and it does not prove an upstream read. Compare
+the same accounts on both hosts. An empty page is valid only when the upstream finished. An upstream
+failure must not be stored as an empty result.
+
+Rollback is `NOSTR_READ_BACKEND=legacy_http` and the previous HTTP `PRIMAL_CACHING_URL`, then
+restart. Do not change the read backend and the publisher in the same step.
 
 Checks before any production change:
 
@@ -231,7 +227,8 @@ Do this only after the owner accepts the production observation window.
 
 ## What is still external
 
-Removing the worker does not make reads independent of the network. The default internal reader
-still asks NostrMash and the public Primal caches. An operator can replace either with their own
-base URL and socket list. Direct relay reads remain a separate path, used for mention fallback and
-for publishing. They are not a full replacement for indexed profiles, threads, and notifications.
+Removing the worker does not make reads independent of the network. Self-hosting this application
+does not mean you are operating an independent Nostr indexer. The default internal reader still asks
+NostrMash and the public Primal caches. An operator can replace either with their own base URL and
+socket list. Direct relay reads remain a separate path, used for mention fallback and for
+publishing. They are not a full replacement for indexed profiles, threads, and notifications.

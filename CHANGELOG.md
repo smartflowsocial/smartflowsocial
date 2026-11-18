@@ -12,9 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ### Added
 
 - An in-process Nostr publisher. `SELF_HOSTED=true` uses it without Cloudflare, a publisher URL, or
-  a publisher token. `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP publisher. Hosted
-  production stays on that HTTP publisher until an explicit cutover. See
-  [Internal Nostr publisher](docs/operations/internal-nostr-publisher.md).
+  a publisher token. `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP publisher. There is no
+  automatic failover. See [Internal Nostr publisher](docs/operations/internal-nostr-publisher.md).
+- A retryable publish failure returns the scheduled note or long-form post to `SCHEDULED`, so the
+  worker can try again. A negative relay acknowledgement stays `FAILED`.
+- `pnpm test:self-host-acceptance` boots the production server and worker and publishes a signed
+  note to a loopback relay without a Cloudflare publisher or cache worker.
+- Release validation defaults to the internal publisher. `publisher_mode=http` still requires the
+  external publisher commit and its checks.
 
 ## [1.0.0-beta.1] - 2026-11-18
 
