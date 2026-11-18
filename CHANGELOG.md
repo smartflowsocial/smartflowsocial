@@ -9,11 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
-## [1.0.0-beta.1] - 2026-11-17
+## [1.0.0-beta.1] - 2026-11-18
 
 First coordinated open-source prerelease. SmartFlowSocial was already in open beta before this
-repository was public. This is not a first launch, and it is not a stable `1.0.0`. Notes:
-[docs/releases/v1.0.0-beta.1.md](docs/releases/v1.0.0-beta.1.md). The tag is not published.
+repository was public. This is not a first launch, and it is not a stable `1.0.0`. The GitHub
+Release and tag `v1.0.0-beta.1` were published on 18 November 2026 at commit
+`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Notes:
+[docs/releases/v1.0.0-beta.1.md](docs/releases/v1.0.0-beta.1.md). The tagged copy of those notes
+still says the tag was unpublished. That wording was corrected on `main` and the tag was not moved.
 `v0.1.0-alpha.0` and the withdrawn `v1.0.0` came from an earlier repository and are not supported
 releases of this one.
 

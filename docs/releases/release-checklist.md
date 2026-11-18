@@ -1,8 +1,61 @@
 # Release checklist
 
-Use this for the `1.0.0-beta.1` prerelease. A green CI run is not the whole gate. Leave a box
-unchecked until that command has been run on the commit you intend to tag. Do not mark a live
-website, a production deploy, or a legal review as done from a source change.
+`v1.0.0-beta.1` is already a published GitHub prerelease. The tag is
+`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Do not move the tag. Do not create a second release to
+correct the description. Replace the description of the existing release with
+[v1.0.0-beta.1.github-release.md](./v1.0.0-beta.1.github-release.md).
+
+A green CI run on `main`, or on any commit other than the candidate, is not evidence for that
+candidate. Leave a box unchecked until that command has been run on the commit you intend to tag. Do
+not mark a live website, a production deploy, or a legal review as done from a source change.
+
+## Published v1.0.0-beta.1
+
+- [x] Tag `v1.0.0-beta.1` points at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`
+- [x] GitHub Release `v1.0.0-beta.1` is a prerelease, published 2026-11-18T07:02:25Z
+- [x] Required checks on that commit later completed successfully. `Tests & Coverage` finished at
+      07:04:30Z, after publication. That order is not acceptable for the next release
+- [ ] The GitHub Release description is replaced with the corrected notes. The tagged commit still
+      contains the pre-publication wording
+- [ ] Production and staging SHAs are read from the running services and recorded with
+      `productionShaStatus: verified-from-running-service`. They are unknown today
+- [ ] Companion release SHAs are recorded only for commits that were actually validated with this
+      application tag. They are unknown today
+
+## Next release
+
+Run the Release validation workflow on the candidate commit after
+`.github/workflows/release-validation.yml` is on the default branch. The workflow checks out that
+SHA and requires the checks below to be `success` on that SHA. Pending, failed, and skipped required
+checks fail the run. It does not publish a release and it does not deploy.
+
+Type `approve-release` only when you mean to record owner approval. Configure the `release-approval`
+GitHub environment with required reviewers so the typed phrase is not the only gate.
+
+Required on the application SHA:
+
+- Lint, Format & Type Check
+- Tests & Coverage
+- Clean install migrations
+- Build & Bundle Budget
+- Docker image boots
+- E2E Smoke
+- Gitleaks
+- Production CSP smoke, executed by the release workflow against that SHA
+
+Required on the publisher SHA you pass in, which must be the publisher commit you are shipping:
+
+- Lint & Type Check
+- Unit Tests
+- Integration Tests
+- Property-Based Tests
+- Chaos Tests
+- Security Tests
+- Worker execution
+- Test Summary
+- Gitleaks
+
+E2E Core stays optional. A skipped optional job does not satisfy a required name.
 
 ## Automated
 
@@ -64,11 +117,12 @@ website, a production deploy, or a legal review as done from a source change.
 - [ ] The operator ran one controlled NWC reconciliation against a wallet they control
 - [ ] The tag is created by the owner. This file does not create it
 
-## Not part of the engineering pass
+## Still not done by a source change
 
-- Creating or pushing `v1.0.0-beta.1`
-- Publishing a GitHub Release
-- Deploying production
+- Replacing the published GitHub Release description
+- Deploying production or staging
 - Changing production Cloudflare resources
+- Recording a deployment SHA from a running process
 - Rotating secrets
 - Sending a mainnet Lightning payment
+- Moving or recreating `v1.0.0-beta.1`
