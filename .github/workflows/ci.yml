@@ -88,6 +88,9 @@ jobs:
             The subject "{subject}" found in the pull request title "{title}"
             must not start with an uppercase character.
 
+      - name: Check the published release manifest
+        run: node scripts/release-manifest.mjs
+
       - name: ESLint
         run: pnpm lint:ci
 

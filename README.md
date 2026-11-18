@@ -11,11 +11,13 @@ The same code is the hosted service and a self-hosted install. There is no priva
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
 [Unlicense](LICENSE).
 
-**SmartFlowSocial v1 — Now Open Source.** `package.json` is `1.0.0-beta.1`, a prerelease. It is the
-first coordinated open-source release candidate, not a claim that the service just launched and not
-a stable `1.0.0`. Notes are in [docs/releases/v1.0.0-beta.1.md](./docs/releases/v1.0.0-beta.1.md).
-The tag is not published. `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were published from an earlier
-repository. Neither is a supported version of this repository.
+**SmartFlowSocial v1 — Now Open Source.** `package.json` is `1.0.0-beta.1`, a published prerelease.
+It is not a claim that the service just launched and not a stable `1.0.0`. The git tag
+[`v1.0.0-beta.1`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.1) is
+commit `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. `main` is newer than that tag. Notes are in
+[docs/releases/v1.0.0-beta.1.md](./docs/releases/v1.0.0-beta.1.md). `v0.1.0-alpha.0` and a withdrawn
+`v1.0.0` were published from an earlier repository. Neither is a supported version of this
+repository.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
@@ -70,9 +72,13 @@ signed event reaches a loopback relay. `pnpm smoke:publish` stops at a signature
 `pnpm test:relay-publish` delivers the event. The Cloudflare Worker itself is `pnpm test:worker` in
 the publisher repository.
 
+`main` includes commits made after the published prerelease. Node.js 26.13.1 or newer and pnpm
+12.21.0. Uncomment the checkout to build the tagged source instead of `main`.
+
 ```bash
 git clone https://github.com/smartflowsocial/smartflowsocial.git
 cd smartflowsocial
+# git checkout v1.0.0-beta.1
 pnpm install
 cp example.env .env
 pnpm docker

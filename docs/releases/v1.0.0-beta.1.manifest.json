@@ -1,58 +1,103 @@
 {
   "version": "1.0.0-beta.1",
-  "status": "prerelease-candidate",
-  "tagPublished": false,
+  "status": "published-prerelease",
+  "tag": "v1.0.0-beta.1",
+  "tagPublished": true,
+  "publishedAt": "2026-11-18T07:02:25Z",
+  "applicationReleaseSha": "9b1e08cf9a8cf381b640d26c26277e2b0c5ad169",
   "productionDeployed": false,
-  "shaPolicy": "This file names repositories and branches. It does not store the commit that contains it, a release tag, or a production deployment. Resolve those with node scripts/release-manifest.mjs --online when the tag is cut. A printed SHA is an observation, not a claim that production runs it.",
+  "shaPolicy": "applicationReleaseSha is the immutable git tag v1.0.0-beta.1. It is not the commit that contains this file and it is not a production deployment. A companion releaseSha stays null until that repository's tag, or the exact commit validated with this release, is recorded. productionSha stays null until it is read from the running service. A green GitHub Actions run is not a production SHA. Do not copy a branch tip into this file.",
   "components": [
     {
       "name": "app",
       "repository": "smartflowsocial/smartflowsocial",
+      "role": "required",
       "branch": "main",
-      "releaseSha": null,
-      "productionSha": null
+      "releaseSha": "9b1e08cf9a8cf381b640d26c26277e2b0c5ad169",
+      "releaseShaStatus": "git-tag",
+      "validationStatus": "checks-finished-after-publication",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "publisher",
       "repository": "smartflowsocial/smartflowsocial-publisher",
+      "role": "required-for-relay-delivery",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "blossom",
       "repository": "smartflowsocial/smartflowsocial-blossom",
+      "role": "optional",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "blastr",
       "repository": "smartflowsocial/smartflowsocial-blastr",
+      "role": "optional",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "cache-worker",
       "repository": "smartflowsocial/smartflowsocial-cache-worker",
+      "role": "optional",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "organization-profile",
       "repository": "smartflowsocial/.github",
+      "role": "optional",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     },
     {
       "name": "landing",
       "repository": "smartflowsocial/smartflowsocial-landing",
+      "role": "optional",
       "branch": "main",
       "releaseSha": null,
-      "productionSha": null
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
     }
   ]
 }

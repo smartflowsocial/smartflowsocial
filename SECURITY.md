@@ -2,8 +2,9 @@
 
 ## Supported Versions
 
-The supported line is the default branch. `package.json` is `1.0.0-beta.1`. That is a prerelease.
-The tag is not published until the owner creates it. It is not a stable `1.0.0`.
+The supported line is the default branch. `package.json` is `1.0.0-beta.1`. The git tag
+`v1.0.0-beta.1` is a published prerelease at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. It is not a
+stable `1.0.0`, and security fixes are not backported onto it.
 
 `v0.1.0-alpha.0` was published from an earlier repository, and so was a `v1.0.0` release that was
 withdrawn on the day it was published, 14 November 2026. The changelog also has an older `1.0.0`
