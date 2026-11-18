@@ -31,8 +31,7 @@ export function usePollTally(
   const genRef = useRef(0);
 
   useEffect(() => {
-    /* Reset when poll/relays change; sync setState primes UI before relay callbacks fire. */
-    /* eslint-disable react-hooks/set-state-in-effect -- reset tally state when poll subscription input changes */
+    // Reset when poll/relays change; sync setState primes UI before relay callbacks fire.
     if (!poll || !enabled || poll.relayUrls.length === 0) {
       setEvents([]);
       setLoading(false);
@@ -42,7 +41,6 @@ export function usePollTally(
     const gen = ++genRef.current;
     setEvents([]);
     setLoading(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
 
     const pool = new SimplePool();
     const relays = poll.relayUrls;

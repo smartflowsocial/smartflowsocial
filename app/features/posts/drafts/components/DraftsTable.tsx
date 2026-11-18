@@ -197,7 +197,6 @@ export function DraftsTable({
     postToCombinedContent(post as unknown as PostData)
   );
 
-  /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual exposes unstable function refs; virtualization is intentional */
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>

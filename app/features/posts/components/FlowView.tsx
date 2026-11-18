@@ -182,7 +182,6 @@ const FlowViewInner = forwardRef<FlowViewHandle, FlowViewProps>(
     }, [flowItems, firstFutureIndex, hasMorePast, hasMoreFuture, cardSlotSize]);
 
     // TanStack Virtual returns unstable refs; React Compiler skips this component by design.
-    // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer API
     const rowVirtualizer = useVirtualizer({
       count: slots.length,
       getScrollElement: () => scrollContainerRef.current,
