@@ -98,7 +98,8 @@ Edit `.env` with your configuration:
 DATABASE_URL=your_database_connection_string
 SESSION_SECRET=your_random_session_secret
 NOSTR_PUBLISHER_URL=https://your-publisher-instance.com
-PRIMAL_CACHING_URL=https://your-primal-caching-instance.com # optional
+# Optional custom Primal sockets. Leave empty to use the in-process reader.
+# PRIMAL_CACHING_URL=wss://cache.example.com/v1
 STORAGE_ACCESS_KEY=your_s3_key
 STORAGE_SECRET=your_s3_secret
 STORAGE_REGION=your_region

@@ -89,6 +89,8 @@ Comprehensive guides organized by role and topic.
 
 - [Deployment Guide](./guides/deployment.md) - Production deployment
 - [Operations Guide](./guides/operations.md) - Monitoring and maintenance
+- [Internal Nostr read cache](./operations/internal-nostr-read.md) - Profiles, threads, and
+  fallbacks
 - [Security Guide](./guides/security.md) - Security best practices
 - [Scaling Guide](./guides/deployment.md#scaling) - Scaling strategies
 
