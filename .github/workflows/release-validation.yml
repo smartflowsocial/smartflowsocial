@@ -1,0 +1,135 @@
+# Release gate for one immutable commit.
+# Checks out candidate_sha and reads checks for that SHA only, then builds it
+# and opens it under the production CSP. Does not publish a release or deploy.
+# The release-approval environment should require a reviewer. The
+# approve-release input records that approval inside the workflow.
+name: Release validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full 40-character application commit to validate
+        required: true
+        type: string
+      publisher_sha:
+        description: Full 40-character publisher commit that must already have passing checks
+        required: true
+        type: string
+      owner_approval:
+        description: Type approve-release. This does not publish or deploy.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  checks: read
+
+concurrency:
+  group: release-validation-${{ inputs.candidate_sha }}-${{ inputs.publisher_sha }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Require release checks
+    runs-on: ubuntu-latest
+    environment: release-approval
+    timeout-minutes: 10
+    steps:
+      - name: Checkout the candidate commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 1
+
+      - name: Require successful checks for these commits
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          PUBLISHER_SHA: ${{ inputs.publisher_sha }}
+          OWNER_APPROVAL: ${{ inputs.owner_approval }}
+          APP_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/require-release-checks.mjs --expect-head
+
+  production-csp:
+    name: Production CSP smoke
+    runs-on: ubuntu-latest
+    needs: checks
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: smartflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d smartflow_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
+      REDIS_URL: redis://127.0.0.1:6379
+      SESSION_SECRET: release-csp-session-secret-32-characters-min
+      CRON_SECRET: release-csp-cron-secret-32-characters-minimum
+      NOSTR_PUBLISHER_URL: http://127.0.0.1:9/publish
+      NOSTR_PUBLISHER_API_TOKEN: release-csp-publisher-token
+      ALLOW_HYDRATION_EXCEPTIONS: "false"
+    steps:
+      - name: Checkout the candidate commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 1
+
+      - name: Confirm the checkout is the candidate
+        run: |
+          actual="$(git rev-parse HEAD)"
+          if [ "$actual" != "${{ inputs.candidate_sha }}" ]; then
+            echo "checked out $actual, expected ${{ inputs.candidate_sha }}"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Cypress binary
+        run: pnpm exec cypress install
+
+      - name: Prepare the database
+        run: pnpm exec prisma db push
+
+      - name: Build the production server
+        run: pnpm build
+
+      - name: Open the production build in a browser
+        run: pnpm exec start-server-and-test "pnpm start" http://127.0.0.1:3000 "pnpm test:e2e:production-csp"

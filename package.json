@@ -92,6 +92,7 @@
     "test:e2e:dev": "start-server-and-test \"cross-env E2E_TEST=true PORT=3000 pnpm dev\" http://localhost:3000 \"E2E_TEST=true ALLOW_HYDRATION_EXCEPTIONS=true pnpm exec cypress open\"",
     "test:e2e:run": "start-server-and-test \"cross-env E2E_TEST=true PORT=3000 pnpm dev\" http://localhost:3000 \"E2E_TEST=true ALLOW_HYDRATION_EXCEPTIONS=true pnpm exec cypress run\"",
     "test:e2e:smoke:run": "start-server-and-test \"cross-env E2E_TEST=true PORT=3000 pnpm dev\" http://localhost:3000 \"E2E_TEST=true ALLOW_HYDRATION_EXCEPTIONS=true pnpm exec cypress run --spec \\\"tests/e2e/smoke/**/*.cy.ts\\\"\"",
+    "test:e2e:production-csp": "pnpm exec cypress run --config specPattern=tests/e2e/release/production-csp.cy.ts --spec tests/e2e/release/production-csp.cy.ts",
     "typecheck": "react-router typegen && cross-env NODE_COMPILE_CACHE=./.cache/node-compile-cache ./scripts/typecheck.sh",
     "precheck": "pnpm lint && pnpm exec tsc --noEmit",
     "validate": "pnpm format:check && pnpm lint:ci && pnpm typecheck",
