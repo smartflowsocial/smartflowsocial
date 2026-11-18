@@ -145,7 +145,7 @@ export function UploadProviderSettings({
                 Primal Blossom (NOSTR)
               </label>
               <p className="text-text-secondary mt-1 text-xs">
-                primal.net · default for Free
+                primal.net · files upload to that third-party server
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 <Badge variant="default">Default for Free plan</Badge>
@@ -203,7 +203,10 @@ export function UploadProviderSettings({
                   <Badge variant="outline">Locked on Free plan</Badge>
                 </div>
                 <p className="text-text-secondary text-xs">
-                  blossom-api.smartflow.social · blossom.smartflow.social
+                  Files go to the Blossom server configured by
+                  BLOSSOM_SFS_API_URL. The hosted service uses
+                  blossom-api.smartflow.social. A self-hosted server does not
+                  contact that host unless the operator sets the URL.
                 </p>
                 {isLegacyStoredSfs ? (
                   <p className="text-text-secondary text-xs">
@@ -243,7 +246,10 @@ export function UploadProviderSettings({
                   {BRAND_BLOSSOM_LABEL} (NOSTR)
                 </label>
                 <p className="text-text-secondary mt-1 text-xs">
-                  blossom-api.smartflow.social · blossom.smartflow.social
+                  Files go to the Blossom server configured by
+                  BLOSSOM_SFS_API_URL. The hosted service uses
+                  blossom-api.smartflow.social. A self-hosted server does not
+                  contact that host unless the operator sets the URL.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <Badge variant="default">Default for paid plan</Badge>

@@ -159,10 +159,14 @@ export async function createBlossomUploader(
     ).BlossomUploader;
   if (!BlossomUploader) throw new Error("BlossomUploader not found in module");
 
+  if (provider === "BLOSSOM_SFS") {
+    throw new Error(
+      "SmartFlowSocial Blossom uploads use the URL returned by this server. This browser path does not assume a hosted Blossom server."
+    );
+  }
+
   let primaryServerUrl = "https://blossom.primal.net";
   if (provider === "BLOSSOM_BLOSSTR") primaryServerUrl = "https://blosstr.com";
-  else if (provider === "BLOSSOM_SFS")
-    primaryServerUrl = "https://blossom-api.smartflow.social";
   else if (provider === "BLOSSOM_CUSTOM" && customBlossomUrl)
     primaryServerUrl = customBlossomUrl;
   else if (provider === "BLOSSOM_CUSTOM") {

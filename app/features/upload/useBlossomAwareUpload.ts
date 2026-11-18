@@ -124,18 +124,8 @@ export function useBlossomAwareUpload() {
       );
     }
 
-    const _uploadUrl =
-      provider === "BLOSSOM_PRIMAL"
-        ? "https://blossom.primal.net/upload"
-        : provider === "BLOSSOM_SFS"
-          ? "https://blossom-api.smartflow.social/upload"
-          : provider === "BLOSSOM_BLOSSTR"
-            ? "https://blosstr.com/upload"
-            : "https://blossom.primal.net/upload";
-
-    // Note: Authentication should be handled by the upload service directly
     throw new Error(
-      "Blossom auth not implemented in useBlossomAwareUpload. Use upload.client.ts instead."
+      `Blossom auth is not implemented in useBlossomAwareUpload (${provider}). Use the upload service. It uses the server-configured Blossom URL and does not assume a hosted server.`
     );
   };
 

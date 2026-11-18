@@ -95,6 +95,18 @@ describe("issueBlossomBulkTokens uploadUrl normalization", () => {
     );
   });
 
+  it("does not call a hosted Blossom server when the URL is unset", async () => {
+    mockEnv.BLOSSOM_SFS_API_URL = undefined;
+    await expect(
+      issueBlossomBulkTokens(
+        "user-1",
+        [{ sha256: "not-a-valid-sha", size: 123, type: "image/jpeg" }],
+        { intentId: "intent-1", requestedProvider: "BLOSSOM_SFS" }
+      )
+    ).rejects.toThrow(/BLOSSOM_SFS_API_URL is not set/);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
   it("returns single /upload when BLOSSOM_SFS_API_URL is API root", async () => {
     mockEnv.BLOSSOM_SFS_API_URL = "https://blossom-api.smartflow.social";
     const result = await issueBlossomBulkTokens(
