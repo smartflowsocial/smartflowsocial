@@ -6,6 +6,7 @@ import {
   ACCOUNT_DELETE_CONFIRMATION,
   ACCOUNT_DELETE_RELAY_ACK,
 } from "~/features/user/account-data.constants";
+import { StorageCleanupUnavailableError } from "~/features/user/account-object-cleanup";
 import { action } from "~/routes/dashboard.account.delete";
 
 const mocks = vi.hoisted(() => ({
@@ -97,6 +98,19 @@ describe("account deletion route", () => {
     expect(mocks.deleteAccount.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.process.mock.invocationCallOrder[0] ?? 0
     );
+  });
+
+  it("does not delete the account when storage configuration cannot identify owned objects", async () => {
+    mocks.plan.mockRejectedValue(new StorageCleanupUnavailableError());
+
+    const response = await action(args());
+
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as { error: string };
+    expect(body.error).toContain("not deleted");
+    expect(mocks.deleteAccount).not.toHaveBeenCalled();
+    expect(mocks.process).not.toHaveBeenCalled();
+    expect(mocks.logout).not.toHaveBeenCalled();
   });
 
   it("does not delete the account when media inspection fails", async () => {

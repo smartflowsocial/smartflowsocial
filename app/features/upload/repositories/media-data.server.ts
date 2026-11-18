@@ -4,7 +4,23 @@
 
 import type { MediaAssetStatus, MediaVariantStatus } from "@prisma/client";
 
+import {
+  AccountDeletionInProgressError,
+  ownedObjectIdentityFromUrl,
+} from "~/features/user/account-object-cleanup";
+import { rememberRejectedOwnedObject } from "~/features/user/data/account-object-cleanup.server";
+import { lockAccountForWrite } from "~/features/user/data/account-write-lock.server";
 import { prisma } from "~/lib/prisma.server";
+
+function accountIsGone(error: unknown): boolean {
+  return (
+    error instanceof AccountDeletionInProgressError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: unknown }).code === "P2003")
+  );
+}
 
 // --- Media (media.server.ts)
 export async function createMedia(data: {
@@ -15,16 +31,26 @@ export async function createMedia(data: {
   mimeType?: string | null;
   provider: string;
 }) {
-  return prisma.media.create({
-    data: {
-      userId: data.userId,
-      url: data.url,
-      sha256: data.sha256 ?? null,
-      size: data.size ?? null,
-      mimeType: data.mimeType ?? null,
-      provider: data.provider,
-    },
-  });
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await lockAccountForWrite(tx, data.userId);
+      return tx.media.create({
+        data: {
+          userId: data.userId,
+          url: data.url,
+          sha256: data.sha256 ?? null,
+          size: data.size ?? null,
+          mimeType: data.mimeType ?? null,
+          provider: data.provider,
+        },
+      });
+    });
+  } catch (error) {
+    if (accountIsGone(error)) {
+      await rememberRejectedOwnedObject(data.userId, data.url);
+    }
+    throw error;
+  }
 }
 
 export async function findMediaByUserAndUrl(userId: string, url: string) {
@@ -101,8 +127,11 @@ export async function createMediaAsset(data: {
   sha256: string | null;
   sourceProvider: string;
 }) {
-  return prisma.mediaAsset.create({
-    data: { ...data, status: data.status as MediaAssetStatus },
+  return prisma.$transaction(async (tx) => {
+    await lockAccountForWrite(tx, data.userId);
+    return tx.mediaAsset.create({
+      data: { ...data, status: data.status as MediaAssetStatus },
+    });
   });
 }
 
@@ -183,18 +212,34 @@ export async function createMediaVariant(data: {
   isPrimary: boolean;
   status: string;
 }) {
-  return prisma.mediaVariant.create({
-    data: {
-      assetId: data.assetId,
-      variantKind: data.variantKind,
-      mimeType: data.mimeType ?? "",
-      bytes: data.bytes ?? 0,
-      url: data.url,
-      provider: data.provider,
-      isPrimary: data.isPrimary,
-      status: data.status as MediaVariantStatus,
-    },
-  });
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const asset = await tx.mediaAsset.findUnique({
+        where: { id: data.assetId },
+        select: { userId: true },
+      });
+      if (!asset) throw new AccountDeletionInProgressError();
+      await lockAccountForWrite(tx, asset.userId);
+      return tx.mediaVariant.create({
+        data: {
+          assetId: data.assetId,
+          variantKind: data.variantKind,
+          mimeType: data.mimeType ?? "",
+          bytes: data.bytes ?? 0,
+          url: data.url,
+          provider: data.provider,
+          isPrimary: data.isPrimary,
+          status: data.status as MediaVariantStatus,
+        },
+      });
+    });
+  } catch (error) {
+    const owner = ownedObjectIdentityFromUrl(data.url)?.userId;
+    if (accountIsGone(error) && owner) {
+      await rememberRejectedOwnedObject(owner, data.url);
+    }
+    throw error;
+  }
 }
 
 export async function updateMediaVariant(

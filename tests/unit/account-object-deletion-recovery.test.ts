@@ -118,7 +118,19 @@ vi.mock("~/lib/prisma.server", () => {
         return { count };
       },
     },
+    $queryRaw: async (query: TemplateStringsArray) => {
+      const text = Array.isArray(query) ? query.join(" ") : "";
+      if (!text.includes("deletionStartedAt")) return [];
+      return state.users.has(USER) ? [{ deletionStartedAt: null }] : [];
+    },
+    media: {
+      findMany: async () => [],
+    },
+    mediaVariant: {
+      findMany: async () => [],
+    },
     user: {
+      update: async () => ({ id: USER }),
       delete: async () => {
         state.users.delete(USER);
         if (state.failUserDelete) throw new Error("db down");

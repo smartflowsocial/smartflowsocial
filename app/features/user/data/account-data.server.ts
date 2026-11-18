@@ -7,7 +7,12 @@ import {
   ACCOUNT_DELETE_RELAY_ACK,
   FINANCIAL_RECORD_RETENTION_DAYS,
 } from "~/features/user/account-data.constants";
-import { enqueueOwnedObjectDeletions } from "~/features/user/data/account-object-cleanup.server";
+import { AccountDeletionInProgressError } from "~/features/user/account-object-cleanup";
+import {
+  enqueueOwnedObjectDeletions,
+  loadUnsharedOwnedObjectKeys,
+} from "~/features/user/data/account-object-cleanup.server";
+import { readAccountWriteLock } from "~/features/user/data/account-write-lock.server";
 import { prisma } from "~/lib/prisma.server";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -195,10 +200,23 @@ export async function deleteAccountData(
     },
   });
 
+  let removed = false;
   await prisma.$transaction(async (tx) => {
-    if (options?.ownedObjectKeys && options.ownedObjectKeys.length > 0) {
-      await enqueueOwnedObjectDeletions(tx, userId, options.ownedObjectKeys);
-    }
+    const locked = await readAccountWriteLock(tx, userId);
+    if (!locked) return;
+    if (locked.deletionStartedAt) throw new AccountDeletionInProgressError();
+    await tx.user.update({
+      where: { id: userId },
+      data: { deletionStartedAt: new Date() },
+    });
+    const discovered = await loadUnsharedOwnedObjectKeys(tx, userId);
+    const keys = [
+      ...new Set([
+        ...(options?.ownedObjectKeys ?? []),
+        ...discovered.deleteKeys,
+      ]),
+    ];
+    await enqueueOwnedObjectDeletions(tx, userId, keys);
     if (payments.length > 0) {
       await tx.retainedFinancialRecord.createMany({
         data: payments.map((payment) =>
@@ -220,8 +238,9 @@ export async function deleteAccountData(
     });
     await removeReferralDataForDeletedAccount(tx, user.npub);
     await tx.user.delete({ where: { id: userId } });
+    removed = true;
   });
-  return true;
+  return removed;
 }
 
 /**

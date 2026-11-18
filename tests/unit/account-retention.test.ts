@@ -10,7 +10,14 @@ const { mockTx, mockPrisma, calls } = vi.hoisted(() => {
     };
 
   const mockTx = {
-    $queryRaw: vi.fn(record("lock", [])),
+    $queryRaw: vi.fn(async (query: TemplateStringsArray) => {
+      calls.push("lock");
+      const text = Array.isArray(query) ? query.join(" ") : "";
+      if (text.includes("deletionStartedAt")) {
+        return [{ deletionStartedAt: null }];
+      }
+      return [];
+    }),
     $executeRaw: vi.fn(record("scrubText", 0)),
     retainedFinancialRecord: {
       createMany: vi.fn(record("retainPayments")),
@@ -28,7 +35,14 @@ const { mockTx, mockPrisma, calls } = vi.hoisted(() => {
     referralPayoutAuditLog: {
       updateMany: vi.fn(record("blankAuditKeys")),
     },
+    media: {
+      findMany: vi.fn(async () => []),
+    },
+    mediaVariant: {
+      findMany: vi.fn(async () => []),
+    },
     user: {
+      update: vi.fn(record("markDeleting", {})),
       delete: vi.fn(record("deleteUser", {})),
     },
   };

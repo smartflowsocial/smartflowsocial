@@ -4,48 +4,56 @@ import { createS3Client } from "~/features/upload/s3.server";
 import {
   classifyOwnedObjectDeletionError,
   isSafeAccountObjectKey,
-  ownedAccountObjectKey,
+  ownedKeyEmbeddedInPath,
   ownedObjectDeletionIdempotencyKey,
-  planOwnedObjectDeletion,
+  planAccountObjectCleanup,
+  StorageCleanupUnavailableError,
   transitionOwnedObjectDeletion,
   type ObjectDeletionPlan,
   type OwnedObjectDeletionStatusName,
 } from "~/features/user/account-object-cleanup";
 import { env } from "~/lib/env.server";
 import { logError, logInfo } from "~/lib/error-logger.server";
-import { prisma } from "~/lib/prisma.server";
+import { prisma, type AppPrismaTransactionClient } from "~/lib/prisma.server";
+
+type CleanupDb = typeof prisma | AppPrismaTransactionClient;
+
+function asError(error: unknown): Error {
+  return error instanceof Error ? error : new Error("Account cleanup failed");
+}
 
 export interface AccountObjectCleanupResult extends ObjectDeletionPlan {
   deleted: number;
   failed: string[];
-  reason?: "storage_not_configured";
+}
+
+export interface StorageCleanupConfig {
+  bucket?: string;
+  region?: string;
+  cdnBase?: string;
+}
+
+function storageConfigFromEnv(): StorageCleanupConfig {
+  return {
+    bucket: env.STORAGE_BUCKET,
+    region: env.STORAGE_REGION,
+    cdnBase: env.STORAGE_CDN_URL,
+  };
 }
 
 /**
- * Finds this account's objects in the configured bucket. Shared URLs and
- * Blossom or third-party URLs are left in place. Call this before deleting
- * the user, because media rows cascade away with the account.
+ * Reads media URLs and returns owned keys. Shared URLs and Blossom or
+ * third-party URLs are left in place. This does not call object storage.
+ * Missing bucket settings still keep keys that are embedded in the URL.
  */
-export async function planUnsharedOwnedObjects(
-  userId: string
-): Promise<AccountObjectCleanupResult> {
-  const bucket = env.STORAGE_BUCKET?.trim();
-  const region = env.STORAGE_REGION?.trim();
-  if (!bucket || !region) {
-    logInfo("Account object cleanup skipped because storage is not configured");
-    return {
-      deleteKeys: [],
-      skippedShared: [],
-      skippedForeign: 0,
-      deleted: 0,
-      failed: [],
-      reason: "storage_not_configured",
-    };
-  }
-
+export async function loadUnsharedOwnedObjectKeys(
+  db: CleanupDb,
+  userId: string,
+  config: StorageCleanupConfig = storageConfigFromEnv()
+): Promise<ObjectDeletionPlan> {
   const [media, variants] = await Promise.all([
-    prisma.media.findMany({ where: { userId }, select: { url: true } }),
-    prisma.mediaVariant.findMany({
+    db.media.findMany({ where: { userId }, select: { url: true } }),
+    db.mediaVariant.findMany({
       where: { asset: { userId } },
       select: { url: true },
     }),
@@ -53,58 +61,112 @@ export async function planUnsharedOwnedObjects(
   const urls = [...media, ...variants].map((row) => row.url);
   const sharedUrls = new Set<string>();
   for (const url of urls) {
-    const key = ownedAccountObjectKey({
-      url,
+    const plan = planAccountObjectCleanup({
       userId,
-      bucket,
-      region,
-      cdnBase: env.STORAGE_CDN_URL,
+      urls: [url],
+      sharedUrls: new Set(),
+      bucket: config.bucket,
+      region: config.region,
+      cdnBase: config.cdnBase,
     });
-    if (!key) continue;
-    if (await urlIsReferencedByAnotherAccount(userId, url)) sharedUrls.add(url);
+    if (plan.storageUnavailable) throw new StorageCleanupUnavailableError();
+    if (plan.deleteKeys.length === 0) continue;
+    if (await urlIsReferencedByAnotherAccount(db, userId, url)) {
+      sharedUrls.add(url);
+    }
   }
 
-  const plan = planOwnedObjectDeletion({
+  const plan = planAccountObjectCleanup({
     userId,
     urls,
     sharedUrls,
-    bucket,
-    region,
-    cdnBase: env.STORAGE_CDN_URL,
+    bucket: config.bucket,
+    region: config.region,
+    cdnBase: config.cdnBase,
   });
+  if (plan.storageUnavailable) throw new StorageCleanupUnavailableError();
+  return plan;
+}
+
+/**
+ * Finds this account's objects. Call this before deleting the user, because
+ * media rows cascade away with the account. The deletion transaction reads
+ * again under the user row lock.
+ */
+export async function planUnsharedOwnedObjects(
+  userId: string,
+  config?: StorageCleanupConfig
+): Promise<AccountObjectCleanupResult> {
+  const plan = await loadUnsharedOwnedObjectKeys(prisma, userId, config);
   return { ...plan, deleted: 0, failed: [] };
 }
 
+/**
+ * Records an upload that lost the race with account deletion. The database
+ * transaction has already rolled back, so this write is the remaining
+ * obligation. Shared and third-party URLs are not queued.
+ */
+export async function rememberRejectedOwnedObject(
+  userId: string,
+  url: string
+): Promise<void> {
+  try {
+    const key = ownedKeyEmbeddedInPath(url, userId);
+    if (!key) {
+      if (
+        planAccountObjectCleanup({
+          userId,
+          urls: [url],
+          sharedUrls: new Set(),
+        }).storageUnavailable
+      ) {
+        logError(new StorageCleanupUnavailableError(), {
+          message: "A rejected upload has no durable object key.",
+        });
+      }
+      return;
+    }
+    if (await urlIsReferencedByAnotherAccount(prisma, userId, url)) return;
+    await enqueueOwnedObjectDeletions(prisma, userId, [key]);
+    logInfo("Recorded an upload that arrived during account deletion");
+  } catch (error) {
+    logError(asError(error), {
+      message: "Could not record a rejected upload for later deletion.",
+    });
+  }
+}
+
 async function urlIsReferencedByAnotherAccount(
+  db: CleanupDb,
   userId: string,
   url: string
 ): Promise<boolean> {
   if (url.length < 16) return true;
   try {
     const [media, variant, post, article] = await Promise.all([
-      prisma.media.findFirst({
+      db.media.findFirst({
         where: { userId: { not: userId }, url },
         select: { id: true },
       }),
-      prisma.mediaVariant.findFirst({
+      db.mediaVariant.findFirst({
         where: { url, asset: { userId: { not: userId } } },
         select: { id: true },
       }),
-      prisma.post.findFirst({
+      db.post.findFirst({
         where: { userId: { not: userId }, content: { contains: url } },
         select: { id: true },
       }),
-      prisma.longFormPost.findFirst({
+      db.longFormPost.findFirst({
         where: { userId: { not: userId }, content: { contains: url } },
         select: { id: true },
       }),
     ]);
     return Boolean(media ?? variant ?? post ?? article);
-  } catch {
-    logError(new Error("Could not prove an object is unshared"), {
-      message: "Leaving the object in storage.",
+  } catch (error) {
+    logError(asError(error), {
+      message: "Account deletion stopped because a shared-object check failed.",
     });
-    return true;
+    throw error;
   }
 }
 

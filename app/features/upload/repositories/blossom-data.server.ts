@@ -2,6 +2,7 @@
  * Blossom reservation and usage period data. All prisma usage for blossom-v2 confined here.
  */
 
+import { lockAccountForWrite } from "~/features/user/data/account-write-lock.server";
 import { prisma } from "~/lib/prisma.server";
 
 export type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -169,6 +170,7 @@ export async function runCommitBlossomItemInTransaction(
   if (reservation.sha256 !== item.sha256 || reservation.size !== item.size) {
     throw new Error("payload_mismatch");
   }
+  await lockAccountForWrite(tx, reservation.batch.userId);
 
   await tx.blossomCommit.create({
     data: {
