@@ -43,11 +43,9 @@ export function AdminProofOfWorkSection({
         cardType: ProofCardType;
         aspectRatio: ProofCardAspectRatio;
       }>;
-      /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from localStorage after mount */
       if (o.scope) setScope(o.scope);
       if (o.cardType) setCardType(o.cardType);
       if (o.aspectRatio) setAspectRatio(o.aspectRatio);
-      /* eslint-enable react-hooks/set-state-in-effect */
     } catch {
       /* ignore */
     }

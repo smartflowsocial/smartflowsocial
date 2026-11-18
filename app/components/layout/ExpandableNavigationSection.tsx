@@ -145,7 +145,6 @@ export function ExpandableNavigationSection({
   useEffect(() => {
     if (previousPathnameRef.current !== location.pathname) {
       previousPathnameRef.current = location.pathname;
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Sync UI with navigation: reset manual expand when route changes
       setManuallyExpanded(null);
     }
   }, [location.pathname]);

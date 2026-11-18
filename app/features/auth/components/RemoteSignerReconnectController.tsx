@@ -77,7 +77,6 @@ export function RemoteSignerReconnectController(
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     // Intentional: client-only mount gate to avoid calling .client hooks during SSR
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- required for SSR-safe client-only render
     setMounted(true);
   }, []);
 

@@ -41,7 +41,6 @@ export function DefaultZapAmountSettings({
         : DEFAULT_ZAP_AMOUNT_SATS_FALLBACK;
     lastSaved.current = next;
     // Sync server-revalidated default into the controlled input when loader data changes.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional prop → local state sync
     setValue(String(next));
   }, [initialStored]);
 
