@@ -774,14 +774,15 @@ BLOSSOM_INTERNAL_SECRET=your-shared-secret-with-blossom-server
 
 ### BLOSSOM_SFS_API_URL
 
-Optional base URL for SmartFlow Blossom API operations performed by the app server (for example,
-deleting remote files from R2 when deleting media records in Settings). Defaults to
-`https://blossom-api.smartflow.social`.
+Optional base URL for Blossom API operations performed by the app server, including deletion of
+objects this server stored. Unset means those calls do not run and do not fall back to
+`https://blossom-api.smartflow.social`. Set that URL only when this install should use
+SmartFlowSocial's hosted Blossom. A server you run yourself uses your own URL, or stays empty.
 
 **Example:**
 
 ```env
-BLOSSOM_SFS_API_URL=https://blossom-api.smartflow.social
+# BLOSSOM_SFS_API_URL=https://blossom.example.com
 ```
 
 ---

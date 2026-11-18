@@ -6,6 +6,7 @@
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 
+import { resolveBlossomApiBase } from "../blossom-api-url";
 import {
   aggregateCanonicalOwnedBytes,
   createMedia as createMediaRow,
@@ -93,12 +94,8 @@ export async function deleteRemoteBlossomObject(
     throw new Error("BLOSSOM_INTERNAL_SECRET is not configured");
   }
 
-  const configuredApiBase = env.BLOSSOM_SFS_API_URL?.trim();
-  const apiBase =
-    configuredApiBase === ""
-      ? "https://blossom-api.smartflow.social"
-      : (configuredApiBase ?? "https://blossom-api.smartflow.social");
-  const endpoint = `${apiBase.replace(/\/$/, "")}/internal/blob/${encodeURIComponent(key)}`;
+  const apiBase = resolveBlossomApiBase(env.BLOSSOM_SFS_API_URL);
+  const endpoint = `${apiBase}/internal/blob/${encodeURIComponent(key)}`;
 
   const response = await fetch(endpoint, {
     method: "DELETE",

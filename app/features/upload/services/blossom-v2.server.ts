@@ -10,6 +10,7 @@ import { env } from "~/lib/env.server";
 import { logInfo, logWarning } from "~/lib/error-logger.server";
 import { AuthorizationError } from "~/lib/errors";
 
+import { resolveBlossomApiBase } from "../blossom-api-url";
 import {
   aggregateReservedSizeForPubkey,
   commitBlossomBatch as commitBlossomBatchInRepo,
@@ -24,7 +25,6 @@ import { findMediaUploadIntentByIntentId } from "../repositories/media-intent-da
 
 import { getCanonicalOwnedBytesForUser } from "./media.server";
 
-const DEFAULT_BLOSSOM_API_URL = "https://blossom-api.smartflow.social";
 const TOKEN_TTL_SECONDS = 180;
 const BATCH_TTL_SECONDS = 900;
 const MAX_BATCH_SIZE = 500;
@@ -99,12 +99,7 @@ export interface CommitBatchResult {
 }
 
 function resolveBlossomUploadBaseUrl(): string {
-  const configured = env.BLOSSOM_SFS_API_URL?.trim();
-  const rawBase =
-    configured && configured.length > 0 ? configured : DEFAULT_BLOSSOM_API_URL;
-  const trimmed = rawBase.replace(/\/+$/, "");
-  // Accept either ".../upload" or API root in env and normalize to API root.
-  return trimmed.replace(/\/upload$/i, "");
+  return resolveBlossomApiBase(env.BLOSSOM_SFS_API_URL);
 }
 
 function getTokenSecret(): string {
@@ -270,6 +265,7 @@ export async function issueBlossomBulkTokens(
       reason: "token_lane_requires_blossom_sfs",
     });
   }
+  const uploadBase = resolveBlossomUploadBaseUrl();
 
   logInfo("blossom_token_issuance_provider_resolved", {
     userId,
@@ -460,7 +456,7 @@ export async function issueBlossomBulkTokens(
   });
 
   return {
-    uploadUrl: `${resolveBlossomUploadBaseUrl()}/upload`,
+    uploadUrl: `${uploadBase}/upload`,
     batchId,
     expiresIn: BATCH_TTL_SECONDS,
     maxParallelUploadsHint: hostedMediaPolicy.maxParallelUploadsHint,
