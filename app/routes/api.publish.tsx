@@ -14,6 +14,10 @@ import { recordReplyPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { invalidateRelayIntentCache } from "~/features/user";
+import {
+  allRelaysRejected,
+  relayPublishFailureMessage,
+} from "~/infra/publishers/publish-outcome";
 import { withCSRFProtection } from "~/lib/csrf.server";
 import { ValidationError } from "~/lib/errors";
 import { featureFlags } from "~/lib/feature-flags.server";
@@ -87,10 +91,39 @@ function isKind1ReplyEvent(validatedEvent: ValidatedNostrEvent): boolean {
   );
 }
 
+type ApiPublishResult = Awaited<ReturnType<typeof publishSignedEventToRelays>>;
+
+async function persistApiPublishAcks(params: {
+  userId: string;
+  validatedEvent: ValidatedNostrEvent;
+  publishResult: ApiPublishResult;
+}): Promise<void> {
+  const { userId, validatedEvent, publishResult } = params;
+  try {
+    await persistPublishRelayAcks({
+      publishAttemptId: `api:${validatedEvent.id}`,
+      userId,
+      eventId: validatedEvent.id,
+      results: publishResult.results,
+    });
+  } catch (ackError) {
+    const { logError } = await import("~/lib/error-logger.server");
+    logError(
+      ackError instanceof Error ? ackError : new Error(String(ackError)),
+      {
+        userId,
+        eventId: validatedEvent.id,
+        publishAttemptId: `api:${validatedEvent.id}`,
+        message: "API publish: Failed to persist publish ACKs",
+      }
+    );
+  }
+}
+
 async function runPublishApiPostPublishSideEffects(params: {
   userId: string;
   validatedEvent: ValidatedNostrEvent;
-  publishResult: Awaited<ReturnType<typeof publishSignedEventToRelays>>;
+  publishResult: ApiPublishResult;
   recordAsReply?: {
     replyToEventId: string;
     replyToPostId?: string | null;
@@ -113,25 +146,7 @@ async function runPublishApiPostPublishSideEffects(params: {
     }
   }
 
-  try {
-    await persistPublishRelayAcks({
-      publishAttemptId: `api:${validatedEvent.id}`,
-      userId,
-      eventId: validatedEvent.id,
-      results: publishResult.results,
-    });
-  } catch (ackError) {
-    const { logError } = await import("~/lib/error-logger.server");
-    logError(
-      ackError instanceof Error ? ackError : new Error(String(ackError)),
-      {
-        userId,
-        eventId: validatedEvent.id,
-        publishAttemptId: `api:${validatedEvent.id}`,
-        message: "API publish: Failed to persist publish ACKs",
-      }
-    );
-  }
+  await persistApiPublishAcks({ userId, validatedEvent, publishResult });
 
   const isKind1Reply = isKind1ReplyEvent(validatedEvent);
   if (
@@ -228,6 +243,18 @@ async function runPublishApiAction(request: Request): Promise<Response> {
     signedEvent: validatedEvent,
     relays: publishRelays,
   });
+
+  // The internal publisher reports per-relay failures in its result. Record
+  // them, then fail the request. The attempt stays unclaimed, so a retry with
+  // the same attemptId still runs its side effects once it succeeds.
+  if (allRelaysRejected(publishResult.results)) {
+    await persistApiPublishAcks({
+      userId: session.userId,
+      validatedEvent,
+      publishResult,
+    });
+    throw new Error(relayPublishFailureMessage(publishResult.results));
+  }
 
   // Per-attemptId once-only guard: replays of the same signed publish (e.g.
   // signer-recovery resumes) must not double-run side effects like

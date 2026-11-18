@@ -505,6 +505,61 @@ describe("API: Publish", () => {
 
       expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
     });
+
+    it("records the failed ACKs and keeps the attempt open when every relay rejects", async () => {
+      const mockEvent = createValidSignedEvent({
+        kind: 1,
+        content: "Rejected, then accepted",
+      });
+      const relay = "wss://resolved.example.com";
+      (publishSignedEventToRelays as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          results: [{ relay, ok: false, error: "rejected: blocked" }],
+        })
+        .mockResolvedValueOnce({ results: [{ relay, ok: true }] });
+
+      const buildRequest = (): Request =>
+        new Request("http://localhost:3000/api/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: mockEvent,
+            attemptId: "attempt-rejected-then-accepted",
+          }),
+        });
+
+      const rejected = await action({
+        request: buildRequest(),
+        params: {},
+        context: new RouterContextProvider(),
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
+      });
+
+      expect(rejected.ok).toBe(false);
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(1);
+      expect(persistPublishRelayAcks).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          publishAttemptId: `api:${mockEvent.id}`,
+          results: [{ relay, ok: false, error: "rejected: blocked" }],
+        })
+      );
+
+      const accepted = await action({
+        request: buildRequest(),
+        params: {},
+        context: new RouterContextProvider(),
+        url: new URL("http://localhost:3000/api/publish"),
+        pattern: "*",
+      });
+      const acceptedBody: unknown = await accepted.json();
+
+      expect(acceptedBody).toEqual({ success: true });
+      expect(persistPublishRelayAcks).toHaveBeenCalledTimes(2);
+      expect(persistPublishRelayAcks).toHaveBeenLastCalledWith(
+        expect.objectContaining({ results: [{ relay, ok: true }] })
+      );
+    });
   });
 
   describe("Error Handling", () => {

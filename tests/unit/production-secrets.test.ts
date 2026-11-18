@@ -71,6 +71,15 @@ describe("production secret validation", () => {
     expect(productionSecretErrors({ ...base, e2eTest: "true" })).toEqual([]);
   });
 
+  it("does not require the HTTP publisher token for the internal backend", () => {
+    const problems = productionSecretErrors({
+      ...base,
+      cronSecret: "c".repeat(32),
+      publisherBackend: "internal",
+    });
+    expect(problems).toEqual([]);
+  });
+
   it("allows a public publisher only when that mode is explicit", () => {
     const problems = productionSecretErrors({
       ...base,

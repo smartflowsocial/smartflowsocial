@@ -472,9 +472,8 @@ workerMetricsServer.listen(workerMetricsPort, "0.0.0.0", () => {
 const outboxWorkerInterval = startOutboxWorker();
 logInfo("Outbox worker started");
 
-// Keep the process alive
-process.on("SIGTERM", () => {
-  logInfo("Worker shutting down...");
+function shutdownWorker(signal: "SIGTERM" | "SIGINT"): void {
+  logInfo("Worker shutting down...", { signal });
   if (outboxWorkerInterval) {
     clearInterval(outboxWorkerInterval);
   }
@@ -501,36 +500,20 @@ process.on("SIGTERM", () => {
   void scheduledLongFormPostsWorker.close();
   void broadcastDmWorker.close();
   void postCheckerWorker.close();
-  process.exit(0);
+  void import("./app/infra/publishers/internal-nostr-publisher.server")
+    .then(({ closeInternalPublisherConnections }) =>
+      closeInternalPublisherConnections()
+    )
+    .catch(() => undefined)
+    .finally(() => {
+      process.exit(0);
+    });
+}
+
+process.on("SIGTERM", () => {
+  shutdownWorker("SIGTERM");
 });
 
 process.on("SIGINT", () => {
-  logInfo("Worker shutting down...");
-  if (outboxWorkerInterval) {
-    clearInterval(outboxWorkerInterval);
-  }
-  if (runwayLowInterval) {
-    clearInterval(runwayLowInterval);
-  }
-  if (subscriptionRenewalInterval) {
-    clearInterval(subscriptionRenewalInterval);
-  }
-  if (postAnalyticsInterval) {
-    clearInterval(postAnalyticsInterval);
-  }
-  if (financialRecordPurgeInterval) {
-    clearInterval(financialRecordPurgeInterval);
-  }
-  if (ownedObjectDeletionInterval) {
-    clearInterval(ownedObjectDeletionInterval);
-  }
-  clearInterval(relayMetricsInterval);
-  clearInterval(queueBacklogMetricsInterval);
-  clearInterval(blossomReservationCleanupInterval);
-  workerMetricsServer.close();
-  void scheduledPostsWorker.close();
-  void scheduledLongFormPostsWorker.close();
-  void broadcastDmWorker.close();
-  void postCheckerWorker.close();
-  process.exit(0);
+  shutdownWorker("SIGINT");
 });

@@ -9,6 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+### Added
+
+- An in-process Nostr publisher. `SELF_HOSTED=true` uses it without Cloudflare, a publisher URL, or
+  a publisher token. `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP publisher. Hosted
+  production stays on that HTTP publisher until an explicit cutover. See
+  [Internal Nostr publisher](docs/operations/internal-nostr-publisher.md).
+
 ## [1.0.0-beta.1] - 2026-11-18
 
 First coordinated open-source prerelease. SmartFlowSocial was already in open beta before this

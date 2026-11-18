@@ -1,5 +1,7 @@
 /* eslint-disable import/order -- WebSocket polyfill must load before nostr-tools */
 import "~/lib/websocket-polyfill.server";
+import type { SignedEvent } from "~/features/nostr/types";
+import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import { env } from "~/lib/env.server";
 
 import { nip04, finalizeEvent, nip19, SimplePool } from "nostr-tools";
@@ -340,14 +342,6 @@ export async function resolveDmRelaysSafe(
   }
 }
 
-async function readResponseTextSafe(response: Response): Promise<string> {
-  try {
-    return await response.text();
-  } catch {
-    return "";
-  }
-}
-
 export function giftWrapRecipientPubkeyHex(event: {
   tags?: unknown;
 }): string | null {
@@ -396,71 +390,36 @@ export interface SendNostrDirectMessageResult {
 }
 
 async function publishEventToRelays(
-  event: Record<string, unknown>,
+  event: SignedEvent,
   relaysToUse: string[]
 ): Promise<SendNostrDirectMessageResult> {
-  const publisherUrl = env.NOSTR_PUBLISHER_URL;
-  if (!publisherUrl) {
-    return {
-      success: false,
-      error: "NOSTR_PUBLISHER_URL is not set.",
-      event,
-    };
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  const apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
-  if (apiToken) {
-    headers["API-TOKEN"] = apiToken;
-  }
-
   const relayList =
     relaysToUse.length > 0 ? relaysToUse : normalizeRelays(relaysArray);
 
-  const response = await fetch(publisherUrl, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      relays: relayList,
-      event,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await readResponseTextSafe(response);
-
-    if (response.status === 409) {
+  try {
+    const publishResult = await getNostrPublisher().publish(event, relayList);
+    const failures = publishResult.results.filter((result) => !result.ok);
+    if (
+      publishResult.results.length > 0 &&
+      failures.length === publishResult.results.length
+    ) {
       return {
         success: false,
-        status: response.status,
-        error: `Event already published (replay protection): ${errorText}`,
+        error:
+          failures.find((result) => result.error)?.error ??
+          "Publish failed on all relays",
         event,
       };
     }
-
-    if (response.status === 429) {
-      const retryAfter = response.headers.get("Retry-After");
-      const retryMsg = retryAfter ? ` Retry after ${retryAfter} seconds.` : "";
-      return {
-        success: false,
-        status: response.status,
-        error: `Rate limit exceeded.${retryMsg} ${errorText}`,
-        event,
-      };
-    }
-
+    return { success: true, event };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      status: response.status,
-      error: errorText,
+      error: message,
       event,
     };
   }
-
-  return { success: true, event };
 }
 
 type Nip17Outcome = NonNullable<SendNostrDirectMessageResult["nip17"]>;
@@ -597,10 +556,7 @@ export async function sendNostrDirectMessage(
 
     const signedEvent = finalizeEvent(eventTemplate, systemKey.privateKeyBytes);
 
-    const nip04Result = await publishEventToRelays(
-      signedEvent as unknown as Record<string, unknown>,
-      relaysToUse
-    );
+    const nip04Result = await publishEventToRelays(signedEvent, relaysToUse);
 
     const merged: SendNostrDirectMessageResult = {
       ...nip04Result,

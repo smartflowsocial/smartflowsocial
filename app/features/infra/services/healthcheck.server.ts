@@ -4,6 +4,7 @@
  */
 
 import { countUsers } from "~/features/user";
+import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import {
   DatabaseError,
@@ -50,6 +51,7 @@ export async function performHealthCheck(
     return Response.json(
       {
         status: "ok",
+        publisherBackend: env.NOSTR_PUBLISHER_BACKEND,
         version: identity.version,
         sourceCommit: identity.sourceCommit,
         sourceCommitStatus: identity.sourceCommitStatus,

@@ -369,6 +369,7 @@ jobs:
             --env REDIS_URL=redis://host.docker.internal:6379 \
             --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
             --env CRON_SECRET=test-cron-secret-very-long-and-secure-32-chars \
+            --env NOSTR_PUBLISHER_BACKEND=http \
             --env NOSTR_PUBLISHER_URL=http://127.0.0.1:9/publish \
             --env NOSTR_PUBLISHER_API_TOKEN=test-publisher-token \
             smartflowsocial:ci

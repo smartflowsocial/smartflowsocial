@@ -8,18 +8,21 @@ It does not use the hosted service, a paid account, or a production relay.
 
 ## What you are starting
 
-| Piece                                    | Required for the scheduler?       | How it starts                                                                                                                                   |
-| ---------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| This app and its worker                  | Yes                               | `pnpm dev` starts both. Do not also run `pnpm worker:local`.                                                                                    |
-| PostgreSQL and Redis                     | Yes                               | `pnpm docker`                                                                                                                                   |
-| HTTP publisher                           | Yes, or posts never leave the app | Real worker: [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher). Laptop stand-in: `pnpm publisher:local` |
-| S3-compatible storage                    | Only for uploads                  | Environment variables in `example.env`                                                                                                          |
-| Blossom, Blastr, cache worker, NostrMash | No                                | Separate repositories. Leave their variables empty.                                                                                             |
-| Lightning, NWC, referral payouts         | No                                | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.                                                                          |
+| Piece                                    | Required for the scheduler?     | How it starts                                                                  |
+| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| This app and its worker                  | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.                   |
+| PostgreSQL and Redis                     | Yes                             | `pnpm docker`                                                                  |
+| Nostr publisher                          | Yes, and it is part of this app | `SELF_HOSTED=true` selects it. `pnpm publisher:local` is only a signature stub |
+| S3-compatible storage                    | Only for uploads                | Environment variables in `example.env`                                         |
+| Blossom, Blastr, cache worker, NostrMash | No                              | Separate repositories. Leave their variables empty.                            |
+| Lightning, NWC, referral payouts         | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.         |
 
-`pnpm publisher:local` checks Nostr signatures and returns success. It does not connect to relays.
-Use the Cloudflare publisher when you want events on the network. For that process set
-`ALLOW_PRIVATE_RELAYS=true` only if the relay is on your own machine.
+`SELF_HOSTED=true` publishes signed events from this process. A clean install does not need
+Cloudflare, Wrangler, a publisher URL, or a publisher token. `pnpm publisher:local` checks
+signatures and returns success. It does not connect to relays. `pnpm smoke:publish` forces that HTTP
+stub. `pnpm test:relay-publish` uses the internal publisher against a relay on this machine. Set
+`NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` only when that relay is on a private network you
+operate. `SELF_HOSTED` does not turn that flag on.
 
 Production is different. After `pnpm build`, `pnpm start` runs the web server and one worker
 together. `pnpm start:server` and `pnpm start:worker` run them as two separate processes. Do not
@@ -47,22 +50,19 @@ cp example.env .env
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres
 REDIS_URL=redis://127.0.0.1:6379
 SELF_HOSTED=true
+NOSTR_PUBLISHER_BACKEND=internal
 SESSION_SECRET=replace-with-32-or-more-random-characters
-LOCAL_PUBLISHER_TOKEN=local-dev-publisher-token
-NOSTR_PUBLISHER_URL=http://127.0.0.1:8787/publish
-NOSTR_PUBLISHER_API_TOKEN=local-dev-publisher-token
 ```
 
 Generate `SESSION_SECRET` with `openssl rand -base64 32`. Leave storage, Blastr, Blossom, and
 `OWNER_NWC` empty until you need those features.
 
-4. Start data stores, apply the schema, and start the local publisher in another terminal:
+4. Start data stores and apply the schema. Do not start a separate publisher.
 
 ```bash
 pnpm docker
 pnpm exec prisma generate
 pnpm exec prisma migrate deploy
-pnpm publisher:local
 ```
 
 5. Prove the scheduled-publish path. This creates an ephemeral key, inserts one due post, runs the
@@ -82,8 +82,8 @@ self-host publish smoke passed post=<id> state=PUBLISHED publisher=local
 and `REDIS_URL`. The development passwords in `docker-compose.yml` are for a laptop. Do not start
 that file on a public server.
 
-5b. Before a release, prove the event reaches a relay. This starts a loopback relay and a publisher
-that writes to it. It does not use a public relay or a personal key.
+5b. Before a release, prove the event reaches a relay. This starts a loopback relay and publishes
+through the internal publisher. It does not use a public relay or a personal key.
 
 ```bash
 pnpm test:relay-publish
@@ -95,16 +95,10 @@ Expected last line:
 relay publish integration passed post=<id> relay=ws://127.0.0.1:<port> events=1
 ```
 
-The same command also checks a publisher that is down, recovery after it returns, a second job for
-an already published post, a bad signature, and a relay that is not running. A wrong publisher token
-is checked by `pnpm exec vitest run tests/integration/relay-publisher.contract.test.ts`.
-
-That publisher is `scripts/relay-publisher.mjs`. It checks the token and the signature, then writes
-the event to the loopback relay. It is not the Cloudflare Worker. To exercise the Worker runtime,
-clone [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) and
-run `pnpm test:worker`. That command starts `wrangler`'s local worker and a `ws://127.0.0.1` relay.
-It does not use a public relay or a production token. `ALLOW_PRIVATE_RELAYS` is ignored unless
-`ENVIRONMENT` is `test` or `development`.
+The same command also checks a relay that is down, recovery after it accepts again, a second job for
+an already published post, a bad signature, and an independent read of the stored event. The script
+sets `NOSTR_PUBLISHER_BACKEND=internal` and `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` for that
+loopback relay only.
 
 6. Start the app:
 
@@ -117,17 +111,17 @@ calls the publish job directly. Posts you schedule in the browser are published 
 `pnpm dev` started.
 
 7. Check the process, then sign in with a NIP-07 extension or a NIP-46 remote signer at
-   `http://localhost:3000`. Create a post and schedule it. The worker sends the event you signed to
-   `NOSTR_PUBLISHER_URL`. With the local publisher, the note is accepted and not broadcast. Point
-   `NOSTR_PUBLISHER_URL` at the real publisher, with `ALLOW_PRIVATE_RELAYS` if needed, to reach a
-   relay.
+   `http://localhost:3000`. Create a post and schedule it. The worker sends the event you signed
+   straight to your relays. A JSON health response names the active backend:
 
 ```bash
-curl -fsS http://localhost:3000/healthcheck
+curl -fsS -H 'accept: application/json' http://localhost:3000/healthcheck
 ```
 
-A 200 means the app reached Postgres. It does not mean storage, Lightning, or a public relay is
-configured.
+`publisherBackend` is `internal`. `/healthcheck` without that header still returns `OK` when
+Postgres is reachable. A 200 does not mean storage, Lightning, or a public relay is configured, and
+it does not mean a relay accepted an event. Relay results are the `nostr_publisher_relay_total` and
+`nostr_publisher_relay_latency_ms` series on the metrics ports.
 
 ## Pinned tag
 
@@ -142,11 +136,7 @@ commit out explicitly. `main` is newer and is not that release.
 - A browser extension signed the smoke event. The smoke signs with `nostr-tools` so the job path can
   run without a person clicking a signer. Browser login is covered by `pnpm test:e2e:smoke` when
   Cypress is installed.
-- The note reached a public relay. `pnpm smoke:publish` stops at the local publisher.
-  `pnpm test:relay-publish` reaches a relay on this machine only. It uses
-  `scripts/relay-publisher.mjs` in this repository. That is not the Cloudflare publisher worker. The
-  app's publish job is the real one. The worker in
-  [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) is a
-  separate process and was not started by that command.
+- The note reached a public relay. `pnpm smoke:publish` stops at the local signature stub.
+  `pnpm test:relay-publish` reaches a relay on this machine through the internal publisher.
 - Uploads, Blossom, Blastr, analytics, or Lightning work. Those stay off until their variables are
   set. Missing payout and cron secrets do not open those routes.
