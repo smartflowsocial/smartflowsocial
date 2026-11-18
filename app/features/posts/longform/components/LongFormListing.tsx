@@ -138,7 +138,6 @@ export default function LongFormListing({
     [filteredPosts]
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual useVirtualizer; memoization handled by library
   const rowVirtualizer = useVirtualizer({
     count: combinedContent.length,
     getScrollElement: () =>

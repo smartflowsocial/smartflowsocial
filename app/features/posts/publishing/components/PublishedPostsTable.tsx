@@ -249,7 +249,6 @@ export default function PublishedPostsTable({
         : attachedPostsByParentId(filteredPosts),
     [filteredPosts, showFollowUpsAsRows]
   );
-  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
   const rowVirtualizer = useVirtualizer({
     count: threadRows.length,
     getScrollElement: () =>

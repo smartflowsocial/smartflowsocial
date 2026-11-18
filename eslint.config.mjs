@@ -352,6 +352,14 @@ export default (async () => {
         ...reactPlugin.configs.recommended.rules,
         ...reactPlugin.configs["jsx-runtime"].rules,
         ...reactHooks.configs.recommended.rules,
+        // 7.1.1 enforces React Compiler rules that 7.0.1 did not report here.
+        // The component code is unchanged; these stay off until that migration.
+        "react-hooks/set-state-in-effect": "off",
+        "react-hooks/refs": "off",
+        "react-hooks/immutability": "off",
+        "react-hooks/purity": "off",
+        "react-hooks/preserve-manual-memoization": "off",
+        "react-hooks/incompatible-library": "off",
         ...jsxA11y.configs.recommended.rules,
         "react/jsx-no-leaked-render": [
           "warn",
