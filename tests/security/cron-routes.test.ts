@@ -219,4 +219,40 @@ describe("cron route authentication", () => {
     expect(posted.status).toBe(200);
     expect(posted.headers.get("Deprecation")).toBeNull();
   });
+
+  it("rejects a GET purge with a missing or invalid secret", async () => {
+    const route = await import("~/routes/cron.purge-retained-records");
+    const missing = await route.loader({
+      request: request("/cron/purge-retained-records", "GET"),
+      params: {},
+      context: new RouterContextProvider(),
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
+    });
+    envState.CRON_SECRET = SECRET;
+    const invalid = await route.loader({
+      request: request("/cron/purge-retained-records", "GET", "wrong-secret"),
+      params: {},
+      context: new RouterContextProvider(),
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
+    });
+    expect(missing.status).toBe(401);
+    expect(invalid.status).toBe(401);
+    expect(jobs.purge).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-POST purge mutation before it runs", async () => {
+    envState.CRON_SECRET = SECRET;
+    const route = await import("~/routes/cron.purge-retained-records");
+    const response = await route.action({
+      request: request("/cron/purge-retained-records", "PUT", SECRET),
+      params: {},
+      context: new RouterContextProvider(),
+      url: new URL("http://localhost:3000/"),
+      pattern: "*",
+    });
+    expect(response.status).toBe(405);
+    expect(jobs.purge).not.toHaveBeenCalled();
+  });
 });
