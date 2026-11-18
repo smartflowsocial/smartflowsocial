@@ -42,8 +42,8 @@ signed. If publishing fails, the worker retries that job.
 
 Drafts, templates, long-form articles (NIP-23), media, an engagement feed, signed DM broadcasts,
 giveaways, and contests are in the same app. Lightning payouts can use NWC or BTCPay when those are
-configured. Blastr, Blossom, the cache worker, and NostrMash are separate projects. Scheduling does
-not require them.
+configured. Blastr, Blossom, and NostrMash are separate projects. Profile and thread reads run in
+this app and cache in Redis. Scheduling does not require them or the legacy cache worker.
 
 The [feature coverage matrix](./docs/reference/feature-coverage-matrix.md) maps each area to its
 documentation. It is an index of the docs, not a guarantee that every path is finished.
@@ -95,8 +95,10 @@ Postgres is published on **127.0.0.1:5433** (container port `5432`). Redis is on
 Those ports are not bound on every interface. The database name in that compose file is `postgres`,
 and the password there is for local development. Point `DATABASE_URL` and `REDIS_URL` at `127.0.0.1`
 before `prisma migrate deploy` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited
-by hosted plan caps. That does not include hosted Blossom or hosted Blastr. `pnpm db:seed` replaces
-plan rows. A database that already has subscriptions should not be seeded.
+by hosted plan caps. That same flag selects the in-process Nostr reader when `PRIMAL_CACHING_URL` is
+empty, so this install does not need the cache worker. It does not include hosted Blossom or hosted
+Blastr. `pnpm db:seed` replaces plan rows. A database that already has subscriptions should not be
+seeded.
 
 `pnpm dev` starts the web server and the worker, and restarts the worker when its files change.
 `pnpm worker:local` runs the worker without the web server. Running it next to `pnpm dev` starts a
@@ -128,8 +130,9 @@ curl http://localhost:3011/metrics
 
 `/healthcheck` returns `200` and `OK`. `X-Source-Commit` is the commit baked into that build, or
 `unknown` when the image was built without one. A green CI run does not fill that header on a server
-that was not built from the same commit. `Accept: application/json` returns the same fields in a
-body. `/` returns success or a redirect. `/metrics` returns Prometheus text.
+that was not built from the same commit. `Accept: application/json` returns the same fields plus
+`publisherBackend` and `nostrReadBackend`. `/` returns success or a redirect. `/metrics` returns
+Prometheus text.
 
 Next: [Quickstart](./docs/getting-started/quickstart.md) ·
 [Installation](./docs/getting-started/installation.md) · [Deployment](./docs/guides/deployment.md) ·

@@ -304,12 +304,17 @@ policy. Publishing still works without them.
 media gateway ([protocol](https://github.com/hzrd149/blossom)). Set `BLOSSOM_SFS_API_URL`,
 `BLOSSOM_INTERNAL_SECRET`, and `BLOSSOM_UPLOAD_TOKEN_SECRET` to the same values the gateway uses.
 
-### Cache worker (optional)
+### Profile and thread reads
 
-[SmartFlowSocial Cache Worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker)
-answers profile and event lookups. It reads [NostrMash](https://github.com/nostrmash/nostrmash)
-first and falls back to public Primal. Set `PRIMAL_CACHING_URL` to the worker. If unset, the app
-uses public Primal sockets.
+Reads run in this process. Redis caches them. NostrMash HTTP, the NostrMash compatibility socket,
+and public Primal sockets are the default upstreams. A self-hosted install with `SELF_HOSTED=true`
+and an empty `PRIMAL_CACHING_URL` uses that reader. It does not need the cache worker, Wrangler, or
+Cloudflare KV.
+
+Set `NOSTR_READ_BACKEND=legacy_http` and `PRIMAL_CACHING_URL` to an HTTP proxy only to keep the
+[cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker). Set
+`PRIMAL_CACHING_URL` to a `wss://` list to use your own Primal-compatible cache. Details are in
+[Internal Nostr read cache](../operations/internal-nostr-read.md).
 
 ### Redis Setup
 

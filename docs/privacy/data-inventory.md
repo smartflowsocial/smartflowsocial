@@ -68,7 +68,8 @@ uses. This inventory does not invent a company name or a registered address.
 - The HTTP Nostr publisher
 - Blossom, when hosted media is enabled
 - Blastr, when managed relay publishing is enabled
-- NostrMash or a Primal cache, when profile and engagement lookups use them
+- NostrMash or a Primal-compatible cache, when the in-process reader or paid analytics use them.
+  Redis stores those pages. The legacy cache worker is optional.
 - Relays the user or the operator configured (public Nostr network)
 - BTCPay, when founder or on-chain checkout is enabled
 - The user's Lightning wallet, via NWC, when they connect one

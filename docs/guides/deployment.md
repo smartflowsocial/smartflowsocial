@@ -96,6 +96,8 @@ fly secrets set SESSION_SECRET="your-secret"
 fly secrets set NOSTR_PUBLISHER_BACKEND="http"
 fly secrets set NOSTR_PUBLISHER_URL="https://..."
 fly secrets set NOSTR_NSEC="nsec1..."
+# Leave NOSTR_READ_BACKEND unset while production still uses an HTTP cache proxy.
+# Staging sets NOSTR_READ_BACKEND=internal and must not keep an https proxy URL.
 fly secrets set PRIMAL_CACHING_URL="wss://..."
 fly secrets set REDIS_URL="redis://..."
 fly secrets set STORAGE_ACCESS_KEY="..."
@@ -331,7 +333,10 @@ services:
       - NOSTR_PUBLISHER_URL=${NOSTR_PUBLISHER_URL:-}
       - NOSTR_PUBLISHER_API_TOKEN=${NOSTR_PUBLISHER_API_TOKEN:-}
       - NOSTR_NSEC=${NOSTR_NSEC}
-      - PRIMAL_CACHING_URL=${PRIMAL_CACHING_URL}
+      # Empty selects the in-process reader when SELF_HOSTED is true.
+      # An https:// value keeps the legacy cache proxy.
+      - NOSTR_READ_BACKEND=${NOSTR_READ_BACKEND:-}
+      - PRIMAL_CACHING_URL=${PRIMAL_CACHING_URL:-}
       - REDIS_URL=${REDIS_URL}
       - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}
       - STORAGE_SECRET=${STORAGE_SECRET}
@@ -428,7 +433,10 @@ NOSTR_PUBLISHER_URL=https://your-publisher.example.com
 # HTTP backend only. Required in production, at least 16 characters.
 NOSTR_PUBLISHER_API_TOKEN=same-token-as-the-publisher
 NOSTR_NSEC=nsec1...
-PRIMAL_CACHING_URL=wss://cache.example.com/v1
+# Optional. Unset uses NostrMash and the public Primal sockets inside this process
+# when NOSTR_READ_BACKEND=internal (the self-hosted default).
+# NOSTR_READ_BACKEND=internal
+# PRIMAL_CACHING_URL=wss://cache.example.com/v1
 
 # Redis
 REDIS_URL=redis://host:6379

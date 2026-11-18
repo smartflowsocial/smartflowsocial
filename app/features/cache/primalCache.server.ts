@@ -1,10 +1,23 @@
 import { tryNativePrimalFrames } from "~/features/nostrmash/native-frames.server";
+import { isHttpCacheProxyUrl } from "~/infra/nostr-read/read-backend";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { fetchJsonWithRetry } from "~/lib/fetch.server";
 import { connectToPrimalCache as connectToPrimalCacheWs } from "~/lib/nostrwebsocket.server";
-import { buildCacheKey, getOrSetJson } from "~/lib/redis-cache.server";
+import { getOrSetJson } from "~/lib/redis-cache.server";
 import { withSentrySpan } from "~/lib/sentry.server";
+
+import {
+  allowsEmptyResult,
+  cacheTtlForRequest,
+  isEmptyCachePage,
+  readCacheKey,
+  shouldStoreReadCache,
+} from "./cache-policy";
+import { isCompleteEmpty, isUsableCachePayload } from "./payload";
+import { recordReadCacheResult } from "./read-metrics.server";
+import { readNostrUpstreamsFromEnv } from "./read-service.server";
+import { singleFlight } from "./single-flight";
 
 type CacheParams = Record<string, unknown>;
 type CacheResponse = unknown[];
@@ -12,10 +25,10 @@ type CacheResponse = unknown[];
 const SENTRY_SPAN_NAME_PRIMAL_FETCH = "primal_cache.fetch";
 const SENTRY_SPAN_OP_HTTP_CLIENT = "http.client";
 
-/** Default per-attempt timeout when calling Primal over HTTP (was 15s × 3 attempts ≈ 45s wall time). */
+/** Default per-attempt timeout when calling the legacy HTTP proxy. */
 const DEFAULT_PRIMAL_HTTP_TIMEOUT_MS = 8000;
 
-/** Default extra retries after the first attempt (maxRetries in fetch layer = this value). */
+/** Default extra retries after the first attempt. */
 const DEFAULT_PRIMAL_HTTP_MAX_RETRIES = 0;
 
 function parsePrimalHttpTimeoutMs(): number {
@@ -34,45 +47,10 @@ function parsePrimalHttpMaxRetries(): number {
   return Math.min(5, Math.max(0, n));
 }
 
-function cacheTtlSecondsForRequestType(requestType: string): {
-  ttlSeconds: number | null;
-  negativeTtlSeconds?: number;
-} {
-  // Conservative TTLs: enough to reduce load but avoid stale UX.
-  switch (requestType) {
-    case "thread_view":
-      return { ttlSeconds: 30, negativeTtlSeconds: 5 };
-    case "user_profile":
-      return { ttlSeconds: 300, negativeTtlSeconds: 30 };
-    case "user_infos":
-      return { ttlSeconds: 300, negativeTtlSeconds: 30 };
-    case "event_actions":
-      return { ttlSeconds: 30, negativeTtlSeconds: 5 };
-    case "get_notifications":
-      return { ttlSeconds: 15, negativeTtlSeconds: 5 };
-    default:
-      return { ttlSeconds: null };
-  }
-}
-
-function isEmptyCacheResponse(value: CacheResponse): boolean {
-  if (!Array.isArray(value) || value.length === 0) return true;
-  const nonEose = value.filter(
-    (res) => Array.isArray(res) && res[0] !== "EOSE"
-  );
-  return nonEose.length === 0;
-}
-
-/** True if PRIMAL_CACHING_URL is an HTTP(S) proxy (e.g. Cloudflare Worker). */
-function isHttpPrimalUrl(url: string | undefined): boolean {
-  if (!url || typeof url !== "string") return false;
-  const u = url.trim().toLowerCase();
-  return u.startsWith("http://") || u.startsWith("https://");
-}
-
 /**
- * Fetches via HTTP POST when PRIMAL_CACHING_URL is an HTTP(S) proxy
- * (e.g. Cloudflare Worker that forwards to WebSocket backends).
+ * Legacy HTTP proxy. `X-Cache-Skip-Native` tells the Cloudflare worker that
+ * this process already tried NostrMash HTTP. The internal reader does not
+ * send that header because it owns the whole chain.
  */
 async function fetchFromPrimalViaHttp(
   primalUrl: string,
@@ -100,10 +78,6 @@ async function fetchFromPrimalViaHttp(
   );
 }
 
-/**
- * Fetches via WebSocket when PRIMAL_CACHING_URL is ws/wss or unset
- * (direct Primal cache or default public endpoints).
- */
 async function fetchFromPrimalViaWebSocket(
   requestType: string,
   params: CacheParams
@@ -118,69 +92,92 @@ async function fetchFromPrimalViaWebSocket(
   );
 }
 
+async function fetchLegacyUpstream(
+  requestType: string,
+  params: CacheParams
+): Promise<CacheResponse> {
+  try {
+    const native = await tryNativePrimalFrames(requestType, params);
+    if (
+      native &&
+      native.length > 0 &&
+      isUsableCachePayload(requestType, params, native)
+    ) {
+      return native;
+    }
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      requestType,
+      message: "[NostrMash] Native read failed, using Primal fallback",
+    });
+  }
+  const primalUrl = env.PRIMAL_CACHING_URL;
+  if (
+    env.NOSTR_READ_BACKEND === "legacy_http" &&
+    primalUrl &&
+    isHttpCacheProxyUrl(primalUrl)
+  ) {
+    return fetchFromPrimalViaHttp(primalUrl, requestType, params);
+  }
+  return fetchFromPrimalViaWebSocket(requestType, params);
+}
+
+async function fetchUpstream(
+  requestType: string,
+  params: CacheParams
+): Promise<CacheResponse> {
+  if (env.NOSTR_READ_BACKEND === "internal") {
+    const result = await readNostrUpstreamsFromEnv(requestType, params);
+    return result.messages;
+  }
+  return fetchLegacyUpstream(requestType, params);
+}
+
 /**
- * Fetches data from the Primal cache.
- * Supports two PRIMAL_CACHING_URL formats:
- * - https://... (e.g. Cloudflare Worker proxy): HTTP POST with { requestType, params }
- * - wss://... or unset: WebSocket API (direct cache or default public endpoints)
+ * Reads a Nostr cache page.
+ *
+ * The internal backend uses the in-process chain and Redis.
+ * `legacy_http` keeps the HTTP proxy. `legacy_ws` keeps direct sockets.
+ * Redis keys for the internal reader are version `v2`, so a rollback to the
+ * legacy reader does not serve those entries.
  */
 export async function fetchFromCache(
   requestType: string,
   params: CacheParams
 ): Promise<CacheResponse> {
-  const primalUrl = env.PRIMAL_CACHING_URL;
-  const useHttp = isHttpPrimalUrl(primalUrl);
-
-  const doFetch = async (): Promise<CacheResponse> => {
-    try {
-      const native = await tryNativePrimalFrames(requestType, params);
-      if (native && native.length > 0) return native;
-    } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
-        requestType,
-        params,
-        message: "[NostrMash] Native read failed, using Primal fallback",
-      });
-    }
-    return useHttp && primalUrl
-      ? fetchFromPrimalViaHttp(primalUrl, requestType, params)
-      : fetchFromPrimalViaWebSocket(requestType, params);
-  };
+  const backend = env.NOSTR_READ_BACKEND;
+  const doFetch = () => fetchUpstream(requestType, params);
 
   try {
-    const { ttlSeconds, negativeTtlSeconds } =
-      cacheTtlSecondsForRequestType(requestType);
-
-    if (!ttlSeconds) {
-      return await doFetch();
+    const key = readCacheKey({ backend, requestType, params });
+    const { ttlSeconds, negativeTtlSeconds } = cacheTtlForRequest(requestType);
+    if (!shouldStoreReadCache(requestType, params) || !ttlSeconds) {
+      recordReadCacheResult("bypass", requestType);
+      return await singleFlight(key, doFetch);
     }
 
-    const key = buildCacheKey({
-      namespace: "primal",
-      version: "v1",
-      parts: { requestType, params },
-    });
-
-    return await getOrSetJson<CacheResponse>({
-      cache: "primal",
-      key,
-      ttlSeconds,
-      negativeTtlSeconds,
-      shouldNegativeCache: isEmptyCacheResponse,
-      compute: () =>
-        withSentrySpan(
-          {
-            name: SENTRY_SPAN_NAME_PRIMAL_FETCH,
-            op: SENTRY_SPAN_OP_HTTP_CLIENT,
-            attributes: { requestType, cache: "redis" },
-          },
-          doFetch
-        ),
-    });
+    return await singleFlight(key, () =>
+      getOrSetJson<CacheResponse>({
+        cache: "primal",
+        key,
+        ttlSeconds,
+        negativeTtlSeconds,
+        shouldNegativeCache: isEmptyCachePage,
+        observe: (result) => recordReadCacheResult(result, requestType),
+        compute: () =>
+          withSentrySpan(
+            {
+              name: SENTRY_SPAN_NAME_PRIMAL_FETCH,
+              op: SENTRY_SPAN_OP_HTTP_CLIENT,
+              attributes: { requestType, cache: "redis" },
+            },
+            doFetch
+          ),
+      })
+    );
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
       requestType,
-      params,
       message: "[Primal Cache] Failed to fetch",
     });
     throw error;
@@ -188,24 +185,8 @@ export async function fetchFromCache(
 }
 
 /**
- * Connects to the Primal cache and fetches data.
- * PRIMAL_CACHING_URL can be:
- * - https://...  -  HTTP proxy (e.g. Cloudflare Worker): POST { requestType, params }, returns same array format
- * - wss://... or unset  -  WebSocket API (direct cache or default wss://cache1.primal.net/v1, etc.)
- * WebSocket `requestType` strings must match `App.exposed_functions` in Primal’s `app.jl`
- * (e.g. `network_stats`, `thread_view`, `parametrized_replaceable_event`, `contact_list`,
- * `user_followers`, `mutual_follows`). Helpers in `nostrwebsocket.server.ts` map aliases
- * (`reposts`/`likes`/… → `event_actions`) and `net_stats` → `network_stats`.
- * `get_notifications` is used on Primal public caches but is not in the open-source exposed set.
- *
- * @param requestType - The type of request (e.g., "thread_view", "user_profile", etc.)
- * @param params - Parameters for the request (e.g., { event_id: "..." })
- * @returns Array of response events from the cache
- *
- * @example
- * const responses = await connectToPrimalCache("thread_view", {
- *   event_id: "d17048466d168d49a0af46ce7fc054f59a797ad0d05e0f95a0241192cd220bff"
- * });
+ * Same page as `fetchFromCache`, rejecting an empty page unless this request
+ * type can legitimately be empty.
  */
 export async function connectToPrimalCache(
   requestType: string,
@@ -213,25 +194,28 @@ export async function connectToPrimalCache(
 ): Promise<CacheResponse> {
   try {
     const responses = await fetchFromCache(requestType, params);
-
-    // Check if we got valid responses (at least one non-EOSE event)
     const nonEose = responses.filter(
       (res): res is unknown[] => Array.isArray(res) && res[0] !== "EOSE"
     );
-
-    if (nonEose.length > 0) {
+    if (nonEose.length > 0) return responses;
+    if (allowsEmptyResult(requestType) && isCompleteEmpty(responses)) {
       return responses;
     }
 
     logError(new Error("[Primal Cache] Empty response"), {
       requestType,
-      params,
+      message: "[Primal Cache] Empty response",
     });
     throw new Error("Primal cache gave empty response.");
   } catch (err) {
+    if (
+      err instanceof Error &&
+      err.message === "Primal cache gave empty response."
+    ) {
+      throw err;
+    }
     logError(err instanceof Error ? err : new Error(String(err)), {
       requestType,
-      params,
       message: "[Primal Cache] Failed",
     });
     throw err;

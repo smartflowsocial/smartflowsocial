@@ -73,7 +73,7 @@ graph TB
 
     subgraph "External Services"
         HttpPublisher[Optional HTTP publisher]
-        Primal[Cache worker<br/>NostrMash then Primal]
+        Primal[Nostr read<br/>Redis, NostrMash, Primal]
         Storage[SmartFlowSocial Blossom<br/>Image Uploads]
         Relays[Nostr Relays<br/>Event Distribution]
         NWC[NWC Service<br/>Lightning Payments]
@@ -110,9 +110,12 @@ graph TB
     style Relays fill:#fff9c4
 ```
 
-The publisher in that diagram runs inside this process. Blossom and the cache worker are the other
-SmartFlowSocial repositories, not generic third-party boxes. Blastr is optional managed fan-out.
-[NostrMash](https://github.com/nostrmash/nostrmash) is the cache worker's first read source.
+The publisher in that diagram runs inside this process. Profile and thread reads do too: Redis
+caches them, then NostrMash and Primal-compatible sockets supply misses. Blossom is the other
+SmartFlowSocial repository in that picture. Blastr is optional managed fan-out.
+[NostrMash](https://github.com/nostrmash/nostrmash) is an indexed read source, not a cache. The
+[cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is only the legacy
+HTTP proxy.
 
 - The internal Nostr publisher sends signed events to relays. `SELF_HOSTED=true` selects it.
   `NOSTR_PUBLISHER_BACKEND=http` keeps an external HTTP publisher, including the
@@ -122,10 +125,13 @@ SmartFlowSocial repositories, not generic third-party boxes. Blastr is optional 
   optional managed fan-out.
 - [Blossom](https://github.com/smartflowsocial/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`) is
   optional media storage. S3-compatible storage is the other upload path.
-- [Cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker)
-  (`PRIMAL_CACHING_URL`) is an optional profile and engagement cache.
+- The in-process reader serves profile and engagement lookups. `SELF_HOSTED=true` selects it when
+  `PRIMAL_CACHING_URL` is not an HTTP proxy. See
+  [Internal Nostr read cache](../operations/internal-nostr-read.md).
+- [Cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is optional.
+  `NOSTR_READ_BACKEND=legacy_http` and an HTTP `PRIMAL_CACHING_URL` keep it.
 - [NostrMash](https://github.com/nostrmash/nostrmash) (`NOSTRMASH_BASE_URL`) is an optional read
-  source for paid post analytics. The scheduler runs without it.
+  source for those lookups and for paid post analytics. The scheduler runs without it.
 
 Mandatory for a local scheduler: this repository, PostgreSQL, and Redis. `pnpm dev` runs the web
 process and the worker. In production `pnpm start` runs both under one supervisor, or

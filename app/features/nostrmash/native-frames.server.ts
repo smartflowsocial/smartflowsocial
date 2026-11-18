@@ -59,9 +59,44 @@ function kindContentEvent(
     tags: [],
     content: typeof content === "string" ? content : JSON.stringify(content),
     sig: "",
+    synthetic: true,
   };
   if (extra) Object.assign(event, extra);
   return event;
+}
+
+function hex64Keep(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^[0-9a-f]{64}$/i.test(trimmed) ? trimmed : null;
+}
+
+function hexListKeep(value: unknown, max: number): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const hex = hex64Keep(item);
+    if (!hex || seen.has(hex.toLowerCase())) continue;
+    seen.add(hex.toLowerCase());
+    out.push(hex);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+function statsArePresent(stats: Record<string, unknown> | null): boolean {
+  if (!stats) return false;
+  return (
+    num(stats["follower_count"]) > 0 ||
+    num(stats["following_count"]) > 0 ||
+    num(stats["note_count"]) > 0 ||
+    num(stats["reply_count"]) > 0 ||
+    num(stats["zap_received_count"]) > 0 ||
+    num(stats["sats_zapped"]) > 0 ||
+    num(stats["media_count"]) > 0 ||
+    num(stats["long_form_note_count"]) > 0
+  );
 }
 
 function eventFrame(subId: string, event: Record<string, unknown>): unknown[] {
@@ -164,7 +199,7 @@ function nostrEvent(value: unknown): Record<string, unknown> | null {
 async function queryUserProfile(
   params: CacheParams | undefined
 ): Promise<unknown[] | null> {
-  const pubkey = hex64(params?.["pubkey"]);
+  const pubkey = hex64Keep(params?.["pubkey"]);
   if (!pubkey) return null;
   const response = await nostrmashRead(
     `/api/v1/users/${encodeURIComponent(pubkey)}/summary`
@@ -179,7 +214,7 @@ async function queryUserProfile(
     body["metadata_event_id"],
     body["metadata_created_at"]
   );
-  if (!profile && !stats) return null;
+  if (!profile && !statsArePresent(stats)) return null;
   const events: Array<Record<string, unknown>> = [];
   if (profile) events.push(profile);
   if (stats) events.push(userStatsEvent(pubkey, stats));
@@ -189,7 +224,7 @@ async function queryUserProfile(
 async function queryUserInfos(
   params: CacheParams | undefined
 ): Promise<unknown[] | null> {
-  const pubkeys = hexList(params?.["pubkeys"], MAX_BATCH);
+  const pubkeys = hexListKeep(params?.["pubkeys"], MAX_BATCH);
   if (pubkeys.length === 0) return null;
   const response = await nostrmashRead("/api/v1/profiles/batch", {
     method: "POST",
@@ -204,8 +239,11 @@ async function queryUserInfos(
     if (!record) continue;
     const pubkey = hex64(record["pubkey"]);
     if (!pubkey) continue;
+    const requested =
+      pubkeys.find((item) => item.toLowerCase() === pubkey.toLowerCase()) ??
+      pubkey;
     const profile = kind0Event(
-      pubkey,
+      requested,
       record["profile"],
       record["metadata_event_id"],
       record["metadata_created_at"]

@@ -136,9 +136,11 @@ export async function getOrSetJson<T>(input: {
    */
   negativeTtlSeconds?: number;
   shouldNegativeCache?: (value: T) => boolean;
+  observe?: (event: "hit" | "miss" | "negative" | "bypass") => void;
 }): Promise<T> {
   if (!isRedisCacheEnabled()) {
     recordRedisCacheRequest(input.cache, "bypass");
+    input.observe?.("bypass");
     const computeStart = Date.now();
     const value = await input.compute();
     recordRedisCacheLatency(input.cache, "compute", Date.now() - computeStart);
@@ -149,7 +151,12 @@ export async function getOrSetJson<T>(input: {
     cache: input.cache,
     key: input.key,
   });
-  if (cached.hit) return cached.value;
+  if (cached.hit) {
+    const negative = input.shouldNegativeCache?.(cached.value) ?? false;
+    input.observe?.(negative ? "negative" : "hit");
+    return cached.value;
+  }
+  input.observe?.("miss");
 
   const computeStart = Date.now();
   const value = await input.compute();

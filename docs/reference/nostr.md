@@ -611,7 +611,8 @@ Replies use standard Nostr reply structure:
 
 ### Thread View
 
-Thread views are fetched from Primal cache:
+Thread views are fetched by the in-process reader (Redis, then NostrMash, then a Primal-compatible
+cache):
 
 ```typescript
 // Fetch thread
