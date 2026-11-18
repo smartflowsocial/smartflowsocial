@@ -11,7 +11,31 @@ import {
 
 const HEAD = "a".repeat(40);
 
-function publishedManifest() {
+interface ReleaseComponent {
+  name: string;
+  repository: string;
+  role: string;
+  releaseSha: string | null;
+  releaseShaStatus: string;
+  validationStatus: string;
+  productionSha: string | null;
+  productionShaStatus: string;
+  stagingSha: string | null;
+  stagingShaStatus: string;
+}
+
+interface PublishedManifest {
+  version: string;
+  status: string;
+  tag: string;
+  tagPublished: boolean;
+  publishedAt: string;
+  applicationReleaseSha: string | null;
+  productionDeployed: boolean;
+  components: ReleaseComponent[];
+}
+
+function publishedManifest(): PublishedManifest {
   return {
     version: "1.0.0-beta.1",
     status: "published-prerelease",
@@ -87,6 +111,15 @@ function publishedManifest() {
 
 const packageJson = { version: "1.0.0-beta.1", private: true };
 
+function componentAt(
+  manifest: PublishedManifest,
+  index: number
+): ReleaseComponent {
+  const component = manifest.components[index];
+  if (!component) throw new Error(`missing component ${index}`);
+  return component;
+}
+
 describe("published beta manifest", () => {
   it("accepts the published tag when this commit is a later correction", () => {
     expect(
@@ -102,9 +135,10 @@ describe("published beta manifest", () => {
     manifest.tagPublished = false;
     manifest.status = "prerelease-candidate";
     manifest.applicationReleaseSha = null;
-    manifest.components[0].releaseSha = null;
-    manifest.components[0].releaseShaStatus = "unknown";
-    manifest.components[0].validationStatus = "unknown";
+    const app = componentAt(manifest, 0);
+    app.releaseSha = null;
+    app.releaseShaStatus = "unknown";
+    app.validationStatus = "unknown";
     const errors = validatePublishedBetaManifest(manifest, packageJson, {
       headSha: HEAD,
       tagSha: PUBLISHED_BETA_SHA,
@@ -123,9 +157,10 @@ describe("published beta manifest", () => {
 
   it("rejects an invented companion release SHA", () => {
     const manifest = publishedManifest();
-    manifest.components[1].releaseSha = "b".repeat(40);
-    manifest.components[1].releaseShaStatus = "validated-commit";
-    manifest.components[1].validationStatus = "checks-passed";
+    const publisher = componentAt(manifest, 1);
+    publisher.releaseSha = "b".repeat(40);
+    publisher.releaseShaStatus = "validated-commit";
+    publisher.validationStatus = "checks-passed";
     const errors = validatePublishedBetaManifest(manifest, packageJson, {
       headSha: HEAD,
       tagSha: PUBLISHED_BETA_SHA,
@@ -135,9 +170,9 @@ describe("published beta manifest", () => {
 
   it("rejects a production SHA copied from a CI run", () => {
     const manifest = publishedManifest();
-    manifest.components[0].productionSha = "c".repeat(40);
-    manifest.components[0].productionShaStatus =
-      "verified-from-running-service";
+    const app = componentAt(manifest, 0);
+    app.productionSha = "c".repeat(40);
+    app.productionShaStatus = "verified-from-running-service";
     const errors = validatePublishedBetaManifest(manifest, packageJson, {
       headSha: HEAD,
       tagSha: PUBLISHED_BETA_SHA,
@@ -161,7 +196,9 @@ describe("future release records", () => {
 
   it("refuses to mark validation passed when the component SHA is unknown", () => {
     const record = emptyReleaseRecord("1.0.0-beta.2");
-    record.components[1].validationStatus = "checks-passed";
+    const publisher = record.components[1];
+    if (!publisher) throw new Error("missing publisher");
+    publisher.validationStatus = "checks-passed";
     const errors = validateReleaseRecord(record, {
       headSha: HEAD,
       required: ["app", "publisher"],
