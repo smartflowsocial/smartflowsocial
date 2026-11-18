@@ -9,6 +9,11 @@ export interface ProductionSecretInput {
   referralPayoutsEnabled: string | undefined;
   nostrPublisherApiToken: string | undefined;
   nostrPublisherAllowUnauthenticated: string | undefined;
+  /**
+   * `internal` publishes from this process and does not need the HTTP token.
+   * Omitted means the HTTP publisher, which still requires the token.
+   */
+  publisherBackend?: "http" | "internal";
 }
 
 export interface ProductionSecretProblem {
@@ -49,6 +54,7 @@ export function productionSecretErrors(
   const allowPublicPublisher =
     input.nostrPublisherAllowUnauthenticated === "true";
   if (
+    input.publisherBackend !== "internal" &&
     !allowPublicPublisher &&
     (input.nostrPublisherApiToken?.trim() ?? "").length < 16
   ) {

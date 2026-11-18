@@ -137,8 +137,9 @@ DATABASE_URL=postgresql://user:password@localhost:5432/smartflow
 # Session
 SESSION_SECRET=your-random-32-character-secret-here
 
-# Nostr Publisher
-NOSTR_PUBLISHER_URL=https://your-publisher.example.com
+# Self-hosted publishing. Omit the publisher URL and token.
+SELF_HOSTED=true
+NOSTR_PUBLISHER_BACKEND=internal
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -282,15 +283,14 @@ Access MinIO console at http://localhost:9001
 
 ## External Services
 
-### HTTP Nostr Publisher
+### Nostr publisher
 
-Required for publishing posts to Nostr relays.
+Publishing is built in. `SELF_HOSTED=true` selects it, and a clean install does not need Cloudflare,
+Wrangler, a publisher URL, or a publisher token.
 
-**Deploy your own:**
-
-- [SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
-- Set `NOSTR_PUBLISHER_URL` to that worker. If the publisher has `API_TOKEN` set, set the same value
-  as `NOSTR_PUBLISHER_API_TOKEN` (sent as `API-TOKEN`).
+Set `NOSTR_PUBLISHER_BACKEND=http` only to keep an external HTTP publisher. The
+[SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) worker is
+that optional adapter. See [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 ### Blastr (optional)
 

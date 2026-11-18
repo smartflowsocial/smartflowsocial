@@ -11,6 +11,10 @@ import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.se
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
+  allRelaysRejected,
+  relayPublishFailureMessage,
+} from "~/infra/publishers/publish-outcome";
+import {
   processPayloadWithVersion,
   CURRENT_VERSION,
   getPayloadVersion,
@@ -431,6 +435,10 @@ async function handlePostDeleteRequested(
     );
   }
 
+  if (allRelaysRejected(publishResult.results)) {
+    throw new Error(relayPublishFailureMessage(publishResult.results));
+  }
+
   logInfo("Published post delete request to relays", {
     ...buildObsContext({
       postId: payload.postId,
@@ -509,6 +517,10 @@ async function handleLongFormDeleteRequested(
         message: "Failed to persist longform delete relay ACKs",
       }
     );
+  }
+
+  if (allRelaysRejected(publishResult.results)) {
+    throw new Error(relayPublishFailureMessage(publishResult.results));
   }
 
   logInfo("Published longform delete request to relays", {

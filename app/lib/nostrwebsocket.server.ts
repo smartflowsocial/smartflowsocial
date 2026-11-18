@@ -340,7 +340,7 @@ async function tryConnectToCache(
       }
     };
 
-    ws.onerror = (ev: Error | Event) => {
+    ws.onerror = (ev: unknown) => {
       // In Node.js with 'ws' library, error handler receives Error directly
       // In browser, it would be ErrorEvent, but we're in Node.js
       const error = ev instanceof Error ? ev : new Error("WebSocket error");

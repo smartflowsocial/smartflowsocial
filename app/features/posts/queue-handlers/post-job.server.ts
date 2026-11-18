@@ -29,6 +29,10 @@ import { PostStateMachine } from "~/features/posts/state-machine/post-state-mach
 import { getPostStats } from "~/features/posts/stats.server";
 import type { RepostConditions } from "~/features/posts/types";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import {
+  allRelaysRejected,
+  relayPublishFailureMessage,
+} from "~/infra/publishers/publish-outcome";
 import type { PublishLease } from "~/infra/publishing/publish-lease.server";
 import {
   acquirePostPublishLease,
@@ -854,6 +858,10 @@ export async function runScheduledPostJob(input: {
         message: "Scheduled posts worker: Failed to persist publish ACKs",
       }
     );
+  }
+
+  if (allRelaysRejected(publishResult.results)) {
+    throw new Error(relayPublishFailureMessage(publishResult.results));
   }
 
   try {

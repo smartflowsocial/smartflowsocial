@@ -21,6 +21,8 @@ import {
   recordRelayFailure,
 } from "../relays/relay-health.server";
 
+import { InternalNostrPublisher } from "./internal-nostr-publisher.server";
+
 export interface RelayPublishResult {
   relay: string;
   ok: boolean;
@@ -290,10 +292,11 @@ export class DefaultNostrPublisher implements NostrPublisher {
   private readonly apiToken: string | undefined;
 
   constructor() {
-    this.publisherUrl = env.NOSTR_PUBLISHER_URL;
-    if (!this.publisherUrl) {
+    const publisherUrl = env.NOSTR_PUBLISHER_URL;
+    if (!publisherUrl) {
       throw new Error("NOSTR_PUBLISHER_URL environment variable is not set");
     }
+    this.publisherUrl = publisherUrl;
 
     // Optional API token for authentication
     this.apiToken = env.NOSTR_PUBLISHER_API_TOKEN;
@@ -461,12 +464,40 @@ export class DefaultNostrPublisher implements NostrPublisher {
 
 // Default instance
 let defaultPublisher: NostrPublisher | null = null;
+let loggedBackend = false;
 
 /**
- * Get the default Nostr publisher instance
+ * Get the default Nostr publisher instance.
+ *
+ * `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP publisher.
+ * `internal` publishes from this process. Hosted production leaves the
+ * variable unset and stays on HTTP. There is no automatic failover.
  */
 export function getNostrPublisher(): NostrPublisher {
-  defaultPublisher ??= new DefaultNostrPublisher();
+  if (!loggedBackend) {
+    loggedBackend = true;
+    logInfo("Nostr publisher backend selected", {
+      publisherBackend: env.NOSTR_PUBLISHER_BACKEND,
+    });
+    if (
+      env.NOSTR_PUBLISHER_BACKEND === "internal" &&
+      env.NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS === "true"
+    ) {
+      logWarning(
+        "NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS is enabled. The publisher can open relay URLs on private networks.",
+        { publisherBackend: "internal" }
+      );
+    }
+  }
+  if (!defaultPublisher) {
+    defaultPublisher =
+      env.NOSTR_PUBLISHER_BACKEND === "internal"
+        ? new InternalNostrPublisher({
+            allowPrivateRelays:
+              env.NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS === "true",
+          })
+        : new DefaultNostrPublisher();
+  }
   return defaultPublisher;
 }
 
@@ -475,4 +506,12 @@ export function getNostrPublisher(): NostrPublisher {
  */
 export function setNostrPublisher(publisher: NostrPublisher): void {
   defaultPublisher = publisher;
+}
+
+/**
+ * Drop the cached publisher so the next read follows the current backend.
+ */
+export function resetNostrPublisherForTests(): void {
+  defaultPublisher = null;
+  loggedBackend = false;
 }

@@ -50,8 +50,8 @@ cp example.env .env
 # At minimum, set:
 # - DATABASE_URL
 # - SESSION_SECRET
-# - NOSTR_PUBLISHER_URL
 # - REDIS_URL
+# - SELF_HOSTED=true on an install you operate
 # - Storage credentials (S3, R2, etc.)
 ```
 
@@ -97,11 +97,12 @@ The application will be available at [http://localhost:3000](http://localhost:30
 Worker metrics are on port 3011. `pnpm worker:local` runs the worker without the web server. Do not
 run it next to `pnpm dev`, or you get a second worker.
 
-Publishing still needs `NOSTR_PUBLISHER_URL`. `pnpm docker` does not start a publisher. For a
-laptop, run `pnpm publisher:local` and point the URL at `http://127.0.0.1:8787/publish` with the
-same token. That process checks signatures and does not open relays. The production publisher is the
-separate [Cloudflare worker](https://github.com/smartflowsocial/smartflowsocial-publisher). The
-checked procedure is the [self-host smoke](./self-host-smoke.md).
+`SELF_HOSTED=true` publishes from this process. It does not need a publisher URL, a publisher token,
+or a Cloudflare account. `pnpm docker` starts Postgres and Redis only. `pnpm publisher:local` is an
+optional signature stub for `pnpm smoke:publish`. Real loopback delivery is
+`pnpm test:relay-publish`. The checked procedure is the [self-host smoke](./self-host-smoke.md). The
+rollout and rollback steps are in
+[Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 Before you call this healthy:
 

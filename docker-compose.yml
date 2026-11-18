@@ -8,8 +8,8 @@
 # Postgres 16 matches CI. Do not switch this image back to `latest`.
 #
 # `pnpm dev` runs the web server and the worker.
-# The production publisher is https://github.com/smartflowsocial/smartflowsocial-publisher (a Cloudflare Worker).
-# On a laptop, `pnpm publisher:local` is a signature-checking stand-in. It does not open relays.
+# Publishing is in-process. SELF_HOSTED=true selects that publisher.
+# `pnpm publisher:local` remains a signature-checking HTTP stub. It does not open relays.
 services:
   postgres:
     image: postgres:16
