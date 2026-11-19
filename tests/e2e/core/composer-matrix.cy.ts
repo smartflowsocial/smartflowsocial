@@ -2,47 +2,67 @@ import { TEST_NPUB } from "../support/nostr-test-keys";
 
 const COMPOSER_TYPES = ["post", "thread", "poll", "article"] as const;
 
-function assertPrimaryCta(label: string) {
-  cy.contains("button", new RegExp(`^${label}$`, "i"), {
-    timeout: 20000,
-  }).should("be.visible");
+// The publishing rail is a side column from the `lg` breakpoint (1024px) up.
+// Cypress's default 1000×660 viewport stacks that rail under the composer.
+// A forced click then lands on the fixed header instead of the mode control,
+// so the primary action never leaves "Publish now".
+const RAIL_VIEWPORT = { width: 1280, height: 900 } as const;
+const PUBLISH_RAIL = 'aside[aria-label="Publish"]';
+
+const MODE_ARIA_LABEL = {
+  now: "Publish now, immediate",
+  schedule: "Schedule for a specific time",
+  queue: "Add to queue",
+} as const;
+
+function publishModeRadio(ariaLabel: string) {
+  return cy.get(
+    `${PUBLISH_RAIL} [role="radiogroup"][aria-label="Publishing mode"] button[aria-label="${ariaLabel}"]`,
+    { timeout: 20000 }
+  );
 }
 
-function runPublishModeChecksOrFallback(type: (typeof COMPOSER_TYPES)[number]) {
-  cy.get("body").then(($body) => {
-    const hasModeTabs =
-      $body.find('button[role="radio"][aria-label*="Publish now"]').length >
-        0 || $body.find("button:contains('Now')").length > 0;
+function selectPublishMode(mode: keyof typeof MODE_ARIA_LABEL) {
+  const ariaLabel = MODE_ARIA_LABEL[mode];
+  const clickMode = () =>
+    publishModeRadio(ariaLabel).click({ scrollBehavior: "center" });
 
-    if (hasModeTabs) {
-      cy.contains("button", /^Now$/).click({ force: true });
-      assertPrimaryCta("Publish now");
+  clickMode();
+  // The first click can land before the composer finishes hydrating.
+  publishModeRadio(ariaLabel).then(($button) => {
+    if ($button.attr("aria-checked") !== "true") clickMode();
+  });
+  publishModeRadio(ariaLabel).should("have.attr", "aria-checked", "true");
+}
 
-      cy.contains("button", /^Schedule$/).click({ force: true });
-      assertPrimaryCta("Schedule post");
+function assertPrimaryCta(label: string) {
+  cy.get(PUBLISH_RAIL, { timeout: 20000 }).within(() => {
+    cy.contains("button", new RegExp(`^${label}$`, "i"), {
+      timeout: 20000,
+    }).should("be.visible");
+  });
+}
 
-      cy.contains("button", /^Queue$/).click({ force: true });
-      assertPrimaryCta("Add to queue");
+function assertPublishModes() {
+  selectPublishMode("now");
+  assertPrimaryCta("Publish now");
 
-      cy.contains("button", /Save (as )?draft/i).should("be.visible");
-      return;
-    }
+  selectPublishMode("schedule");
+  assertPrimaryCta("Schedule post");
 
-    // Fallback when composer rail hasn't hydrated in headless Electron:
-    // still validate type shell and tab matrix deterministically.
-    cy.contains(/Create (post|thread|poll|article)/, { timeout: 20000 }).should(
-      "exist"
+  selectPublishMode("queue");
+  assertPrimaryCta("Add to queue");
+
+  cy.get(PUBLISH_RAIL).within(() => {
+    cy.contains("button", /Save (as )?draft/i, { timeout: 20000 }).should(
+      "be.visible"
     );
-    cy.contains("button", "Post").should("be.visible");
-    cy.contains("button", "Poll").should("be.visible");
-    cy.contains("button", "Thread").should("be.visible");
-    cy.contains("button", "Article").should("be.visible");
-    cy.location("search").should("include", `type=${type}`);
   });
 }
 
 describe("Core: Composer matrix", () => {
   beforeEach(() => {
+    cy.viewport(RAIL_VIEWPORT.width, RAIL_VIEWPORT.height);
     cy.loginNostr({ npub: TEST_NPUB });
   });
 
@@ -55,27 +75,19 @@ describe("Core: Composer matrix", () => {
       cy.visitAndCheck(`/dashboard/compose?type=${type}`);
       cy.assertPathname("/dashboard/compose");
       cy.get("main", { timeout: 20000 }).should("be.visible");
-      runPublishModeChecksOrFallback(type);
+      cy.location("search").should("include", `type=${type}`);
+      assertPublishModes();
     });
   });
 
   it("shows schedule datetime field for shortform composer", () => {
     cy.visitAndCheck("/dashboard/compose?type=post");
-    cy.get("body").then(($body) => {
-      const hasScheduleMode =
-        $body.find('button[role="radio"][aria-label*="Schedule"]').length > 0 ||
-        $body.find("button:contains('Schedule')").length > 0;
-
-      if (hasScheduleMode) {
-        cy.contains("button", /^Schedule$/).click({ force: true });
-        cy.get('input[aria-label="Publish date and time"]', {
-          timeout: 20000,
-        }).should("exist");
-        return;
-      }
-
-      cy.contains("button", "Post", { timeout: 20000 }).should("be.visible");
-      cy.contains("button", "Poll").should("be.visible");
-    });
+    selectPublishMode("schedule");
+    cy.get(`${PUBLISH_RAIL} input[aria-label="Publish date and time"]`, {
+      timeout: 20000,
+    }).scrollIntoView();
+    cy.get(`${PUBLISH_RAIL} input[aria-label="Publish date and time"]`).should(
+      "be.visible"
+    );
   });
 });
