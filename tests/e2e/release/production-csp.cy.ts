@@ -52,6 +52,32 @@ describe("production CSP", () => {
     const violations: string[] = [];
     cy.visit("/", {
       onBeforeLoad(win) {
+        // Cypress inserts a whitespace text node into <head> before the
+        // document finishes loading. React 19 hydrates <head> and throws
+        // minified error #418 when that text node sits where a <link> belongs.
+        // A normal browser does not insert it. Drop blank head text nodes
+        // until the app has hydrated.
+        const dropBlankHeadText = () => {
+          for (const node of Array.from(win.document.head.childNodes)) {
+            if (
+              node.nodeType === win.Node.TEXT_NODE &&
+              !(node.textContent ?? "").trim()
+            ) {
+              node.remove();
+            }
+          }
+        };
+        dropBlankHeadText();
+        const observer = new win.MutationObserver(dropBlankHeadText);
+        observer.observe(win.document.head, { childList: true });
+        win.addEventListener(
+          "DOMContentLoaded",
+          () => {
+            dropBlankHeadText();
+            observer.disconnect();
+          },
+          { once: true }
+        );
         win.document.addEventListener("securitypolicyviolation", (event) => {
           violations.push(`${event.violatedDirective} ${event.blockedURI}`);
         });
