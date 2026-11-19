@@ -41,8 +41,9 @@ Contest and giveaway finalization uses one rate table.
 | Hosted      |  10% |    7.5% |      5% |                  0% |
 | Self-hosted |   0% |      0% |      0% |                  0% |
 
-Self-hosted mode is `SELF_HOSTED=true` on the server. The fee is separate from winner payouts and
-from plan subscription invoices. A zero fee does not call `OWNER_NWC`.
+Self-hosted mode is `SFS_DEPLOYMENT_MODE=self_hosted`, which is also the default. The fee is
+separate from winner payouts and from plan subscription invoices. A zero fee does not call
+`OWNER_NWC`.
 
 ## Environment Variables
 

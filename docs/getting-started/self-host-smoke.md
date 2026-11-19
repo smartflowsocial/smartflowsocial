@@ -12,17 +12,16 @@ It does not use the hosted service, a paid account, or a production relay.
 | ---------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
 | This app and its worker                  | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.           |
 | PostgreSQL and Redis                     | Yes                             | `pnpm docker`                                                          |
-| Nostr publisher                          | Yes, and it is part of this app | Unset selects it. `pnpm publisher:local` is only a signature stub      |
+| Nostr publisher                          | Yes, and it is part of this app | It runs in this process. No publisher URL.                             |
 | S3-compatible storage                    | Only for uploads                | Environment variables in `example.env`                                 |
 | Blossom, Blastr, cache worker, NostrMash | No                              | Leave their variables empty. Reads use the in-process reader.          |
 | Lightning, NWC, referral payouts         | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed. |
 
 A clean install publishes signed events from this process. It does not need Cloudflare, Wrangler, a
-publisher URL, or a publisher token. `pnpm publisher:local` checks signatures and returns success.
-It does not connect to relays. `pnpm smoke:publish` forces that HTTP stub. `pnpm test:relay-publish`
-uses the internal publisher against a relay on this machine. Set
+publisher URL, or a publisher token. `pnpm smoke:publish` and `pnpm test:relay-publish` use the
+publisher in this process against a relay on this machine. Set
 `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` only when that relay is on a private network you
-operate. `SELF_HOSTED` does not turn that flag on.
+operate. Deployment mode does not turn that flag on.
 
 Production is different. After `pnpm build`, `pnpm start` runs the web server and one worker
 together. `pnpm start:server` and `pnpm start:worker` run them as two separate processes. Do not
@@ -60,8 +59,7 @@ cp example.env .env
 ```bash
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres
 REDIS_URL=redis://127.0.0.1:6379
-SELF_HOSTED=true
-NOSTR_PUBLISHER_BACKEND=internal
+SFS_DEPLOYMENT_MODE=self_hosted
 SESSION_SECRET=replace-with-32-or-more-random-characters
 ```
 
@@ -108,8 +106,7 @@ relay publish integration passed post=<id> relay=ws://127.0.0.1:<port> events=1
 
 The same command also checks a relay that is down, recovery after it accepts again, a second job for
 an already published post, a bad signature, and an independent read of the stored event. The script
-sets `NOSTR_PUBLISHER_BACKEND=internal` and `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` for that
-loopback relay only.
+sets `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` for that loopback relay only.
 
 6. Start the app:
 

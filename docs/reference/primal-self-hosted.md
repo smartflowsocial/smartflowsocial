@@ -5,7 +5,7 @@
 The engagement feed uses Primal’s cache request `get_notifications` for **quote reposts** and
 **global mentions** (see `app/features/cache/wire.ts` and
 `app/features/engagement/services/engagement-loader.server.ts`). The in-process reader tries
-NostrMash first. A custom `PRIMAL_CACHING_URL` is the Primal fallback, not a requirement. See
+NostrMash first. A custom `PRIMAL_UPSTREAM_URLS` list is the Primal fallback, not a requirement. See
 [Internal Nostr read cache](../operations/internal-nostr-read.md).
 
 In **primal-caching-service**, only symbols listed in `App.exposed_functions` in `src/app.jl` are

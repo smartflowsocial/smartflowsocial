@@ -394,9 +394,7 @@ Publish a signed Nostr event to relays via the HTTP Nostr Publisher service.
 }
 ```
 
-**Note:** The event must be signed client-side before sending. The internal publisher is used when
-`NOSTR_PUBLISHER_BACKEND=internal` or when `SELF_HOSTED` is enabled and the backend is unset. The
-HTTP backend requires `NOSTR_PUBLISHER_URL`.
+**Note:** The event must be signed client-side before sending. This process publishes it to relays.
 
 ---
 

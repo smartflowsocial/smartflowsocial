@@ -78,8 +78,6 @@ E2E Core stays optional. A skipped optional job does not satisfy a required name
 - [ ] `pnpm test:relay-publish` against disposable Postgres, Redis, and a loopback relay. This uses
       the in-repo relay publisher, not the Cloudflare Worker
 - [ ] Full E2E Core has a successful check on the commit. A skipped core suite is not a pass
-- [ ] `pnpm test:worker` in `smartflowsocial-publisher` only when the release still selects
-      `NOSTR_PUBLISHER_BACKEND=http`
 - [ ] `pnpm build`
 - [ ] Secret scanning in CI
 - [ ] The CI `migrate` job is green on the commit to tag

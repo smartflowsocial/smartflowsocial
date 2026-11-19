@@ -11,30 +11,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ### Changed
 
-- A fresh install is self-hosted. `SFS_DEPLOYMENT_MODE=self_hosted` or `hosted` is the explicit
-  choice. Production, and the managed hosts `app.smartflow.social` and `staging.smartflow.social`,
-  refuse to start when the mode is unset. `SELF_HOSTED=true` and `SELF_HOSTED=false` still select
-  the same modes and must agree with `SFS_DEPLOYMENT_MODE` when both are set. Self-hosted platform
-  commission stays 0%. Hosted rates are unchanged.
-- The Nostr publisher defaults to `internal`. `NOSTR_PUBLISHER_BACKEND=http` is the explicit legacy
-  adapter. A publisher URL without that setting refuses to boot.
-- The Nostr reader defaults to `internal`. `NOSTR_READ_BACKEND=legacy_http` is the explicit legacy
-  cache proxy. An HTTP `PRIMAL_CACHING_URL` without that setting refuses to boot.
+- A fresh install is self-hosted, including a production build. `SFS_DEPLOYMENT_MODE` is the only
+  commercial selector. `self_hosted` charges 0%. `hosted` keeps Free 10%, Starter 7.5%, Creator 5%,
+  and Pro, Teams, and Founder at 0%. `NODE_ENV=production` does not select hosted mode.
+  `app.smartflow.social` and `staging.smartflow.social` refuse to boot unless the mode is `hosted`.
+- Publishing and Nostr reads run only inside this process. The external HTTP publisher and the
+  external cache worker are not configuration, not fallbacks, and not health checks.
+- `SELF_HOSTED`, `NOSTR_PUBLISHER_BACKEND`, `NOSTR_PUBLISHER_URL`, `NOSTR_PUBLISHER_API_TOKEN`,
+  `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED`, `NOSTR_READ_BACKEND`, `PRIMAL_CACHING_URL`,
+  `PRIMAL_HTTP_TIMEOUT_MS`, `PRIMAL_HTTP_MAX_RETRIES`, `LOCAL_PUBLISHER_TOKEN`, and
+  `LOCAL_PUBLISHER_PORT` refuse to boot when set. Custom Primal sockets use `PRIMAL_UPSTREAM_URLS`.
 - Vitest coverage floors are 80% lines, 80% statements, 78% functions, and 75% branches.
 - Full Cypress E2E Core runs on pull requests and pushes. Hydration errors fail that run.
 - A release tag must match `package.json`. `v1.0.0-beta.2` remains the historical exception.
+- Release validation no longer accepts an external publisher commit.
 
 ### Added
 
-- An in-process Nostr publisher. `SELF_HOSTED=true` uses it without Cloudflare, a publisher URL, or
-  a publisher token. `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP publisher. There is no
-  automatic failover. See [Internal Nostr publisher](docs/operations/internal-nostr-publisher.md).
+- An in-process Nostr publisher. See
+  [Internal Nostr publisher](docs/operations/internal-nostr-publisher.md).
 - A retryable publish failure returns the scheduled note or long-form post to `SCHEDULED`, so the
   worker can try again. A negative relay acknowledgement stays `FAILED`.
 - `pnpm test:self-host-acceptance` boots the production server and worker and publishes a signed
-  note to a loopback relay without a Cloudflare publisher or cache worker.
-- Release validation defaults to the internal publisher. `publisher_mode=http` still requires the
-  external publisher commit and its checks.
+  note to a loopback relay.
 
 ## [1.0.0-beta.1] - 2026-11-18
 

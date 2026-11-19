@@ -95,13 +95,11 @@ This will create a `fly.toml` configuration file.
 fly secrets set DATABASE_URL="postgresql://..."
 fly secrets set SESSION_SECRET="your-secret"
 fly secrets set SFS_DEPLOYMENT_MODE="self_hosted"
-# Hosted SmartFlowSocial uses hosted. Do not leave production without a mode.
+# Managed SmartFlowSocial uses hosted.
 # fly secrets set SFS_DEPLOYMENT_MODE="hosted"
-# The publisher and reader default to internal. Set these only for the legacy adapters.
-# fly secrets set NOSTR_PUBLISHER_BACKEND="http"
-# fly secrets set NOSTR_PUBLISHER_URL="https://..."
 fly secrets set NOSTR_NSEC="nsec1..."
-fly secrets set PRIMAL_CACHING_URL="wss://..."
+# Optional. Unset uses the public Primal sockets.
+# fly secrets set PRIMAL_UPSTREAM_URLS="wss://cache.example.com/v1"
 fly secrets set REDIS_URL="redis://..."
 fly secrets set STORAGE_ACCESS_KEY="..."
 fly secrets set STORAGE_SECRET="..."
@@ -330,16 +328,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - SESSION_SECRET=${SESSION_SECRET}
       - CRON_SECRET=${CRON_SECRET}
-      - SELF_HOSTED=${SELF_HOSTED:-true}
-      - NOSTR_PUBLISHER_BACKEND=${NOSTR_PUBLISHER_BACKEND:-internal}
-      # HTTP backend only. Leave empty when NOSTR_PUBLISHER_BACKEND=internal.
-      - NOSTR_PUBLISHER_URL=${NOSTR_PUBLISHER_URL:-}
-      - NOSTR_PUBLISHER_API_TOKEN=${NOSTR_PUBLISHER_API_TOKEN:-}
+      - SFS_DEPLOYMENT_MODE=${SFS_DEPLOYMENT_MODE:-self_hosted}
       - NOSTR_NSEC=${NOSTR_NSEC}
-      # Empty selects the in-process reader when SELF_HOSTED is true.
-      # An https:// value keeps the legacy cache proxy.
-      - NOSTR_READ_BACKEND=${NOSTR_READ_BACKEND:-}
-      - PRIMAL_CACHING_URL=${PRIMAL_CACHING_URL:-}
       - REDIS_URL=${REDIS_URL}
       - STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}
       - STORAGE_SECRET=${STORAGE_SECRET}
@@ -408,13 +398,8 @@ out of the image. Pass them with your platform's secret settings, `docker run --
 example below is that file. Never commit it.
 
 With `NODE_ENV=production` the app refuses to boot unless `CRON_SECRET` is at least 32 characters.
-The HTTP publisher backend also requires a `NOSTR_PUBLISHER_API_TOKEN` of at least 16 characters,
-except when `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED=true` is set on purpose.
-`NOSTR_PUBLISHER_BACKEND=internal` does not require that token or `NOSTR_PUBLISHER_URL`. Hosted
-production stays on `http` until the cutover in
-[Internal Nostr publisher](../operations/internal-nostr-publisher.md). A self-hosted install sets
-`SELF_HOSTED=true` and uses `internal`. The full list is in
-[Configuration](../reference/configuration.md).
+An empty `SFS_DEPLOYMENT_MODE` is self-hosted. Managed SmartFlowSocial sets `hosted`. Publishing and
+reads run in this process. The full list is in [Configuration](../reference/configuration.md).
 
 ```env
 # Application
@@ -430,16 +415,11 @@ SESSION_SECRET=your-super-secret-session-key-min-32-chars
 # Cron endpoints (required in production, at least 32 characters)
 CRON_SECRET=generate-with-openssl-rand-base64-32
 
-# Nostr. Hosted production keeps http until cutover. Self-hosted uses internal and omits the URL.
-NOSTR_PUBLISHER_BACKEND=http
-NOSTR_PUBLISHER_URL=https://your-publisher.example.com
-# HTTP backend only. Required in production, at least 16 characters.
-NOSTR_PUBLISHER_API_TOKEN=same-token-as-the-publisher
+# Commercial mode. self_hosted is the default. Managed hosting uses hosted.
+SFS_DEPLOYMENT_MODE=self_hosted
 NOSTR_NSEC=nsec1...
-# Optional. Unset uses NostrMash and the public Primal sockets inside this process
-# when NOSTR_READ_BACKEND=internal (the self-hosted default).
-# NOSTR_READ_BACKEND=internal
-# PRIMAL_CACHING_URL=wss://cache.example.com/v1
+# Optional. Unset uses NostrMash and the public Primal sockets inside this process.
+# PRIMAL_UPSTREAM_URLS=wss://cache.example.com/v1
 
 # Redis
 REDIS_URL=redis://host:6379

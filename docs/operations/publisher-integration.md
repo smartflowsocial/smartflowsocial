@@ -15,18 +15,8 @@ What that run covers:
 - An invalid signature is rejected.
 - A relay that is not running does not mark the post published.
 
-`pnpm smoke:publish` is the faster check. It forces `NOSTR_PUBLISHER_BACKEND=http` and talks to
-`scripts/local-publisher.mjs`, which checks the signature and does not open a relay.
+`pnpm smoke:publish` runs the same internal publisher against a loopback relay.
 
 `tests/integration/publisher-parity.test.ts` compares per-relay success and rejection with
-`scripts/relay-publisher.mjs` on isolated relays. That script is a test publisher. It is not the
-Cloudflare Worker.
-
-## HTTP adapter
-
-`NOSTR_PUBLISHER_BACKEND=http` still posts signed events to `NOSTR_PUBLISHER_URL`. Hosted production
-keeps that setting until the cutover in [Internal Nostr publisher](./internal-nostr-publisher.md). A
-wrong token is covered by `tests/integration/relay-publisher.contract.test.ts`.
-
-Do not treat a green `pnpm test:relay-publish` as proof that the Cloudflare Worker, its KV
-namespace, or its production secret is correct. Those belong to the optional HTTP adapter.
+`scripts/relay-publisher.mjs` on isolated relays. That script is a test publisher. It is not a
+Cloudflare Worker and the application does not call it.
