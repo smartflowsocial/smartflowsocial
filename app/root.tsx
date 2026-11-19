@@ -42,6 +42,7 @@ import { QueryProvider } from "~/lib/query/QueryProvider";
 import { isDev } from "~/lib/runtime-env";
 import { buildRootDefaultMeta, pageTitle } from "~/lib/seo";
 import { getSiteOrigin } from "~/lib/site-url.server";
+import { themeBootScript } from "~/lib/theme-boot-script";
 import { THEME_COLOR_HEX } from "~/lib/theme-color";
 import { syncThemeColorMetaFromDocument } from "~/lib/theme.client";
 import stylesheet from "~/tailwind.css?url";
@@ -179,7 +180,8 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     },
     { name: "apple-mobile-web-app-title", content: BRAND_NAME },
     // Match browser/PWA chrome to page canvas (not brand purple  -  Android paints a strip from theme-color).
-    // Client overrides via `syncThemeColorMeta` for in-app theme vs OS mismatch.
+    // The boot script does not touch these. ThemeColorMetaSync replaces them
+    // after hydration so an in-app theme can disagree with the OS.
     {
       name: "theme-color",
       content: THEME_COLOR_HEX.light,
@@ -244,73 +246,7 @@ export default function App() {
         />
         <script
           nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                var C_LIGHT = '${THEME_COLOR_HEX.light}';
-                var C_DARK = '${THEME_COLOR_HEX.dark}';
-
-                function parseStoredTheme(raw) {
-                  if (!raw) return null;
-                  var v = raw;
-                  try { v = JSON.parse(raw); } catch (e) { /* ignore */ }
-                  return (v === 'system' || v === 'light' || v === 'dark') ? v : null;
-                }
-
-                function systemEffectiveTheme() {
-                  var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
-                  return (mql && mql.matches) ? 'dark' : 'light';
-                }
-
-                function syncThemeColorMeta(effective) {
-                  var content = effective === 'dark' ? C_DARK : C_LIGHT;
-                  var meta = document.getElementById('sfs-theme-color');
-                  if (!meta) {
-                    meta = document.createElement('meta');
-                    meta.id = 'sfs-theme-color';
-                    meta.name = 'theme-color';
-                    document.head.appendChild(meta);
-                  }
-                  meta.setAttribute('content', content);
-                  document.querySelectorAll('meta[name="theme-color"][media]').forEach(function(el) {
-                    el.remove();
-                  });
-                }
-
-                function applyEffectiveTheme(effective) {
-                  if (effective === 'dark') document.documentElement.classList.add('dark');
-                  else document.documentElement.classList.remove('dark');
-                  syncThemeColorMeta(effective);
-                }
-
-                var accountPref = window.__SFS_ACCOUNT_THEME__;
-                var stored = localStorage.getItem('theme');
-                var sessionRaw = localStorage.getItem('theme_session');
-                var sessionOverride = parseStoredTheme(sessionRaw);
-                var pref;
-
-                if (accountPref === 'system' || accountPref === 'light' || accountPref === 'dark') {
-                  pref = sessionOverride || accountPref;
-                } else {
-                  pref = parseStoredTheme(stored);
-                  if (!pref) pref = 'system';
-                }
-
-                var effective = (pref === 'system') ? systemEffectiveTheme() : pref;
-                applyEffectiveTheme(effective);
-
-                // Live updates when following system preference.
-                if (pref === 'system' && window.matchMedia) {
-                  var mql = window.matchMedia('(prefers-color-scheme: dark)');
-                  if (mql) {
-                    var handler = function() { applyEffectiveTheme(systemEffectiveTheme()); };
-                    if (mql.addEventListener) mql.addEventListener('change', handler);
-                    else if (mql.addListener) mql.addListener(handler);
-                  }
-                }
-              })();
-            `,
-          }}
+          dangerouslySetInnerHTML={{ __html: themeBootScript() }}
         />
       </head>
       <body className="h-full">
