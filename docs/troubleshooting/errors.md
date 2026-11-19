@@ -699,11 +699,11 @@ See [Queue System](../guides/operations.md#queue-system) for more details.
 
 **Solutions:**
 
-1. **Check Primal Cache URL:**
+1. **Check the optional Primal socket list:**
 
    ```bash
-   echo $PRIMAL_CACHING_URL
-   # Verify WebSocket URL format: wss://...
+   echo $PRIMAL_UPSTREAM_URLS
+   # Unset uses the public Primal sockets. A custom list is wss:// URLs.
    ```
 
 2. **Test Relay Connection:**

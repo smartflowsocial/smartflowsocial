@@ -112,7 +112,6 @@ export default defineConfig({
           DATABASE_URL:
             process.env["DATABASE_URL"] ?? process.env["TEST_DATABASE_URL"],
           SESSION_SECRET: process.env["SESSION_SECRET"],
-          NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"],
           REDIS_URL: process.env["REDIS_URL"],
           ALLOW_HYDRATION_EXCEPTIONS:
             process.env["ALLOW_HYDRATION_EXCEPTIONS"] ?? "false",

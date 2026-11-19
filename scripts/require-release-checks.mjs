@@ -10,7 +10,6 @@ import { execFileSync } from "node:child_process";
 
 import {
   APP_REQUIRED_CHECKS,
-  PUBLISHER_REQUIRED_CHECKS,
   evaluateRequiredChecks,
   publisherReleasePlan,
   releaseInputErrors,
@@ -18,9 +17,6 @@ import {
 
 const APP_REPOSITORY =
   process.env.APP_REPOSITORY ?? "smartflowsocial/smartflowsocial";
-const PUBLISHER_REPOSITORY =
-  process.env.PUBLISHER_REPOSITORY ??
-  "smartflowsocial/smartflowsocial-publisher";
 
 function headSha() {
   return execFileSync("git", ["rev-parse", "HEAD"], {
@@ -90,22 +86,13 @@ async function main() {
   const appRuns = await checkRuns(APP_REPOSITORY, candidate);
   const appFailures = evaluateRequiredChecks(appRuns, APP_REQUIRED_CHECKS);
   report(`${APP_REPOSITORY}@${candidate}`, appFailures);
-  /** @type {Array<{ name: string, result: string }>} */
-  let publisherFailures = [];
-  if (publisherPlan.mode === "http") {
-    const publisher = process.env.PUBLISHER_SHA;
-    const publisherRuns = await checkRuns(PUBLISHER_REPOSITORY, publisher);
-    publisherFailures = evaluateRequiredChecks(
-      publisherRuns,
-      PUBLISHER_REQUIRED_CHECKS
-    );
-    report(`${PUBLISHER_REPOSITORY}@${publisher}`, publisherFailures);
-  } else {
-    console.log(
-      "internal publisher: external HTTP publisher checks are not required for this release"
-    );
+  if (publisherPlan.mode !== "internal") {
+    process.exit(1);
   }
-  if (appFailures.length > 0 || publisherFailures.length > 0) {
+  console.log(
+    "internal publisher: this release does not check an external HTTP publisher"
+  );
+  if (appFailures.length > 0) {
     process.exit(1);
   }
   console.log(

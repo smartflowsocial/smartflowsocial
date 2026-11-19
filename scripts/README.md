@@ -46,11 +46,10 @@ node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/r
 node scripts/check-performance-budgets.mjs --source=bundle
 ```
 
-### `local-publisher.mjs` and `self-host-publish-smoke.ts`
+### `relay-publish-integration.ts`
 
-`pnpm publisher:local` checks Nostr signatures and does not open relays. `pnpm smoke:publish`
-inserts one due post and runs the scheduled job against that publisher. See
-[the self-host smoke](../docs/getting-started/self-host-smoke.md).
+`pnpm smoke:publish` and `pnpm test:relay-publish` publish through this process to a loopback relay.
+See [the self-host smoke](../docs/getting-started/self-host-smoke.md).
 
 ### `VERIFY_INDEXES.sql`
 

@@ -72,8 +72,7 @@ graph TB
     end
 
     subgraph "External Services"
-        HttpPublisher[Optional HTTP publisher]
-        Primal[Nostr read<br/>Redis, NostrMash, Primal]
+        Primal[Nostr read upstreams<br/>NostrMash and Primal]
         Storage[SmartFlowSocial Blossom<br/>Image Uploads]
         Relays[Nostr Relays<br/>Event Distribution]
         NWC[NWC Service<br/>Lightning Payments]
@@ -92,7 +91,6 @@ graph TB
     App -->|Publish Events| Publisher
     Worker -->|Update Status| DB
     Publisher --> Relays
-    HttpPublisher -.-> Relays
     Routes -->|Fetch Profiles| Primal
     Routes -->|Upload Images| Storage
     Routes -->|Process Payments| NWC
@@ -106,30 +104,23 @@ graph TB
     style DB fill:#f3e5f5
     style Redis fill:#ffcdd2
     style Publisher fill:#e0f2f1
-    style HttpPublisher fill:#eceff1
     style Relays fill:#fff9c4
 ```
 
 The publisher in that diagram runs inside this process. Profile and thread reads do too: Redis
-caches them, then NostrMash and Primal-compatible sockets supply misses. Blossom is the other
-SmartFlowSocial repository in that picture. Blastr is optional managed fan-out.
-[NostrMash](https://github.com/nostrmash/nostrmash) is an indexed read source, not a cache. The
-[cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is only the legacy
-HTTP proxy.
+caches them, then NostrMash and Primal-compatible sockets supply misses. That reader is not a
+self-hosted Nostr index. Blossom is optional media storage. Blastr is optional managed fan-out.
+[NostrMash](https://github.com/nostrmash/nostrmash) is an indexed read source, not a cache this app
+requires.
 
-- The internal Nostr publisher sends signed events to relays. It is the default.
-  `NOSTR_PUBLISHER_BACKEND=http` keeps an external HTTP publisher, including the
-  [Cloudflare worker](https://github.com/smartflowsocial/smartflowsocial-publisher), as an optional
-  adapter. `pnpm publisher:local` only checks signatures.
+- The Nostr publisher sends signed events to relays from this process. See
+  [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 - [Blastr](https://github.com/smartflowsocial/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`) is
   optional managed fan-out.
 - [Blossom](https://github.com/smartflowsocial/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`) is
   optional media storage. S3-compatible storage is the other upload path.
-- The in-process reader serves profile and engagement lookups. It is the default. An HTTP
-  `PRIMAL_CACHING_URL` requires `NOSTR_READ_BACKEND=legacy_http`. See
+- The in-process reader serves profile and engagement lookups. See
   [Internal Nostr read cache](../operations/internal-nostr-read.md).
-- [Cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is optional.
-  `NOSTR_READ_BACKEND=legacy_http` and an HTTP `PRIMAL_CACHING_URL` keep it.
 - [NostrMash](https://github.com/nostrmash/nostrmash) (`NOSTRMASH_BASE_URL`) is an optional read
   source for those lookups and for paid post analytics. The scheduler runs without it.
 

@@ -29,10 +29,10 @@ Hosted, from `app/features/payments/plan-policy.ts`, in basis points:
 | Teams   |         0% |
 | Founder |         0% |
 
-Self-hosted (`SELF_HOSTED=true` in the server process only): every plan is 0%. The process does not
-create a platform-fee invoice, does not require `OWNER_NWC` for that fee, and does not block
-finalization because billing is unavailable. Winner payouts stay a separate payment from a wallet
-the creator or operator connects.
+Self-hosted (`SFS_DEPLOYMENT_MODE=self_hosted`, also the default): every plan is 0%. The process
+does not create a platform-fee invoice, does not require `OWNER_NWC` for that fee, and does not
+block finalization because billing is unavailable. Winner payouts stay a separate payment from a
+wallet the creator or operator connects.
 
 A browser header, cookie, query parameter, or account field cannot select the self-hosted rate.
 

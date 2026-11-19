@@ -7,13 +7,6 @@ export interface ProductionSecretInput {
   referralManualPayoutSecret: string | undefined;
   /** When explicitly on, production also requires the referral payout secret. */
   referralPayoutsEnabled: string | undefined;
-  nostrPublisherApiToken: string | undefined;
-  nostrPublisherAllowUnauthenticated: string | undefined;
-  /**
-   * `internal` publishes from this process and does not need the HTTP token.
-   * Omitted means the HTTP publisher, which still requires the token.
-   */
-  publisherBackend?: "http" | "internal";
 }
 
 export interface ProductionSecretProblem {
@@ -25,8 +18,8 @@ export interface ProductionSecretProblem {
  * Production boot refuses to start when secrets that gate administrative HTTP
  * routes are missing. Referral payouts are optional: the manual route stays
  * closed until its secret is set, and production requires that secret only
- * when referral payouts are explicitly enabled. Development and E2E boots may omit
- * the cron and publisher secrets; those routes still reject requests.
+ * when referral payouts are explicitly enabled. Development and E2E boots may
+ * omit the cron secret; those routes still reject requests.
  */
 export function productionSecretErrors(
   input: ProductionSecretInput
@@ -49,19 +42,6 @@ export function productionSecretErrors(
       key: "REFERRAL_MANUAL_PAYOUT_SECRET",
       reason:
         "is required in production when referral payouts are enabled and must be at least 32 characters. Generate one with: openssl rand -base64 32",
-    });
-  }
-  const allowPublicPublisher =
-    input.nostrPublisherAllowUnauthenticated === "true";
-  if (
-    input.publisherBackend !== "internal" &&
-    !allowPublicPublisher &&
-    (input.nostrPublisherApiToken?.trim() ?? "").length < 16
-  ) {
-    problems.push({
-      key: "NOSTR_PUBLISHER_API_TOKEN",
-      reason:
-        "is required in production unless public publishing is explicitly enabled. Use at least 16 characters, matching the publisher API_TOKEN.",
     });
   }
   return problems;

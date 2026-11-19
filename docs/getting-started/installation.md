@@ -137,9 +137,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/smartflow
 # Session
 SESSION_SECRET=your-random-32-character-secret-here
 
-# Self-hosted publishing. Omit the publisher URL and token.
-SELF_HOSTED=true
-NOSTR_PUBLISHER_BACKEND=internal
+# Self-hosted is the default. Managed hosting sets hosted.
+SFS_DEPLOYMENT_MODE=self_hosted
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -285,12 +284,8 @@ Access MinIO console at http://localhost:9001
 
 ### Nostr publisher
 
-Publishing is built in. `SELF_HOSTED=true` selects it, and a clean install does not need Cloudflare,
-Wrangler, a publisher URL, or a publisher token.
-
-Set `NOSTR_PUBLISHER_BACKEND=http` only to keep an external HTTP publisher. The
-[SmartFlowSocial Publisher](https://github.com/smartflowsocial/smartflowsocial-publisher) worker is
-that optional adapter. See [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
+Publishing is built in. A clean install does not need Cloudflare, Wrangler, a publisher URL, or a
+publisher token. See [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 ### Blastr (optional)
 
@@ -308,12 +303,9 @@ media gateway ([protocol](https://github.com/hzrd149/blossom)). Set `BLOSSOM_SFS
 
 Reads run in this process. Redis caches them. NostrMash HTTP, the NostrMash compatibility socket,
 and public Primal sockets are the default upstreams. The internal reader is the default. It does not
-need the cache worker, Wrangler, or Cloudflare KV. It is not a full self-hosted Nostr indexer.
-`NOSTRMASH_BASE_URL` can point at an instance you operate.
-
-Set `NOSTR_READ_BACKEND=legacy_http` and `PRIMAL_CACHING_URL` to an HTTP proxy only to keep the
-[cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker). Set
-`PRIMAL_CACHING_URL` to a `wss://` list to use your own Primal-compatible cache. Details are in
+need a cache worker, Wrangler, or Cloudflare KV. It is not a full self-hosted Nostr indexer.
+`NOSTRMASH_BASE_URL` can point at an instance you operate. `PRIMAL_UPSTREAM_URLS` can list your own
+Primal-compatible sockets. Details are in
 [Internal Nostr read cache](../operations/internal-nostr-read.md).
 
 ### Redis Setup

@@ -329,7 +329,7 @@ export function defaultReadDeps(
     querySocket: (endpoint, requestType, params, timeouts) =>
       queryCacheSocket(endpoint, requestType, params, timeouts),
     nostrmashWsUrl: wsError ? null : candidate,
-    primalEndpoints: primalSocketEndpoints(env.PRIMAL_CACHING_URL),
+    primalEndpoints: primalSocketEndpoints(env.PRIMAL_UPSTREAM_URLS),
     ...overrides,
   };
 }

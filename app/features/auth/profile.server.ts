@@ -34,7 +34,7 @@ export function validateNpub(npub: string): boolean {
 export const LOGIN_FLOW_PRIMAL_FETCH_BUDGET_MS = 5000;
 
 /**
- * Fetches profile data from Primal cache (HTTP proxy or WebSocket per PRIMAL_CACHING_URL).
+ * Fetches profile data through the in-process Nostr reader.
  * @param primalFetchBudgetMs - When set, resolves to [] after this delay if Primal is still pending (does not cancel the upstream request).
  */
 export async function fetchPrimalProfileData(

@@ -1,300 +1,96 @@
 /**
- * Integration tests for Primal cache service
- * Tests app/features/cache/primalCache.server.ts
+ * The in-process reader is the only cache path.
+ * HTTP retries against an external cache worker are not part of this app.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock dependencies
+const read = vi.hoisted(() => vi.fn());
+
 vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
   logWarning: vi.fn(),
 }));
 
-// Ensure fetchFromCache uses HTTP path (so global.fetch is used)
-vi.mock("~/lib/env.server", async (importOriginal) => {
-  /* eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vi.mock factory needs module type */
-  const mod = await importOriginal<typeof import("~/lib/env.server")>();
-  const actual = mod;
-  return {
-    env: new Proxy(actual.env, {
-      get(target, prop: string) {
-        const envRecord = target as unknown as Record<string, unknown>;
-        if (prop === "PRIMAL_CACHING_URL") {
-          return (
-            process.env["PRIMAL_CACHING_URL"] ??
-            envRecord[prop] ??
-            "https://cache.example.com/api"
-          );
-        }
-        if (prop === "NOSTR_READ_BACKEND") {
-          return process.env["NOSTR_READ_BACKEND"] ?? "legacy_http";
-        }
-        // Match pre–fail-fast production defaults so retry / timer tests stay stable.
-        if (prop === "PRIMAL_HTTP_TIMEOUT_MS") {
-          return process.env["PRIMAL_HTTP_TIMEOUT_MS"] ?? "15000";
-        }
-        if (prop === "PRIMAL_HTTP_MAX_RETRIES") {
-          return process.env["PRIMAL_HTTP_MAX_RETRIES"] ?? "2";
-        }
-        return envRecord[prop];
-      },
-    }),
-  };
-});
-
-// Bypass Redis so compute (doFetch) runs
 vi.mock("~/lib/redis-cache.server", async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();
-
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- importOriginal type
-    ...(actual ?? {}),
-    getJsonFromRedis: vi.fn().mockResolvedValue({ hit: false }),
+    ...actual,
     getOrSetJson: vi.fn(async <T>(opts: { compute: () => Promise<T> }) =>
       opts.compute()
     ),
   };
 });
 
-vi.mock("~/features/nostrmash/native-frames.server", () => ({
-  tryNativePrimalFrames: vi.fn(async () => null),
+vi.mock("~/features/cache/read-service.server", () => ({
+  readNostrUpstreamsFromEnv: read,
 }));
 
-// Mock global fetch
-global.fetch = vi.fn();
-
 import {
-  fetchFromCache,
   connectToPrimalCache,
+  fetchFromCache,
 } from "~/features/cache/primalCache.server";
 import { resetSingleFlightForTests } from "~/features/cache/single-flight";
 import { logError } from "~/lib/error-logger.server";
 
-describe("Primal Cache Service", () => {
+const PAGE = [
+  ["EVENT", "sub", { id: "event-123", kind: 1 }],
+  ["EOSE", "sub"],
+];
+
+describe("in-process Nostr read cache", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // The suite pins the internal reader. This file exercises the legacy HTTP adapter.
-    process.env["NOSTR_READ_BACKEND"] = "legacy_http";
-    process.env["PRIMAL_CACHING_URL"] = "https://cache.example.com/api";
-  });
-
-  afterEach(() => {
-    delete process.env["PRIMAL_CACHING_URL"];
-    process.env["NOSTR_READ_BACKEND"] = "internal";
     resetSingleFlightForTests();
-  });
-
-  describe("fetchFromCache", () => {
-    it("should fetch data successfully", async () => {
-      const mockResponse = [{ id: "event-123", content: "test" }];
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
-
-      const result = await fetchFromCache("thread_view", {
-        event_id: "event-123",
-      });
-
-      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      expect(fetchCall[0]).toBe("https://cache.example.com/api");
-      const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.method).toBe("POST");
-      const headers = fetchOptions.headers as
-        Record<string, string> | undefined;
-      expect(headers?.["Content-Type"]).toBe("application/json");
-      expect(headers?.["X-Cache-Skip-Native"]).toBe("1");
-      expect(fetchOptions.body).toBe(
-        JSON.stringify({
-          requestType: "thread_view",
-          params: { event_id: "event-123" },
-        })
-      );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("should retry on 502 error", async () => {
-      const mockResponse = [{ id: "event-123", content: "test" }];
-      (global.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 502,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResponse),
-        });
-
-      vi.useFakeTimers();
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-
-      // Advance all timers to allow retries to complete
-      await vi.runAllTimersAsync();
-
-      const result = await promise;
-      vi.useRealTimers();
-
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("should retry on 503 error", async () => {
-      const mockResponse = [{ id: "event-123", content: "test" }];
-      (global.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 503,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockResponse),
-        });
-
-      vi.useFakeTimers();
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-
-      // Advance all timers to allow retries to complete
-      await vi.runAllTimersAsync();
-
-      const result = await promise;
-      vi.useRealTimers();
-
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(result).toEqual(mockResponse);
-    });
-
-    it("should throw error after max retries", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-      });
-
-      await expect(
-        fetchFromCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow();
-    });
-
-    it("should handle network errors with retries", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>)
-        .mockRejectedValueOnce(new TypeError("Network error"))
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve([{ id: "event-123" }]),
-        });
-
-      vi.useFakeTimers();
-
-      // Create promise
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-
-      // Advance timers to allow retries (exponential backoff: ~1000ms, ~2000ms)
-      await vi.advanceTimersByTimeAsync(5000);
-
-      const result = await promise;
-      vi.useRealTimers();
-
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(result).toEqual([{ id: "event-123" }]);
-    });
-
-    it("should throw error after all retries exhausted", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error")
-      );
-
-      vi.useFakeTimers();
-
-      // Create promise and handle rejection immediately to prevent unhandled rejection warning
-      let rejectionHandled = false;
-      const promise = fetchFromCache("thread_view", { event_id: "event-123" });
-
-      // Attach error handler immediately to prevent unhandled rejection
-      promise.catch(() => {
-        rejectionHandled = true;
-      });
-
-      // Advance timers to trigger retries
-      await vi.advanceTimersByTimeAsync(1000);
-      await vi.advanceTimersByTimeAsync(2000);
-
-      // Wait for all pending promises to settle
-      await vi.runAllTimersAsync();
-
-      // Now expect the rejection
-      await expect(promise).rejects.toThrow("Network error");
-      expect(rejectionHandled).toBe(true);
-
-      vi.useRealTimers();
+    read.mockResolvedValue({
+      messages: PAGE,
+      source: "nostrmash-native",
+      empty: false,
     });
   });
 
-  describe("connectToPrimalCache", () => {
-    it("should return responses with non-EOSE events", async () => {
-      const mockResponse = [[{ id: "event-1" }], [{ id: "event-2" }], ["EOSE"]];
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
+  it("returns the in-process reader page", async () => {
+    await expect(
+      fetchFromCache("thread_view", { event_id: "event-123" })
+    ).resolves.toEqual(PAGE);
+    expect(read).toHaveBeenCalledWith("thread_view", { event_id: "event-123" });
+  });
 
-      const result = await connectToPrimalCache("thread_view", {
-        event_id: "event-123",
-      });
+  it("returns a page that contains events", async () => {
+    await expect(
+      connectToPrimalCache("thread_view", { event_id: "event-123" })
+    ).resolves.toEqual(PAGE);
+    expect(logError).not.toHaveBeenCalled();
+  });
 
-      expect(result).toEqual(mockResponse);
-      expect(logError).not.toHaveBeenCalled();
+  it("rejects an empty thread page", async () => {
+    read.mockResolvedValue({
+      messages: [["EOSE", "sub"]],
+      source: "primal",
+      empty: true,
     });
+    await expect(
+      connectToPrimalCache("thread_view", { event_id: "event-123" })
+    ).rejects.toThrow("Primal cache gave empty response.");
+    expect(logError).toHaveBeenCalled();
+  });
 
-    it("should throw error for empty response (only EOSE)", async () => {
-      const mockResponse = [["EOSE"]];
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
-
-      await expect(
-        connectToPrimalCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow("Primal cache gave empty response.");
-      expect(logError).toHaveBeenCalled();
+  it("keeps a valid empty notification page", async () => {
+    read.mockResolvedValue({
+      messages: [["EOSE", "sub"]],
+      source: "primal",
+      empty: true,
     });
+    await expect(
+      connectToPrimalCache("get_notifications", { pubkey: "ab".repeat(32) })
+    ).resolves.toEqual([["EOSE", "sub"]]);
+  });
 
-    it("should throw error for completely empty response", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
-
-      await expect(
-        connectToPrimalCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow("Primal cache gave empty response.");
-    });
-
-    it("should handle fetch errors and log them", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Fetch failed")
-      );
-
-      await expect(
-        connectToPrimalCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow("Fetch failed");
-      expect(logError).toHaveBeenCalled();
-    });
-
-    it("should handle non-array responses", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ error: "Invalid response" }),
-      });
-
-      await expect(
-        connectToPrimalCache("thread_view", { event_id: "event-123" })
-      ).rejects.toThrow();
-    });
+  it("logs and rethrows a reader failure", async () => {
+    read.mockRejectedValue(new Error("upstream down"));
+    await expect(
+      fetchFromCache("thread_view", { event_id: "event-123" })
+    ).rejects.toThrow("upstream down");
+    expect(logError).toHaveBeenCalled();
   });
 });

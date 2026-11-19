@@ -14,7 +14,9 @@ describe("giveaway-finalization-fee.shared", () => {
     expect(getFinalizationFeeRateBps("pro")).toBe(0);
     expect(getFinalizationFeeRateBps("teams")).toBe(0);
     expect(getFinalizationFeeRateBps("founder")).toBe(0);
-    const selfHosted = readPublicDeployment({ SELF_HOSTED: "true" });
+    const selfHosted = readPublicDeployment({
+      SFS_DEPLOYMENT_MODE: "self_hosted",
+    });
     expect(getFinalizationFeeRateBps("free", selfHosted)).toBe(0);
     expect(getFinalizationFeeRateBps("starter", selfHosted)).toBe(0);
     expect(getFinalizationFeeRateBps("creator", selfHosted)).toBe(0);

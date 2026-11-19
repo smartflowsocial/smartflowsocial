@@ -30,7 +30,6 @@ import { getPostStats } from "~/features/posts/stats.server";
 describe("Statistics Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["PRIMAL_CACHING_URL"] = "https://api.primal.net/v1/cache";
   });
 
   afterEach(() => {

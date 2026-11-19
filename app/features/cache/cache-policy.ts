@@ -3,7 +3,6 @@
  * TTLs match the previous `fetchFromCache` values.
  */
 
-import type { NostrReadBackend } from "~/infra/nostr-read/read-backend";
 import { buildCacheKey } from "~/lib/redis-cache.server";
 
 export interface CacheTtl {
@@ -62,8 +61,9 @@ export function allowsEmptyResult(requestType: string): boolean {
   return ALLOW_EMPTY.has(requestType);
 }
 
-export function cacheKeyVersion(backend: NostrReadBackend): string {
-  return backend === "internal" ? "v2" : "v1";
+/** Redis pages written by the in-process reader. */
+export function cacheKeyVersion(): string {
+  return "v2";
 }
 
 export function isEmptyCachePage(value: unknown[]): boolean {
@@ -92,13 +92,12 @@ export function shouldStoreReadCache(
 }
 
 export function readCacheKey(input: {
-  backend: NostrReadBackend;
   requestType: string;
   params: Record<string, unknown>;
 }): string {
   return buildCacheKey({
     namespace: "primal",
-    version: cacheKeyVersion(input.backend),
+    version: cacheKeyVersion(),
     parts: { requestType: input.requestType, params: input.params },
   });
 }

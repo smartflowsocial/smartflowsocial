@@ -12,6 +12,16 @@
 import type { Job } from "bullmq";
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
+const { mockPublish } = vi.hoisted(() => ({
+  mockPublish: vi.fn(),
+}));
+
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: () => ({
+    publish: mockPublish,
+  }),
+}));
+
 // Mock BullMQ Worker
 vi.mock("bullmq", () => {
   class MockWorker {
@@ -104,9 +114,6 @@ vi.mock("~/infra/queue", () => ({
   closeAllQueues: vi.fn(),
 }));
 
-// Mock global fetch
-global.fetch = vi.fn();
-
 import { TEST_USER_ID, createValidSignedEvent } from "../utils/test-helpers";
 
 import { getUserById } from "~/features/user";
@@ -136,8 +143,9 @@ describe("Queue Worker Edge Cases", () => {
     vi.clearAllMocks();
     mockTransition.mockClear();
     mockTransition.mockResolvedValue(undefined);
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
+    mockPublish.mockResolvedValue({
+      results: [{ relay: "wss://relay1.com", ok: true }],
+    });
 
     // Relay resolution: subscription lookup (isBlastrEnabledForUserFromDb)
     (
@@ -224,10 +232,8 @@ describe("Queue Worker Edge Cases", () => {
         userRelays: ["wss://relay1.com"],
       });
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: false, error: "rejected" }],
       });
 
       const mockJobData = {
@@ -243,7 +249,7 @@ describe("Queue Worker Edge Cases", () => {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Failed to post to nostr publisher"
+        "Publish failed on all relays: rejected"
       );
 
       // Post should be transitioned to FAILED state when publish fails
@@ -262,9 +268,7 @@ describe("Queue Worker Edge Cases", () => {
         userRelays: ["wss://relay1.com"],
       });
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network timeout")
-      );
+      mockPublish.mockRejectedValue(new Error("Network timeout"));
 
       const mockJobData = {
         postId: TEST_POST_ID,
@@ -312,7 +316,7 @@ describe("Queue Worker Edge Cases", () => {
         skipped: true,
       });
       // updatePostStatus was removed - state transitions now use PostStateMachine
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPublish).not.toHaveBeenCalled();
     });
 
     it("should handle race condition: post becomes posted between check and update", async () => {
@@ -341,11 +345,12 @@ describe("Queue Worker Edge Cases", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // Should handle gracefully (idempotency check should catch this)
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
-      await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow();
+      const result = await scheduledPostsWorker.process(mockJob);
+      expect(result).toMatchObject({ success: true, postId: TEST_POST_ID });
+      expect(mockPublish).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -387,9 +392,8 @@ describe("Queue Worker Edge Cases", () => {
         userRelays: ["wss://relay1.com"],
       });
 
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: true }],
       });
 
       const mockJobData = {
@@ -528,9 +532,6 @@ describe("Queue Worker Edge Cases", () => {
         userRelays: ["wss://relay1.com"],
       };
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Cannot stringify undefined")
-      );
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");

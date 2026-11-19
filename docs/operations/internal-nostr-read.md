@@ -4,8 +4,7 @@ Profile, thread, notification, and social-graph reads run in this Node.js proces
 cache. NostrMash and Primal-compatible sockets are upstream data sources. A clean self-hosted
 install does not need Cloudflare Workers, Wrangler, Cloudflare KV, or `cache.smartflowsocial.com`.
 
-The Cloudflare cache worker remains available for rollback. This change does not delete it, archive
-its repository, or change production traffic.
+This application does not call an external cache worker. Redis pages use key version `v2`.
 
 ```text
 caller
@@ -29,11 +28,8 @@ Primal-compatible sockets
 validate, then Redis
 ```
 
-`NOSTR_READ_BACKEND=legacy_http` keeps the previous path: this process tries NostrMash HTTP, then
-POSTs to `PRIMAL_CACHING_URL` with `X-Cache-Skip-Native: 1`. `legacy_ws` is not a value you set. It
-is the hosted default when the flag is unset and `PRIMAL_CACHING_URL` is empty or a `wss://` list.
-That path tries NostrMash HTTP and then the direct sockets. It does not open the NostrMash
-compatibility socket.
+There is no read-backend switch. `NOSTR_READ_BACKEND`, `PRIMAL_CACHING_URL`,
+`PRIMAL_HTTP_TIMEOUT_MS`, and `PRIMAL_HTTP_MAX_RETRIES` refuse to boot when set.
 
 ## What the app reads
 
@@ -65,25 +61,13 @@ recognizes them.
 
 ## Configuration
 
-| Install                                                     | Reader                                                           |
-| ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| Unset, no HTTP proxy                                        | `internal`                                                       |
-| `PRIMAL_CACHING_URL` is `http://` or `https://`, flag unset | Refuses to boot. Set `legacy_http` or remove the HTTP URL.       |
-| `NOSTR_READ_BACKEND` set                                    | `internal` or `legacy_http` only. Anything else refuses to boot. |
-
-`NOSTR_READ_BACKEND=internal` together with an HTTP `PRIMAL_CACHING_URL` refuses to boot. An HTTP
-URL is the legacy proxy. A WebSocket URL is an upstream cache, not a backend selector.
-
-| Variable                  | Default                                          | Role                                                                                   |
-| ------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `NOSTR_READ_BACKEND`      | see the table                                    | `internal` or `legacy_http`                                                            |
-| `NOSTRMASH_BASE_URL`      | `https://api.nostrmash.com`                      | NostrMash HTTP. The token stays on the server.                                         |
-| `NOSTRMASH_API_TOKEN`     | unset                                            | Bearer token only when that deployment requires one.                                   |
-| `NOSTRMASH_WS_URL`        | `wss://api.nostrmash.com/primal/ws/v1`           | Compatibility socket. `/primal/ws` is rejected.                                        |
-| `PRIMAL_CACHING_URL`      | public `wss://cache1.primal.net/v1` and `cache2` | Custom Primal sockets, comma-separated. Not required.                                  |
-| `NOSTR_READ_TIMEOUT_MS`   | `15000`                                          | Budget for one internal read. Each socket uses at most 3s to connect and 5s to answer. |
-| `PRIMAL_HTTP_TIMEOUT_MS`  | `8000`                                           | Legacy HTTP proxy only.                                                                |
-| `PRIMAL_HTTP_MAX_RETRIES` | `0`                                              | Legacy HTTP proxy only.                                                                |
+| Variable                | Default                                          | Role                                                                          |
+| ----------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `NOSTRMASH_BASE_URL`    | `https://api.nostrmash.com`                      | NostrMash HTTP. The token stays on the server.                                |
+| `NOSTRMASH_API_TOKEN`   | unset                                            | Bearer token only when that deployment requires one.                          |
+| `NOSTRMASH_WS_URL`      | `wss://api.nostrmash.com/primal/ws/v1`           | Compatibility socket. `/primal/ws` is rejected.                               |
+| `PRIMAL_UPSTREAM_URLS`  | public `wss://cache1.primal.net/v1` and `cache2` | Optional custom Primal sockets, comma-separated.                              |
+| `NOSTR_READ_TIMEOUT_MS` | `15000`                                          | Budget for one read. Each socket uses at most 3s to connect and 5s to answer. |
 
 Socket URLs must be `ws://` or `wss://`, with a host and no username or password. The process
 accepts at most eight. These values come from the operator's environment, not from a request. A
@@ -93,12 +77,11 @@ users.
 The internal reader does not publish an HTTP route. Browsers do not receive NostrMash tokens or the
 upstream URL list.
 
-Redis keys are `smartflow:primal:v2:<hash>` for the internal reader and `v1` for the legacy readers.
-The hash includes the request type and every parameter, so two users do not share a notification or
-follow-list page. A user-scoped request without a pubkey is not stored. Transport failures are not
-stored. A finished empty page for a type that can be empty uses the negative TTL. Entries expire by
-TTL. Publishing a note does not scan Redis for related pages. The short thread and reaction TTLs are
-the freshness mechanism.
+Redis keys are `smartflow:primal:v2:<hash>`. The hash includes the request type and every parameter,
+so two users do not share a notification or follow-list page. A user-scoped request without a pubkey
+is not stored. Transport failures are not stored. A finished empty page for a type that can be empty
+uses the negative TTL. Entries expire by TTL. Publishing a note does not scan Redis for related
+pages. The short thread and reaction TTLs are the freshness mechanism.
 
 One in-flight read is shared by concurrent callers of the same key. A failure is not remembered, so
 the next call can try again. Redis errors are logged and the read continues against the upstreams.
@@ -139,8 +122,8 @@ curl -fsS -H 'accept: application/json' https://app.smartflow.social/healthcheck
 the same accounts on both hosts. An empty page is valid only when the upstream finished. An upstream
 failure must not be stored as an empty result.
 
-Rollback is `NOSTR_READ_BACKEND=legacy_http` and the previous HTTP `PRIMAL_CACHING_URL`, then
-restart. Do not change the read backend and the publisher in the same step.
+This build has no cache-worker rollback. A non-empty `NOSTR_READ_BACKEND` or `PRIMAL_CACHING_URL`
+refuses to boot.
 
 Checks before any production change:
 
@@ -190,24 +173,11 @@ use local sockets and fixtures.
 
 Do this only after the project owner accepts a staging result.
 
-1. Deploy the build while production is still on its current `PRIMAL_CACHING_URL`. Leave
-   `NOSTR_READ_BACKEND` unset so an HTTP proxy stays on `legacy_http`.
-2. No database migration. Redis `v1` keys belong to the legacy reader. The internal reader writes
-   `v2`. TTLs are at most 300 seconds, so old keys expire on their own.
-3. Canary one process with `NOSTR_READ_BACKEND=internal` and the HTTP proxy URL removed. A `wss://`
-   list is optional. Do not switch every production process in the same step as a publisher cutover.
-4. Watch the metrics above for at least one busy hour. Suggested stop conditions: upstream failure
-   ratio above 50% for 15 minutes, timeout ratio above 20% for 15 minutes, or profile and thread
-   pages missing notes that the legacy reader still returns.
-5. After that window, set the remaining production processes to `internal` and remove the HTTP proxy
-   URL. Keep the proxy deployed and its secret available.
-6. Confirm `/healthcheck` JSON says `internal`.
+Production and staging already read through this process. No database migration. Redis keys are
+`v2`. Confirm `/healthcheck` JSON says `nostrReadBackend: "internal"`.
 
-### Rollback
-
-Set `NOSTR_READ_BACKEND=legacy_http`, restore the HTTP `PRIMAL_CACHING_URL`, and restart. No
-database rollback. `v2` keys are ignored by the legacy reader. `v1` keys that are still inside their
-TTL are used again. In-flight sockets close when the process stops.
+This application does not call the cache worker. Decommissioning it is an owner action. See
+[NostrMash utility migration](./nostrmash-utility-migration.md).
 
 ## Retiring the cache worker
 

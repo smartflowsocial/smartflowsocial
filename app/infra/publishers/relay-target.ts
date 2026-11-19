@@ -2,8 +2,7 @@
  * Relay URL checks for the internal publisher.
  *
  * Public `wss://` relays are allowed. Private and loopback targets require
- * `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true`. That flag is never implied by
- * `SELF_HOSTED`.
+ * `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true`. Deployment mode does not turn it on.
  */
 
 import { lookup } from "node:dns/promises";

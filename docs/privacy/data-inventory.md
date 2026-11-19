@@ -65,11 +65,11 @@ uses. This inventory does not invent a company name or a registered address.
 - PostgreSQL host (application database)
 - Redis host (queues and cache)
 - S3-compatible object storage
-- The legacy HTTP Nostr publisher, only when `NOSTR_PUBLISHER_BACKEND=http`
+- Nostr relays chosen by the publisher in this process
 - Blossom, when hosted media is enabled
 - Blastr, when managed relay publishing is enabled
 - NostrMash or a Primal-compatible cache, when the in-process reader or paid analytics use them.
-  Redis stores those pages. The legacy cache worker is optional.
+  Redis stores those pages.
 - Relays the user or the operator configured (public Nostr network)
 - BTCPay, when founder or on-chain checkout is enabled
 - The user's Lightning wallet, via NWC, when they connect one

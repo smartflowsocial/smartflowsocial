@@ -28,8 +28,6 @@ import {
 describe("Schedule Longform Action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
     // Mock getUserById - required by handleNewLongFormAction
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,

@@ -135,8 +135,25 @@ async function main(): Promise<void> {
   const sessionSecret = process.env["SESSION_SECRET"]?.trim() ?? "";
   process.env["NODE_ENV"] = "test";
   process.env["E2E_TEST"] = "true";
-  process.env["NOSTR_PUBLISHER_BACKEND"] = "internal";
+  process.env["SFS_DEPLOYMENT_MODE"] = "self_hosted";
   process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] = "true";
+  for (const removed of [
+    "SELF_HOSTED",
+    "LOCAL_PUBLISHER_PORT",
+    "LOCAL_PUBLISHER_TOKEN",
+    "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+    "NOSTR_PUBLISHER_API_TOKEN",
+    "NOSTR_PUBLISHER_BACKEND",
+    "NOSTR_PUBLISHER_URL",
+    "NOSTR_READ_BACKEND",
+    "PRIMAL_CACHING_URL",
+    "PRIMAL_HTTP_MAX_RETRIES",
+    "PRIMAL_HTTP_TIMEOUT_MS",
+    "APP_URL",
+    "COOLIFY_URL",
+  ]) {
+    delete process.env[removed];
+  }
   process.env["SESSION_SECRET"] =
     sessionSecret.length >= 32
       ? sessionSecret

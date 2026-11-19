@@ -183,8 +183,6 @@ describe("Longform Edit Action Handler", () => {
     vi.clearAllMocks();
     mockPublishExecute.mockClear();
     mockScheduleExecute.mockClear();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       npub: "pk1",
       userRelays: ["wss://relay1.com", "wss://relay2.com"],

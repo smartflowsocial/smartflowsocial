@@ -16,6 +16,7 @@ export const APP_REQUIRED_CHECKS = [
   "E2E Smoke",
   "E2E Core",
   "Gitleaks",
+  "Self-host Compose",
 ];
 
 export const PUBLISHER_REQUIRED_CHECKS = [
@@ -74,39 +75,27 @@ export function evaluateRequiredChecks(runs, requiredNames) {
 }
 
 /**
- * The internal publisher is the release default. `http` still requires the
- * external publisher commit and its checks. A blank publisher SHA is not a
- * pass in that mode.
+ * Publishing is in-process. An external publisher commit is not part of an
+ * application release.
  *
  * @param {{ publisherMode?: string, publisherSha?: string }} input
- * @returns {{ mode: "internal" | "http" | "invalid", errors: string[] }}
+ * @returns {{ mode: "internal" | "invalid", errors: string[] }}
  */
 export function publisherReleasePlan(input) {
   const requested = (input.publisherMode ?? "").trim().toLowerCase();
-  /** @type {"internal" | "http" | "invalid"} */
-  let mode = "internal";
-  if (requested === "http" || requested === "internal") {
-    mode = requested;
-  } else if (requested !== "") {
-    mode = "invalid";
-  } else if ((input.publisherSha ?? "").trim() !== "") {
-    mode = "http";
-  }
-
   /** @type {string[]} */
   const errors = [];
-  if (mode === "invalid") {
-    errors.push("publisher_mode must be internal or http");
-  } else if (mode === "internal" && (input.publisherSha ?? "").trim() !== "") {
+  if (requested !== "" && requested !== "internal") {
     errors.push(
-      "publisher_sha must be empty when publisher_mode is internal. The HTTP publisher is not part of this release."
-    );
-  } else if (mode === "http" && !SHA_RE.test(input.publisherSha ?? "")) {
-    errors.push(
-      "publisher_sha must be the full 40-character publisher commit when publisher_mode is http. A blank value is not a pass."
+      "publisher_mode must be internal. SmartFlowSocial does not release against an external HTTP publisher."
     );
   }
-  return { mode, errors };
+  if ((input.publisherSha ?? "").trim() !== "") {
+    errors.push(
+      "publisher_sha must be empty. The application publisher runs inside this repository."
+    );
+  }
+  return { mode: errors.length === 0 ? "internal" : "invalid", errors };
 }
 
 /**

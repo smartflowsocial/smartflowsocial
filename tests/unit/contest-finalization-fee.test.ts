@@ -66,7 +66,9 @@ describe("quoteContestFinalization", () => {
   });
 
   it("charges a self-hosted contest nothing, including Free", () => {
-    const selfHosted = readPublicDeployment({ SELF_HOSTED: "true" });
+    const selfHosted = readPublicDeployment({
+      SFS_DEPLOYMENT_MODE: "self_hosted",
+    });
     const quote = quoteContestFinalization({
       contest: {
         sourceNoteId: "note123",

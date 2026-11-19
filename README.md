@@ -46,7 +46,7 @@ signed. If publishing fails, the worker retries that job.
 Drafts, templates, long-form articles (NIP-23), media, an engagement feed, signed DM broadcasts,
 giveaways, and contests are in the same app. Lightning payouts can use NWC or BTCPay when those are
 configured. Blastr, Blossom, and NostrMash are separate projects. Profile and thread reads run in
-this app and cache in Redis. Scheduling does not require them or the legacy cache worker.
+this app and cache in Redis. Scheduling does not require them.
 
 The [feature coverage matrix](./docs/reference/feature-coverage-matrix.md) maps each area to its
 documentation. It is an index of the docs, not a guarantee that every path is finished.
@@ -68,17 +68,13 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 ## Run it yourself
 
 You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis. A fresh install
-is self-hosted. Signed events are published from this process, and Nostr reads stay in this process
-with Redis as the cache. That does not need the
-[HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher), a publisher token, a
-Cloudflare account, or the cache worker. Uploads need S3-compatible storage when you use them.
-First-time setup is about 30–60 minutes.
-[Self-host smoke](./docs/getting-started/self-host-smoke.md) is the short path.
-`pnpm test:self-host-acceptance` boots the built server and worker and delivers a signed note to a
-loopback relay. `pnpm smoke:publish` only checks a signature stub. `pnpm test:relay-publish` calls
-the publisher function directly. The HTTP publisher and the HTTP cache proxy remain optional
-adapters. Set `NOSTR_PUBLISHER_BACKEND=http` or `NOSTR_READ_BACKEND=legacy_http` only when you mean
-to use them.
+is self-hosted, including a production build. Signed events are published from this process, and
+Nostr reads stay in this process with Redis as the cache. That does not need a Cloudflare Worker, a
+publisher URL, or a cache URL. Uploads need S3-compatible storage when you use them. First-time
+setup is about 30–60 minutes. [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the
+short path. `pnpm test:self-host-acceptance` boots the built server and worker and delivers a signed
+note to a loopback relay. `pnpm test:relay-publish` does the same through the publish job. Managed
+hosting sets `SFS_DEPLOYMENT_MODE=hosted`.
 
 Install a published release by checking out its tag and following the README in that commit.
 `v1.0.0-beta.2` is the current published release. The commands below match this source tree, which
@@ -103,17 +99,15 @@ Postgres is published on **127.0.0.1:5433** (container port `5432`). Redis is on
 Those ports are not bound on every interface. The database name in that compose file is `postgres`,
 and the password there is for local development. Point `DATABASE_URL` and `REDIS_URL` at `127.0.0.1`
 before `prisma migrate deploy` or `pnpm dev`. `example.env` sets `SFS_DEPLOYMENT_MODE=self_hosted`.
-Outside production, an empty mode is also self-hosted, so this install is not limited by hosted plan
-caps and the platform commission is 0%. Production refuses to start until the mode is explicit. The
-internal publisher and the internal reader are the defaults. A publisher URL or an HTTP cache URL
-without an explicit backend also refuses to start. This install does not include hosted Blossom or
-hosted Blastr. `pnpm db:seed` replaces plan rows. A database that already has subscriptions should
-not be seeded.
+An empty mode is also self-hosted, including a production build, so this install is not limited by
+hosted plan caps and the platform commission is 0%. `app.smartflow.social` and
+`staging.smartflow.social` refuse to start unless the mode is `hosted`. Publishing and reads run in
+this process. This install does not include hosted Blossom or hosted Blastr. `pnpm db:seed` replaces
+plan rows. A database that already has subscriptions should not be seeded.
 
 `pnpm dev` starts the web server and the worker, and restarts the worker when its files change.
 `pnpm worker:local` runs the worker without the web server. Running it next to `pnpm dev` starts a
-second worker. `pnpm publisher:local` checks signatures on this machine. It is a different program
-from the [Cloudflare publisher](https://github.com/smartflowsocial/smartflowsocial-publisher).
+second worker.
 
 After `pnpm build`, `pnpm start` runs the web server and one worker, and exits if either stops.
 `pnpm start:server` and `pnpm start:worker` run them as separate processes. These commands load

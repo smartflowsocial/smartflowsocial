@@ -8,17 +8,12 @@ const base = {
   cronSecret: undefined,
   referralManualPayoutSecret: undefined,
   referralPayoutsEnabled: undefined,
-  nostrPublisherApiToken: undefined,
-  nostrPublisherAllowUnauthenticated: undefined,
 };
 
 describe("production secret validation", () => {
-  it("requires cron and publisher secrets, and leaves referral payouts optional", () => {
+  it("requires the cron secret and leaves referral payouts optional", () => {
     const problems = productionSecretErrors(base);
-    expect(problems.map((problem) => problem.key)).toEqual([
-      "CRON_SECRET",
-      "NOSTR_PUBLISHER_API_TOKEN",
-    ]);
+    expect(problems.map((problem) => problem.key)).toEqual(["CRON_SECRET"]);
   });
 
   it("requires the referral secret for every explicit on value", () => {
@@ -26,7 +21,6 @@ describe("production secret validation", () => {
       const problems = productionSecretErrors({
         ...base,
         cronSecret: "c".repeat(32),
-        nostrPublisherApiToken: "p".repeat(16),
         referralPayoutsEnabled: flag,
       });
       expect(problems.map((problem) => problem.key)).toContain(
@@ -47,7 +41,6 @@ describe("production secret validation", () => {
     const disabled = productionSecretErrors({
       ...base,
       cronSecret: "c".repeat(32),
-      nostrPublisherApiToken: "p".repeat(16),
       referralPayoutsEnabled: "false",
     });
     expect(disabled).toEqual([]);
@@ -59,7 +52,6 @@ describe("production secret validation", () => {
       cronSecret: "c".repeat(32),
       referralPayoutsEnabled: "true",
       referralManualPayoutSecret: "r".repeat(32),
-      nostrPublisherApiToken: "p".repeat(16),
     });
     expect(problems).toEqual([]);
   });
@@ -69,23 +61,5 @@ describe("production secret validation", () => {
       []
     );
     expect(productionSecretErrors({ ...base, e2eTest: "true" })).toEqual([]);
-  });
-
-  it("does not require the HTTP publisher token for the internal backend", () => {
-    const problems = productionSecretErrors({
-      ...base,
-      cronSecret: "c".repeat(32),
-      publisherBackend: "internal",
-    });
-    expect(problems).toEqual([]);
-  });
-
-  it("allows a public publisher only when that mode is explicit", () => {
-    const problems = productionSecretErrors({
-      ...base,
-      cronSecret: "c".repeat(32),
-      nostrPublisherAllowUnauthenticated: "true",
-    });
-    expect(problems).toEqual([]);
   });
 });

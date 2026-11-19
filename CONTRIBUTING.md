@@ -98,12 +98,10 @@ Edit `.env` with your configuration:
 DATABASE_URL=your_database_connection_string
 SESSION_SECRET=your_random_session_secret
 REDIS_URL=redis://127.0.0.1:6379
-# Self-hosted installs publish and read in this process.
-SELF_HOSTED=true
-# NOSTR_PUBLISHER_BACKEND=http
-# NOSTR_PUBLISHER_URL=https://your-publisher-instance.com
-# Optional custom Primal sockets. Leave empty to use the in-process reader.
-# PRIMAL_CACHING_URL=wss://cache.example.com/v1
+# Self-hosted is the default. Managed hosting sets hosted.
+SFS_DEPLOYMENT_MODE=self_hosted
+# Optional custom Primal sockets. Leave empty to use the public ones.
+# PRIMAL_UPSTREAM_URLS=wss://cache.example.com/v1
 STORAGE_ACCESS_KEY=your_s3_key
 STORAGE_SECRET=your_s3_secret
 STORAGE_REGION=your_region

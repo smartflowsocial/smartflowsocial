@@ -99,7 +99,7 @@ describe("release check evaluation", () => {
     ).toMatch(/publisher_sha/);
   });
 
-  it("rejects a different checkout and a missing HTTP publisher SHA", () => {
+  it("rejects an external publisher mode and a different checkout", () => {
     expect(
       releaseInputErrors({
         candidateSha: candidate,
@@ -109,7 +109,7 @@ describe("release check evaluation", () => {
         headSha: publisher,
         expectHead: true,
       }).join("\n")
-    ).toMatch(/publisher_sha/);
+    ).toMatch(/publisher_mode/);
     expect(
       releaseInputErrors({
         candidateSha: candidate,

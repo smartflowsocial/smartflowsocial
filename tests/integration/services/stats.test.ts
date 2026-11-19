@@ -5,7 +5,6 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock fetch (used when PRIMAL_CACHING_URL is HTTP and fetchJsonWithRetry runs)
 global.fetch = vi.fn();
 
 // Stats use Redis + connectToPrimalCache; mock so cache misses and Primal returns mock data
@@ -31,7 +30,6 @@ import { getPostStats } from "~/features/posts/stats.server";
 describe("Stats Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["PRIMAL_CACHING_URL"] = "http://test-cache-url";
   });
 
   it("should return empty stats for empty event IDs", async () => {

@@ -5,12 +5,9 @@ const { testEnv, nativeMock, socketMock, redisMock } = vi.hoisted(() => {
   return {
     testEnv: {
       NODE_ENV: "production",
-      NOSTR_READ_BACKEND: "internal",
-      PRIMAL_CACHING_URL: undefined as string | undefined,
+      PRIMAL_UPSTREAM_URLS: undefined as string | undefined,
       NOSTRMASH_WS_URL: undefined as string | undefined,
       NOSTR_READ_TIMEOUT_MS: "15000",
-      PRIMAL_HTTP_TIMEOUT_MS: undefined as string | undefined,
-      PRIMAL_HTTP_MAX_RETRIES: undefined as string | undefined,
     },
     nativeMock: vi.fn(
       async (..._args: unknown[]): Promise<unknown[] | null> => null
@@ -110,8 +107,7 @@ describe("internal read cache", () => {
     vi.clearAllMocks();
     redisMock.store.clear();
     resetSingleFlightForTests();
-    testEnv.NOSTR_READ_BACKEND = "internal";
-    testEnv.PRIMAL_CACHING_URL = undefined;
+    testEnv.PRIMAL_UPSTREAM_URLS = undefined;
     testEnv.NODE_ENV = "production";
     nativeMock.mockResolvedValue(null);
     socketMock.mockResolvedValue({
@@ -238,21 +234,9 @@ describe("internal read cache", () => {
     ).resolves.toEqual([["EOSE", "sub"]]);
   });
 
-  it("keeps the legacy HTTP proxy header when that backend is selected", async () => {
-    testEnv.NOSTR_READ_BACKEND = "legacy_http";
-    testEnv.PRIMAL_CACHING_URL = "https://cache.example/api";
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
-      Response.json([
-        ["EVENT", "sub", { id: EVENT_ID, kind: 1 }],
-        ["EOSE", "sub"],
-      ])
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    await fetchFromCache("thread_view", { event_id: EVENT_ID });
-    const headers = fetchMock.mock.calls[0]?.[1]?.headers as
-      Record<string, string> | undefined;
-    expect(headers?.["X-Cache-Skip-Native"]).toBe("1");
-    expect(String(redisMock.set.mock.calls[0]?.[0])).toContain(":v1:");
-    vi.unstubAllGlobals();
+  it("stores the in-process reader page under the v2 cache key", async () => {
+    nativeMock.mockResolvedValueOnce(profilePage(PUBKEY_A));
+    await fetchFromCache("user_profile", { pubkey: PUBKEY_A });
+    expect(String(redisMock.set.mock.calls[0]?.[0])).toContain(":v2:");
   });
 });

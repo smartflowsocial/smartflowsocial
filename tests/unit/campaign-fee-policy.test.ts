@@ -50,7 +50,7 @@ describe("campaign finalization commission", () => {
 
   it("charges every self-hosted plan zero and ignores client-shaped fields", () => {
     const selfHosted = readPublicDeployment({
-      SELF_HOSTED: "true",
+      SFS_DEPLOYMENT_MODE: "self_hosted",
       "x-self-hosted": "false",
     });
     const hostedDespiteHeader = readPublicDeployment({

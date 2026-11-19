@@ -155,7 +155,7 @@ const POST_STATS_CACHE = "post-stats";
 
 /**
  * Fetch stats for a single event ID from Primal cache.
- * Uses PRIMAL_CACHING_URL: https:// (HTTP proxy) or wss:// / unset (WebSocket).
+ * Uses the in-process reader. Redis, then NostrMash, then Primal sockets.
  */
 async function fetchStatsFromAPI(eventId: string): Promise<PostStats> {
   try {

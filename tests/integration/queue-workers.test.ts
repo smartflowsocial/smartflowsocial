@@ -7,8 +7,15 @@
 import type { Job } from "bullmq";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock global fetch
-global.fetch = vi.fn();
+const { mockPublish } = vi.hoisted(() => ({
+  mockPublish: vi.fn(),
+}));
+
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: () => ({
+    publish: mockPublish,
+  }),
+}));
 
 // Mock BullMQ Worker - needs to be a class constructor
 vi.mock("bullmq", () => {
@@ -197,8 +204,9 @@ describe("Queue Workers", () => {
     vi.clearAllMocks();
     postStateMap.clear();
     longFormPostStateMap.clear();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
+    mockPublish.mockResolvedValue({
+      results: [{ relay: "wss://relay1.com", ok: true }],
+    });
 
     (resolveExecutionRelays as ReturnType<typeof vi.fn>).mockResolvedValue(
       systemDefaultRelays
@@ -336,44 +344,23 @@ describe("Queue Workers", () => {
       (
         resolveExecutionRelays as ReturnType<typeof vi.fn>
       ).mockResolvedValueOnce(["wss://relay1.com", "wss://relay2.com"]);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-      });
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       const result = await scheduledPostsWorker.process(mockJob);
 
-      // State transitions now use PostStateMachine, not updatePostStatus
       expect(resolveExecutionRelays).toHaveBeenCalledWith(TEST_USER_ID);
-      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      expect(fetchCall[0]).toBe("https://api.nostr-publisher.com/publish");
-      const fetchOptions = fetchCall[1] as RequestInit;
-      expect(fetchOptions.method).toBe("POST");
-      const headers = fetchOptions.headers as
-        Record<string, string> | undefined;
-      expect(headers?.["Content-Type"]).toBe("application/json");
-      // JSON.stringify excludes Symbol(verified), so parse and check properties
-      const body = JSON.parse(fetchOptions.body as string) as {
-        relays: string[];
-        event: { id: string; pubkey: string; kind: number; content: string };
-      };
-      expect(body.relays).toEqual(["wss://relay1.com", "wss://relay2.com"]);
-      expect(body.event).toMatchObject({
-        id: mockJobData.signedEvent.id,
-        pubkey: mockJobData.signedEvent.pubkey,
-        kind: mockJobData.signedEvent.kind,
-        content: mockJobData.signedEvent.content,
-      });
+      expect(mockPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: mockJobData.signedEvent.id,
+          pubkey: mockJobData.signedEvent.pubkey,
+          kind: mockJobData.signedEvent.kind,
+          content: mockJobData.signedEvent.content,
+        }),
+        ["wss://relay1.com", "wss://relay2.com"],
+        undefined
+      );
       expect(result).toEqual({ success: true, postId: "post-123" });
     });
 
@@ -393,37 +380,22 @@ describe("Queue Workers", () => {
       (
         resolveExecutionRelays as ReturnType<typeof vi.fn>
       ).mockResolvedValueOnce(["wss://relay1.com", "wss://relay2.com"]);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-      });
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await scheduledPostsWorker.process(mockJob);
 
-      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      const fetchOptions = fetchCall[1] as RequestInit;
-      // JSON.stringify field order may vary, so parse and check properties
-      const body = JSON.parse(fetchOptions.body as string) as {
-        relays: string[];
-        event: { id: string; pubkey: string; kind: number; content: string };
-      };
-      expect(body.relays).toEqual(["wss://relay1.com", "wss://relay2.com"]);
-      expect(body.event).toMatchObject({
-        id: mockJobData.signedEvent.id,
-        pubkey: mockJobData.signedEvent.pubkey,
-        kind: mockJobData.signedEvent.kind,
-        content: mockJobData.signedEvent.content,
-      });
+      expect(mockPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: mockJobData.signedEvent.id,
+          pubkey: mockJobData.signedEvent.pubkey,
+          kind: mockJobData.signedEvent.kind,
+          content: mockJobData.signedEvent.content,
+        }),
+        ["wss://relay1.com", "wss://relay2.com"],
+        undefined
+      );
     });
 
     it("should handle missing user", async () => {
@@ -463,41 +435,24 @@ describe("Queue Workers", () => {
         data: mockJobData,
       } as unknown as Job;
 
-      // If the resolver returns an empty list, the publisher falls back to its own defaults.
+      // An empty resolved list is forwarded. The publisher substitutes its defaults.
       (
         resolveExecutionRelays as ReturnType<typeof vi.fn>
       ).mockResolvedValueOnce([]);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-      });
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await scheduledPostsWorker.process(mockJob);
 
-      // fetchWithRetry adds additional options (timeout, maxRetries, correlation ID, etc.)
-      expect(global.fetch).toHaveBeenCalled();
-      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0];
-      if (!fetchCall) {
-        throw new Error("fetch was not called");
-      }
-      const fetchOptions = fetchCall[1] as RequestInit;
-      // JSON.stringify excludes Symbol(verified), so parse and check properties
-      const body = JSON.parse(fetchOptions.body as string) as {
-        relays: string[];
-        event: { id: string; pubkey: string; kind: number; content: string };
-      };
-      expect([...body.relays].sort()).toEqual([...systemDefaultRelays].sort());
-      expect(body.event).toMatchObject({
-        id: mockJobData.signedEvent.id,
-        pubkey: mockJobData.signedEvent.pubkey,
-        kind: mockJobData.signedEvent.kind,
-        content: mockJobData.signedEvent.content,
-      });
+      expect(mockPublish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: mockJobData.signedEvent.id,
+          content: mockJobData.signedEvent.content,
+        }),
+        [],
+        undefined
+      );
     });
 
     it("should handle publisher API errors", async () => {
@@ -520,18 +475,15 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: false, error: "rejected" }],
       });
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
       }
       await expect(scheduledPostsWorker.process(mockJob)).rejects.toThrow(
-        "Failed to post to nostr publisher"
+        "Publish failed on all relays: rejected"
       );
     });
 
@@ -552,10 +504,7 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      // State transitions now use PostStateMachine, not updatePostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Network error")
-      );
+      mockPublish.mockRejectedValue(new Error("Network error"));
 
       if (!scheduledPostsWorker?.process) {
         throw new Error("scheduledPostsWorker.process is not defined");
@@ -586,10 +535,6 @@ describe("Queue Workers", () => {
       (
         resolveExecutionRelays as ReturnType<typeof vi.fn>
       ).mockResolvedValueOnce(["wss://relay1.com"]);
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-      });
 
       if (!scheduledLongFormPostsWorker?.process) {
         throw new Error("scheduledLongFormPostsWorker.process is not defined");
@@ -643,11 +588,8 @@ describe("Queue Workers", () => {
       };
 
       (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
-      // State transitions now use LongFormPostStateMachine, not updateLongFormPostStatus
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay1.com", ok: false, error: "rejected" }],
       });
 
       if (!scheduledLongFormPostsWorker?.process) {
@@ -655,7 +597,7 @@ describe("Queue Workers", () => {
       }
       await expect(
         scheduledLongFormPostsWorker.process(mockJob)
-      ).rejects.toThrow("Failed to post to nostr publisher");
+      ).rejects.toThrow("Publish failed on all relays: rejected");
     });
   });
 

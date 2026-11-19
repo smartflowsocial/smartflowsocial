@@ -52,7 +52,7 @@ cp example.env .env
 # - DATABASE_URL
 # - SESSION_SECRET
 # - REDIS_URL
-# - SELF_HOSTED=true on an install you operate
+# - SFS_DEPLOYMENT_MODE=self_hosted on an install you operate
 # - Storage credentials (S3, R2, etc.)
 ```
 
@@ -99,11 +99,8 @@ Worker metrics are on port 3011. `pnpm worker:local` runs the worker without the
 run it next to `pnpm dev`, or you get a second worker.
 
 The default install publishes from this process. It does not need a publisher URL, a publisher
-token, or a Cloudflare account. `pnpm docker` starts Postgres and Redis only. `pnpm publisher:local`
-is an optional signature stub for `pnpm smoke:publish`. Real loopback delivery is
-`pnpm test:relay-publish`. The checked procedure is the [self-host smoke](./self-host-smoke.md). The
-rollout and rollback steps are in
-[Internal Nostr publisher](../operations/internal-nostr-publisher.md).
+token, or a Cloudflare account. `pnpm docker` starts Postgres and Redis only. Real loopback delivery
+is `pnpm test:relay-publish`. The checked procedure is the [self-host smoke](./self-host-smoke.md).
 
 Before you call this healthy:
 
@@ -186,7 +183,6 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 | Start dev server | `pnpm dev` (web server and worker)                      |
 | Worker only      | `pnpm worker:local` (not beside `pnpm dev`)             |
 | Production       | `pnpm build`, then `pnpm start` (web server and worker) |
-| Local publisher  | `pnpm publisher:local`                                  |
 | Publish smoke    | `pnpm smoke:publish`                                    |
 | Run tests        | `pnpm test`                                             |
 | Check types      | `pnpm exec tsc --noEmit`                                |

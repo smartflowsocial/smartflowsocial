@@ -54,8 +54,8 @@ export async function performHealthCheck(
       {
         status: "ok",
         deploymentMode: currentDeployment().mode,
-        publisherBackend: env.NOSTR_PUBLISHER_BACKEND,
-        nostrReadBackend: env.NOSTR_READ_BACKEND,
+        publisherBackend: "internal",
+        nostrReadBackend: "internal",
         version: identity.version,
         sourceCommit: identity.sourceCommit,
         sourceCommitStatus: identity.sourceCommitStatus,

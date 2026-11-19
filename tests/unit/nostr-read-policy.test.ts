@@ -41,38 +41,28 @@ describe("cache policy", () => {
     expect(cacheTtlForRequest("feed").ttlSeconds).toBeNull();
   });
 
-  it("separates users, request types, and reader versions", () => {
+  it("separates users and request types in the reader cache key", () => {
     const first = readCacheKey({
-      backend: "internal",
       requestType: "get_notifications",
       params: { pubkey: PUBKEY_A, limit: 10 },
     });
     const swapped = readCacheKey({
-      backend: "internal",
       requestType: "get_notifications",
       params: { limit: 10, pubkey: PUBKEY_A },
     });
     const otherUser = readCacheKey({
-      backend: "internal",
       requestType: "get_notifications",
       params: { pubkey: PUBKEY_B, limit: 10 },
     });
     const otherType = readCacheKey({
-      backend: "internal",
       requestType: "user_profile",
-      params: { pubkey: PUBKEY_A, limit: 10 },
-    });
-    const legacy = readCacheKey({
-      backend: "legacy_http",
-      requestType: "get_notifications",
       params: { pubkey: PUBKEY_A, limit: 10 },
     });
     expect(first).toBe(swapped);
     expect(first).not.toBe(otherUser);
     expect(first).not.toBe(otherType);
-    expect(cacheKeyVersion("internal")).toBe("v2");
-    expect(legacy).not.toBe(first);
-    expect(legacy).toContain(":v1:");
+    expect(cacheKeyVersion()).toBe("v2");
+    expect(first).toContain(":v2:");
   });
 
   it("does not store a user-scoped page that has no pubkey", () => {

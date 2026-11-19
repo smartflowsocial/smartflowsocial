@@ -27,8 +27,6 @@ env:
   SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
   REDIS_URL: redis://127.0.0.1:6379
   SFS_DEPLOYMENT_MODE: hosted
-  NOSTR_PUBLISHER_BACKEND: http
-  NOSTR_PUBLISHER_URL: http://localhost:3001/publish
   ALLOW_HYDRATION_EXCEPTIONS: "false"
 
 jobs:

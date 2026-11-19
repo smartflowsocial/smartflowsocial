@@ -18,26 +18,19 @@ InternalNostrPublisher
 Nostr relays
 ```
 
-`NOSTR_PUBLISHER_BACKEND=http` remains an adapter. It forwards the signed event to another HTTP
-service. It does not contain a second copy of the relay engine. There is no automatic failover. One
-publish attempt uses the backend selected when the process started.
+There is no second publisher. A process that still has `NOSTR_PUBLISHER_BACKEND`,
+`NOSTR_PUBLISHER_URL`, `NOSTR_PUBLISHER_API_TOKEN`, or `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` set
+refuses to boot.
 
 ## Configuration
 
-| Install                                  | Backend                                                          |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| Unset                                    | `internal`                                                       |
-| `NOSTR_PUBLISHER_URL` set, backend unset | Refuses to boot. Set `http` or remove the URL.                   |
-| `NOSTR_PUBLISHER_BACKEND` set            | That value, `http` or `internal`. Anything else refuses to boot. |
-
-`NOSTR_PUBLISHER_URL` and `NOSTR_PUBLISHER_API_TOKEN` are required only for `http`. Production still
-requires `CRON_SECRET`.
+Production still requires `CRON_SECRET`.
 
 `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` is the only switch that allows loopback, private, and
-carrier-grade NAT relay addresses, including `ws://` on those hosts. `SELF_HOSTED` does not turn it
-on. Hosted production leaves it unset. Link-local addresses, including `169.254.169.254`, metadata
-hostnames, multicast, and credentials in the URL stay blocked. DNS answers are checked on the socket
-lookup, so a public name that resolves to a private address is refused.
+carrier-grade NAT relay addresses, including `ws://` on those hosts. Hosted production leaves it
+unset. Link-local addresses, including `169.254.169.254`, metadata hostnames, multicast, and
+credentials in the URL stay blocked. DNS answers are checked on the socket lookup, so a public name
+that resolves to a private address is refused.
 
 Public relays use `wss://`. The publisher caps a call at 32 relays and an event at 256 KiB. The
 default timeouts are 5 seconds to connect, 8 seconds for the acknowledgement, and 15 seconds for the
@@ -50,8 +43,7 @@ unacknowledged attempt is not stored and is not treated as success.
 
 Callers persist each relay row before they treat a total failure as an error. Scheduled posts,
 long-form posts, `/api/publish`, and delete jobs throw after that write when every relay failed, so
-a total failure is not marked published. An empty result list stays a success so the HTTP adapter's
-older body shape is unchanged.
+a total failure is not marked published.
 
 Logs include the backend, correlation id, event id, relay hostname, result, latency, failure
 category, and retry count. They do not include event content or secrets. Metrics:
@@ -63,12 +55,12 @@ category, and retry count. They do not include event content or secrets. Metrics
 The worker closes open relay sockets on `SIGTERM` and `SIGINT`.
 
 `/healthcheck` still returns `OK` when Postgres answers. `Accept: application/json` adds
-`publisherBackend`. That field names the configured backend. It does not prove a relay accepted an
-event.
+`publisherBackend: "internal"`. That field names this publisher. It does not prove a relay accepted
+an event.
 
 ## Staging
 
-CI builds the production image and health-checks it with `NOSTR_PUBLISHER_BACKEND=internal`. That
+CI builds the production image and health-checks it with `SFS_DEPLOYMENT_MODE=self_hosted`. That
 proves the image boots. It does not prove a relay accepted an event.
 
 Read the running web process before changing it:
@@ -85,9 +77,8 @@ Those two commits have the same tree. The JSON names the web process. Confirm th
 before treating the cutover as complete, and do not retire the legacy publisher until that worker
 has been observed.
 
-Rollback is `NOSTR_PUBLISHER_BACKEND=http` plus the previous URL and token, then restart both
-processes. Do not change the publisher and the read backend in the same step when leaving a
-known-good state. Use a disposable key for a publish test.
+This build has no HTTP publisher rollback. A non-empty `NOSTR_PUBLISHER_BACKEND` or
+`NOSTR_PUBLISHER_URL` refuses to boot. Use a disposable key for a publish test.
 
 Checks before any production change:
 
@@ -107,43 +98,17 @@ growth in `nostr_publisher_open_sockets` after the queue drains.
 
 Do not switch production until the project owner accepts the staging result.
 
-1. Deploy the build while production is still `NOSTR_PUBLISHER_BACKEND=http`.
-2. No database migration is required. Existing ack rows, jobs, and leases stay.
-3. Canary one internal test account by running one app process with
-   `NOSTR_PUBLISHER_BACKEND=internal` against that account's traffic only if the platform can split
-   processes that way. Otherwise keep the flag off and publish a disposable signed event from a
-   staging-like process first.
-4. One attempt must not move between backends. Restarting onto the other backend is a new attempt
-   and is safe only because relay acknowledgements are per relay.
-5. Suggested alert thresholds for the canary: relay failure ratio above 50% for 15 minutes,
-   acknowledgement timeouts above 20% for 15 minutes, open sockets still climbing 10 minutes after
-   the queue is idle, or a worker restart loop. Compare those with the HTTP publisher's recent rate
-   before calling it a regression.
-6. After the canary, set the hosted production processes to `NOSTR_PUBLISHER_BACKEND=internal` and
-   leave the HTTP URL and token in place, unused.
-7. Confirm `/healthcheck` JSON says `internal`, a disposable event is readable from a relay, and new
-   ack rows are `ACCEPTED` or a real `FAILED`/`TIMEOUT`.
-8. Keep the Cloudflare Worker for the observation window. Delete or archive nothing in this step.
+Production and staging already publish from this process. No database migration is required. Confirm
+`/healthcheck` JSON says `publisherBackend: "internal"`, a disposable event is readable from a
+relay, and new ack rows are `ACCEPTED` or a real `FAILED`/`TIMEOUT`.
 
-### Rollback
+This application does not call the Cloudflare publisher. Decommissioning that Worker is an owner
+action. The procedure is in [NostrMash utility migration](./nostrmash-utility-migration.md).
 
-Set `NOSTR_PUBLISHER_BACKEND=http` and restart. The previous `NOSTR_PUBLISHER_URL` and
-`NOSTR_PUBLISHER_API_TOKEN` must still be present. Do not roll back a database migration; this
-change does not add one. Queued jobs, ack rows, and completed posts stay. In-flight internal sockets
-close on shutdown. A job that failed closed can run again on the HTTP publisher.
-
-## Retiring the Cloudflare publisher
-
-Do this only after the owner accepts the production observation window.
-
-- Remove the hosted requirement for `NOSTR_PUBLISHER_URL` and `NOSTR_PUBLISHER_API_TOKEN`.
-- Keep `NOSTR_PUBLISHER_BACKEND=http` documented as an optional adapter.
-- Update the remaining deployment notes that still show the URL as mandatory.
-- Confirm nothing else in the organization calls the Worker's `/publish`, `/batch`, `/profile`,
-  `/health`, or SSE routes. This application only posts `/publish`. A search of this repository
-  found no caller of `/profile` or `/batch`. That is not proof about other repositories.
-- Archive [smartflowsocial-publisher](https://github.com/smartflowsocial/smartflowsocial-publisher)
-  only after that inventory. Do not archive it in the implementation change.
+- Confirm nothing else calls the Worker's `/publish`, `/batch`, `/profile`, `/health`, or SSE
+  routes.
+- The standalone repository can move to NostrMash as an independent utility. Do not archive it as
+  part of this application change.
 - The Worker's global event-id replay is not part of this publisher. Success is stored per relay.
 
 ## Code provenance

@@ -63,7 +63,6 @@ import { connectToPrimalCache } from "~/lib/nostrwebsocket.server";
 describe("Giveaway Loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["PRIMAL_CACHING_URL"] = "https://api.primal.com";
     // Loader uses getQueueTypesCached; default to one enabled queue type
     (getQueueTypesCached as ReturnType<typeof vi.fn>).mockResolvedValue([
       createMockQueueType({ id: "queue-1", name: "posts", isEnabled: true }),

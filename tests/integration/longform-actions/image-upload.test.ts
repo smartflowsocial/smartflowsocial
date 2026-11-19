@@ -26,8 +26,6 @@ import {
 describe("Image Upload Action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(
       createMockUser({ userRelays: ["wss://relay1.com", "wss://relay2.com"] })
     );
