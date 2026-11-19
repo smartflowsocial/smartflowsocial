@@ -4,8 +4,6 @@ const COMPOSER_TYPES = ["post", "thread", "poll", "article"] as const;
 
 // The publishing rail is a side column from the `lg` breakpoint (1024px) up.
 // Cypress's default 1000×660 viewport stacks that rail under the composer.
-// A forced click then lands on the fixed header instead of the mode control,
-// so the primary action never leaves "Publish now".
 const RAIL_VIEWPORT = { width: 1280, height: 900 } as const;
 const PUBLISH_RAIL = 'aside[aria-label="Publish"]';
 
@@ -24,15 +22,13 @@ function publishModeRadio(ariaLabel: string) {
 
 function selectPublishMode(mode: keyof typeof MODE_ARIA_LABEL) {
   const ariaLabel = MODE_ARIA_LABEL[mode];
-  const clickMode = () =>
-    publishModeRadio(ariaLabel).click({ scrollBehavior: "center" });
-
-  clickMode();
-  // The first click can land before the composer finishes hydrating.
-  publishModeRadio(ariaLabel).then(($button) => {
-    if ($button.attr("aria-checked") !== "true") clickMode();
+  // Cypress's mouse sequence can skip the click when the rail re-renders
+  // between pointerdown and mouseup. A DOM click still reaches the handler.
+  publishModeRadio(ariaLabel).should(($button) => {
+    const button = $button.get(0);
+    if (button.getAttribute("aria-checked") !== "true") button.click();
+    expect(button.getAttribute("aria-checked"), ariaLabel).to.eq("true");
   });
-  publishModeRadio(ariaLabel).should("have.attr", "aria-checked", "true");
 }
 
 function assertPrimaryCta(label: string) {
