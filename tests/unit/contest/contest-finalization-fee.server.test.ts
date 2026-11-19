@@ -17,7 +17,9 @@ import {
 import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 
 const END = new Date("2026-03-25T12:00:00.000Z");
-const SELF_HOSTED = readPublicDeployment({ SELF_HOSTED: "true" });
+const SELF_HOSTED = readPublicDeployment({
+  SFS_DEPLOYMENT_MODE: "self_hosted",
+});
 
 describe("quoteContestFinalization", () => {
   beforeEach(() => {

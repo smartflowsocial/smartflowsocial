@@ -151,8 +151,6 @@ import { prisma } from "~/lib/prisma.server";
 describe("New Post Action Handler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
 
     // Relay resolution (getRelayIntentFromDb, isBlastrEnabledForUserFromDb)
     (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -720,7 +718,7 @@ describe("New Post Action Handler", () => {
     it("should handle Nostr publisher errors", async () => {
       // Mock PublishNowUseCase to throw an error
       mockPublishNowExecute.mockRejectedValue(
-        new Error("Failed to post to nostr publisher")
+        new Error("Publish failed on all relays: rejected")
       );
 
       const signedEvent = {
@@ -753,7 +751,7 @@ describe("New Post Action Handler", () => {
       });
 
       await expect(handleNewPostAction(TEST_USER_ID, request)).rejects.toThrow(
-        "Failed to post to nostr publisher"
+        "Publish failed on all relays: rejected"
       );
     });
   });

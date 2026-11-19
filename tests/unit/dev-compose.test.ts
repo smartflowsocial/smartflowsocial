@@ -31,9 +31,9 @@ describe("development compose", () => {
     expect(devComposeProblems(selfHost)).toEqual([]);
     expect(devComposeProblems(cleanRoom)).toEqual([]);
     expect(selfHost).toContain("SFS_DEPLOYMENT_MODE: self_hosted");
-    expect(selfHost).toContain("NOSTR_PUBLISHER_BACKEND: internal");
-    expect(selfHost).toContain("NOSTR_READ_BACKEND: internal");
-    expect(selfHost).toContain('SELF_HOSTED: "true"');
+    expect(selfHost).not.toContain("NOSTR_PUBLISHER_BACKEND");
+    expect(selfHost).not.toContain("NOSTR_READ_BACKEND");
+    expect(selfHost).not.toContain("SELF_HOSTED:");
     expect(selfHost).toContain("restart: unless-stopped");
     expect(selfHost).toContain("127.0.0.1:3011/metrics");
     expect(selfHost).not.toContain("NOSTR_PUBLISHER_URL");

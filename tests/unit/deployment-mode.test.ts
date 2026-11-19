@@ -24,51 +24,61 @@ describe("deployment mode", () => {
     const development = resolveDeploymentMode({ NODE_ENV: "development" });
     expect(fresh.ok && fresh.mode).toBe("self-hosted");
     expect(development.ok && development.source).toBe("default");
-    expect(parseDeploymentMode("false")).toBe("hosted");
-    expect(parseDeploymentMode("true")).toBe("self-hosted");
-    expect(parseDeploymentMode(" YES ")).toBe("self-hosted");
-    expect(parseDeploymentMode("0")).toBe("hosted");
+    const production = resolveDeploymentMode({ NODE_ENV: "production" });
+    expect(production.ok && production.mode).toBe("self-hosted");
+    expect(production.ok && production.source).toBe("default");
+    expect(parseDeploymentMode("hosted")).toBe("hosted");
+    expect(parseDeploymentMode(" self_hosted ")).toBe("self-hosted");
+    expect(parseDeploymentMode("self-hosted")).toBe("self-hosted");
     expect(() => parseDeploymentMode(undefined)).toThrow(DeploymentModeError);
+    expect(() => parseDeploymentMode("true")).toThrow(DeploymentModeError);
     expect(() => parseDeploymentMode("on")).toThrow(DeploymentModeError);
     const explicitSelfHosted = resolveDeploymentMode({
       SFS_DEPLOYMENT_MODE: "self_hosted",
     });
     const explicitHosted = resolveDeploymentMode(HOSTED);
-    const agreeingFlags = resolveDeploymentMode({
-      SFS_DEPLOYMENT_MODE: "hosted",
-      SELF_HOSTED: "false",
-    });
     expect(explicitSelfHosted.ok && explicitSelfHosted.mode).toBe(
       "self-hosted"
     );
+    expect(explicitSelfHosted.ok && explicitSelfHosted.source).toBe("explicit");
     expect(explicitHosted.ok && explicitHosted.mode).toBe("hosted");
-    expect(agreeingFlags.ok && agreeingFlags.mode).toBe("hosted");
   });
 
-  it("fails closed when the mode is missing or contradictory", () => {
-    expect(resolveDeploymentMode({ NODE_ENV: "production" }).ok).toBe(false);
+  it("refuses the old flag and self-hosted policy on the managed hosts", () => {
+    const removed = resolveDeploymentMode({ SELF_HOSTED: "false" });
+    expect(removed.ok).toBe(false);
+    if (!removed.ok) {
+      expect(removed.reason).toContain("SELF_HOSTED is no longer supported");
+    }
     expect(
       resolveDeploymentMode({
         APP_URL: "https://staging.smartflow.social",
+        NODE_ENV: "production",
       }).ok
     ).toBe(false);
     expect(
       resolveDeploymentMode({
         COOLIFY_URL: "https://app.smartflow.social",
-        NODE_ENV: "development",
+        SFS_DEPLOYMENT_MODE: "self_hosted",
       }).ok
     ).toBe(false);
-    const conflict = resolveDeploymentMode({
+    const managed = resolveDeploymentMode({
+      APP_URL: "https://app.smartflow.social",
       SFS_DEPLOYMENT_MODE: "hosted",
-      SELF_HOSTED: "true",
+      cookie: "self-hosted",
     });
-    expect(conflict.ok).toBe(false);
+    expect(managed.ok && managed.mode).toBe("hosted");
     expect(resolveDeploymentMode({ SFS_DEPLOYMENT_MODE: "cloud" }).ok).toBe(
       false
     );
     expect(resolveDeploymentMode({ SELF_HOSTED: "on" }).ok).toBe(false);
-    expect(() => readPublicDeployment({ NODE_ENV: "production" })).toThrow(
-      DeploymentModeError
+    expect(() =>
+      readPublicDeployment({
+        APP_URL: "https://staging.smartflow.social",
+      })
+    ).toThrow(DeploymentModeError);
+    expect(readPublicDeployment({ NODE_ENV: "production" }).mode).toBe(
+      "self-hosted"
     );
   });
 
@@ -126,7 +136,7 @@ describe("deployment mode", () => {
   });
 
   it("unlocks self-hosted software and still honors an operator cap", () => {
-    const open = readPublicDeployment({ SELF_HOSTED: "true" });
+    const open = readPublicDeployment({ SFS_DEPLOYMENT_MODE: "self_hosted" });
     const entitlements = resolveExecutionEntitlements("free", open);
     expect(entitlements.maxFutureScheduledItems).toBeNull();
     expect(entitlements.maxDrafts).toBeNull();
@@ -140,7 +150,7 @@ describe("deployment mode", () => {
     expect(allowsMultipleAccounts(1, open)).toBe(true);
 
     const capped = readPublicDeployment({
-      SELF_HOSTED: "true",
+      SFS_DEPLOYMENT_MODE: "self_hosted",
       SELF_HOSTED_MAX_FUTURE_SCHEDULED: "3",
       SELF_HOSTED_MAX_ACCOUNTS: "1",
     });
@@ -158,7 +168,9 @@ describe("deployment mode", () => {
   });
 
   it("does not grant hosted Blossom or hosted Blastr", () => {
-    const selfHosted = readPublicDeployment({ SELF_HOSTED: "true" });
+    const selfHosted = readPublicDeployment({
+      SFS_DEPLOYMENT_MODE: "self_hosted",
+    });
     const freeMedia =
       getCanonicalPlanPolicy("free").media.canUseSfsBlossomStorage;
     expect(hostedBlossomStaysOnPlan(freeMedia, selfHosted)).toBe(false);

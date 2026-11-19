@@ -55,9 +55,6 @@ services:
     environment: &app-env
       NODE_ENV: production
       SFS_DEPLOYMENT_MODE: self_hosted
-      SELF_HOSTED: "true"
-      NOSTR_PUBLISHER_BACKEND: internal
-      NOSTR_READ_BACKEND: internal
       DATABASE_URL: postgresql://smartflow:smartflow@postgres:5432/smartflow
       REDIS_URL: redis://redis:6379
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET to at least 32 characters}

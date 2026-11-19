@@ -422,9 +422,6 @@ jobs:
             --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
             --env CRON_SECRET=test-cron-secret-very-long-and-secure-32-chars \
             --env SFS_DEPLOYMENT_MODE=self_hosted \
-            --env SELF_HOSTED=true \
-            --env NOSTR_PUBLISHER_BACKEND=internal \
-            --env NOSTR_READ_BACKEND=internal \
             smartflowsocial:ci
           for _ in $(seq 1 60); do
             if curl --silent --show-error --fail --max-time 5 --dump-header /tmp/health-headers --header 'accept: application/json' --output /tmp/health.json http://127.0.0.1:3000/healthcheck; then

@@ -2,7 +2,6 @@
  * Edge Case Tests for External API Failures
  *
  * Tests how the application handles external service failures:
- * - Nostr publisher failures
  * - S3 storage failures
  * - Primal cache failures
  * - Rate limiting from external APIs
@@ -25,79 +24,6 @@ global.fetch = vi.fn();
 describe("External API Failure Edge Cases", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["NOSTR_PUBLISHER_URL"] =
-      "https://api.nostr-publisher.com/publish";
-  });
-
-  describe("Nostr Publisher Failures", () => {
-    it("should handle Nostr publisher service unavailable", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 503,
-        statusText: "Service Unavailable",
-      });
-
-      const response = await fetch(process.env["NOSTR_PUBLISHER_URL"]!, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: {} }),
-      });
-
-      expect(response.ok).toBe(false);
-      expect(response.status).toBe(503);
-    });
-
-    it("should handle Nostr publisher timeout", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error("Request timeout")
-      );
-
-      await expect(
-        fetch(process.env["NOSTR_PUBLISHER_URL"]!, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ event: {} }),
-        })
-      ).rejects.toThrow("Request timeout");
-    });
-
-    it("should handle Nostr publisher rate limiting", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        status: 429,
-        statusText: "Too Many Requests",
-        headers: new Headers({
-          "Retry-After": "60",
-        }),
-      });
-
-      const response = await fetch(process.env["NOSTR_PUBLISHER_URL"]!, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: {} }),
-      });
-
-      expect(response.status).toBe(429);
-      expect(response.headers.get("Retry-After")).toBe("60");
-    });
-
-    it("should handle Nostr publisher invalid response", async () => {
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => {
-          throw new Error("Invalid JSON response");
-        },
-      });
-
-      const response = await fetch(process.env["NOSTR_PUBLISHER_URL"]!, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: {} }),
-      });
-
-      await expect(response.json()).rejects.toThrow("Invalid JSON");
-    });
   });
 
   describe("S3 Storage Failures", () => {

@@ -6,21 +6,14 @@
  *
  * Usage:
  *   import { env } from "~/lib/env.server";
- *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
+ *   const url = env.DATABASE_URL;
  */
 
 import { primalSocketConfigError } from "~/infra/nostr-read/endpoints";
 import {
-  readBackendSelectionError,
-  resolveNostrReadBackend,
   validateNostrMashWsUrl,
   validateReadTimeoutMs,
-  type NostrReadBackend,
 } from "~/infra/nostr-read/read-backend";
-import {
-  resolveNostrPublisherBackend,
-  type NostrPublisherBackend,
-} from "~/infra/publishers/publisher-backend";
 import { resolveDeploymentMode } from "~/lib/deployment-mode";
 import { productionSecretErrors } from "~/lib/production-secrets.server";
 import {
@@ -33,26 +26,8 @@ interface EnvConfig {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   /**
-   * `internal` publishes from this process. This is the default when the
-   * variable is unset and `NOSTR_PUBLISHER_URL` is unset.
-   * `http` posts signed events to NOSTR_PUBLISHER_URL and must be explicit.
-   */
-  NOSTR_PUBLISHER_BACKEND: NostrPublisherBackend;
-  /**
-   * `internal` reads inside this process. This is the default when the
-   * variable is unset and `PRIMAL_CACHING_URL` is not an HTTP proxy.
-   * `legacy_http` posts to an HTTP cache proxy and must be explicit.
-   * `legacy_ws` is no longer selected.
-   */
-  NOSTR_READ_BACKEND: NostrReadBackend;
-  /** Required when NOSTR_PUBLISHER_BACKEND is `http`. */
-  NOSTR_PUBLISHER_URL?: string;
-  NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production HTTP mode unless the publisher is explicitly public
-  /** Set to "true" only when the HTTP publisher is intentionally unauthenticated. */
-  NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED?: string;
-  /**
-   * Set to "true" to let the internal publisher open loopback and private
-   * relay URLs. Never implied by SELF_HOSTED. Leave unset on hosted production.
+   * Set to "true" to let the publisher open loopback and private relay URLs.
+   * Leave unset on hosted production.
    */
   NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS?: string;
   REDIS_URL: string;
@@ -65,7 +40,11 @@ interface EnvConfig {
   STORAGE_CDN_URL?: string;
 
   // Optional
-  PRIMAL_CACHING_URL?: string;
+  /**
+   * Comma-separated Primal-compatible `ws://` or `wss://` sockets.
+   * Unset uses the public Primal endpoints. This is not an HTTP proxy.
+   */
+  PRIMAL_UPSTREAM_URLS?: string;
   /** NostrMash HTTP origin. Defaults to https://api.nostrmash.com when unset. */
   NOSTRMASH_BASE_URL?: string;
   /** Sent as Bearer token only when the deployment requires one. */
@@ -84,10 +63,6 @@ interface EnvConfig {
   NOSTRMASH_WS_URL?: string;
   /** Whole in-process read budget in milliseconds. Default 15000. */
   NOSTR_READ_TIMEOUT_MS?: string;
-  /** HTTP Primal proxy: per-attempt timeout ms (default 8000). */
-  PRIMAL_HTTP_TIMEOUT_MS?: string;
-  /** HTTP Primal proxy: extra retries after first attempt (default 0). */
-  PRIMAL_HTTP_MAX_RETRIES?: string;
   OWNER_NWC?: string;
   /**
    * Bound for one NWC pay_invoice, in milliseconds. Default 45000.
@@ -288,16 +263,36 @@ function validateStorageVariables(
   return [];
 }
 
-function buildBaseConfig(
-  publisherBackend: NostrPublisherBackend,
-  readBackend: NostrReadBackend
-): EnvConfig {
+const REMOVED_ENVIRONMENT_KEYS = [
+  "LOCAL_PUBLISHER_PORT",
+  "LOCAL_PUBLISHER_TOKEN",
+  "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+  "NOSTR_PUBLISHER_API_TOKEN",
+  "NOSTR_PUBLISHER_BACKEND",
+  "NOSTR_PUBLISHER_URL",
+  "NOSTR_READ_BACKEND",
+  "PRIMAL_CACHING_URL",
+  "PRIMAL_HTTP_MAX_RETRIES",
+  "PRIMAL_HTTP_TIMEOUT_MS",
+] as const;
+
+function removedEnvironmentErrors(): ValidationError[] {
+  const errors: ValidationError[] = [];
+  for (const key of REMOVED_ENVIRONMENT_KEYS) {
+    if ((process.env[key]?.trim() ?? "") === "") continue;
+    errors.push({
+      key,
+      reason:
+        "is no longer part of SmartFlowSocial. Remove it. Publishing and Nostr reads run inside this process.",
+    });
+  }
+  return errors;
+}
+
+function buildBaseConfig(): EnvConfig {
   return {
     DATABASE_URL: process.env["DATABASE_URL"]!,
     SESSION_SECRET: process.env["SESSION_SECRET"]!,
-    NOSTR_PUBLISHER_BACKEND: publisherBackend,
-    NOSTR_READ_BACKEND: readBackend,
-    NOSTR_PUBLISHER_URL: process.env["NOSTR_PUBLISHER_URL"],
     REDIS_URL: process.env["REDIS_URL"]!,
   };
 }
@@ -315,10 +310,8 @@ function addOptionalStorageConfig(
 }
 
 function addOptionalConfig(config: EnvConfig): void {
-  const optionalVars: Array<
-    Exclude<keyof EnvConfig, "NOSTR_PUBLISHER_BACKEND" | "NOSTR_READ_BACKEND">
-  > = [
-    "PRIMAL_CACHING_URL",
+  const optionalVars: Array<keyof EnvConfig> = [
+    "PRIMAL_UPSTREAM_URLS",
     "NOSTRMASH_BASE_URL",
     "NOSTRMASH_WS_URL",
     "NOSTR_READ_TIMEOUT_MS",
@@ -326,8 +319,6 @@ function addOptionalConfig(config: EnvConfig): void {
     "POST_ANALYTICS_INTERVAL_MINUTES",
     "POST_ANALYTICS_BATCH_SIZE",
     "POST_ANALYTICS_CONCURRENCY",
-    "PRIMAL_HTTP_TIMEOUT_MS",
-    "PRIMAL_HTTP_MAX_RETRIES",
     "OWNER_NWC",
     "NWC_PAY_TIMEOUT_MS",
     "NWC_RECONCILE_TIMEOUT_MS",
@@ -335,8 +326,6 @@ function addOptionalConfig(config: EnvConfig): void {
     "OWNER_NWC_RELAYS",
     "NOSTR_NSEC",
     "FEEDBACK_INBOX_NPUB",
-    "NOSTR_PUBLISHER_API_TOKEN",
-    "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
     "NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS",
     "SENTRY_DSN",
     "SENTRY_TRACES_SAMPLE_RATE",
@@ -449,20 +438,6 @@ function validateAndGetEnv(): EnvConfig {
   }
 
   const deploymentMode = resolveDeploymentMode(process.env);
-  const publisherBackend = resolveNostrPublisherBackend({
-    configured: process.env["NOSTR_PUBLISHER_BACKEND"],
-    publisherUrl: process.env["NOSTR_PUBLISHER_URL"],
-  });
-  const readBackend = resolveNostrReadBackend({
-    configured: process.env["NOSTR_READ_BACKEND"],
-    primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
-  });
-  if (
-    process.env["E2E_TEST"] === "true" &&
-    (!publisherBackend.ok || publisherBackend.backend === "http")
-  ) {
-    process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
-  }
 
   const required = ["DATABASE_URL", "SESSION_SECRET", "REDIS_URL"] as const;
 
@@ -497,24 +472,8 @@ function validateAndGetEnv(): EnvConfig {
       reason: deploymentMode.reason,
     });
   }
+  invalid.push(...removedEnvironmentErrors());
 
-  if (!publisherBackend.ok) {
-    invalid.push({
-      key: "NOSTR_PUBLISHER_BACKEND",
-      reason: publisherBackend.reason,
-    });
-  } else if (publisherBackend.backend === "http") {
-    const publisherUrl = process.env["NOSTR_PUBLISHER_URL"];
-    if (!publisherUrl || publisherUrl.trim() === "") {
-      missing.push("NOSTR_PUBLISHER_URL");
-    }
-  }
-
-  const readSelectionError = readBackendSelectionError({
-    configured: process.env["NOSTR_READ_BACKEND"],
-    primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
-  });
-  if (readSelectionError) invalid.push(readSelectionError);
   const mashWsError = validateNostrMashWsUrl(process.env["NOSTRMASH_WS_URL"]);
   if (mashWsError) {
     invalid.push({ key: "NOSTRMASH_WS_URL", reason: mashWsError });
@@ -528,14 +487,11 @@ function validateAndGetEnv(): EnvConfig {
       reason: readTimeoutError,
     });
   }
-  if (readBackend.ok) {
-    const socketError = primalSocketConfigError(
-      process.env["PRIMAL_CACHING_URL"],
-      readBackend.backend !== "legacy_http"
-    );
-    if (socketError) {
-      invalid.push({ key: "PRIMAL_CACHING_URL", reason: socketError });
-    }
+  const socketError = primalSocketConfigError(
+    process.env["PRIMAL_UPSTREAM_URLS"]
+  );
+  if (socketError) {
+    invalid.push({ key: "PRIMAL_UPSTREAM_URLS", reason: socketError });
   }
 
   // Validate storage variables: if any is set, all must be set
@@ -549,10 +505,6 @@ function validateAndGetEnv(): EnvConfig {
       cronSecret: process.env["CRON_SECRET"],
       referralManualPayoutSecret: process.env["REFERRAL_MANUAL_PAYOUT_SECRET"],
       referralPayoutsEnabled: process.env["REFERRAL_PAYOUTS_ENABLED"],
-      nostrPublisherApiToken: process.env["NOSTR_PUBLISHER_API_TOKEN"],
-      nostrPublisherAllowUnauthenticated:
-        process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"],
-      publisherBackend: publisherBackend.ok ? publisherBackend.backend : "http",
     })
   );
 
@@ -560,15 +512,9 @@ function validateAndGetEnv(): EnvConfig {
   if (missing.length > 0 || invalid.length > 0) {
     reportValidationErrors(missing, invalid);
   }
-  if (!publisherBackend.ok) {
-    throw new Error("NOSTR_PUBLISHER_BACKEND is invalid");
-  }
-  if (!readBackend.ok) {
-    throw new Error("NOSTR_READ_BACKEND is invalid");
-  }
 
   // Build typed config object
-  const config = buildBaseConfig(publisherBackend.backend, readBackend.backend);
+  const config = buildBaseConfig();
 
   // Check if all storage variables are set
   const storageValues = storageVariables.map((key) => process.env[key]);
@@ -585,12 +531,9 @@ function validateAndGetEnv(): EnvConfig {
       `Deployment mode: ${deploymentMode.mode} (${deploymentMode.source})`
     );
   }
-  safeConsoleLog(`Nostr publisher backend: ${publisherBackend.backend}`);
-  safeConsoleLog(`Nostr read backend: ${readBackend.backend}`);
-  if (
-    publisherBackend.backend === "internal" &&
-    process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] === "true"
-  ) {
+  safeConsoleLog("Nostr publisher: internal");
+  safeConsoleLog("Nostr read cache: internal");
+  if (process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] === "true") {
     safeConsoleLog(
       "WARNING: NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true lets the internal publisher open private-network relay URLs. Do not set this on hosted production."
     );

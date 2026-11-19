@@ -1,8 +1,7 @@
 /**
  * Direct Primal-compatible WebSocket reads.
- * The internal reader uses the same socket. This function is the legacy
- * direct-socket path: configured `wss://` endpoints, or the public Primal
- * pair when `PRIMAL_CACHING_URL` is unset.
+ * The in-process reader uses `read-service.server.ts`. This helper tries
+ * `PRIMAL_UPSTREAM_URLS`, or the public Primal sockets when that list is unset.
  */
 
 import { queryCacheSocket } from "~/features/cache/cache-socket.server";
@@ -35,7 +34,7 @@ export async function connectToPrimalCache(
   if (!canonical) {
     throw new Error("Invalid request type");
   }
-  const endpoints = primalSocketEndpoints(env.PRIMAL_CACHING_URL);
+  const endpoints = primalSocketEndpoints(env.PRIMAL_UPSTREAM_URLS);
 
   for (const endpoint of endpoints) {
     const attempt = await queryCacheSocket(

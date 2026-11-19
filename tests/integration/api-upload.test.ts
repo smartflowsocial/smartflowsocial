@@ -19,7 +19,6 @@ vi.mock("~/lib/env.server", () => ({
   env: {
     DATABASE_URL: "postgresql://user:pass@localhost:5432/testdb",
     SESSION_SECRET: "12345678901234567890123456789012",
-    NOSTR_PUBLISHER_URL: "https://publisher.example.com",
     REDIS_URL: "redis://localhost:6379",
     STORAGE_REGION: "us-east-1",
     STORAGE_BUCKET: "test-bucket",

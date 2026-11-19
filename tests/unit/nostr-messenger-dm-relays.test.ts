@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Provide env so sendNostrDirectMessage can reach the fetch path
+const { mockPublish } = vi.hoisted(() => ({
+  mockPublish: vi.fn(),
+}));
+
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: () => ({
+    publish: mockPublish,
+  }),
+}));
+
 vi.mock("~/lib/env.server", () => ({
   env: {
-    NOSTR_PUBLISHER_URL: "https://publisher.example/publish",
     NOSTR_NSEC: "nsec1test",
     NODE_ENV: "test",
   },
@@ -92,25 +100,23 @@ async function setPoolGetSequence(values: unknown[]) {
   Pool.sequence = [...values];
 }
 
-function publisherResponse(ok: boolean) {
-  return {
-    ok,
-    status: ok ? 200 : 400,
-    statusText: ok ? "OK" : "relay error",
-    headers: { get: () => null },
-    text: async () => "",
-    json: async () => {
-      throw new Error("not json");
-    },
-  };
+function publishedCall(index: number): {
+  event: { id?: string; kind: number };
+  relays: string[];
+} {
+  const call = mockPublish.mock.calls[index] as
+    [{ id?: string; kind: number }, string[]] | undefined;
+  if (!call) throw new Error("publisher was not called");
+  return { event: call[0], relays: call[1] };
 }
 
 describe("sendNostrDirectMessage relay targeting", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env["NOSTR_PUBLISHER_URL"] = "https://publisher.example/publish";
     process.env["NOSTR_NSEC"] = "nsec1test";
-    global.fetch = vi.fn().mockResolvedValue(publisherResponse(true));
+    mockPublish.mockResolvedValue({
+      results: [{ relay: "wss://relay.example", ok: true }],
+    });
   });
 
   it("falls back to DEFAULT_USER_WRITE_RELAYS when no NIP-65 relay list found", async () => {
@@ -118,13 +124,7 @@ describe("sendNostrDirectMessage relay targeting", () => {
 
     await sendNostrDirectMessage("f".repeat(64), "hello");
 
-    const fetchCall = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0];
-    if (!fetchCall) throw new Error("fetch was not called");
-    const bodyRaw = (fetchCall[1] as { body?: unknown } | undefined)?.body;
-    if (typeof bodyRaw !== "string") throw new Error("fetch body missing");
-    const body = JSON.parse(bodyRaw) as { relays: string[] };
-    expect([...body.relays].sort()).toEqual(
+    expect([...publishedCall(0).relays].sort()).toEqual(
       [...DEFAULT_USER_WRITE_RELAYS].sort()
     );
   });
@@ -140,19 +140,13 @@ describe("sendNostrDirectMessage relay targeting", () => {
 
     await sendNostrDirectMessage("f".repeat(64), "hello");
 
-    const fetchCall = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0];
-    if (!fetchCall) throw new Error("fetch was not called");
-    const bodyRaw = (fetchCall[1] as { body?: unknown } | undefined)?.body;
-    if (typeof bodyRaw !== "string") throw new Error("fetch body missing");
-    const body = JSON.parse(bodyRaw) as { relays: string[] };
+    const relays = publishedCall(0).relays;
 
-    expect(body.relays).toContain("wss://relay.read.example");
-    expect(body.relays).toContain("wss://relay.unmarked.example");
-    expect(body.relays).not.toContain("wss://relay.write.example");
-    // Always includes fallback
-    for (const r of DEFAULT_USER_WRITE_RELAYS) {
-      expect(body.relays).toContain(r);
+    expect(relays).toContain("wss://relay.read.example");
+    expect(relays).toContain("wss://relay.unmarked.example");
+    expect(relays).not.toContain("wss://relay.write.example");
+    for (const relay of DEFAULT_USER_WRITE_RELAYS) {
+      expect(relays).toContain(relay);
     }
   });
 
@@ -165,8 +159,7 @@ describe("sendNostrDirectMessage relay targeting", () => {
 
     const result = await sendNostrDirectMessage("f".repeat(64), "hello");
 
-    const fetchMock = global.fetch as unknown as ReturnType<typeof vi.fn>;
-    expect(fetchMock.mock.calls.length).toBe(3);
+    expect(mockPublish).toHaveBeenCalledTimes(3);
 
     expect(result).not.toEqual(false);
     expect(result).toMatchObject({
@@ -174,16 +167,9 @@ describe("sendNostrDirectMessage relay targeting", () => {
       nip04: { success: true },
     });
 
-    const bodies = fetchMock.mock.calls.map(
-      (c) =>
-        JSON.parse((c[1] as { body: string }).body) as {
-          event: { kind: number };
-        }
-    );
-    expect(bodies).toHaveLength(3);
-    expect(bodies[0]!.event.kind).toBe(1059);
-    expect(bodies[1]!.event.kind).toBe(1059);
-    expect(bodies[2]!.event.kind).toBe(4);
+    expect(publishedCall(0).event.kind).toBe(1059);
+    expect(publishedCall(1).event.kind).toBe(1059);
+    expect(publishedCall(2).event.kind).toBe(4);
   });
 
   it("still publishes NIP-04 when NIP-17 gift wrap publish fails", async () => {
@@ -193,18 +179,20 @@ describe("sendNostrDirectMessage relay targeting", () => {
       null,
     ]);
 
-    const fetchMock = vi.fn(async (_url: unknown, init: { body?: string }) => {
-      const body = JSON.parse(init.body ?? "{}") as {
-        event?: { id?: string };
-      };
-      if (body.event?.id === "gw-recipient") return publisherResponse(false);
-      return publisherResponse(true);
+    mockPublish.mockImplementation(async (event: { id?: string }) => {
+      if (event.id === "gw-recipient") {
+        return {
+          results: [
+            { relay: "wss://relay.example", ok: false, error: "rejected" },
+          ],
+        };
+      }
+      return { results: [{ relay: "wss://relay.example", ok: true }] };
     });
-    global.fetch = fetchMock as unknown as typeof fetch;
 
     const result = await sendNostrDirectMessage("f".repeat(64), "hello");
 
-    expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(mockPublish.mock.calls.length).toBeGreaterThanOrEqual(3);
     expect(result).not.toEqual(false);
     expect(result).toMatchObject({
       success: true,

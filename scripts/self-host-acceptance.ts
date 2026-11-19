@@ -240,15 +240,25 @@ async function main(): Promise<void> {
     fail("build/server.js is missing. Run pnpm build first.");
   }
 
-  delete process.env["NOSTR_PUBLISHER_URL"];
-  delete process.env["NOSTR_PUBLISHER_API_TOKEN"];
-  delete process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"];
-  delete process.env["PRIMAL_CACHING_URL"];
+  for (const removed of [
+    "SELF_HOSTED",
+    "LOCAL_PUBLISHER_PORT",
+    "LOCAL_PUBLISHER_TOKEN",
+    "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+    "NOSTR_PUBLISHER_API_TOKEN",
+    "NOSTR_PUBLISHER_BACKEND",
+    "NOSTR_PUBLISHER_URL",
+    "NOSTR_READ_BACKEND",
+    "PRIMAL_CACHING_URL",
+    "PRIMAL_HTTP_MAX_RETRIES",
+    "PRIMAL_HTTP_TIMEOUT_MS",
+    "APP_URL",
+    "COOLIFY_URL",
+  ]) {
+    delete process.env[removed];
+  }
   process.env["NODE_ENV"] = "production";
   process.env["SFS_DEPLOYMENT_MODE"] = "self_hosted";
-  process.env["SELF_HOSTED"] = "true";
-  process.env["NOSTR_PUBLISHER_BACKEND"] = "internal";
-  process.env["NOSTR_READ_BACKEND"] = "internal";
   process.env["NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS"] = "true";
   process.env["REFERRAL_PAYOUTS_ENABLED"] = "false";
   process.env["SESSION_SECRET"] = "self-host-acceptance-session-secret-32";
@@ -308,9 +318,6 @@ async function main(): Promise<void> {
     SESSION_SECRET: process.env["SESSION_SECRET"],
     CRON_SECRET: process.env["CRON_SECRET"],
     SFS_DEPLOYMENT_MODE: "self_hosted",
-    SELF_HOSTED: "true",
-    NOSTR_PUBLISHER_BACKEND: "internal",
-    NOSTR_READ_BACKEND: "internal",
     NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS: "true",
     REFERRAL_PAYOUTS_ENABLED: "false",
     SOURCE_COMMIT: sourceCommit,

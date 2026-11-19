@@ -8,8 +8,7 @@
 # Postgres 16 matches CI. Do not switch this image back to `latest`.
 #
 # `pnpm dev` runs the web server and the worker.
-# Publishing is in-process. SELF_HOSTED=true selects that publisher.
-# `pnpm publisher:local` remains a signature-checking HTTP stub. It does not open relays.
+# Publishing and Nostr reads run in this process. There is no external publisher.
 services:
   postgres:
     image: postgres:16

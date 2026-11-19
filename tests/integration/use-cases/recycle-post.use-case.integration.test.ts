@@ -8,8 +8,15 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock global fetch for Nostr publisher
-global.fetch = vi.fn();
+const { mockPublish } = vi.hoisted(() => ({
+  mockPublish: vi.fn(),
+}));
+
+vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
+  getNostrPublisher: () => ({
+    publish: mockPublish,
+  }),
+}));
 
 import { createValidSignedEvent } from "../../utils/test-helpers";
 
@@ -45,13 +52,8 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       });
       userId = user.id;
       useCase = new RecyclePostUseCase();
-
-      // Mock fetch for Nostr publisher
-
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: "OK",
+      mockPublish.mockResolvedValue({
+        results: [{ relay: "wss://relay.example.com", ok: true }],
       });
     });
 

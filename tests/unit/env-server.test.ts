@@ -14,20 +14,13 @@ describe("Environment Variable Validation", () => {
       // The module requires:
       // - DATABASE_URL (must start with postgresql://)
       // - SESSION_SECRET (must be at least 32 characters)
-      // - NOSTR_PUBLISHER_URL
       // - REDIS_URL (must start with redis://)
 
-      const required = [
-        "DATABASE_URL",
-        "SESSION_SECRET",
-        "NOSTR_PUBLISHER_URL",
-        "REDIS_URL",
-      ];
+      const required = ["DATABASE_URL", "SESSION_SECRET", "REDIS_URL"];
 
-      expect(required.length).toBe(4);
+      expect(required.length).toBe(3);
       expect(required).toContain("DATABASE_URL");
       expect(required).toContain("SESSION_SECRET");
-      expect(required).toContain("NOSTR_PUBLISHER_URL");
       expect(required).toContain("REDIS_URL");
     });
 
@@ -99,7 +92,6 @@ describe("Environment Variable Validation", () => {
       // When E2E_TEST=true, the module provides defaults:
       // - DATABASE_URL defaults to test database
       // - SESSION_SECRET defaults to test secret
-      // - NOSTR_PUBLISHER_URL defaults to localhost:3001
       // - REDIS_URL defaults to localhost:6379
 
       const e2eMode = true;
@@ -111,7 +103,6 @@ describe("Environment Variable Validation", () => {
           "postgresql://postgres:postgres@localhost:5432/smartflow_test",
         SESSION_SECRET:
           "test-session-secret-very-long-and-secure-32-chars-minimum",
-        NOSTR_PUBLISHER_URL: "http://localhost:3001/publish",
         REDIS_URL: "redis://localhost:6379",
       };
 
@@ -123,7 +114,7 @@ describe("Environment Variable Validation", () => {
   describe("Optional environment variables", () => {
     it("should allow optional variables to be unset", () => {
       // Optional variables include:
-      // - PRIMAL_CACHING_URL
+      // - PRIMAL_UPSTREAM_URLS
       // - OWNER_NWC
       // - NOSTR_NSEC
       // - SENTRY_DSN
@@ -140,7 +131,7 @@ describe("Environment Variable Validation", () => {
       // - METRICS_TOKEN
       // - METRICS_ALLOWED_IPS
 
-      const optionalVars = ["PRIMAL_CACHING_URL", "OWNER_NWC", "SENTRY_DSN"];
+      const optionalVars = ["PRIMAL_UPSTREAM_URLS", "OWNER_NWC", "SENTRY_DSN"];
 
       // These can be undefined without causing validation to fail
       expect(optionalVars.length).toBeGreaterThan(0);

@@ -86,21 +86,20 @@ process.env["SESSION_SECRET"] ??=
 // commission, and entitlement tests keep exercising the commercial policy.
 // Resolver tests pass their own environment object.
 process.env["SFS_DEPLOYMENT_MODE"] = "hosted";
-delete process.env["SELF_HOSTED"];
-
-// Required by centralized env validation when the HTTP publisher is selected.
-// Force HTTP here so a developer .env does not send the suite at live relays.
-// Tests construct InternalNostrPublisher directly.
-process.env["NOSTR_PUBLISHER_BACKEND"] = "http";
-process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
-process.env["NOSTR_READ_BACKEND"] = "internal";
-const primalCachingUrl =
-  process.env["PRIMAL_CACHING_URL"]?.trim().toLowerCase() ?? "";
-if (
-  primalCachingUrl.startsWith("http://") ||
-  primalCachingUrl.startsWith("https://")
-) {
-  delete process.env["PRIMAL_CACHING_URL"];
+for (const removed of [
+  "SELF_HOSTED",
+  "LOCAL_PUBLISHER_PORT",
+  "LOCAL_PUBLISHER_TOKEN",
+  "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
+  "NOSTR_PUBLISHER_API_TOKEN",
+  "NOSTR_PUBLISHER_BACKEND",
+  "NOSTR_PUBLISHER_URL",
+  "NOSTR_READ_BACKEND",
+  "PRIMAL_CACHING_URL",
+  "PRIMAL_HTTP_MAX_RETRIES",
+  "PRIMAL_HTTP_TIMEOUT_MS",
+]) {
+  delete process.env[removed];
 }
 process.env["REDIS_URL"] ??= "redis://localhost:6379";
 

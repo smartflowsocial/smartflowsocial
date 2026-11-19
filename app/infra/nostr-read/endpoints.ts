@@ -3,8 +3,6 @@
  * These values come from the environment, not from request bodies.
  */
 
-import { isHttpCacheProxyUrl } from "./read-backend";
-
 export const DEFAULT_PRIMAL_ENDPOINTS = [
   "wss://cache1.primal.net/v1",
   "wss://cache2.primal.net/v1",
@@ -73,13 +71,10 @@ export function parseSocketUrlList(
 }
 
 /**
- * Primal sockets for a read. An HTTP proxy URL is not a socket list.
- * Unset and HTTP values use the public Primal endpoints.
+ * Primal sockets for a read. Unset uses the public Primal endpoints.
+ * `PRIMAL_UPSTREAM_URLS` is a comma-separated `ws://` or `wss://` list.
  */
 export function primalSocketEndpoints(raw: string | undefined): string[] {
-  if (!raw || isHttpCacheProxyUrl(raw)) {
-    return [...DEFAULT_PRIMAL_ENDPOINTS];
-  }
   const parsed = parseSocketUrlList(raw);
   if (!parsed.ok || parsed.urls.length === 0) {
     return [...DEFAULT_PRIMAL_ENDPOINTS];
@@ -88,16 +83,13 @@ export function primalSocketEndpoints(raw: string | undefined): string[] {
 }
 
 export function primalSocketConfigError(
-  raw: string | undefined,
-  backendUsesSockets: boolean
+  raw: string | undefined
 ): string | null {
   const trimmed = raw?.trim() ?? "";
-  if (!backendUsesSockets || trimmed === "" || isHttpCacheProxyUrl(trimmed)) {
-    return null;
-  }
+  if (trimmed === "") return null;
   const parsed = parseSocketUrlList(trimmed);
-  if (!parsed.ok) return `PRIMAL_CACHING_URL ${parsed.reason}`;
-  if (parsed.urls.length === 0) return "PRIMAL_CACHING_URL has no endpoints";
+  if (!parsed.ok) return `PRIMAL_UPSTREAM_URLS ${parsed.reason}`;
+  if (parsed.urls.length === 0) return "PRIMAL_UPSTREAM_URLS has no endpoints";
   return null;
 }
 
