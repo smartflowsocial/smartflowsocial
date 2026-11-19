@@ -71,6 +71,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:report": "pnpm test:coverage && node scripts/coverage-trend.cjs record",
     "test:coverage:trend": "node scripts/coverage-trend.cjs report",
+    "test:coverage:gaps": "node scripts/coverage-gaps.cjs",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:property": "vitest run tests/property",
