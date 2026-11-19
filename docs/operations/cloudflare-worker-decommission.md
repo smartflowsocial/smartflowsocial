@@ -1,18 +1,46 @@
 # Cloudflare Worker decommission review
 
-Reviewed 19 November 2026. Wrangler `whoami` did not return an account. No Cloudflare API call
-completed, and nothing was deleted. Do not treat the script names below as proof of what is
-deployed.
+Reviewed 19 November 2026. Wrangler `whoami` did not return an account. A later read-only Cloudflare
+API call did. Nothing was deleted. Secret values were not read.
 
-GitHub checks on the successor-README branches showed Cloudflare Workers Builds for account
-`9f65435f3bc2df9dee3cb9aeb02da2f4`. The publisher check URL is a preview
-(`production/previews/docs-successor-nostr-publish-gateway`). The cache-worker check URL is also a
-preview (`production/previews/docs-successor-nostr-read-gateway`). Those previews are not a
-replacement of the production scripts. The same account id appears on the NostrMash Web build check.
-Leave that service alone.
+## Verified on the account
 
-Routes, custom domains, secret names, and KV namespace ids are still not in Git. The owner has to
-read them in the dashboard.
+Account `9f65435f3bc2df9dee3cb9aeb02da2f4`. The workers.dev subdomain is `birwix`. These scripts
+exist: `smartflowsocial-publisher`, `smartflowsocial-publisher-staging`,
+`smartflowsocial-cache-worker`, `smartflowsocial-blastr`, `smartflowsocial-landing`, and
+`nostrmash-web`. `smartflowsocial-primal-cache-worker` does not exist.
+`nostrmash-nostr-publish-gateway` and `nostrmash-nostr-read-gateway` do not exist.
+
+`smartflowsocial-cache-worker` is served at
+`https://smartflowsocial-cache-worker.birwix.workers.dev`. Workers.dev is enabled. It has no secret
+bindings. Its plain-text bindings are `NOSTRMASH_HTTP_BASE=https://api.nostrmash.com` and
+`NOSTRMASH_WS_URL=wss://api.nostrmash.com/primal/ws/v1`. Workers Builds trigger "Deploy default
+branch" runs `pnpm exec wrangler deploy` for `main`. Wrangler warns that `wrangler.toml` says
+`smartflowsocial-primal-cache-worker` and then overrides the name to `smartflowsocial-cache-worker`.
+
+Merging the README pull request started that trigger. The build succeeded and uploaded version
+`873bfd53-83a4-4fdd-9dec-0fd6b45ee2d3` at 2026-11-19T21:22:06Z from commit `a92fce6`. The parent,
+`526270c`, was already production from 2026-11-18T07:31:13Z. The merge changes `README.md` only.
+That file is not in the Worker bundle. This was still a production deploy, and it was not intended.
+It has not been rolled back. A rollback would deploy again.
+
+`smartflowsocial-publisher` has workers.dev enabled, secret name `API_TOKEN`, and KV binding
+`PROFILES` namespace `09f055c2671d4bf3a73a958a6a72cbea`. The trigger list that was read has a
+preview trigger for the documentation branch and no default-branch deploy trigger. The documentation
+branch ran `npx wrangler preview`. It did not replace the production script.
+`smartflowsocial-publisher-staging` has secret name `API_TOKEN`, `ENVIRONMENT=staging`, and KV
+binding `PROFILES` namespace `cafb44fe56d540fcbda91433cbff8ba8`.
+
+Custom domains on this account are `smartflow.social`, `www.smartflow.social`,
+`smartflowsocial.com`, and `www.smartflowsocial.com` on `smartflowsocial-landing`;
+`blastr.smartflow.social` on `smartflowsocial-blastr`; and `nostrmash.com` on `nostrmash-web`. Zone
+routes exist only for `blastr.smartflow.social` and `blastr.smartflow.social/event`. No custom
+domain or zone route points at the publisher or the cache worker.
+
+The NostrMash Web documentation branch ran `npx wrangler preview`. It did not replace
+`nostrmash-web`.
+
+Caller traffic is still unknown. Do not delete either retired script until that is checked.
 
 ## Publisher Worker
 
@@ -63,4 +91,6 @@ scripts until that is checked.
 - No secret revocation
 - No KV deletion
 - No DNS edit
-- No change to unrelated Cloudflare services
+- No change to landing, Blastr, NostrMash Web, or Coolify
+- The cache-worker production script was redeployed by its existing `main` trigger, as recorded
+  above. That version was not rolled back
