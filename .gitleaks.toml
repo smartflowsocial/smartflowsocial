@@ -4,7 +4,7 @@ title = "SmartFlowSocial allowlist"
 useDefault = true
 
 [allowlist]
-description = "Public AWS documentation example, the Cypress fixture key, and the fake NWC secret in the encryption unit test"
+description = "Public AWS documentation example, fixture keys, and the env-name list in the env unit test"
 regexes = [
   '''AKIAIOSFODNN7EXAMPLE''',
   '''abc123def456''',
@@ -13,4 +13,5 @@ paths = [
   '''tests/e2e/support/nostr-test-keys\.ts''',
   '''tests/utils/nostr-mock\.ts''',
   '''cypress/support/nostr-test-keys\.ts''',
+  '''tests/unit/lib/env\.server\.branches\.test\.ts''',
 ]
