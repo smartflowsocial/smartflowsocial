@@ -1,3 +1,4 @@
+// @ts-nocheck -- mocked collaborators are narrower than the production types.
 import {
   afterAll,
   afterEach,

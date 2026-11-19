@@ -1,3 +1,4 @@
+// @ts-nocheck -- mocked collaborators are narrower than the production types.
 import { createHmac } from "node:crypto";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";

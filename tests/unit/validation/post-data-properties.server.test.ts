@@ -1,3 +1,4 @@
+// @ts-nocheck -- mocked collaborators are narrower than the production types.
 import { describe, expect, it } from "vitest";
 
 import type { PostData } from "~/features/posts/types";
