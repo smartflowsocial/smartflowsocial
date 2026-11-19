@@ -1,0 +1,76 @@
+# Boots docker-compose.self-host.yml and checks the default mode.
+# Release validation calls this workflow. Pull requests run it when the
+# deployment files change. It does not use production services.
+name: Self-host Compose
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "docker-compose.self-host.yml"
+      - "Dockerfile"
+      - "app/lib/deployment-mode.ts"
+      - "app/lib/env.server.ts"
+      - "app/infra/publishers/**"
+      - "app/infra/nostr-read/**"
+      - ".github/workflows/self-host-compose.yml"
+  push:
+    branches: [main, develop]
+    paths:
+      - "docker-compose.self-host.yml"
+      - "Dockerfile"
+      - "app/lib/deployment-mode.ts"
+      - "app/lib/env.server.ts"
+      - "app/infra/publishers/**"
+      - "app/infra/nostr-read/**"
+      - ".github/workflows/self-host-compose.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  compose:
+    name: Self-host Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Start the self-host stack
+        env:
+          SESSION_SECRET: compose-acceptance-session-secret-32
+          CRON_SECRET: compose-acceptance-cron-secret-32-chars
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml up --build -d
+
+      - name: Wait for the web and worker health checks
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            if curl --silent --show-error --fail --max-time 5 \
+              --header 'accept: application/json' \
+              --output /tmp/health.json \
+              http://127.0.0.1:3080/healthcheck; then
+              node -e 'const body=require("/tmp/health.json"); if (body.status!=="ok" || body.deploymentMode!=="self-hosted" || body.publisherBackend!=="internal" || body.nostrReadBackend!=="internal") { console.error(body); process.exit(1); } console.log(JSON.stringify({deploymentMode:body.deploymentMode,publisherBackend:body.publisherBackend,nostrReadBackend:body.nostrReadBackend,sourceCommit:body.sourceCommit}));'
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "self-host compose did not become healthy"
+          docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml ps
+          docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml logs --no-color
+          exit 1
+
+      - name: Show diagnostics when startup fails
+        if: failure()
+        run: |
+          docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml ps || true
+          docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml logs --no-color || true
+
+      - name: Remove this compose project
+        if: always()
+        run: docker compose -p sfs-self-host-ci -f docker-compose.self-host.yml down -v

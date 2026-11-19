@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { readPublicDeployment } from "~/features/payments/entitlements/deployment-mode";
 import { parentSubscriptionCoversLinkedChild } from "~/features/payments/linked-account-subscription";
 
-const hosted = readPublicDeployment({});
+const hosted = readPublicDeployment({ SFS_DEPLOYMENT_MODE: "hosted" });
 const now = new Date("2026-11-17T18:00:00.000Z");
 
 describe("parentSubscriptionCoversLinkedChild", () => {

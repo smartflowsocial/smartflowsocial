@@ -82,11 +82,26 @@ process.env["SKIP_DATABASE_TESTS"] ??= "false";
 process.env["SESSION_SECRET"] ??=
   "test-session-secret-very-long-and-secure-32-chars-minimum";
 
+// The product default is self-hosted. This suite pins hosted so plan,
+// commission, and entitlement tests keep exercising the commercial policy.
+// Resolver tests pass their own environment object.
+process.env["SFS_DEPLOYMENT_MODE"] = "hosted";
+delete process.env["SELF_HOSTED"];
+
 // Required by centralized env validation when the HTTP publisher is selected.
-// Force HTTP here so a developer .env with SELF_HOSTED=true does not send the
-// suite at live relays. Tests construct InternalNostrPublisher directly.
+// Force HTTP here so a developer .env does not send the suite at live relays.
+// Tests construct InternalNostrPublisher directly.
 process.env["NOSTR_PUBLISHER_BACKEND"] = "http";
 process.env["NOSTR_PUBLISHER_URL"] ??= "http://localhost:3001/publish";
+process.env["NOSTR_READ_BACKEND"] = "internal";
+const primalCachingUrl =
+  process.env["PRIMAL_CACHING_URL"]?.trim().toLowerCase() ?? "";
+if (
+  primalCachingUrl.startsWith("http://") ||
+  primalCachingUrl.startsWith("https://")
+) {
+  delete process.env["PRIMAL_CACHING_URL"];
+}
 process.env["REDIS_URL"] ??= "redis://localhost:6379";
 
 // Suppress console errors in tests (optional - remove if you want to see them)

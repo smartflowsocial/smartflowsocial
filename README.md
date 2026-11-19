@@ -11,11 +11,14 @@ The same code is the hosted service and a self-hosted install. There is no priva
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
 [Unlicense](LICENSE).
 
-**SmartFlowSocial v1 — Now Open Source.** `package.json` is `1.0.0-beta.1`, a published prerelease.
-It is not a claim that the service just launched and not a stable `1.0.0`. The git tag
-[`v1.0.0-beta.1`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.1) is
-commit `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. `main` is newer than that tag. Notes are in
-[docs/releases/v1.0.0-beta.1.md](./docs/releases/v1.0.0-beta.1.md). `v0.1.0-alpha.0` and a withdrawn
+**SmartFlowSocial v1 — Now Open Source.** The published release is
+[`v1.0.0-beta.2`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.2) at
+`5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. That tag's `package.json` still says `1.0.0-beta.1`. The
+tag is not rewritten. This source tree also reports `1.0.0-beta.1` until the next release is
+prepared. A future tag must match `package.json`;
+`node scripts/check-release-version.mjs --tag v<version>` rejects a mismatch. This is not a stable
+`1.0.0`. Notes for the published release are in
+[docs/releases/v1.0.0-beta.2.md](./docs/releases/v1.0.0-beta.2.md). `v0.1.0-alpha.0` and a withdrawn
 `v1.0.0` were published from an earlier repository. Neither is a supported version of this
 repository.
 
@@ -64,22 +67,26 @@ Next: [Hosted setup](./docs/getting-started/hosted.md) ·
 
 ## Run it yourself
 
-You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis.
-`SELF_HOSTED=true` publishes from this process. It does not need the
-[HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher), a publisher token,
-or a Cloudflare account. Uploads need S3-compatible storage when you use them. First-time setup is
-about 30–60 minutes. [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the short path.
+You need Node.js 26.13.1 or newer, pnpm 12.21.0 (Corepack), PostgreSQL, and Redis. A fresh install
+is self-hosted. Signed events are published from this process, and Nostr reads stay in this process
+with Redis as the cache. That does not need the
+[HTTP publisher](https://github.com/smartflowsocial/smartflowsocial-publisher), a publisher token, a
+Cloudflare account, or the cache worker. Uploads need S3-compatible storage when you use them.
+First-time setup is about 30–60 minutes.
+[Self-host smoke](./docs/getting-started/self-host-smoke.md) is the short path.
 `pnpm test:self-host-acceptance` boots the built server and worker and delivers a signed note to a
 loopback relay. `pnpm smoke:publish` only checks a signature stub. `pnpm test:relay-publish` calls
-the publisher function directly. The HTTP publisher remains an optional adapter.
+the publisher function directly. The HTTP publisher and the HTTP cache proxy remain optional
+adapters. Set `NOSTR_PUBLISHER_BACKEND=http` or `NOSTR_READ_BACKEND=legacy_http` only when you mean
+to use them.
 
-`main` includes commits made after the published prerelease. Node.js 26.13.1 or newer and pnpm
-12.21.0. Uncomment the checkout to build the tagged source instead of `main`.
+Install a published release by checking out its tag and following the README in that commit.
+`v1.0.0-beta.2` is the current published release. The commands below match this source tree, which
+is ahead of that tag. Do not mix this README with an older checkout.
 
 ```bash
 git clone https://github.com/smartflowsocial/smartflowsocial.git
 cd smartflowsocial
-# git checkout v1.0.0-beta.1
 pnpm install
 cp example.env .env
 pnpm docker
@@ -95,11 +102,13 @@ Open `http://localhost:3000`.
 Postgres is published on **127.0.0.1:5433** (container port `5432`). Redis is on **127.0.0.1:6379**.
 Those ports are not bound on every interface. The database name in that compose file is `postgres`,
 and the password there is for local development. Point `DATABASE_URL` and `REDIS_URL` at `127.0.0.1`
-before `prisma migrate deploy` or `pnpm dev`. Set `SELF_HOSTED=true` so this install is not limited
-by hosted plan caps. That same flag selects the in-process Nostr reader when `PRIMAL_CACHING_URL` is
-empty, so this install does not need the cache worker. It does not include hosted Blossom or hosted
-Blastr. `pnpm db:seed` replaces plan rows. A database that already has subscriptions should not be
-seeded.
+before `prisma migrate deploy` or `pnpm dev`. `example.env` sets `SFS_DEPLOYMENT_MODE=self_hosted`.
+Outside production, an empty mode is also self-hosted, so this install is not limited by hosted plan
+caps and the platform commission is 0%. Production refuses to start until the mode is explicit. The
+internal publisher and the internal reader are the defaults. A publisher URL or an HTTP cache URL
+without an explicit backend also refuses to start. This install does not include hosted Blossom or
+hosted Blastr. `pnpm db:seed` replaces plan rows. A database that already has subscriptions should
+not be seeded.
 
 `pnpm dev` starts the web server and the worker, and restarts the worker when its files change.
 `pnpm worker:local` runs the worker without the web server. Running it next to `pnpm dev` starts a

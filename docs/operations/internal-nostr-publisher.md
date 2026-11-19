@@ -24,11 +24,11 @@ publish attempt uses the backend selected when the process started.
 
 ## Configuration
 
-| Install                       | Backend                                                          |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `SELF_HOSTED` enabled, unset  | `internal`                                                       |
-| Hosted, unset                 | `http`                                                           |
-| `NOSTR_PUBLISHER_BACKEND` set | That value, `http` or `internal`. Anything else refuses to boot. |
+| Install                                  | Backend                                                          |
+| ---------------------------------------- | ---------------------------------------------------------------- |
+| Unset                                    | `internal`                                                       |
+| `NOSTR_PUBLISHER_URL` set, backend unset | Refuses to boot. Set `http` or remove the URL.                   |
+| `NOSTR_PUBLISHER_BACKEND` set            | That value, `http` or `internal`. Anything else refuses to boot. |
 
 `NOSTR_PUBLISHER_URL` and `NOSTR_PUBLISHER_API_TOKEN` are required only for `http`. Production still
 requires `CRON_SECRET`.

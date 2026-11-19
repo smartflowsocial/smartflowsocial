@@ -11,7 +11,9 @@ Cypress.on("uncaught:exception", (err) => {
     return;
   }
 
-  // Temporary compatibility switch for hydration errors in legacy environments.
+  // Opt-in only. Release validation and the E2E workflows leave this unset
+  // or false so a React hydration error fails the run. Set
+  // ALLOW_HYDRATION_EXCEPTIONS=true for one local spec that still needs it.
   if (
     /hydrat/i.test(err.message) ||
     /Minified React error #418|#423/.test(err.message)

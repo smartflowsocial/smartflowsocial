@@ -8,19 +8,19 @@ It does not use the hosted service, a paid account, or a production relay.
 
 ## What you are starting
 
-| Piece                                    | Required for the scheduler?     | How it starts                                                                  |
-| ---------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
-| This app and its worker                  | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.                   |
-| PostgreSQL and Redis                     | Yes                             | `pnpm docker`                                                                  |
-| Nostr publisher                          | Yes, and it is part of this app | `SELF_HOSTED=true` selects it. `pnpm publisher:local` is only a signature stub |
-| S3-compatible storage                    | Only for uploads                | Environment variables in `example.env`                                         |
-| Blossom, Blastr, cache worker, NostrMash | No                              | Leave their variables empty. Reads use the in-process reader.                  |
-| Lightning, NWC, referral payouts         | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.         |
+| Piece                                    | Required for the scheduler?     | How it starts                                                          |
+| ---------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| This app and its worker                  | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.           |
+| PostgreSQL and Redis                     | Yes                             | `pnpm docker`                                                          |
+| Nostr publisher                          | Yes, and it is part of this app | Unset selects it. `pnpm publisher:local` is only a signature stub      |
+| S3-compatible storage                    | Only for uploads                | Environment variables in `example.env`                                 |
+| Blossom, Blastr, cache worker, NostrMash | No                              | Leave their variables empty. Reads use the in-process reader.          |
+| Lightning, NWC, referral payouts         | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed. |
 
-`SELF_HOSTED=true` publishes signed events from this process. A clean install does not need
-Cloudflare, Wrangler, a publisher URL, or a publisher token. `pnpm publisher:local` checks
-signatures and returns success. It does not connect to relays. `pnpm smoke:publish` forces that HTTP
-stub. `pnpm test:relay-publish` uses the internal publisher against a relay on this machine. Set
+A clean install publishes signed events from this process. It does not need Cloudflare, Wrangler, a
+publisher URL, or a publisher token. `pnpm publisher:local` checks signatures and returns success.
+It does not connect to relays. `pnpm smoke:publish` forces that HTTP stub. `pnpm test:relay-publish`
+uses the internal publisher against a relay on this machine. Set
 `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS=true` only when that relay is on a private network you
 operate. `SELF_HOSTED` does not turn that flag on.
 

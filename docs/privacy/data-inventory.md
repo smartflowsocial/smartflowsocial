@@ -65,7 +65,7 @@ uses. This inventory does not invent a company name or a registered address.
 - PostgreSQL host (application database)
 - Redis host (queues and cache)
 - S3-compatible object storage
-- The HTTP Nostr publisher
+- The legacy HTTP Nostr publisher, only when `NOSTR_PUBLISHER_BACKEND=http`
 - Blossom, when hosted media is enabled
 - Blastr, when managed relay publishing is enabled
 - NostrMash or a Primal-compatible cache, when the in-process reader or paid analytics use them.

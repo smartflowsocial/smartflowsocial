@@ -117,7 +117,7 @@ SmartFlowSocial repository in that picture. Blastr is optional managed fan-out.
 [cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is only the legacy
 HTTP proxy.
 
-- The internal Nostr publisher sends signed events to relays. `SELF_HOSTED=true` selects it.
+- The internal Nostr publisher sends signed events to relays. It is the default.
   `NOSTR_PUBLISHER_BACKEND=http` keeps an external HTTP publisher, including the
   [Cloudflare worker](https://github.com/smartflowsocial/smartflowsocial-publisher), as an optional
   adapter. `pnpm publisher:local` only checks signatures.
@@ -125,8 +125,8 @@ HTTP proxy.
   optional managed fan-out.
 - [Blossom](https://github.com/smartflowsocial/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`) is
   optional media storage. S3-compatible storage is the other upload path.
-- The in-process reader serves profile and engagement lookups. `SELF_HOSTED=true` selects it when
-  `PRIMAL_CACHING_URL` is not an HTTP proxy. See
+- The in-process reader serves profile and engagement lookups. It is the default. An HTTP
+  `PRIMAL_CACHING_URL` requires `NOSTR_READ_BACKEND=legacy_http`. See
   [Internal Nostr read cache](../operations/internal-nostr-read.md).
 - [Cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker) is optional.
   `NOSTR_READ_BACKEND=legacy_http` and an HTTP `PRIMAL_CACHING_URL` keep it.

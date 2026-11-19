@@ -35,7 +35,7 @@ export function parentSubscriptionCoversLinkedChild(
   const commercial = parseCommercialPlanType(subscription.planId);
   if (!commercial || commercial === "free") return false;
 
-  const deployment = options?.deployment ?? readPublicDeployment({});
+  const deployment = options?.deployment ?? readPublicDeployment(process.env);
   const accountsIncluded = getCanonicalPlanPolicy(commercial).accountsIncluded;
   if (!allowsMultipleAccounts(accountsIncluded, deployment)) return false;
 

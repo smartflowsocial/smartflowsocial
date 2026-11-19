@@ -1,10 +1,10 @@
 /**
  * Selects the Nostr publishing backend at boot.
  *
- * Hosted installs stay on the HTTP publisher until an operator sets
- * `NOSTR_PUBLISHER_BACKEND=internal`. Self-hosted installs use the internal
- * publisher unless the operator explicitly selects `http`. There is no
- * automatic failover between the two.
+ * Unset selects the in-process publisher. `NOSTR_PUBLISHER_BACKEND=http` is
+ * the explicit legacy adapter. A publisher URL without that setting is
+ * ambiguous and refuses to boot, so an existing HTTP deployment is not
+ * silently moved onto direct relay connections.
  */
 
 export type NostrPublisherBackend = "http" | "internal";
@@ -12,24 +12,9 @@ export type NostrPublisherBackend = "http" | "internal";
 export type PublisherBackendDecision =
   { ok: true; backend: NostrPublisherBackend } | { ok: false; reason: string };
 
-/**
- * Same accepted values as `parseDeploymentMode` in deployment-mode.ts.
- * Duplicated here so environment validation does not import billing code.
- */
-function isSelfHostedFlag(value: string | undefined): boolean {
-  const normalized = value?.trim().toLowerCase();
-  return (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === "self-hosted" ||
-    normalized === "self_hosted"
-  );
-}
-
 export function resolveNostrPublisherBackend(input: {
   configured: string | undefined;
-  selfHosted: string | undefined;
+  publisherUrl?: string | undefined;
 }): PublisherBackendDecision {
   const configured = input.configured?.trim() ?? "";
   if (configured !== "") {
@@ -40,11 +25,15 @@ export function resolveNostrPublisherBackend(input: {
     return {
       ok: false,
       reason:
-        'must be "http" or "internal". Unset keeps the HTTP publisher on hosted installs and selects the internal publisher when SELF_HOSTED is enabled.',
+        'must be "http" or "internal". Unset selects the internal publisher. Set "http" to use NOSTR_PUBLISHER_URL.',
     };
   }
-  if (isSelfHostedFlag(input.selfHosted)) {
-    return { ok: true, backend: "internal" };
+  if ((input.publisherUrl?.trim() ?? "") !== "") {
+    return {
+      ok: false,
+      reason:
+        "NOSTR_PUBLISHER_URL is set but NOSTR_PUBLISHER_BACKEND is unset. Set NOSTR_PUBLISHER_BACKEND=http to keep the HTTP adapter, or unset NOSTR_PUBLISHER_URL to publish from this process.",
+    };
   }
-  return { ok: true, backend: "http" };
+  return { ok: true, backend: "internal" };
 }
