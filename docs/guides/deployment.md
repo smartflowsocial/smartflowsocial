@@ -37,9 +37,10 @@ Before deploying, ensure you have:
 
 - ✅ Node.js 26.13.1 or higher (`.nvmrc` is `26.13.1`)
 - ✅ PostgreSQL database (managed or self-hosted)
-- ✅ Redis instance (for BullMQ queues)
-- ✅ S3-compatible storage (for image uploads)
-- ✅ HTTP Nostr Publisher service
+- ✅ Redis instance (for BullMQ queues and the internal Nostr read cache)
+- ✅ S3-compatible storage when the install accepts uploads
+- ✅ `SFS_DEPLOYMENT_MODE=self_hosted` for an operator install, or `hosted` for managed
+  SmartFlowSocial
 - ✅ Domain name (for production)
 - ✅ SSL certificate (or use Let's Encrypt)
 
@@ -93,11 +94,13 @@ This will create a `fly.toml` configuration file.
 ```bash
 fly secrets set DATABASE_URL="postgresql://..."
 fly secrets set SESSION_SECRET="your-secret"
-fly secrets set NOSTR_PUBLISHER_BACKEND="http"
-fly secrets set NOSTR_PUBLISHER_URL="https://..."
+fly secrets set SFS_DEPLOYMENT_MODE="self_hosted"
+# Hosted SmartFlowSocial uses hosted. Do not leave production without a mode.
+# fly secrets set SFS_DEPLOYMENT_MODE="hosted"
+# The publisher and reader default to internal. Set these only for the legacy adapters.
+# fly secrets set NOSTR_PUBLISHER_BACKEND="http"
+# fly secrets set NOSTR_PUBLISHER_URL="https://..."
 fly secrets set NOSTR_NSEC="nsec1..."
-# Leave NOSTR_READ_BACKEND unset while production still uses an HTTP cache proxy.
-# Staging sets NOSTR_READ_BACKEND=internal and must not keep an https proxy URL.
 fly secrets set PRIMAL_CACHING_URL="wss://..."
 fly secrets set REDIS_URL="redis://..."
 fly secrets set STORAGE_ACCESS_KEY="..."

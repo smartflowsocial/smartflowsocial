@@ -9,6 +9,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+### Changed
+
+- A fresh install is self-hosted. `SFS_DEPLOYMENT_MODE=self_hosted` or `hosted` is the explicit
+  choice. Production, and the managed hosts `app.smartflow.social` and `staging.smartflow.social`,
+  refuse to start when the mode is unset. `SELF_HOSTED=true` and `SELF_HOSTED=false` still select
+  the same modes and must agree with `SFS_DEPLOYMENT_MODE` when both are set. Self-hosted platform
+  commission stays 0%. Hosted rates are unchanged.
+- The Nostr publisher defaults to `internal`. `NOSTR_PUBLISHER_BACKEND=http` is the explicit legacy
+  adapter. A publisher URL without that setting refuses to boot.
+- The Nostr reader defaults to `internal`. `NOSTR_READ_BACKEND=legacy_http` is the explicit legacy
+  cache proxy. An HTTP `PRIMAL_CACHING_URL` without that setting refuses to boot.
+- Vitest coverage floors are 80% lines, 80% statements, 78% functions, and 75% branches.
+- Full Cypress E2E Core runs on pull requests and pushes. Hydration errors fail that run.
+- A release tag must match `package.json`. `v1.0.0-beta.2` remains the historical exception.
+
 ### Added
 
 - An in-process Nostr publisher. `SELF_HOSTED=true` uses it without Cloudflare, a publisher URL, or

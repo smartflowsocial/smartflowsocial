@@ -1,6 +1,8 @@
-# Optional production-shaped stack for an operator who wants containers.
-# It does not call Cloudflare, and it does not set a publisher URL or a cache
-# worker URL. Postgres, Redis, the web process, and the worker are the stack.
+# Production-shaped stack for an operator who wants containers.
+# Self-hosted mode, the internal publisher, and the internal read cache are
+# selected here. The stack does not call Cloudflare and does not set a
+# publisher URL or a cache worker URL. Postgres, Redis, the web process, and
+# the worker are the whole stack.
 #
 #   export SESSION_SECRET="$(openssl rand -base64 32)"
 #   export CRON_SECRET="$(openssl rand -base64 32)"
@@ -9,6 +11,8 @@
 #
 # The site listens on 127.0.0.1:3080. Change the published port if that is taken.
 # Credentials below are for this local stack. Replace them before exposing it.
+# Postgres lives in the selfhost-postgres volume. Dump it with pg_dump before
+# an upgrade. Removing that volume deletes the database.
 
 services:
   postgres:
@@ -26,6 +30,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -38,6 +43,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
 
   migrate:
     build:
@@ -48,6 +54,7 @@ services:
     image: smartflowsocial-self-host
     environment: &app-env
       NODE_ENV: production
+      SFS_DEPLOYMENT_MODE: self_hosted
       SELF_HOSTED: "true"
       NOSTR_PUBLISHER_BACKEND: internal
       NOSTR_READ_BACKEND: internal
@@ -90,6 +97,8 @@ services:
       timeout: 5s
       retries: 20
       start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
 
   worker:
     image: smartflowsocial-self-host
@@ -101,6 +110,22 @@ services:
         condition: service_completed_successfully
       web:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:3011/metrics",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
 
 volumes:
   selfhost-postgres:

@@ -2,6 +2,7 @@
  * Payment read-only queries: plans, subscription, payment history, status.
  */
 
+import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 import { parentSubscriptionCoversLinkedChild } from "~/features/payments/linked-account-subscription";
 import { prisma } from "~/lib/prisma.server";
 
@@ -112,7 +113,13 @@ export async function getUserSubscription(userId: string) {
   if (!parent || parent.id === userId) return own;
 
   const parentSubscription = await getOwnUserSubscription(parent.id);
-  if (!parentSubscriptionCoversLinkedChild(parentSubscription)) return own;
+  if (
+    !parentSubscriptionCoversLinkedChild(parentSubscription, {
+      deployment: currentDeployment(),
+    })
+  ) {
+    return own;
+  }
   return parentSubscription;
 }
 

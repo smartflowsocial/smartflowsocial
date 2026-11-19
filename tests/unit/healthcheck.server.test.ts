@@ -67,6 +67,17 @@ describe("performHealthCheck", () => {
     });
   });
 
+  it("probes the listen port instead of the request host", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await performHealthCheck("127.0.0.1:3080", "application/json");
+
+    expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:3000/", {
+      method: "HEAD",
+    });
+  });
+
   it("fails when this process cannot reach itself", async () => {
     vi.stubGlobal(
       "fetch",

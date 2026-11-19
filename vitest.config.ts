@@ -128,15 +128,14 @@ export default defineConfig({
         "app/features/auth/signer/index.ts",
       ],
       // Vitest 5 matches these include globs against project-relative paths,
-      // so every *.server.ts in the list is counted. Vitest 4's absolute-path
-      // matcher dropped those files, and the old 70/60 bar only described the
-      // remaining set (still about 85% lines). The global numbers are the
-      // current full-include result. Client modules keep the previous bar.
+      // so every *.server.ts in the list is counted. The floors sit under the
+      // measured result (about 86% lines and 81% branches) without dropping
+      // files from the report. Client modules keep their own bar.
       thresholds: {
-        lines: 52,
-        statements: 51,
-        functions: 54,
-        branches: 40,
+        lines: 80,
+        statements: 80,
+        functions: 78,
+        branches: 75,
         "app/**/*.client.ts": {
           lines: 70,
           statements: 70,

@@ -21,6 +21,7 @@ import {
   resolveNostrPublisherBackend,
   type NostrPublisherBackend,
 } from "~/infra/publishers/publisher-backend";
+import { resolveDeploymentMode } from "~/lib/deployment-mode";
 import { productionSecretErrors } from "~/lib/production-secrets.server";
 import {
   safeConsoleError,
@@ -32,16 +33,16 @@ interface EnvConfig {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   /**
-   * `http` posts signed events to NOSTR_PUBLISHER_URL.
-   * `internal` publishes from this process. Hosted production stays on `http`
-   * until this is set. Self-hosted installs default to `internal`.
+   * `internal` publishes from this process. This is the default when the
+   * variable is unset and `NOSTR_PUBLISHER_URL` is unset.
+   * `http` posts signed events to NOSTR_PUBLISHER_URL and must be explicit.
    */
   NOSTR_PUBLISHER_BACKEND: NostrPublisherBackend;
   /**
-   * `internal` reads inside this process.
-   * `legacy_http` posts to an HTTP cache proxy.
-   * `legacy_ws` uses direct Primal sockets and is not settable. It is the
-   * hosted default when `PRIMAL_CACHING_URL` is unset or is a WebSocket list.
+   * `internal` reads inside this process. This is the default when the
+   * variable is unset and `PRIMAL_CACHING_URL` is not an HTTP proxy.
+   * `legacy_http` posts to an HTTP cache proxy and must be explicit.
+   * `legacy_ws` is no longer selected.
    */
   NOSTR_READ_BACKEND: NostrReadBackend;
   /** Required when NOSTR_PUBLISHER_BACKEND is `http`. */
@@ -447,14 +448,14 @@ function validateAndGetEnv(): EnvConfig {
     process.env["REDIS_URL"] ??= "redis://localhost:6379";
   }
 
+  const deploymentMode = resolveDeploymentMode(process.env);
   const publisherBackend = resolveNostrPublisherBackend({
     configured: process.env["NOSTR_PUBLISHER_BACKEND"],
-    selfHosted: process.env["SELF_HOSTED"],
+    publisherUrl: process.env["NOSTR_PUBLISHER_URL"],
   });
   const readBackend = resolveNostrReadBackend({
     configured: process.env["NOSTR_READ_BACKEND"],
     primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
-    selfHosted: process.env["SELF_HOSTED"],
   });
   if (
     process.env["E2E_TEST"] === "true" &&
@@ -490,6 +491,13 @@ function validateAndGetEnv(): EnvConfig {
     }
   }
 
+  if (!deploymentMode.ok) {
+    invalid.push({
+      key: "SFS_DEPLOYMENT_MODE",
+      reason: deploymentMode.reason,
+    });
+  }
+
   if (!publisherBackend.ok) {
     invalid.push({
       key: "NOSTR_PUBLISHER_BACKEND",
@@ -505,7 +513,6 @@ function validateAndGetEnv(): EnvConfig {
   const readSelectionError = readBackendSelectionError({
     configured: process.env["NOSTR_READ_BACKEND"],
     primalCachingUrl: process.env["PRIMAL_CACHING_URL"],
-    selfHosted: process.env["SELF_HOSTED"],
   });
   if (readSelectionError) invalid.push(readSelectionError);
   const mashWsError = validateNostrMashWsUrl(process.env["NOSTRMASH_WS_URL"]);
@@ -573,6 +580,11 @@ function validateAndGetEnv(): EnvConfig {
   // Add other optional variables
   addOptionalConfig(config);
 
+  if (deploymentMode.ok) {
+    safeConsoleLog(
+      `Deployment mode: ${deploymentMode.mode} (${deploymentMode.source})`
+    );
+  }
   safeConsoleLog(`Nostr publisher backend: ${publisherBackend.backend}`);
   safeConsoleLog(`Nostr read backend: ${readBackend.backend}`);
   if (

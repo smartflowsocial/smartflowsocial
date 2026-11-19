@@ -52,11 +52,9 @@ describe("production CSP", () => {
     const violations: string[] = [];
     cy.visit("/", {
       onBeforeLoad(win) {
-        // Cypress inserts a whitespace text node into <head> before the
-        // document finishes loading. React 19 hydrates <head> and throws
-        // minified error #418 when that text node sits where a <link> belongs.
-        // A normal browser does not insert it. Drop blank head text nodes
-        // until the app has hydrated.
+        // The Cypress support file removes the same blank head text nodes.
+        // This spec repeats it because the release job must keep the page
+        // hydratable even if that support hook is not loaded.
         const dropBlankHeadText = () => {
           for (const node of Array.from(win.document.head.childNodes)) {
             if (

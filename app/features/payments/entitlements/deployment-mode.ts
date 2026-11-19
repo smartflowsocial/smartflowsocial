@@ -7,20 +7,32 @@ import {
   toGiveawayLimits,
 } from "~/features/payments/plan-policy";
 import type { BroadcastAudienceGate } from "~/features/payments/types";
+import {
+  DeploymentModeError,
+  parseDeploymentMode,
+  resolveDeploymentMode,
+  type DeploymentMode,
+} from "~/lib/deployment-mode";
+
+export { DeploymentModeError, parseDeploymentMode, resolveDeploymentMode };
+export type {
+  DeploymentMode,
+  DeploymentModeDecision,
+} from "~/lib/deployment-mode";
 
 /**
  * How this process applies commercial plans.
  *
- * `hosted` is the default. Managed hosting keeps Free, Starter, Creator, Pro,
- * and Founder limits. `self-hosted` unlocks software the operator runs.
- * It does not unlock SmartFlowSocial hosted Blossom or hosted Blastr.
+ * `self-hosted` is the install default. It unlocks software the operator runs
+ * and charges no platform commission. It does not unlock SmartFlowSocial
+ * hosted Blossom or hosted Blastr. `hosted` is the managed service and keeps
+ * Free, Starter, Creator, Pro, and Founder limits. Production, and the
+ * managed app hosts, must opt into `hosted` explicitly.
  *
  * The mode comes from the server process environment. A cookie, header, or
  * account field cannot change it.
  */
 const SELF_HOSTED_MODE = "self-hosted" as const;
-
-export type DeploymentMode = "hosted" | typeof SELF_HOSTED_MODE;
 
 export interface OperatorSoftwareLimits {
   /** null means the operator did not set a cap. */
@@ -70,20 +82,6 @@ export const HOSTED_DEPLOYMENT: PublicDeployment = {
 /** Winner counts at or above this are an install with no commercial cap. */
 export const OPEN_WINNER_CAP = 1_000_000;
 
-export function parseDeploymentMode(value: string | undefined): DeploymentMode {
-  const normalized = value?.trim().toLowerCase();
-  if (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === SELF_HOSTED_MODE ||
-    normalized === "self_hosted"
-  ) {
-    return SELF_HOSTED_MODE;
-  }
-  return "hosted";
-}
-
 /**
  * Blank means no operator cap. A non-numeric value is 0 so a typo cannot
  * remove the cap.
@@ -101,8 +99,12 @@ export function parseOperatorCap(value: string | undefined): number | null {
 export function readPublicDeployment(
   source: Record<string, string | undefined>
 ): PublicDeployment {
+  const decision = resolveDeploymentMode(source);
+  if (!decision.ok) {
+    throw new DeploymentModeError(decision.reason);
+  }
   return {
-    mode: parseDeploymentMode(source["SELF_HOSTED"]),
+    mode: decision.mode,
     operatorLimits: {
       maxFutureScheduledItems: parseOperatorCap(
         source["SELF_HOSTED_MAX_FUTURE_SCHEDULED"]

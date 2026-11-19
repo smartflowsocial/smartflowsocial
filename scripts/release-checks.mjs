@@ -14,6 +14,7 @@ export const APP_REQUIRED_CHECKS = [
   "Build & Bundle Budget",
   "Docker image boots",
   "E2E Smoke",
+  "E2E Core",
   "Gitleaks",
 ];
 

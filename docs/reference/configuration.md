@@ -87,11 +87,11 @@ SESSION_SECRET=your-random-32-character-secret-string-here
 
 Selects where signed events are sent.
 
-| Value      | Behavior                                                                                 |
-| ---------- | ---------------------------------------------------------------------------------------- |
-| `internal` | This process opens relay WebSockets. No publisher URL or token.                          |
-| `http`     | `POST` the signed event to `NOSTR_PUBLISHER_URL`.                                        |
-| unset      | `internal` when `SELF_HOSTED` is enabled. `http` otherwise, including hosted production. |
+| Value      | Behavior                                                                  |
+| ---------- | ------------------------------------------------------------------------- |
+| `internal` | This process opens relay WebSockets. No publisher URL or token.           |
+| `http`     | `POST` the signed event to `NOSTR_PUBLISHER_URL`. Must be set explicitly. |
+| unset      | `internal`. A `NOSTR_PUBLISHER_URL` without `http` refuses to boot.       |
 
 An unknown value stops boot. The process does not fall back from one backend to the other.
 
@@ -410,13 +410,30 @@ characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bec
 
 ---
 
+### SFS_DEPLOYMENT_MODE
+
+`self_hosted` or `hosted`. This is the deployment mode. A development or test process with the
+variable unset is self-hosted. `NODE_ENV=production`, and a process whose `APP_URL` or `COOLIFY_URL`
+is `app.smartflow.social` or `staging.smartflow.social`, refuses to start until the mode is set.
+That failure is intentional: an empty variable must not charge a platform commission, and a managed
+install must not drop its commission because a variable was forgotten.
+
+`hosted` keeps Free, Starter, Creator, Pro, Teams, and Founder limits. Platform commission stays
+Free 10%, Starter 7.5%, Creator 5%, and 0% on Pro, Teams, and Founder. `self_hosted` unlocks
+scheduling, queues, drafts, templates, bulk actions, broadcast sending, and giveaway presets without
+a hosted plan, and the platform commission is 0% on every plan. Bitcoin network fees and Lightning
+routing fees are separate.
+
+Hosted production and staging set `SFS_DEPLOYMENT_MODE=hosted` before this build is deployed. The
+previous image ignores the variable, so setting it first does not change the running service.
+Rollback of the new image does not require removing it. See
+[Deployment mode](../operations/deployment-mode.md).
+
 ### SELF_HOSTED
 
-Leave unset on SmartFlowSocial managed hosting. The process then keeps Free, Starter, Creator, Pro,
-and Founder limits. Set `SELF_HOSTED=true` (also `1`, `yes`, `self-hosted`, or `self_hosted`) on an
-install you operate. That unlocks scheduling, queues, drafts, templates, bulk actions, broadcast
-sending, and giveaway presets without a hosted plan. Any other value, including `on` or `false`,
-stays hosted.
+Older alias for the same choice. `true`, `1`, `yes`, `self-hosted`, and `self_hosted` are
+self-hosted. `false`, `0`, `no`, and `hosted` are hosted. An unrecognized value such as `on` refuses
+to boot. When `SFS_DEPLOYMENT_MODE` is also set, the two must agree.
 
 The flag is read from the server process. A cookie, request, or account row cannot change it.
 Switching it does not rewrite subscription rows. Hosted Blossom storage and SmartFlowSocial hosted
@@ -1023,13 +1040,13 @@ Read in `app/lib/env.server.ts` and not given their own section above.
 | --------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `PORT`                                  | `3000`                                 | HTTP listen port.                                                                              |
 | `HOST`                                  | `0.0.0.0`                              | HTTP listen host.                                                                              |
-| `NOSTR_PUBLISHER_BACKEND`               | hosted `http`, self-host `internal`    | `http` or `internal`. Unset follows `SELF_HOSTED`.                                             |
+| `NOSTR_PUBLISHER_BACKEND`               | `internal`                             | `http` or `internal`. Unset is internal. `http` is explicit.                                   |
 | `NOSTR_PUBLISHER_API_TOKEN`             | unset                                  | HTTP backend only. Sent as `API-TOKEN`. Required in production unless public mode is explicit. |
 | `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` | unset                                  | `true` only when the HTTP publisher is intentionally public.                                   |
 | `NOSTR_PUBLISHER_ALLOW_PRIVATE_RELAYS`  | unset                                  | `true` allows the internal publisher to open private and loopback relays.                      |
 | `REFERRAL_PAYOUT_MAX_SATS`              | `1000000`                              | Maximum sats in one referral invoice.                                                          |
 | `REFERRAL_PAYOUT_DAILY_CAP_SATS`        | `5000000`                              | Maximum sats marked successful in one UTC day.                                                 |
-| `NOSTR_READ_BACKEND`                    | see the read doc                       | `internal` or `legacy_http`. Unset follows the proxy URL and `SELF_HOSTED`.                    |
+| `NOSTR_READ_BACKEND`                    | `internal`                             | `internal` or `legacy_http`. Unset is internal. `legacy_http` is explicit.                     |
 | `NOSTRMASH_BASE_URL`                    | `https://api.nostrmash.com`            | NostrMash HTTP origin.                                                                         |
 | `NOSTRMASH_WS_URL`                      | `wss://api.nostrmash.com/primal/ws/v1` | NostrMash compatibility socket. `/primal/ws` is rejected.                                      |
 | `NOSTR_READ_TIMEOUT_MS`                 | `15000`                                | Budget for one internal read, from 3000 to 30000.                                              |

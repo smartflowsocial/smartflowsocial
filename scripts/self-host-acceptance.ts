@@ -30,6 +30,8 @@ import {
   redisIsolationProblem,
 } from "./self-host-acceptance-guards.mjs";
 import { isLoopbackHost } from "./self-host-clean-room.mjs";
+import { effectiveCampaignFinalizationFeeRateBps } from "~/features/payments/campaign-fee-policy";
+import { readPublicDeployment } from "~/features/payments/entitlements/deployment-mode";
 import { parseDatabaseTarget } from "~/lib/test-database-target";
 
 const COMPOSE_DATABASE_URL =
@@ -243,6 +245,7 @@ async function main(): Promise<void> {
   delete process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"];
   delete process.env["PRIMAL_CACHING_URL"];
   process.env["NODE_ENV"] = "production";
+  process.env["SFS_DEPLOYMENT_MODE"] = "self_hosted";
   process.env["SELF_HOSTED"] = "true";
   process.env["NOSTR_PUBLISHER_BACKEND"] = "internal";
   process.env["NOSTR_READ_BACKEND"] = "internal";
@@ -253,6 +256,21 @@ async function main(): Promise<void> {
   delete process.env["E2E_TEST"];
   process.env["DATABASE_URL"] = databaseUrl;
   process.env["REDIS_URL"] = redisUrl;
+  const deployment = readPublicDeployment(process.env);
+  for (const plan of [
+    "free",
+    "starter",
+    "creator",
+    "pro",
+    "teams",
+    "founder",
+  ] as const) {
+    const rate = effectiveCampaignFinalizationFeeRateBps(plan, deployment);
+    if (rate !== 0) {
+      fail(`${plan} platform commission is ${rate} bps in self-host mode`);
+    }
+  }
+  write("self-host platform commission is 0% on every plan");
 
   execFileSync("pnpm", ["exec", "prisma", "migrate", "deploy"], {
     stdio: "inherit",
@@ -289,6 +307,7 @@ async function main(): Promise<void> {
     REDIS_URL: redisUrl,
     SESSION_SECRET: process.env["SESSION_SECRET"],
     CRON_SECRET: process.env["CRON_SECRET"],
+    SFS_DEPLOYMENT_MODE: "self_hosted",
     SELF_HOSTED: "true",
     NOSTR_PUBLISHER_BACKEND: "internal",
     NOSTR_READ_BACKEND: "internal",
@@ -331,11 +350,17 @@ async function main(): Promise<void> {
           if (!response.ok) return false;
           const body = (await response.json()) as {
             status?: string;
+            deploymentMode?: string;
             publisherBackend?: string;
             nostrReadBackend?: string;
             sourceCommit?: string | null;
           };
           if (body.status !== "ok") return false;
+          if (body.deploymentMode !== "self-hosted") {
+            fail(
+              `healthcheck deploymentMode is ${String(body.deploymentMode)}`
+            );
+          }
           if (body.publisherBackend !== "internal") {
             fail(
               `healthcheck publisherBackend is ${String(body.publisherBackend)}`

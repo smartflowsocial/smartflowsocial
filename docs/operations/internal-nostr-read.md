@@ -67,9 +67,8 @@ recognizes them.
 
 | Install                                                     | Reader                                                           |
 | ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| `PRIMAL_CACHING_URL` is `http://` or `https://`, flag unset | `legacy_http`                                                    |
-| `SELF_HOSTED` enabled, no HTTP proxy, flag unset            | `internal`                                                       |
-| Hosted, flag unset, URL empty or `wss://`                   | `legacy_ws`                                                      |
+| Unset, no HTTP proxy                                        | `internal`                                                       |
+| `PRIMAL_CACHING_URL` is `http://` or `https://`, flag unset | Refuses to boot. Set `legacy_http` or remove the HTTP URL.       |
 | `NOSTR_READ_BACKEND` set                                    | `internal` or `legacy_http` only. Anything else refuses to boot. |
 
 `NOSTR_READ_BACKEND=internal` together with an HTTP `PRIMAL_CACHING_URL` refuses to boot. An HTTP

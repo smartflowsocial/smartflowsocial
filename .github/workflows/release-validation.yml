@@ -96,6 +96,7 @@ jobs:
       REDIS_URL: redis://127.0.0.1:6379
       SESSION_SECRET: release-csp-session-secret-32-characters-min
       CRON_SECRET: release-csp-cron-secret-32-characters-minimum
+      SFS_DEPLOYMENT_MODE: self_hosted
       SELF_HOSTED: "true"
       NOSTR_PUBLISHER_BACKEND: internal
       NOSTR_READ_BACKEND: internal
@@ -178,6 +179,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
       REDIS_URL: redis://127.0.0.1:6379
       CLEAN_ROOM_REDIS: isolated
+      SFS_DEPLOYMENT_MODE: self_hosted
       SELF_HOSTED: "true"
       NOSTR_PUBLISHER_BACKEND: internal
       NOSTR_READ_BACKEND: internal
@@ -213,3 +215,8 @@ jobs:
 
       - name: Publish through the internal publisher
         run: pnpm test:self-host-acceptance
+
+  compose:
+    name: Self-host Compose
+    needs: checks
+    uses: ./.github/workflows/self-host-compose.yml

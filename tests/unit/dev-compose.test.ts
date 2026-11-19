@@ -30,9 +30,12 @@ describe("development compose", () => {
     const cleanRoom = readFileSync(cleanRoomComposePath, "utf8");
     expect(devComposeProblems(selfHost)).toEqual([]);
     expect(devComposeProblems(cleanRoom)).toEqual([]);
+    expect(selfHost).toContain("SFS_DEPLOYMENT_MODE: self_hosted");
     expect(selfHost).toContain("NOSTR_PUBLISHER_BACKEND: internal");
     expect(selfHost).toContain("NOSTR_READ_BACKEND: internal");
     expect(selfHost).toContain('SELF_HOSTED: "true"');
+    expect(selfHost).toContain("restart: unless-stopped");
+    expect(selfHost).toContain("127.0.0.1:3011/metrics");
     expect(selfHost).not.toContain("NOSTR_PUBLISHER_URL");
     expect(selfHost).not.toContain("PRIMAL_CACHING_URL");
     expect(cleanRoom).toContain("127.0.0.1:5434:5432");
