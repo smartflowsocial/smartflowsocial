@@ -115,19 +115,18 @@ const blossomRepo = vi.hoisted(() => ({
         items: ReservationItem[]
       ) => Promise<void>
     >(),
-  commitBlossomBatch:
-    vi.fn<
-      (
-        items: unknown[],
-        batchId: string,
-        periodStartUtc: Date
-      ) => Promise<{
-        processed: number;
-        duplicate: number;
-        failed: number;
-        statuses: [];
-      }>
-    >(),
+  commitBlossomBatch: vi.fn<
+    (
+      items: unknown[],
+      batchId: string,
+      periodStartUtc: Date
+    ) => Promise<{
+      processed: number;
+      duplicate: number;
+      failed: number;
+      statuses: [];
+    }>
+  >(),
   expireBlossomReservations:
     vi.fn<
       (now: Date) => Promise<{ itemsExpired: number; batchesExpired: number }>

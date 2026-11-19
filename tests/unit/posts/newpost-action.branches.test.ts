@@ -192,14 +192,13 @@ const {
           queueTypeId: string | null
         ) => Promise<{ hashTagPresetId: string | null }>
       >(),
-    mockUpload:
-      vi.fn<
-        (formData: FormData) => {
-          success: boolean;
-          error?: string;
-          fileUrls?: string[];
-        }
-      >(),
+    mockUpload: vi.fn<
+      (formData: FormData) => {
+        success: boolean;
+        error?: string;
+        fileUrls?: string[];
+      }
+    >(),
     mockSaveDraft:
       vi.fn<(userId: string, formData: FormData) => Promise<unknown>>(),
     mockThread:
