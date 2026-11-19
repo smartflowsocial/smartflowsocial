@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Mock dependencies
 vi.mock("~/lib/error-logger.server", () => ({
   logError: vi.fn(),
+  logWarning: vi.fn(),
 }));
 
 // Ensure fetchFromCache uses HTTP path (so global.fetch is used)
@@ -73,11 +74,14 @@ import { logError } from "~/lib/error-logger.server";
 describe("Primal Cache Service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // The suite pins the internal reader. This file exercises the legacy HTTP adapter.
+    process.env["NOSTR_READ_BACKEND"] = "legacy_http";
     process.env["PRIMAL_CACHING_URL"] = "https://cache.example.com/api";
   });
 
   afterEach(() => {
     delete process.env["PRIMAL_CACHING_URL"];
+    process.env["NOSTR_READ_BACKEND"] = "internal";
     resetSingleFlightForTests();
   });
 

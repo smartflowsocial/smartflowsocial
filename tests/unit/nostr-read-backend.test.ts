@@ -13,34 +13,30 @@ import {
 } from "~/infra/nostr-read/read-backend";
 
 describe("resolveNostrReadBackend", () => {
-  it("keeps an HTTP proxy on the legacy reader when the flag is unset", () => {
-    expect(
-      resolveNostrReadBackend({
-        configured: undefined,
-        primalCachingUrl: "https://cache.example/api",
-        selfHosted: "true",
-      })
-    ).toEqual({ ok: true, backend: "legacy_http" });
+  it("refuses an HTTP proxy when the backend is unset", () => {
+    const decision = resolveNostrReadBackend({
+      configured: undefined,
+      primalCachingUrl: "https://cache.example/api",
+    });
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) {
+      expect(decision.reason).toContain("legacy_http");
+    }
   });
 
-  it("selects the in-process reader for a self-hosted install with no proxy", () => {
+  it("selects the in-process reader when the backend and HTTP proxy are unset", () => {
     expect(
       resolveNostrReadBackend({
         configured: "  ",
         primalCachingUrl: undefined,
-        selfHosted: "self-hosted",
       })
     ).toEqual({ ok: true, backend: "internal" });
-  });
-
-  it("keeps a hosted install with no proxy on direct sockets", () => {
     expect(
       resolveNostrReadBackend({
         configured: undefined,
         primalCachingUrl: "wss://cache.example/v1",
-        selfHosted: "false",
       })
-    ).toEqual({ ok: true, backend: "legacy_ws" });
+    ).toEqual({ ok: true, backend: "internal" });
   });
 
   it("lets an explicit flag override the default", () => {
@@ -48,16 +44,20 @@ describe("resolveNostrReadBackend", () => {
       resolveNostrReadBackend({
         configured: "INTERNAL",
         primalCachingUrl: undefined,
-        selfHosted: "false",
       })
     ).toEqual({ ok: true, backend: "internal" });
+    expect(
+      resolveNostrReadBackend({
+        configured: "legacy_http",
+        primalCachingUrl: "https://cache.example/api",
+      })
+    ).toEqual({ ok: true, backend: "legacy_http" });
   });
 
   it("rejects an unknown flag", () => {
     const decision = resolveNostrReadBackend({
       configured: "cloudflare",
       primalCachingUrl: undefined,
-      selfHosted: "true",
     });
     expect(decision.ok).toBe(false);
   });
@@ -68,7 +68,6 @@ describe("read backend configuration errors", () => {
     const error = readBackendSelectionError({
       configured: "internal",
       primalCachingUrl: "https://worker.example",
-      selfHosted: "false",
     });
     expect(error?.key).toBe("NOSTR_READ_BACKEND");
     expect(error?.reason).toContain("HTTP");
@@ -78,7 +77,6 @@ describe("read backend configuration errors", () => {
     const error = readBackendSelectionError({
       configured: "legacy_http",
       primalCachingUrl: "wss://cache.example/v1",
-      selfHosted: "false",
     });
     expect(error?.key).toBe("PRIMAL_CACHING_URL");
   });

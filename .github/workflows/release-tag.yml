@@ -1,0 +1,20 @@
+name: Release tag version
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Package version matches tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v7
+
+      - name: Require package.json to match the tag
+        run: node scripts/check-release-version.mjs --tag "${{ github.ref_name }}"

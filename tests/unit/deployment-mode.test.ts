@@ -1,31 +1,111 @@
 import { describe, expect, it } from "vitest";
 
+import { effectiveCampaignFinalizationFeeRateBps } from "~/features/payments/campaign-fee-policy";
 import {
   allowsMultipleAccounts,
+  DeploymentModeError,
   hostedBlossomStaysOnPlan,
   parseDeploymentMode,
   parseOperatorCap,
   readPublicDeployment,
   relayFanoutAllowed,
   resolveBroadcastLimits,
+  resolveDeploymentMode,
   resolveExecutionEntitlements,
   resolveGiveawayLimits,
 } from "~/features/payments/entitlements/deployment-mode";
 import { getCanonicalPlanPolicy } from "~/features/payments/plan-policy";
 
+const HOSTED = { SFS_DEPLOYMENT_MODE: "hosted" };
+
 describe("deployment mode", () => {
-  it("stays hosted unless the process flag is explicit", () => {
-    expect(parseDeploymentMode(undefined)).toBe("hosted");
-    expect(parseDeploymentMode("")).toBe("hosted");
+  it("defaults a fresh install to self-hosted and keeps an explicit mode", () => {
+    const fresh = resolveDeploymentMode({});
+    const development = resolveDeploymentMode({ NODE_ENV: "development" });
+    expect(fresh.ok && fresh.mode).toBe("self-hosted");
+    expect(development.ok && development.source).toBe("default");
     expect(parseDeploymentMode("false")).toBe("hosted");
-    expect(parseDeploymentMode("on")).toBe("hosted");
     expect(parseDeploymentMode("true")).toBe("self-hosted");
     expect(parseDeploymentMode(" YES ")).toBe("self-hosted");
+    expect(parseDeploymentMode("0")).toBe("hosted");
+    expect(() => parseDeploymentMode(undefined)).toThrow(DeploymentModeError);
+    expect(() => parseDeploymentMode("on")).toThrow(DeploymentModeError);
+    const explicitSelfHosted = resolveDeploymentMode({
+      SFS_DEPLOYMENT_MODE: "self_hosted",
+    });
+    const explicitHosted = resolveDeploymentMode(HOSTED);
+    const agreeingFlags = resolveDeploymentMode({
+      SFS_DEPLOYMENT_MODE: "hosted",
+      SELF_HOSTED: "false",
+    });
+    expect(explicitSelfHosted.ok && explicitSelfHosted.mode).toBe(
+      "self-hosted"
+    );
+    expect(explicitHosted.ok && explicitHosted.mode).toBe("hosted");
+    expect(agreeingFlags.ok && agreeingFlags.mode).toBe("hosted");
+  });
+
+  it("fails closed when the mode is missing or contradictory", () => {
+    expect(resolveDeploymentMode({ NODE_ENV: "production" }).ok).toBe(false);
+    expect(
+      resolveDeploymentMode({
+        APP_URL: "https://staging.smartflow.social",
+      }).ok
+    ).toBe(false);
+    expect(
+      resolveDeploymentMode({
+        COOLIFY_URL: "https://app.smartflow.social",
+        NODE_ENV: "development",
+      }).ok
+    ).toBe(false);
+    const conflict = resolveDeploymentMode({
+      SFS_DEPLOYMENT_MODE: "hosted",
+      SELF_HOSTED: "true",
+    });
+    expect(conflict.ok).toBe(false);
+    expect(resolveDeploymentMode({ SFS_DEPLOYMENT_MODE: "cloud" }).ok).toBe(
+      false
+    );
+    expect(resolveDeploymentMode({ SELF_HOSTED: "on" }).ok).toBe(false);
+    expect(() => readPublicDeployment({ NODE_ENV: "production" })).toThrow(
+      DeploymentModeError
+    );
+  });
+
+  it("charges no platform commission on a fresh install and keeps hosted rates", () => {
+    const fresh = readPublicDeployment({});
+    const hosted = readPublicDeployment({
+      ...HOSTED,
+      cookie: "self-hosted",
+      "x-deployment-mode": "self-hosted",
+    });
+    expect(fresh.mode).toBe("self-hosted");
+    expect(hosted.mode).toBe("hosted");
+    for (const plan of [
+      "free",
+      "starter",
+      "creator",
+      "pro",
+      "teams",
+      "founder",
+    ]) {
+      expect(effectiveCampaignFinalizationFeeRateBps(plan, fresh)).toBe(0);
+    }
+    expect(effectiveCampaignFinalizationFeeRateBps("free", hosted)).toBe(1000);
+    expect(effectiveCampaignFinalizationFeeRateBps("starter", hosted)).toBe(
+      750
+    );
+    expect(effectiveCampaignFinalizationFeeRateBps("creator", hosted)).toBe(
+      500
+    );
+    expect(effectiveCampaignFinalizationFeeRateBps("pro", hosted)).toBe(0);
+    expect(effectiveCampaignFinalizationFeeRateBps("teams", hosted)).toBe(0);
+    expect(effectiveCampaignFinalizationFeeRateBps("founder", hosted)).toBe(0);
   });
 
   it("keeps hosted free limits and ignores operator caps", () => {
     const deployment = readPublicDeployment({
-      SELF_HOSTED: "false",
+      SFS_DEPLOYMENT_MODE: "hosted",
       SELF_HOSTED_MAX_FUTURE_SCHEDULED: "1000",
     });
     const entitlements = resolveExecutionEntitlements("free", deployment);
@@ -38,7 +118,7 @@ describe("deployment mode", () => {
   });
 
   it("keeps hosted paid limits", () => {
-    const deployment = readPublicDeployment({});
+    const deployment = readPublicDeployment(HOSTED);
     const entitlements = resolveExecutionEntitlements("pro", deployment);
     expect(entitlements.maxFutureScheduledItems).toBe(1000);
     expect(entitlements.canExecuteBulkActions).toBe(true);
@@ -100,7 +180,7 @@ describe("deployment mode", () => {
     ).toBe(true);
     expect(
       relayFanoutAllowed({
-        deployment: readPublicDeployment({}),
+        deployment: readPublicDeployment(HOSTED),
         subscriptionActive: true,
         planEnablesRelayBlast: false,
         operatorBlastrConfigured: true,

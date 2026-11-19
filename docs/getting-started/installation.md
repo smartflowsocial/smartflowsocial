@@ -307,9 +307,9 @@ media gateway ([protocol](https://github.com/hzrd149/blossom)). Set `BLOSSOM_SFS
 ### Profile and thread reads
 
 Reads run in this process. Redis caches them. NostrMash HTTP, the NostrMash compatibility socket,
-and public Primal sockets are the default upstreams. A self-hosted install with `SELF_HOSTED=true`
-and an empty `PRIMAL_CACHING_URL` uses that reader. It does not need the cache worker, Wrangler, or
-Cloudflare KV.
+and public Primal sockets are the default upstreams. The internal reader is the default. It does not
+need the cache worker, Wrangler, or Cloudflare KV. It is not a full self-hosted Nostr indexer.
+`NOSTRMASH_BASE_URL` can point at an instance you operate.
 
 Set `NOSTR_READ_BACKEND=legacy_http` and `PRIMAL_CACHING_URL` to an HTTP proxy only to keep the
 [cache worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker). Set

@@ -1,11 +1,10 @@
 /**
  * Selects the Nostr read path at boot.
  *
- * An HTTP(S) `PRIMAL_CACHING_URL` keeps the legacy proxy until an operator
- * sets the internal backend and removes that HTTP URL. A self-hosted
- * install with no HTTP proxy uses the in-process reader. A hosted install
- * with no HTTP proxy keeps direct WebSocket reads, so deploying this build
- * does not move that process onto a new upstream chain.
+ * Unset selects the in-process reader. `NOSTR_READ_BACKEND=legacy_http` is
+ * the explicit legacy cache proxy. An HTTP(S) `PRIMAL_CACHING_URL` without
+ * that setting refuses to boot, so an existing proxy is not silently dropped
+ * and is not kept on merely because the URL is present.
  */
 
 export type NostrReadBackend = "internal" | "legacy_http" | "legacy_ws";
@@ -16,7 +15,6 @@ export type NostrReadBackendDecision =
 export interface ReadBackendEnv {
   configured: string | undefined;
   primalCachingUrl: string | undefined;
-  selfHosted: string | undefined;
   nostrmashWsUrl: string | undefined;
   readTimeoutMs: string | undefined;
 }
@@ -24,17 +22,6 @@ export interface ReadBackendEnv {
 const DEFAULT_READ_TIMEOUT_MS = 15_000;
 const MIN_READ_TIMEOUT_MS = 3_000;
 const MAX_READ_TIMEOUT_MS = 30_000;
-
-function isSelfHostedFlag(value: string | undefined): boolean {
-  const normalized = value?.trim().toLowerCase();
-  return (
-    normalized === "true" ||
-    normalized === "1" ||
-    normalized === "yes" ||
-    normalized === "self-hosted" ||
-    normalized === "self_hosted"
-  );
-}
 
 export function isHttpCacheProxyUrl(url: string | undefined): boolean {
   if (!url) return false;
@@ -45,7 +32,6 @@ export function isHttpCacheProxyUrl(url: string | undefined): boolean {
 export function resolveNostrReadBackend(input: {
   configured: string | undefined;
   primalCachingUrl: string | undefined;
-  selfHosted: string | undefined;
 }): NostrReadBackendDecision {
   const configured = input.configured?.trim() ?? "";
   if (configured !== "") {
@@ -56,16 +42,17 @@ export function resolveNostrReadBackend(input: {
     return {
       ok: false,
       reason:
-        'must be "internal" or "legacy_http". Unset keeps an HTTP PRIMAL_CACHING_URL on the legacy proxy, selects the in-process reader when SELF_HOSTED is enabled, and otherwise keeps direct WebSocket reads.',
+        'must be "internal" or "legacy_http". Unset selects the in-process reader. Set "legacy_http" to keep an HTTP cache proxy.',
     };
   }
   if (isHttpCacheProxyUrl(input.primalCachingUrl)) {
-    return { ok: true, backend: "legacy_http" };
+    return {
+      ok: false,
+      reason:
+        "PRIMAL_CACHING_URL is an HTTP(S) proxy but NOSTR_READ_BACKEND is unset. Set NOSTR_READ_BACKEND=legacy_http to keep that proxy, or unset the HTTP URL to use the internal reader.",
+    };
   }
-  if (isSelfHostedFlag(input.selfHosted)) {
-    return { ok: true, backend: "internal" };
-  }
-  return { ok: true, backend: "legacy_ws" };
+  return { ok: true, backend: "internal" };
 }
 
 export function validateNostrMashWsUrl(
@@ -126,7 +113,7 @@ export function readTimeoutMs(value: string | undefined): number {
  * applied by the caller so this module stays free of URL splitting rules.
  */
 export function readBackendSelectionError(
-  source: Pick<ReadBackendEnv, "configured" | "primalCachingUrl" | "selfHosted">
+  source: Pick<ReadBackendEnv, "configured" | "primalCachingUrl">
 ): { key: string; reason: string } | null {
   const decision = resolveNostrReadBackend(source);
   if (!decision.ok) {

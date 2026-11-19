@@ -4,10 +4,11 @@ title = "SmartFlowSocial allowlist"
 useDefault = true
 
 [allowlist]
-description = "Public AWS documentation example, fixture keys, and the env-name list in the env unit test"
+description = "Public AWS documentation example, fixture keys, the env-name list in the env unit test, and a removed compose placeholder that remains in be6d8de"
 regexes = [
   '''AKIAIOSFODNN7EXAMPLE''',
   '''abc123def456''',
+  '''compose-acceptance-cron-secret-32-chars''',
 ]
 paths = [
   '''tests/e2e/support/nostr-test-keys\.ts''',

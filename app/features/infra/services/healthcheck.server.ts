@@ -3,6 +3,7 @@
  * Handles application health checks
  */
 
+import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 import { countUsers } from "~/features/user";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
@@ -21,7 +22,7 @@ import {
 
 /**
  * Perform health check
- * Verifies database connectivity and HTTP service availability.
+ * Verifies database connectivity and that this process answers on its listen port.
  * Headers name the build commit when the image was given one. They do not
  * prove that a GitHub Actions run is the process currently serving traffic.
  */
@@ -33,14 +34,15 @@ export async function performHealthCheck(
     throw new ValidationError("Missing host header");
   }
 
-  const url = new URL("/", `http://${host}`);
-
-  // if we can connect to the database and make a simple query
-  // and make a HEAD request to ourselves, then we're good.
+  // Probe this process on its listen port. The request Host can be a published
+  // port or a public name, and fetching that address from inside the container
+  // fails or can be pointed at another service.
+  const configuredPort = env.PORT?.trim() ?? "";
+  const port = /^\d+$/.test(configuredPort) ? configuredPort : "3000";
   await Promise.all([
     countUsers(),
     (async () => {
-      const r = await fetch(url.toString(), { method: "HEAD" });
+      const r = await fetch(`http://127.0.0.1:${port}/`, { method: "HEAD" });
       if (!r.ok) return Promise.reject(r);
     })(),
   ]);
@@ -51,6 +53,7 @@ export async function performHealthCheck(
     return Response.json(
       {
         status: "ok",
+        deploymentMode: currentDeployment().mode,
         publisherBackend: env.NOSTR_PUBLISHER_BACKEND,
         nostrReadBackend: env.NOSTR_READ_BACKEND,
         version: identity.version,

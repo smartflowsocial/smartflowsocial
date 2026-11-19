@@ -258,10 +258,10 @@ jobs:
 
             | Metric | Coverage | Threshold |
             |---|---|---|
-            | Lines | ${{ steps.coverage.outputs.lines }}% | 70% |
-            | Statements | ${{ steps.coverage.outputs.statements }}% | 70% |
-            | Functions | ${{ steps.coverage.outputs.functions }}% | 70% |
-            | Branches | ${{ steps.coverage.outputs.branches }}% | 60% |
+            | Lines | ${{ steps.coverage.outputs.lines }}% | 80% |
+            | Statements | ${{ steps.coverage.outputs.statements }}% | 80% |
+            | Functions | ${{ steps.coverage.outputs.functions }}% | 78% |
+            | Branches | ${{ steps.coverage.outputs.branches }}% | 75% |
 
             [Run details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
@@ -421,6 +421,7 @@ jobs:
             --env REDIS_URL=redis://host.docker.internal:6379 \
             --env SESSION_SECRET=test-session-secret-very-long-and-secure-32-chars-minimum \
             --env CRON_SECRET=test-cron-secret-very-long-and-secure-32-chars \
+            --env SFS_DEPLOYMENT_MODE=self_hosted \
             --env SELF_HOSTED=true \
             --env NOSTR_PUBLISHER_BACKEND=internal \
             --env NOSTR_READ_BACKEND=internal \
@@ -433,8 +434,8 @@ jobs:
                 echo "image reported source commit '$reported'"
                 exit 1
               fi
-              node -e 'const body=require("/tmp/health.json"); if (body.publisherBackend!=="internal" || body.nostrReadBackend!=="internal") { console.error(body); process.exit(1); }'
-              echo "healthcheck ok source=$reported backends=internal"
+              node -e 'const body=require("/tmp/health.json"); if (body.deploymentMode!=="self-hosted" || body.publisherBackend!=="internal" || body.nostrReadBackend!=="internal") { console.error(body); process.exit(1); }'
+              echo "healthcheck ok source=$reported mode=self-hosted backends=internal"
               exit 0
             fi
             if ! docker inspect --format '{{.State.Running}}' smartflow-ci | grep -qx true; then

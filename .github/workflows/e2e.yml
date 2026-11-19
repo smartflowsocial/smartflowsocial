@@ -5,7 +5,8 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
-  # Full core suite. Smoke still runs. A failure fails the workflow.
+  # Smoke and the full core suite both run. A failure fails the workflow.
+  # Hydration errors fail the run. ALLOW_HYDRATION_EXCEPTIONS stays false.
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
@@ -25,9 +26,10 @@ env:
   TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
   SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
   REDIS_URL: redis://127.0.0.1:6379
+  SFS_DEPLOYMENT_MODE: hosted
   NOSTR_PUBLISHER_BACKEND: http
   NOSTR_PUBLISHER_URL: http://localhost:3001/publish
-  ALLOW_HYDRATION_EXCEPTIONS: "true"
+  ALLOW_HYDRATION_EXCEPTIONS: "false"
 
 jobs:
   e2e-smoke:
@@ -174,9 +176,9 @@ jobs:
           retention-days: 7
 
   e2e-core:
-    name: E2E Core (full, optional)
+    name: E2E Core
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || vars.E2E_RUN_CORE == 'true'
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:16
@@ -186,10 +188,20 @@ jobs:
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d smartflow_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       redis:
         image: redis:7
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

@@ -83,6 +83,7 @@ const MANAGED_KEYS = [
   "SENTRY_PROFILES_SAMPLE_RATE",
   "SENTRY_TRACES_SAMPLE_RATE",
   "SESSION_SECRET",
+  "SFS_DEPLOYMENT_MODE",
   "SIGNING_MULTI_SLOT",
   "STORAGE_ACCESS_KEY",
   "STORAGE_BUCKET",
@@ -198,6 +199,7 @@ describe("env.server validation branches", () => {
     expect(env.PORT).toBeUndefined();
     expect(env.STORAGE_BUCKET).toBeUndefined();
     expect(consoleLog.mock.calls.map((call) => call[0])).toEqual([
+      "Deployment mode: self-hosted (default)",
       "Nostr publisher backend: internal",
       "Nostr read backend: internal",
       "✅ Environment variables validated",
@@ -238,7 +240,7 @@ describe("env.server validation branches", () => {
     expect(env.STORAGE_CDN_URL).toBe("https://cdn.example");
   });
 
-  it("fills E2E defaults without overriding values that are already set", async () => {
+  it("fills E2E database defaults and leaves publishing internal", async () => {
     applyEnv(
       baseline({
         DATABASE_URL: undefined,
@@ -263,9 +265,9 @@ describe("env.server validation branches", () => {
       "test-session-secret-very-long-and-secure-32-chars-minimum"
     );
     expect(env.REDIS_URL).toBe("redis://localhost:6379");
-    expect(env.NOSTR_PUBLISHER_URL).toBe("http://localhost:3001/publish");
-    expect(env.NOSTR_PUBLISHER_BACKEND).toBe("http");
-    expect(env.NOSTR_READ_BACKEND).toBe("legacy_ws");
+    expect(env.NOSTR_PUBLISHER_URL).toBeUndefined();
+    expect(env.NOSTR_PUBLISHER_BACKEND).toBe("internal");
+    expect(env.NOSTR_READ_BACKEND).toBe("internal");
   });
 
   it("keeps a preset database URL and skips the publisher URL for an internal E2E boot", async () => {
@@ -494,6 +496,7 @@ describe("env.server validation branches", () => {
         CRON_SECRET: "short",
         NODE_ENV: "production",
         NOSTR_PUBLISHER_BACKEND: "internal",
+        SFS_DEPLOYMENT_MODE: "hosted",
       })
     );
     expect(await rejectionText()).toContain("CRON_SECRET");
@@ -504,6 +507,7 @@ describe("env.server validation branches", () => {
         E2E_TEST: "true",
         NODE_ENV: "production",
         NOSTR_PUBLISHER_BACKEND: "internal",
+        SFS_DEPLOYMENT_MODE: "hosted",
       })
     );
     const e2e = await loadEnv();
@@ -517,6 +521,7 @@ describe("env.server validation branches", () => {
         NOSTR_PUBLISHER_URL: "http://publisher.example/publish",
         REFERRAL_MANUAL_PAYOUT_SECRET: "short",
         REFERRAL_PAYOUTS_ENABLED: "true",
+        SFS_DEPLOYMENT_MODE: "hosted",
       })
     );
     const payout = await rejectionText();
@@ -532,6 +537,7 @@ describe("env.server validation branches", () => {
         NOSTR_PUBLISHER_URL: "http://publisher.example/publish",
         REFERRAL_MANUAL_PAYOUT_SECRET: PAYOUT_SECRET,
         REFERRAL_PAYOUTS_ENABLED: "true",
+        SFS_DEPLOYMENT_MODE: "hosted",
       })
     );
     const allowed = await loadEnv();
@@ -544,10 +550,78 @@ describe("env.server validation branches", () => {
         NOSTR_PUBLISHER_API_TOKEN: PUBLISHER_TOKEN,
         NOSTR_PUBLISHER_BACKEND: "http",
         NOSTR_PUBLISHER_URL: "http://publisher.example/publish",
+        SFS_DEPLOYMENT_MODE: "hosted",
       })
     );
     const tokenized = await loadEnv();
     expect(tokenized.env.NOSTR_PUBLISHER_API_TOKEN).toBe(PUBLISHER_TOKEN);
+  });
+
+  it("refuses production and the managed hosts when the mode is unset", async () => {
+    applyEnv(
+      baseline({
+        CRON_SECRET: CRON,
+        NODE_ENV: "production",
+        SFS_DEPLOYMENT_MODE: undefined,
+        SELF_HOSTED: undefined,
+      })
+    );
+    expect(await rejectionText()).toContain("SFS_DEPLOYMENT_MODE");
+
+    applyEnv(
+      baseline({
+        APP_URL: "https://app.smartflow.social",
+        NODE_ENV: "test",
+        SFS_DEPLOYMENT_MODE: undefined,
+      })
+    );
+    expect(await rejectionText()).toContain("app.smartflow.social");
+  });
+
+  it("refuses a publisher URL or HTTP cache proxy when the backend is unset", async () => {
+    applyEnv(
+      baseline({
+        NOSTR_PUBLISHER_BACKEND: undefined,
+        NOSTR_PUBLISHER_URL: "https://publisher.example/publish",
+      })
+    );
+    expect(await rejectionText()).toContain("NOSTR_PUBLISHER_URL is set");
+
+    applyEnv(
+      baseline({
+        NOSTR_READ_BACKEND: undefined,
+        PRIMAL_CACHING_URL: "https://cache.example",
+      })
+    );
+    expect(await rejectionText()).toContain("legacy_http");
+  });
+
+  it("accepts an explicit hosted production mode and an empty development mode", async () => {
+    applyEnv(
+      baseline({
+        CRON_SECRET: CRON,
+        NODE_ENV: "production",
+        SFS_DEPLOYMENT_MODE: "hosted",
+        SELF_HOSTED: "false",
+      })
+    );
+    const hosted = await loadEnv();
+    expect(hosted.env.NOSTR_PUBLISHER_BACKEND).toBe("internal");
+
+    applyEnv(
+      baseline({
+        NODE_ENV: "development",
+        NOSTR_PUBLISHER_BACKEND: undefined,
+        NOSTR_PUBLISHER_URL: undefined,
+        NOSTR_READ_BACKEND: undefined,
+        SFS_DEPLOYMENT_MODE: undefined,
+        SELF_HOSTED: undefined,
+      })
+    );
+    const fresh = await loadEnv();
+    expect(fresh.env.NOSTR_PUBLISHER_BACKEND).toBe("internal");
+    expect(fresh.env.NOSTR_READ_BACKEND).toBe("internal");
+    expect(fresh.env.NOSTR_PUBLISHER_URL).toBeUndefined();
   });
 
   it("ignores an empty optional value", async () => {

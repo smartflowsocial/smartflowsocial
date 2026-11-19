@@ -54,6 +54,7 @@ describe("campaign finalization commission", () => {
       "x-self-hosted": "false",
     });
     const hostedDespiteHeader = readPublicDeployment({
+      SFS_DEPLOYMENT_MODE: "hosted",
       cookie: "self-hosted",
       "x-deployment-mode": "self-hosted",
     });

@@ -5,9 +5,10 @@
 **Last updated:** 2026-11-14
 
 This is the local development setup. It is not a five-minute production install. A useful local
-scheduler needs Node.js, pnpm, PostgreSQL, and Redis. Publishing is in this process when
-`SELF_HOSTED=true`. An HTTP publisher is optional. Uploads need S3-compatible storage. Production
-self-hosting is covered in the [deployment guide](../guides/deployment.md).
+scheduler needs Node.js, pnpm, PostgreSQL, and Redis. Publishing and Nostr reads run in this
+process. An HTTP publisher and an HTTP cache proxy are optional legacy adapters. Uploads need
+S3-compatible storage. Production self-hosting is covered in the
+[deployment guide](../guides/deployment.md).
 
 ---
 
@@ -97,9 +98,9 @@ The application will be available at [http://localhost:3000](http://localhost:30
 Worker metrics are on port 3011. `pnpm worker:local` runs the worker without the web server. Do not
 run it next to `pnpm dev`, or you get a second worker.
 
-`SELF_HOSTED=true` publishes from this process. It does not need a publisher URL, a publisher token,
-or a Cloudflare account. `pnpm docker` starts Postgres and Redis only. `pnpm publisher:local` is an
-optional signature stub for `pnpm smoke:publish`. Real loopback delivery is
+The default install publishes from this process. It does not need a publisher URL, a publisher
+token, or a Cloudflare account. `pnpm docker` starts Postgres and Redis only. `pnpm publisher:local`
+is an optional signature stub for `pnpm smoke:publish`. Real loopback delivery is
 `pnpm test:relay-publish`. The checked procedure is the [self-host smoke](./self-host-smoke.md). The
 rollout and rollback steps are in
 [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
