@@ -30,16 +30,19 @@ describe("deployment mode", () => {
     expect(parseDeploymentMode("0")).toBe("hosted");
     expect(() => parseDeploymentMode(undefined)).toThrow(DeploymentModeError);
     expect(() => parseDeploymentMode("on")).toThrow(DeploymentModeError);
-    expect(
-      resolveDeploymentMode({ SFS_DEPLOYMENT_MODE: "self_hosted" }).mode
-    ).toBe("self-hosted");
-    expect(resolveDeploymentMode(HOSTED).mode).toBe("hosted");
-    expect(
-      resolveDeploymentMode({
-        SFS_DEPLOYMENT_MODE: "hosted",
-        SELF_HOSTED: "false",
-      }).mode
-    ).toBe("hosted");
+    const explicitSelfHosted = resolveDeploymentMode({
+      SFS_DEPLOYMENT_MODE: "self_hosted",
+    });
+    const explicitHosted = resolveDeploymentMode(HOSTED);
+    const agreeingFlags = resolveDeploymentMode({
+      SFS_DEPLOYMENT_MODE: "hosted",
+      SELF_HOSTED: "false",
+    });
+    expect(explicitSelfHosted.ok && explicitSelfHosted.mode).toBe(
+      "self-hosted"
+    );
+    expect(explicitHosted.ok && explicitHosted.mode).toBe("hosted");
+    expect(agreeingFlags.ok && agreeingFlags.mode).toBe("hosted");
   });
 
   it("fails closed when the mode is missing or contradictory", () => {
