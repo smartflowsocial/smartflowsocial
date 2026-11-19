@@ -183,15 +183,16 @@ This application does not call the cache worker. Decommissioning it is an owner 
 
 Do this only after the owner accepts the production observation window.
 
-- Remove the hosted requirement for an HTTP `PRIMAL_CACHING_URL`.
-- Remove `X-Cache-Skip-Native` from the legacy client once `legacy_http` is no longer deployed.
-- Update the remaining notes that still describe the worker as the cache.
+- `PRIMAL_CACHING_URL` is already rejected at startup. Do not put it back.
 - Search for clients of the worker's public CORS `POST` API outside this repository. This app is the
   only caller found here. The worker repository documents a public HTTP API, so an external client
   is possible. That search is not proof that none exist.
-- Archive
-  [smartflowsocial-cache-worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker)
-  only after that inventory. Do not archive it in the implementation change.
+- The maintained utility is a new repository,
+  [nostrmash/nostr-read-gateway](https://github.com/nostrmash/nostr-read-gateway). It is not a
+  transfer of
+  [smartflowsocial-cache-worker](https://github.com/smartflowsocial/smartflowsocial-cache-worker),
+  and this application does not call it. Do not archive the old repository in the implementation
+  change.
 - Do not delete the Cloudflare script, KV, or route until the owner says so.
 
 ## What is still external

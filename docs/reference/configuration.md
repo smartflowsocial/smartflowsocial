@@ -1137,7 +1137,6 @@ Create a validation script:
 const required = [
   "DATABASE_URL",
   "SESSION_SECRET",
-  "NOSTR_PUBLISHER_URL",
   "REDIS_URL",
   "STORAGE_ACCESS_KEY",
   "STORAGE_SECRET",

@@ -1,5 +1,10 @@
 # Staging Publisher smoke
 
+> Archived on 19 November 2026. This note is a historical record of the external publisher Worker.
+> Current SmartFlowSocial does not call that Worker and refuses `NOSTR_PUBLISHER_URL`. Do not use
+> this procedure for a current install. See
+> [Internal Nostr publisher](../../operations/internal-nostr-publisher.md).
+
 Use a staging worker, an ephemeral key, and a relay you control. Do not send a production user's
 event. Do not point the request at a public relay.
 
