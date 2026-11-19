@@ -77,22 +77,15 @@ function main() {
 
   const shown = rows.slice(0, limit);
   log("");
-  log(
-    `Top ${shown.length} files by uncovered branches (then uncovered lines)`
-  );
+  log(`Top ${shown.length} files by uncovered branches (then uncovered lines)`);
   for (const row of shown) {
     log(
       `${pad(row.branchesUncovered, 5)} branches  ${pad(row.linesUncovered, 5)} lines  ${pad(row.functionsUncovered, 4)} fn  B ${pad(row.branchesPct.toFixed(1), 6)}%  L ${pad(row.linesPct.toFixed(1), 6)}%  F ${pad(row.functionsPct.toFixed(1), 6)}%  ${row.file}`
     );
   }
 
-  const under = rows.filter(
-    (row) => row.linesPct < 80 || row.branchesPct < 80
-  );
-  const branchGap = under.reduce(
-    (sum, row) => sum + row.branchesUncovered,
-    0
-  );
+  const under = rows.filter((row) => row.linesPct < 80 || row.branchesPct < 80);
+  const branchGap = under.reduce((sum, row) => sum + row.branchesUncovered, 0);
   const lineGap = under.reduce((sum, row) => sum + row.linesUncovered, 0);
   log("");
   log(
