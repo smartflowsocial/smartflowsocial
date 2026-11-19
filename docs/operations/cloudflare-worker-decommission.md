@@ -1,10 +1,18 @@
 # Cloudflare Worker decommission review
 
-Reviewed 19 November 2026 from the Git repositories only. No Cloudflare API call completed. No
-script, route, secret, KV namespace, DNS record, or other Cloudflare resource was changed.
+Reviewed 19 November 2026. Wrangler `whoami` did not return an account. No Cloudflare API call
+completed, and nothing was deleted. Do not treat the script names below as proof of what is
+deployed.
 
-Wrangler in the publisher checkout did not return an account identity. Do not treat the script names
-below as proof of what is deployed.
+GitHub checks on the successor-README branches showed Cloudflare Workers Builds for account
+`9f65435f3bc2df9dee3cb9aeb02da2f4`. The publisher check URL is a preview
+(`production/previews/docs-successor-nostr-publish-gateway`). The cache-worker check URL is also a
+preview (`production/previews/docs-successor-nostr-read-gateway`). Those previews are not a
+replacement of the production scripts. The same account id appears on the NostrMash Web build check.
+Leave that service alone.
+
+Routes, custom domains, secret names, and KV namespace ids are still not in Git. The owner has to
+read them in the dashboard.
 
 ## Publisher Worker
 
