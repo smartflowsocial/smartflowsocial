@@ -40,8 +40,8 @@ jobs:
 
       - name: Start the self-host stack
         env:
-          SESSION_SECRET: compose-acceptance-session-secret-32
-          CRON_SECRET: compose-acceptance-cron-secret-32-chars
+          SESSION_SECRET: test-session-secret-very-long-and-secure-32-chars-minimum
+          CRON_SECRET: test-cron-secret-very-long-and-secure-32-chars
           SOURCE_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
