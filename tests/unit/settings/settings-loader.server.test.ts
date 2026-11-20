@@ -57,6 +57,10 @@ const blastr = vi.hoisted(() => ({
   resolvePubkeyHex: vi.fn(),
 }));
 
+const entitlementSync = vi.hoisted(() => ({
+  syncBlastrEntitlementForUser: vi.fn(async () => undefined),
+}));
+
 const deployment = vi.hoisted(() => ({
   relayFanoutForSubscription: vi.fn(),
 }));
@@ -91,6 +95,7 @@ vi.mock(
 );
 vi.mock("~/features/relays/relay-resolution.server", () => relays);
 vi.mock("~/infra/blastr/blastr-admin.client.server", () => blastr);
+vi.mock("~/infra/blastr/entitlement-sync.server", () => entitlementSync);
 vi.mock("~/features/referral/referral-settings.server", () => referral);
 vi.mock(
   "~/features/engagement/engagement-reply-templates.server",
@@ -212,6 +217,7 @@ function primeSettings(): void {
   deployment.relayFanoutForSubscription.mockReturnValue(false);
   blastr.resolvePubkeyHex.mockReturnValue(null);
   blastr.getUserPolicy.mockResolvedValue(null);
+  entitlementSync.syncBlastrEntitlementForUser.mockResolvedValue(undefined);
   acks.findLatestPublishRelayAcksByUserAndUrls.mockResolvedValue([]);
 }
 
@@ -284,6 +290,7 @@ describe("settings loader", () => {
     expect(data.availablePlans).toEqual([]);
     expect(data.paymentHistory).toEqual([]);
     expect(data.isChild).toBe(false);
+    expect(entitlementSync.syncBlastrEntitlementForUser).not.toHaveBeenCalled();
     expect(data.hasAccountsAccess).toBe(true);
     expect(data.accounts).toEqual({
       isChild: false,
@@ -757,6 +764,9 @@ describe("settings loader", () => {
     const data = await loadSettingsData(USER_ID);
 
     expect(data.isChild).toBe(true);
+    expect(entitlementSync.syncBlastrEntitlementForUser).toHaveBeenCalledWith(
+      USER_ID
+    );
     expect(data.hasAccountsAccess).toBe(true);
     expect(data.accounts).toEqual({
       isChild: true,

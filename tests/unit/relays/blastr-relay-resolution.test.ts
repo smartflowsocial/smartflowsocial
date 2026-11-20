@@ -67,4 +67,105 @@ describe("isBlastrEnabledForUserFromDb", () => {
     const result = await isBlastrEnabledForUserFromDb("user-1");
     expect(result).toBe(false);
   });
+
+  it("enables Blastr for a linked child who opted in when the parent plan includes it", async () => {
+    installChildSubscription({
+      blastrRelayEnabled: true,
+      parentPlanId: "pro",
+      parentEnablesRelayBlast: true,
+    });
+
+    const { isBlastrEnabledForUserFromDb } =
+      await import("~/features/relays/repositories/relay-resolution-data.server");
+    const result = await isBlastrEnabledForUserFromDb("child-1");
+    expect(result).toBe(true);
+  });
+
+  it("keeps Blastr off for a linked child who turned the relay off", async () => {
+    installChildSubscription({
+      blastrRelayEnabled: false,
+      parentPlanId: "pro",
+      parentEnablesRelayBlast: true,
+    });
+
+    const { isBlastrEnabledForUserFromDb } =
+      await import("~/features/relays/repositories/relay-resolution-data.server");
+    const result = await isBlastrEnabledForUserFromDb("child-1");
+    expect(result).toBe(false);
+  });
+
+  it("does not enable Blastr for a child when the parent plan excludes fan-out", async () => {
+    installChildSubscription({
+      blastrRelayEnabled: true,
+      parentPlanId: "pro",
+      parentEnablesRelayBlast: false,
+    });
+
+    const { isBlastrEnabledForUserFromDb } =
+      await import("~/features/relays/repositories/relay-resolution-data.server");
+    const result = await isBlastrEnabledForUserFromDb("child-1");
+    expect(result).toBe(false);
+  });
+
+  it("does not grant Blastr from a parent plan that does not cover linked accounts", async () => {
+    installChildSubscription({
+      blastrRelayEnabled: true,
+      parentPlanId: "starter",
+      parentEnablesRelayBlast: true,
+    });
+
+    const { isBlastrEnabledForUserFromDb } =
+      await import("~/features/relays/repositories/relay-resolution-data.server");
+    const result = await isBlastrEnabledForUserFromDb("child-1");
+    expect(result).toBe(false);
+  });
 });
+
+function installChildSubscription(input: {
+  blastrRelayEnabled: boolean;
+  parentPlanId: string;
+  parentEnablesRelayBlast: boolean;
+}): void {
+  (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
+    (args: {
+      where: { id?: string; npub?: string };
+      select?: {
+        blastrRelayEnabled?: boolean;
+        isChild?: boolean;
+        id?: boolean;
+      };
+    }) => {
+      if (args.where.npub) return { id: "parent-1" };
+      if (args.select?.isChild) {
+        return { isChild: true, parentNpub: "parent-npub" };
+      }
+      return { blastrRelayEnabled: input.blastrRelayEnabled };
+    }
+  );
+  (
+    mockPrisma.subscription.findUnique as ReturnType<typeof vi.fn>
+  ).mockImplementation((args: { where: { userId: string } }) => {
+    if (args.where.userId === "parent-1") {
+      return {
+        status: "ACTIVE",
+        planId: input.parentPlanId,
+        currentPeriodEnd: new Date("2099-01-01T00:00:00.000Z"),
+        Plan: {
+          enableRelayBlast: input.parentEnablesRelayBlast,
+          enableLifetimeAccess: false,
+          name: input.parentPlanId,
+        },
+      };
+    }
+    return {
+      status: "CANCELED",
+      planId: "free",
+      currentPeriodEnd: new Date("2020-01-01T00:00:00.000Z"),
+      Plan: {
+        enableRelayBlast: false,
+        enableLifetimeAccess: false,
+        name: "Free",
+      },
+    };
+  });
+}

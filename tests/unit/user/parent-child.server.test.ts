@@ -89,7 +89,12 @@ const nostr = vi.hoisted(() => ({
   decodeNpub: vi.fn<(value: string) => string | null>(),
 }));
 
+const blastrSync = vi.hoisted(() => ({
+  syncBlastrEntitlementForUser: vi.fn(async () => undefined),
+}));
+
 vi.mock("~/features/user/repositories/parent-child-data.server", () => repo);
+vi.mock("~/infra/blastr/entitlement-sync.server", () => blastrSync);
 vi.mock("~/lib/error-logger.server", () => logs);
 vi.mock("~/lib/nostr-adapter.server", () => ({
   nostrAdapter: { decodeNpub: nostr.decodeNpub },
@@ -181,6 +186,7 @@ describe("parent-child service", () => {
     repo.updateUserAcceptChildLink.mockResolvedValue(undefined);
     repo.updateUserRejectChildLink.mockResolvedValue(undefined);
     repo.updateUserUnlinkChild.mockResolvedValue(undefined);
+    blastrSync.syncBlastrEntitlementForUser.mockResolvedValue(undefined);
   });
 
   describe("searchUsersByProfileName", () => {
@@ -637,6 +643,9 @@ describe("parent-child service", () => {
         PARENT,
         [OTHER]
       );
+      expect(blastrSync.syncBlastrEntitlementForUser).toHaveBeenCalledWith(
+        "child-1"
+      );
       expect(repo.updateUserRejectChildLink).not.toHaveBeenCalled();
     });
 
@@ -652,6 +661,7 @@ describe("parent-child service", () => {
         OTHER,
       ]);
       expect(repo.updateUserAcceptChildLink).not.toHaveBeenCalled();
+      expect(blastrSync.syncBlastrEntitlementForUser).not.toHaveBeenCalled();
     });
 
     it("propagates lookup failures", async () => {
@@ -700,6 +710,9 @@ describe("parent-child service", () => {
 
       await expect(unlinkParent(CHILD)).resolves.toEqual({ ok: true });
       expect(repo.updateUserUnlinkChild).toHaveBeenCalledWith(CHILD);
+      expect(blastrSync.syncBlastrEntitlementForUser).toHaveBeenCalledWith(
+        "child-1"
+      );
     });
 
     it("rejects a parent who does not own the child", async () => {
@@ -727,6 +740,9 @@ describe("parent-child service", () => {
         ok: true,
       });
       expect(repo.updateUserUnlinkChild).toHaveBeenCalledWith(CHILD);
+      expect(blastrSync.syncBlastrEntitlementForUser).toHaveBeenCalledWith(
+        "child-1"
+      );
     });
 
     it("propagates lookup failures", async () => {
@@ -747,6 +763,18 @@ describe("parent-child service", () => {
       await expect(unlinkChildByParent(PARENT, CHILD)).rejects.toBe(
         "child unlink"
       );
+    });
+
+    it("still unlinks when Blastr entitlement sync fails", async () => {
+      repo.findUserByNpubForParentChild.mockResolvedValue(
+        childAccount({ parentNpub: PARENT, isChild: true })
+      );
+      blastrSync.syncBlastrEntitlementForUser.mockRejectedValueOnce(
+        new Error("blastr down")
+      );
+
+      await expect(unlinkParent(CHILD)).resolves.toEqual({ ok: true });
+      expect(logs.logError).toHaveBeenCalled();
     });
   });
 });

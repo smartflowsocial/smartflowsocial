@@ -64,6 +64,7 @@ import {
   getUserPolicy as getBlastrUserPolicy,
   resolvePubkeyHex as resolveBlastrPubkeyHex,
 } from "~/infra/blastr/blastr-admin.client.server";
+import { syncBlastrEntitlementForUser } from "~/infra/blastr/entitlement-sync.server";
 import { logWarning } from "~/lib/error-logger.server";
 
 import { findLatestPublishRelayAcksByUserAndUrls } from "./repositories/settings-loader-data.server";
@@ -344,6 +345,22 @@ async function buildAccountsData(params: {
   };
 }
 
+/**
+ * Linked children publish as their own pubkey. Write that pubkey's Blastr
+ * entitlement from the parent plan when they open settings, and keep going
+ * if Blastr is unreachable.
+ */
+async function syncChildBlastrEntitlement(userId: string): Promise<void> {
+  try {
+    await syncBlastrEntitlementForUser(userId);
+  } catch (error) {
+    logWarning("Could not sync Blastr entitlement for linked child", {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /** Dedupe and sort global composer interval hours from persisted string[] (e.g. "8", "0.25"). */
 function normalizeGlobalScheduleIntervalHours(raw: string[]): number[] {
   const nums = raw
@@ -525,9 +542,14 @@ export async function loadSettingsData(
     };
   })();
 
+  const childBlastrEntitlementSync = isChild
+    ? syncChildBlastrEntitlement(userId)
+    : Promise.resolve();
+
   const [accounts, billingBundle] = await Promise.all([
     accountsPromise,
     billingBundlePromise,
+    childBlastrEntitlementSync,
   ]);
 
   const { allPlans, paymentHistory, referral, billingContext } = billingBundle;

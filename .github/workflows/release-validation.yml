@@ -200,3 +200,5 @@ jobs:
     name: Self-host Compose
     needs: checks
     uses: ./.github/workflows/self-host-compose.yml
+    with:
+      candidate_sha: ${{ inputs.candidate_sha }}

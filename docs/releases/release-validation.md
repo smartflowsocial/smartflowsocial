@@ -34,6 +34,11 @@ The same workflow then builds the candidate and runs the clean-room self-host ac
 job is not a check that already exists on the commit. CI success does not skip it, and it does not
 mean a live deployment is on that commit.
 
+The Self-host Compose job in this workflow calls the reusable compose workflow with `candidate_sha`.
+That job checks out that commit, not the branch selected in the dispatch form. Its health check
+requires `sourceCommit` to equal that same SHA. A green compose run on another commit does not
+satisfy it.
+
 After those checks pass, the workflow builds that same commit and opens it in Cypress. The sign-in
 page has to hydrate under the production content security policy. A nonce in the HTML is not the
 assertion. `ALLOW_HYDRATION_EXCEPTIONS` is false for that job.

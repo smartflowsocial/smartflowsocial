@@ -124,7 +124,8 @@ export async function getRelayIntent(userId: string): Promise<RelayIntent> {
 /**
  * Compute the effective write relays for publishing (direct intent + managed relays).
  * - direct: user intent (persisted)
- * - managed: computed from feature access (Plan.enableRelayBlast + ACTIVE subscription)
+ * - managed: the account opted in, and the effective plan includes relay fan-out
+ *   (a linked child uses the parent subscription)
  */
 export async function getEffectiveWriteRelays(
   userId: string,

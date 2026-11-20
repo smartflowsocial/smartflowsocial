@@ -11,16 +11,16 @@ The same code is the hosted service and a self-hosted install. There is no priva
 scheduler. A running deploy can lag this commit until the operator updates it. The license is the
 [Unlicense](LICENSE).
 
-**SmartFlowSocial v1 — Now Open Source.** The published release is
-[`v1.0.0-beta.2`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.2) at
-`5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. That tag's `package.json` still says `1.0.0-beta.1`. The
-tag is not rewritten. This source tree is `1.0.0-rc.1` and that tag has not been created. A future
-tag must match `package.json`; `node scripts/check-release-version.mjs --tag v<version>` rejects a
-mismatch. This is not a stable `1.0.0`. Notes for the published release are in
-[docs/releases/v1.0.0-beta.2.md](./docs/releases/v1.0.0-beta.2.md). The candidate is
-[docs/releases/v1.0.0-rc.1.md](./docs/releases/v1.0.0-rc.1.md). `v0.1.0-alpha.0` and a withdrawn
-`v1.0.0` were published from an earlier repository. Neither is a supported version of this
-repository.
+**SmartFlowSocial v1 — Now Open Source.** The latest published prerelease is
+[`v1.0.0-rc.1`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-rc.1) at
+`7b9903532637525685dcb915081cb0824b2b43f6`. Its `package.json` is `1.0.0-rc.1`. It is not stable
+`v1.0.0`. Do not move the tag. `develop` and `main` can move past it. A tag must match
+`package.json`; `node scripts/check-release-version.mjs --tag v<version>` rejects a mismatch. Notes
+are in [docs/releases/v1.0.0-rc.1.md](./docs/releases/v1.0.0-rc.1.md).
+[`v1.0.0-beta.2`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.2)
+stays at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. That tag's `package.json` says `1.0.0-beta.1`,
+and its README still describes that older tree. `v0.1.0-alpha.0` and a withdrawn `v1.0.0` were
+published from an earlier repository. Neither is a supported version of this repository.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
@@ -76,13 +76,15 @@ short path. `pnpm test:self-host-acceptance` boots the built server and worker a
 note to a loopback relay. `pnpm test:relay-publish` does the same through the publish job. Managed
 hosting sets `SFS_DEPLOYMENT_MODE=hosted`.
 
-Install a published release by checking out its tag and following the README in that commit.
-`v1.0.0-beta.2` is the current published release. The commands below match this source tree, which
-is ahead of that tag. Do not mix this README with an older checkout.
+Install the published prerelease with `git checkout v1.0.0-rc.1`, then follow the README in that
+commit. `example.env` there sets `SFS_DEPLOYMENT_MODE=self_hosted`. Do not set `SELF_HOSTED`. The
+commands below match this source tree. `develop` and `main` can be newer than the tag. Do not mix
+this README with the beta.2 checkout. That tag still documents `SELF_HOSTED=true`.
 
 ```bash
 git clone https://github.com/smartflowsocial/smartflowsocial.git
 cd smartflowsocial
+git checkout v1.0.0-rc.1
 pnpm install
 cp example.env .env
 pnpm docker

@@ -3,7 +3,9 @@
  *
  * For each user with an ACTIVE subscription and a plan with enableRelayBlast,
  * calls Blastr PUT /admin/entitlements/:pubkey with status: "active"
- * (same eligibility logic as afterSubscriptionUpdated).
+ * (same eligibility logic as afterSubscriptionUpdated). Confirmed child
+ * accounts of those users are synced too, because they publish as their own
+ * pubkey and follow the parent plan.
  *
  * Requires: DATABASE_URL, BLASTR_ADMIN_URL, BLASTR_ADMIN_API_TOKEN in .env
  *
@@ -126,8 +128,10 @@ async function main() {
 
   let synced = 0;
   let failed = 0;
+  const eligibleParentNpubs: string[] = [];
   for (const s of eligible) {
     const user = s.User!;
+    if (user.npub) eligibleParentNpubs.push(user.npub);
     const pubkeyHex = resolvePubkeyHex(user.npub!);
     if (!pubkeyHex) {
       log(`Skip user ${user.id}: could not resolve npub to hex`);
@@ -139,6 +143,40 @@ async function main() {
       synced++;
       log(
         `Synced entitlement: user ${user.id} (pubkey ${pubkeyHex.slice(0, 16)}...)`
+      );
+    } else {
+      failed++;
+    }
+  }
+
+  const children =
+    eligibleParentNpubs.length === 0
+      ? []
+      : await prisma.user.findMany({
+          where: {
+            isChild: true,
+            isEnabled: true,
+            parentNpub: { in: eligibleParentNpubs },
+          },
+          select: { id: true, npub: true },
+        });
+
+  if (children.length > 0) {
+    log(`Found ${children.length} linked child account(s) to sync.`);
+  }
+  for (const child of children) {
+    if (!child.npub) continue;
+    const pubkeyHex = resolvePubkeyHex(child.npub);
+    if (!pubkeyHex) {
+      log(`Skip child ${child.id}: could not resolve npub to hex`);
+      failed++;
+      continue;
+    }
+    const ok = await putEntitlement(BLASTR_BASE, pubkeyHex);
+    if (ok) {
+      synced++;
+      log(
+        `Synced child entitlement: user ${child.id} (pubkey ${pubkeyHex.slice(0, 16)}...)`
       );
     } else {
       failed++;

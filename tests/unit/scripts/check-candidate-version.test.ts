@@ -6,6 +6,8 @@ import {
   CANDIDATE_VERSION,
   PUBLISHED_BETA_2_AT,
   PUBLISHED_BETA_2_SHA,
+  PUBLISHED_RC_AT,
+  PUBLISHED_RC_SHA,
   validateWorkingTreeVersions,
 } from "../../../scripts/check-candidate-version.mjs";
 
@@ -34,17 +36,16 @@ function component(
 function candidate() {
   return {
     version: CANDIDATE_VERSION,
-    status: "unreleased",
+    status: "published-prerelease",
     tag: `v${CANDIDATE_VERSION}`,
-    tagPublished: false,
-    publishedAt: null,
-    applicationReleaseSha: null as string | null,
+    tagPublished: true,
+    publishedAt: PUBLISHED_RC_AT as string | null,
+    applicationReleaseSha: PUBLISHED_RC_SHA as string | null,
     productionDeployed: false,
     components: [
       {
-        ...component("app", "required"),
+        ...component("app", "required", PUBLISHED_RC_SHA),
         repository: "smartflowsocial/smartflowsocial",
-        validationStatus: "not-validated",
       },
       {
         ...component("blastr", "optional"),
@@ -77,11 +78,33 @@ function beta2() {
 }
 
 describe("working tree versions", () => {
-  it("accepts the unreleased candidate beside the published beta.2 tag", () => {
+  it("accepts the published rc.1 tag beside the published beta.2 tag", () => {
     expect(
       validateWorkingTreeVersions({
         packageJson: { version: CANDIDATE_VERSION, private: true },
         candidate: candidate(),
+        beta2: beta2(),
+        headSha: HEAD,
+        beta2TagSha: PUBLISHED_BETA_2_SHA,
+      })
+    ).toEqual([]);
+  });
+
+  it("accepts an unreleased candidate that has no release SHA", () => {
+    const record = candidate();
+    record.status = "unreleased";
+    record.tagPublished = false;
+    record.publishedAt = null;
+    record.applicationReleaseSha = null;
+    const unreleasedApp = record.components[0];
+    if (!unreleasedApp) throw new Error("app component missing");
+    unreleasedApp.releaseSha = null;
+    unreleasedApp.releaseShaStatus = "unknown";
+    unreleasedApp.validationStatus = "not-validated";
+    expect(
+      validateWorkingTreeVersions({
+        packageJson: { version: CANDIDATE_VERSION, private: true },
+        candidate: record,
         beta2: beta2(),
         headSha: HEAD,
         beta2TagSha: PUBLISHED_BETA_2_SHA,
@@ -103,8 +126,9 @@ describe("working tree versions", () => {
   it("rejects a candidate that already names a SHA or the retired publisher", () => {
     const record = candidate();
     record.applicationReleaseSha = HEAD;
-    record.tagPublished = true;
-    record.status = "published";
+    const publishedApp = record.components[0];
+    if (!publishedApp) throw new Error("app component missing");
+    publishedApp.releaseSha = HEAD;
     record.components.push({
       ...component("publisher", "optional"),
       repository: "smartflowsocial/smartflowsocial-publisher",
@@ -116,7 +140,7 @@ describe("working tree versions", () => {
       headSha: HEAD,
       beta2TagSha: PUBLISHED_BETA_2_SHA,
     });
-    expect(errors.join("\n")).toMatch(/not a published tag/);
+    expect(errors.join("\n")).toMatch(/commit that contains this record/);
     expect(errors.join("\n")).toMatch(/must not list publisher/);
   });
 
