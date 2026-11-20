@@ -39,8 +39,8 @@ function candidate() {
     status: "published-prerelease",
     tag: `v${CANDIDATE_VERSION}`,
     tagPublished: true,
-    publishedAt: PUBLISHED_RC_AT,
-    applicationReleaseSha: PUBLISHED_RC_SHA,
+    publishedAt: PUBLISHED_RC_AT as string | null,
+    applicationReleaseSha: PUBLISHED_RC_SHA as string | null,
     productionDeployed: false,
     components: [
       {
@@ -90,6 +90,28 @@ describe("working tree versions", () => {
     ).toEqual([]);
   });
 
+  it("accepts an unreleased candidate that has no release SHA", () => {
+    const record = candidate();
+    record.status = "unreleased";
+    record.tagPublished = false;
+    record.publishedAt = null;
+    record.applicationReleaseSha = null;
+    const unreleasedApp = record.components[0];
+    if (!unreleasedApp) throw new Error("app component missing");
+    unreleasedApp.releaseSha = null;
+    unreleasedApp.releaseShaStatus = "unknown";
+    unreleasedApp.validationStatus = "not-validated";
+    expect(
+      validateWorkingTreeVersions({
+        packageJson: { version: CANDIDATE_VERSION, private: true },
+        candidate: record,
+        beta2: beta2(),
+        headSha: HEAD,
+        beta2TagSha: PUBLISHED_BETA_2_SHA,
+      })
+    ).toEqual([]);
+  });
+
   it("rejects a package.json that still says beta.1", () => {
     const errors = validateWorkingTreeVersions({
       packageJson: { version: "1.0.0-beta.1", private: true },
@@ -104,7 +126,9 @@ describe("working tree versions", () => {
   it("rejects a candidate that already names a SHA or the retired publisher", () => {
     const record = candidate();
     record.applicationReleaseSha = HEAD;
-    record.components[0].releaseSha = HEAD;
+    const publishedApp = record.components[0];
+    if (!publishedApp) throw new Error("app component missing");
+    publishedApp.releaseSha = HEAD;
     record.components.push({
       ...component("publisher", "optional"),
       repository: "smartflowsocial/smartflowsocial-publisher",

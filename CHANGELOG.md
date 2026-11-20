@@ -9,9 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
-Prepared as `1.0.0-rc.1` in `package.json`. The tag is not created. Notes:
-[docs/releases/v1.0.0-rc.1.md](docs/releases/v1.0.0-rc.1.md). These entries are the changes after
-`v1.0.0-beta.2`. They are not part of that tag.
+## [1.0.0-rc.1] — 2026-11-20
+
+Published prerelease. The git tag is `7b9903532637525685dcb915081cb0824b2b43f6`. This is not stable
+`1.0.0`. Notes: [docs/releases/v1.0.0-rc.1.md](docs/releases/v1.0.0-rc.1.md). These entries are the
+changes after `v1.0.0-beta.2` that are in that tag. Later commits are not inside the tag.
 
 ### Changed
 
