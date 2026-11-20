@@ -12,6 +12,7 @@ import {
   updateUserRejectChildLink,
   updateUserUnlinkChild,
 } from "~/features/user/repositories/parent-child-data.server";
+import { syncBlastrEntitlementForUser } from "~/infra/blastr/entitlement-sync.server";
 import { logWarning, logError } from "~/lib/error-logger.server";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
@@ -261,6 +262,17 @@ export async function getPendingParentRequestsForChild(childNpub: string) {
   return findPendingParentRequestsForChild(childNpub);
 }
 
+async function refreshChildBlastrEntitlement(childId: string): Promise<void> {
+  try {
+    await syncBlastrEntitlementForUser(childId);
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      context: "child Blastr entitlement sync",
+      childId,
+    });
+  }
+}
+
 /**
  * Responds to a child link request (accept or reject)
  */
@@ -283,6 +295,7 @@ export async function respondToChildRequest(
       return { ok: false, reason: "Already linked to a parent." };
     }
     await updateUserAcceptChildLink(childNpub, parentNpub, newPending);
+    await refreshChildBlastrEntitlement(child.id);
   } else {
     await updateUserRejectChildLink(childNpub, newPending);
   }
@@ -303,6 +316,7 @@ export async function unlinkParent(
   }
 
   await updateUserUnlinkChild(childNpub);
+  await refreshChildBlastrEntitlement(child.id);
   return { ok: true };
 }
 
@@ -319,5 +333,6 @@ export async function unlinkChildByParent(
     return { ok: false, reason: "Not authorized to unlink this child." };
   }
   await updateUserUnlinkChild(childNpub);
+  await refreshChildBlastrEntitlement(child.id);
   return { ok: true };
 }
