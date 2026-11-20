@@ -1,11 +1,13 @@
 # Release checklist
 
-`v1.0.0-beta.2` is the latest published GitHub prerelease. The tag is
-`5be28add1a8ef1d078e8ba9c885ca68249d0a54f`, published 2026-11-19T07:47:40Z. Do not move it. Its
-`package.json` says `1.0.0-beta.1`. `v1.0.0-beta.1` stays at
-`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Do not move that tag either.
+`v1.0.0-rc.1` is the latest published GitHub prerelease. The tag is
+`7b9903532637525685dcb915081cb0824b2b43f6`, published 2026-11-20T19:23:53Z. Do not move it. It is
+not stable `v1.0.0`. `v1.0.0-beta.2` stays at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`, published
+2026-11-19T07:47:40Z. Its `package.json` says `1.0.0-beta.1`. `v1.0.0-beta.1` stays at
+`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Do not move either beta tag.
 
-The working tree is `1.0.0-rc.1`. That tag is not created. Do not tag `v1.0.0` from this checklist.
+The working tree is `1.0.0-rc.1`. Do not tag `v1.0.0` from this checklist. `develop` can move past
+the rc.1 tag. A later commit is not inside the tag.
 
 A green CI run on `main`, or on any commit other than the candidate, is not evidence for that
 candidate. Leave a box unchecked until that command has been run on the commit you intend to tag. Do

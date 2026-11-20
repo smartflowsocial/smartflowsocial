@@ -64,34 +64,49 @@ export function validateWorkingTreeVersions(input) {
   if (candidate.tag !== `v${CANDIDATE_VERSION}`) {
     errors.push(`candidate tag must be v${CANDIDATE_VERSION}`);
   }
-  if (candidate.status !== "published-prerelease") {
-    errors.push("candidate status must be published-prerelease");
-  }
-  if (candidate.tagPublished !== true) {
-    errors.push("v1.0.0-rc.1 tagPublished must be true");
-  }
-  if (candidate.publishedAt !== PUBLISHED_RC_AT) {
-    errors.push(`candidate publishedAt must be ${PUBLISHED_RC_AT}`);
-  }
-  if (candidate.applicationReleaseSha !== PUBLISHED_RC_SHA) {
-    errors.push(`candidate applicationReleaseSha must be ${PUBLISHED_RC_SHA}`);
-  }
   const candidateApp = Array.isArray(candidate.components)
     ? candidate.components.find((item) => item?.name === "app")
     : undefined;
-  if (!candidateApp || candidateApp.releaseSha !== PUBLISHED_RC_SHA) {
-    errors.push("candidate app.releaseSha must be the published tag");
-  }
-  if (candidateApp && candidateApp.validationStatus !== "checks-passed") {
-    errors.push("candidate app validationStatus must be checks-passed");
+  if (candidate.status === "unreleased") {
+    if (candidate.tagPublished !== false) {
+      errors.push("an unreleased candidate is not a published tag");
+    }
+    if (candidate.publishedAt != null) {
+      errors.push("an unreleased candidate has no publishedAt");
+    }
+    if (candidate.applicationReleaseSha != null) {
+      errors.push(
+        "an unreleased candidate applicationReleaseSha stays null until the tag exists"
+      );
+    }
+    if (candidateApp?.releaseSha != null) {
+      errors.push("an unreleased candidate app.releaseSha stays null");
+    }
+  } else if (candidate.status === "published-prerelease") {
+    if (candidate.tagPublished !== true) {
+      errors.push("v1.0.0-rc.1 tagPublished must be true");
+    }
+    if (candidate.publishedAt !== PUBLISHED_RC_AT) {
+      errors.push(`candidate publishedAt must be ${PUBLISHED_RC_AT}`);
+    }
+    if (candidate.applicationReleaseSha !== PUBLISHED_RC_SHA) {
+      errors.push(
+        `candidate applicationReleaseSha must be ${PUBLISHED_RC_SHA}`
+      );
+    }
+    if (!candidateApp || candidateApp.releaseSha !== PUBLISHED_RC_SHA) {
+      errors.push("candidate app.releaseSha must be the published tag");
+    }
+    if (candidateApp && candidateApp.validationStatus !== "checks-passed") {
+      errors.push("candidate app validationStatus must be checks-passed");
+    }
+  } else {
+    errors.push("candidate status must be unreleased or published-prerelease");
   }
   if (candidate.productionDeployed !== false) {
     errors.push("candidate productionDeployed must be false");
   }
-  if (
-    input.rcTagSha != null &&
-    input.rcTagSha !== PUBLISHED_RC_SHA
-  ) {
+  if (input.rcTagSha != null && input.rcTagSha !== PUBLISHED_RC_SHA) {
     errors.push(`local v1.0.0-rc.1 tag must stay ${PUBLISHED_RC_SHA}`);
   }
   const names = new Set(
@@ -181,6 +196,11 @@ function main() {
     rcTagSha: gitCommit("v1.0.0-rc.1"),
     beta2TagSha: gitCommit("v1.0.0-beta.2"),
   });
+  if (candidate.status !== "published-prerelease") {
+    errors.push(
+      "this checkout must record the published v1.0.0-rc.1 tag. An unreleased record is valid only before that tag exists."
+    );
+  }
   if (errors.length > 0) {
     for (const error of errors) console.error(error);
     process.exit(1);

@@ -2,12 +2,15 @@
 
 ## Supported Versions
 
-The supported line is `develop`, which is merged to `main`. `package.json` on this branch is
-`1.0.0-rc.1`. That version is not tagged. It is not a stable `1.0.0`.
+The supported line is `develop`, which is merged to `main`. `package.json` is `1.0.0-rc.1`. That is
+not a stable `1.0.0`. `develop` can move past a published tag. `main` is the default branch and is
+not automatically the same commit as the tag.
 
-The latest published prerelease is `v1.0.0-beta.2` at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`,
-published 2026-11-19T07:47:40Z. That tag's `package.json` says `1.0.0-beta.1`. `v1.0.0-beta.1` is
-`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`.
+The latest published prerelease is
+[`v1.0.0-rc.1`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-rc.1) at
+`7b9903532637525685dcb915081cb0824b2b43f6`, published 2026-11-20T19:23:53Z. Do not move that tag.
+`v1.0.0-beta.2` remains `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. Its `package.json` says
+`1.0.0-beta.1`. `v1.0.0-beta.1` is `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`.
 
 Published prerelease tags do not receive security backports. The supported upgrade path is to pull
 `develop` and then move to the next published tag when one exists. Historical tags are unsupported.
@@ -20,14 +23,15 @@ published as GitHub releases.
 
 Security fixes land on the default branch. There is no commitment to backport fixes onto older tags.
 
-| Version                               | Supported                                             |
-| ------------------------------------- | ----------------------------------------------------- |
-| `develop` / `main`                    | Security fixes land here. `1.0.0-rc.1` is not tagged. |
-| `v1.0.0-beta.2` tag                   | Latest published snapshot. No backports.              |
-| `v1.0.0-beta.1` tag                   | Published snapshot. No backports.                     |
-| `v0.1.0-alpha.0`                      | Not supported                                         |
-| `v1.0.0` (withdrawn 14 November 2026) | Not supported                                         |
-| Anything older                        | Not supported                                         |
+| Version                               | Supported                                                 |
+| ------------------------------------- | --------------------------------------------------------- |
+| `develop` / `main`                    | Security fixes land here. Either branch can pass the tag. |
+| `v1.0.0-rc.1` tag                     | Latest published prerelease. No backports.                |
+| `v1.0.0-beta.2` tag                   | Historical prerelease. No backports.                      |
+| `v1.0.0-beta.1` tag                   | Historical prerelease. No backports.                      |
+| `v0.1.0-alpha.0`                      | Not supported                                             |
+| `v1.0.0` (withdrawn 14 November 2026) | Not supported                                             |
+| Anything older                        | Not supported                                             |
 
 ## Reporting a Vulnerability
 
