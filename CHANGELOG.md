@@ -9,8 +9,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+Prepared as `1.0.0-rc.1` in `package.json`. The tag is not created. Notes:
+[docs/releases/v1.0.0-rc.1.md](docs/releases/v1.0.0-rc.1.md). These entries are the changes after
+`v1.0.0-beta.2`. They are not part of that tag.
+
 ### Changed
 
+- `package.json` is `1.0.0-rc.1`. `v1.0.0-beta.2` stays at
+  `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`, and that tag's `package.json` still says
+  `1.0.0-beta.1`.
+- `@prisma/config` resolves `effect@3.22.1` through a scoped pnpm override. Prisma 7.10.1 still
+  declares `effect@3.20.0`. See [dependency advisories](docs/security/dependency-advisories.md).
 - A fresh install is self-hosted, including a production build. `SFS_DEPLOYMENT_MODE` is the only
   commercial selector. `self_hosted` charges 0%. `hosted` keeps Free 10%, Starter 7.5%, Creator 5%,
   and Pro, Teams, and Founder at 0%. `NODE_ENV=production` does not select hosted mode.
@@ -38,6 +47,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
   worker can try again. A negative relay acknowledgement stays `FAILED`.
 - `pnpm test:self-host-acceptance` boots the production server and worker and publishes a signed
   note to a loopback relay.
+
+## [1.0.0-beta.2] - 2026-11-19
+
+Published prerelease at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. GitHub published the release at
+2026-11-19T07:47:40Z. The tagged `package.json` says `1.0.0-beta.1`. The tagged changelog still
+lists the items below under Unreleased. The tag was not moved. Notes:
+[docs/releases/v1.0.0-beta.2.md](docs/releases/v1.0.0-beta.2.md). Production and staging SHAs were
+not read from running services.
+
+### Added
+
+- An in-process Nostr publisher. On this tag, `SELF_HOSTED=true` uses it without Cloudflare, a
+  publisher URL, or a publisher token. `NOSTR_PUBLISHER_BACKEND=http` keeps the external HTTP
+  publisher. There is no automatic failover.
+- A retryable publish failure returns the scheduled note or long-form post to `SCHEDULED`, so the
+  worker can try again. A negative relay acknowledgement stays `FAILED`.
+- `pnpm test:self-host-acceptance` boots the production server and worker and publishes a signed
+  note to a loopback relay without a Cloudflare publisher or cache worker.
+- Release validation on this tag defaults to the internal publisher. `publisher_mode=http` on that
+  tag still requires the external publisher commit and its checks. Later source rejects that mode.
 
 ## [1.0.0-beta.1] - 2026-11-18
 
@@ -107,10 +136,9 @@ Prepared locally. The tag and GitHub release are not published. Do not tag `0.1.
 
 ### Documentation
 
-- Privacy and terms replacement text names the Nostr contact and does not claim GDPR or e-commerce
-  identity compliance. Landing pull request #2 is already merged and still says Starter commission
-  is 0%. The live site stays wrong until a follow-up landing change is deployed. See
-  [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
+- The public contact is the Nostr account
+  `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`. Hosted commission is recorded
+  in [hosted service disclosures](docs/legal/hosted-service-disclosures.md).
 - The `Protect main` ruleset requires the `Clean install migrations` status check.
 
 ## [0.1.0-alpha.2] - 2026-11-16

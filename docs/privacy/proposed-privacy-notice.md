@@ -1,77 +1,73 @@
-# Proposed privacy notice
+# Privacy notice
 
-Replacement text for the landing site. The owner decided the public contact is the Nostr account
-below and that no legal name or postal address will be published. Do not add one. Do not write that
-the hosted service is GDPR-compliant. The engineering inventory is
-[data-inventory.md](./data-inventory.md).
+SmartFlowSocial is a Nostr-native publishing application. This notice explains what information the
+hosted service processes, how it is used, and what happens when you export or delete your account.
+For questions, contact SmartFlowSocial through its official Nostr account
+`npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`
+(<https://njump.me/npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0>). Self-hosted
+installations are operated by their respective administrators.
 
-This file is not the live page. The landing repository was not updated from the application
-workspace.
+The engineering inventory is [data-inventory.md](./data-inventory.md). The public page is in
+`smartflowsocial/smartflowsocial-landing`.
 
-The current marketing page says the service stores the public key, signed posts, uploaded media,
-queue settings, and billing details. That is true and incomplete. It does not mention draft text,
-draft version history, encrypted wallet connections, referral records, or the processors above.
+## Signing keys
 
-## Draft text
+Sign-in uses a NIP-07 browser extension or a NIP-46 remote signer. The server does not ask for a
+private key and does not store the Nostr signing key. You sign each post when you schedule it. The
+server stores that signed event and publishes it at the scheduled time. It does not sign your posts
+with your key.
 
-**Who we are.** SmartFlowSocial communicates publicly under its Nostr identity
-npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0
-(https://njump.me/npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0). That account is
-a public contact. It is not a registered company, a legal name, or a postal address. Publishing it
-does not by itself identify a data controller under GDPR Article 13 or a service provider under
-Article 5 of Directive 2000/31/EC. Where those duties apply to the commercial hosted service, they
-are not met by this notice.
+`NOSTR_NSEC`, when the operator sets it, signs operator messages such as feedback replies and, when
+delete events are turned on, kind 5 deletion events. That key is not the account key.
 
-**Signing keys.** SmartFlowSocial does not store your Nostr signing key. You sign with a browser
-extension or a remote signer on a device you control. We store the public key and the events you
-have already signed. We do not sign posts for you.
+## What the hosted service stores
 
-**Wallet connections.** Connecting a wallet is optional. If you connect an NWC wallet for renewals
-or creator payouts, we store that connection encrypted. It is a payment credential. The wallet
-provider enforces the permissions and spending limit you set. You can revoke the connection in the
-wallet. Referral payouts from the operator, when that program is running, are paid from the
-operator's wallet to an invoice or Lightning address you provide.
+- Your public key.
+- Drafts and older draft versions.
+- Signed posts, queues, and schedule settings.
+- A signed-in session cookie.
+- Media you upload, in object storage or, when that path is used, Blossom.
+- Subscription and payment records when you pay.
+- An optional encrypted NWC wallet connection. It is a payment credential. You can revoke it in the
+  wallet.
+- Referral and campaign payout records when those features are used: public key, amount, Lightning
+  address, invoice, and payment hash. A payout whose result was not confirmed stays blocked until it
+  is reconciled.
+- The caller IP for the public-stats endpoint, in Redis for about 60 seconds. That address is not
+  written to the account database.
 
-**What we store.** Draft text and older draft versions, media you upload, schedules and queues,
-billing and subscription records, referral balances, and the operational logs needed to publish and
-to debug failed jobs.
+The account export does not include the encrypted wallet connection or Lightning preimages.
 
-**How long.** [State the retention period for drafts, media, billing, and logs. The software does
-not delete most of these on a timer. Publish-relay acknowledgements are deleted after 30 days.
-Payment facts kept after account deletion, and referral payout audit rows, are deleted after 365
-days. That is the software's current setting, not a statutory period. Events already sent to Nostr
-relays stay on those relays.]
+## Who else handles it
 
-**Who else processes it.** [List the database host, object storage, publisher, Blossom if used,
-error tracking if used, and the relays. Say which country they operate in if you know.]
+The hosted service uses its own database, Redis, and object storage. Signed events are published
+from the application. Profile and thread reads run in the same application and can still ask public
+Nostr relays and indexers. The relays for a post are chosen for that post. Blossom, Blastr, BTCPay,
+Sentry, and web push are used only when those features are turned on. A self-hosted install uses the
+operator's providers and does not include the hosted Blossom or Blastr services. Running this
+application does not operate a full Nostr indexer.
 
-**Your rights.** If the controller is established in the EU or UK, or offers the service to people
-there, you can ask for access, correction, deletion, restriction, and a copy of the data the
-controller holds. You can complain to a supervisory authority. A signed-in user can download a JSON
-export at `/dashboard/account/export` and can delete the account from Settings. Deletion removes the
-account row, drafts, schedules, sessions, and the encrypted wallet connection. It keeps payment
-amount, status, purpose, and payment hash in `RetainedFinancialRecord`, without the public key or
-the invoice, for 365 days. It removes the public key from referral records. Pending and failed
-commissions with no payout in progress are removed. Paid commissions, and any commission already
-submitted for payment, stay without the public key until the retention purge. Payout audit rows keep
-the amount and payment hash without the public key for 365 days. Deleting the account does not
-delete events that relays already accepted. When the operator enables delete events, those events
-are signed by the operator key in `NOSTR_NSEC`, which is not the user's key. Unshared objects in
-this install's bucket are queued and deleted, including when storage is briefly unavailable. The
-queue does not depend on the account row remaining. Blossom blobs and files on other servers may
-remain, and this service does not delete blobs on a Blossom server it does not operate.
+## How long
 
-**Contact.** The public contact is the Nostr account above. There is no separate support email or
-privacy officer published with this service.
+Publish acknowledgements are deleted after 30 days. From Settings you can download a JSON export and
+delete the account. Deletion removes drafts, schedules, sessions, and the encrypted wallet
+connection. It keeps payment amount, status, purpose, and payment hash without your public key for
+365 days. It removes your public key from referral records. Pending and failed commissions with no
+payout in progress are removed. Paid commissions, and any commission already submitted for payment,
+stay without your public key until that retention purge. Payout audit records keep the amount and
+payment hash without your public key for 365 days. Those periods are the software's current
+settings.
 
-## What changed relative to the 8 November 2026 page
+Deleting the account does not remove events from relays. Deleting a post in the app removes that
+row. Relays that already accepted the event keep their copy. Unshared files in the install's own
+bucket are queued for deletion and retried if storage is unavailable. The queue does not need the
+account row to remain. Blossom blobs and copies on servers this install does not operate may remain.
 
-- Say explicitly that signing keys are not stored, and that optional NWC connections are stored
-  encrypted.
-- Add drafts, draft snapshots, schedules, and referral records.
-- Separate the operator wallet from the user's wallet.
-- Replace the single "billing details" sentence with the processors the hosted service actually
-  uses.
-- Add retention and the limits of deletion once an event is on a relay.
-- The owner decided not to publish a legal name or address. Do not invent one, and do not describe
-  the Nostr account as a company.
+## This website
+
+The marketing site uses Cloudflare Web Analytics. That measurement does not use cookies and is not
+used to advertise to you on other sites.
+
+## Contact
+
+Privacy questions go to the Nostr account above.

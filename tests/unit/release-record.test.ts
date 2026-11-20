@@ -121,6 +121,19 @@ function componentAt(
 }
 
 describe("published beta manifest", () => {
+  it("accepts a later package.json version beside the historical manifest", () => {
+    expect(
+      validatePublishedBetaManifest(
+        publishedManifest(),
+        { version: "1.0.0-rc.1", private: true },
+        {
+          headSha: HEAD,
+          tagSha: PUBLISHED_BETA_SHA,
+        }
+      )
+    ).toEqual([]);
+  });
+
   it("accepts the published tag when this commit is a later correction", () => {
     expect(
       validatePublishedBetaManifest(publishedManifest(), packageJson, {
@@ -187,7 +200,7 @@ describe("future release records", () => {
     expect(
       validateReleaseRecord(record, {
         headSha: HEAD,
-        required: ["app", "publisher"],
+        required: ["app"],
       })
     ).toEqual([]);
     expect(record.applicationReleaseSha).toBeNull();
@@ -196,12 +209,12 @@ describe("future release records", () => {
 
   it("refuses to mark validation passed when the component SHA is unknown", () => {
     const record = emptyReleaseRecord("1.0.0-beta.2");
-    const publisher = record.components[1];
-    if (!publisher) throw new Error("missing publisher");
-    publisher.validationStatus = "checks-passed";
+    const companion = record.components[1];
+    if (!companion) throw new Error("missing companion");
+    companion.validationStatus = "checks-passed";
     const errors = validateReleaseRecord(record, {
       headSha: HEAD,
-      required: ["app", "publisher"],
+      required: ["app"],
     });
     expect(errors.join("\n")).toMatch(
       /cannot be validated without a releaseSha/

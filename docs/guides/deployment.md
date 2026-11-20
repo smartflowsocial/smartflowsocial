@@ -755,8 +755,8 @@ Configure your monitoring service to check:
 - **Timeout**: 10 seconds
 - **Expected Response**: `200 OK` with body `OK`
 
-`curl -H 'accept: application/json'` returns `publisherBackend` (`http` or `internal`) with the
-deployment identity. Relay outcomes are
+`curl -H 'accept: application/json'` returns `publisherBackend: "internal"` and
+`nostrReadBackend: "internal"` with the deployment identity. Relay outcomes are
 `nostr_publisher_relay_total{backend,result,failure_category}` and
 `nostr_publisher_relay_latency_ms` on the metrics endpoint. Open sockets are
 `nostr_publisher_open_sockets`.

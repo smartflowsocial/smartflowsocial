@@ -4,10 +4,8 @@ Use this before publishing a release. It does not create a tag, edit a GitHub Re
 
 1. Push the candidate commit and wait until its CI, E2E, and secret-scan workflows finish. A green
    run on a different commit does not count. A green run is not a deployment.
-2. For a release that publishes from this process, leave `publisher_mode` at `internal` and leave
-   `publisher_sha` empty. Set `publisher_mode` to `http` and `publisher_sha` to the full publisher
-   commit only when that external publisher is part of the release. A blank SHA is not a pass in
-   `http` mode.
+2. Leave `publisher_mode` at `internal` and leave `publisher_sha` empty. Any other mode, or a
+   publisher SHA, fails the check. The application publishes from this repository.
 3. Run **Release validation** with `workflow_dispatch` on the candidate. Set `candidate_sha` to the
    full 40-character application commit and `owner_approval` to `approve-release`.
 4. In the GitHub environment `release-approval`, add required reviewers. Until that protection
@@ -25,14 +23,12 @@ that commit:
 - Docker image boots
 - E2E Smoke
 - Gitleaks
+- E2E Core
+- Self-host Compose
 
 `Internal Nostr paths` runs the loopback relay publication and the Nostr read cache tests. A
-pending, failed, skipped, or missing required check fails the run. E2E Core is optional and is not
-in that list.
-
-When `publisher_mode` is `http`, the publisher commit must have successful Lint & Type Check, Unit
-Tests, Integration Tests, Property-Based Tests, Chaos Tests, Security Tests, Worker execution, Test
-Summary, and Gitleaks. `internal` does not read those checks.
+pending, failed, skipped, or missing required check fails the run. The workflow does not read checks
+from the historical publisher repository.
 
 The same workflow then builds the candidate and runs the clean-room self-host acceptance test. That
 job is not a check that already exists on the commit. CI success does not skip it, and it does not

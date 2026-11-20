@@ -3,6 +3,8 @@
  *
  * The tagged commit still contains the pre-publication manifest. This script
  * checks the copy on the branch where it is run. It does not move the tag.
+ * package.json may move on for a later candidate. This check does not freeze it
+ * at 1.0.0-beta.1.
  *
  *   node scripts/release-manifest.mjs
  *   node scripts/release-manifest.mjs --online
@@ -29,12 +31,6 @@ export function validatePublishedBetaManifest(manifest, packageJson, context) {
   });
   if (manifest?.version !== "1.0.0-beta.1") {
     errors.push(`manifest version is ${String(manifest?.version)}`);
-  }
-  if (packageJson?.version !== "1.0.0-beta.1") {
-    errors.push(`package.json version is ${String(packageJson?.version)}`);
-  }
-  if (packageJson?.version !== manifest?.version) {
-    errors.push("package.json version does not match the manifest");
   }
   if (packageJson?.private !== true) {
     errors.push('package.json "private" must stay true');

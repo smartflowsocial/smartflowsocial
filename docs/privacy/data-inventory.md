@@ -1,15 +1,11 @@
 # Data inventory
 
-This is an engineering inventory of what the application stores and where it goes. It is not a
-privacy notice and it does not name a legal controller. The owner decided that the public contact is
-the Nostr account `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0` and that no
-legal name or postal address will be published. That decision does not make this inventory a GDPR
-notice.
+This is an engineering inventory of what the application stores and where it goes. The public notice
+is [proposed-privacy-notice.md](./proposed-privacy-notice.md). Questions go to the Nostr account
+`npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`.
 
 Reviewed against the Prisma schema, the account export and deletion routes, and the campaign fee
-code on 16 November 2026. The live pages at https://smartflow.social/privacy,
-https://smartflow.social/terms, and https://smartflow.social/pricing were read the same day. This
-repository does not contain that website, so those pages were not changed here.
+code on 16 November 2026. The public pages live in `smartflowsocial/smartflowsocial-landing`.
 
 ## What is not stored
 
@@ -30,7 +26,7 @@ use a personal identity key.
 | Profile fields the user saves            | Postgres                                                 | Display name and related settings                      |
 | Draft post content and version snapshots | Postgres                                                 | Editing and restore                                    |
 | Scheduled posts, queues, calendars       | Postgres                                                 | Publish later                                          |
-| Signed Nostr events ready to publish     | Postgres, then relays via the publisher                  | The published event is public on Nostr once it is sent |
+| Signed Nostr events ready to publish     | Postgres, then relays from this process                  | The published event is public on Nostr once it is sent |
 | Media files                              | S3-compatible bucket, and Blossom when that path is used | Attachments                                            |
 | Engagement and analytics snapshots       | Postgres                                                 | In-app stats for paid profiles                         |
 
@@ -139,18 +135,11 @@ wallet connection, session secrets, and Lightning preimages. Deletion is
 `POST /dashboard/account/delete` with CSRF, the phrase `delete my account`, and the relay
 acknowledgement.
 
-A GDPR Article 13 notice has to say who the controller is, the purposes, the legal bases, the
-recipients, the retention periods, and the rights to access, rectify, erase, restrict, and complain
-to a supervisory authority. The owner chose not to publish a legal name or address. The Nostr
-contact does not fill that gap. Article 5 of Directive 2000/31/EC can separately require a service
-provider's identity. Those duties, where they apply to the commercial hosted service, are an
-owner-accepted gap. They are not marked compliant.
-
 This application does not embed a Cloudflare Web Analytics beacon. If the host or the marketing site
 sits behind Cloudflare, that account can still see connection metadata. Operational logs may include
 IP addresses. `PUBLIC_STATS_ENABLED` (on unless set to `false`) keeps a caller IP in Redis for about
 60 seconds and does not write it to Postgres.
 
 Hosted and self-hosted commission wording is in
-[hosted service disclosures](../legal/hosted-service-disclosures.md). The marketing site is a
-separate repository and was not updated by the application change that corrected the fee code.
+[hosted service disclosures](../legal/hosted-service-disclosures.md). The public privacy page is in
+the landing repository.

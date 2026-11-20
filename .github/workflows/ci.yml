@@ -91,8 +91,11 @@ jobs:
       - name: Check the published release manifest
         run: node scripts/release-manifest.mjs
 
-      - name: Check the unpublished beta.2 release record
+      - name: Check the published beta.2 release record
         run: node scripts/release-record.mjs --check docs/releases/v1.0.0-beta.2.manifest.json
+
+      - name: Check the unreleased release candidate
+        run: node scripts/check-candidate-version.mjs
 
       - name: ESLint
         run: pnpm lint:ci
