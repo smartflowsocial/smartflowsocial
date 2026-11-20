@@ -1,9 +1,11 @@
 # Release checklist
 
-`v1.0.0-beta.1` is already a published GitHub prerelease. The tag is
-`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Do not move the tag. Do not create a second release to
-correct the description. Replace the description of the existing release with
-[v1.0.0-beta.1.github-release.md](./v1.0.0-beta.1.github-release.md).
+`v1.0.0-beta.2` is the latest published GitHub prerelease. The tag is
+`5be28add1a8ef1d078e8ba9c885ca68249d0a54f`, published 2026-11-19T07:47:40Z. Do not move it. Its
+`package.json` says `1.0.0-beta.1`. `v1.0.0-beta.1` stays at
+`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Do not move that tag either.
+
+The working tree is `1.0.0-rc.1`. That tag is not created. Do not tag `v1.0.0` from this checklist.
 
 A green CI run on `main`, or on any commit other than the candidate, is not evidence for that
 candidate. Leave a box unchecked until that command has been run on the commit you intend to tag. Do
@@ -45,20 +47,12 @@ Required on the application SHA:
 - Production CSP smoke, executed by the release workflow against that SHA
 - Clean-room self-host, executed by the release workflow against that SHA
 
-`publisher_mode=internal` does not take a publisher SHA. Required on the publisher SHA only when
-`publisher_mode=http`:
+Publishing is in-process. `publisher_mode` must be `internal` and `publisher_sha` must be empty.
+`scripts/release-checks.mjs` also requires `E2E Core` and `Self-host Compose` on the candidate SHA.
+The `Protect main` ruleset does not currently require those two names, or `Internal Nostr paths`, or
+`Docker image boots`. Do not treat a ruleset gap as a passed check.
 
-- Lint & Type Check
-- Unit Tests
-- Integration Tests
-- Property-Based Tests
-- Chaos Tests
-- Security Tests
-- Worker execution
-- Test Summary
-- Gitleaks
-
-E2E Core stays optional. A skipped optional job does not satisfy a required name.
+A skipped required job does not satisfy its name.
 
 ## Automated
 
@@ -67,8 +61,9 @@ E2E Core stays optional. A skipped optional job does not satisfy a required name
 - [ ] `pnpm lint:ci`
 - [ ] `pnpm format:check`
 - [ ] `pnpm typecheck`
-- [ ] `node scripts/check-release-version.mjs --tag v<this-version>` matches `package.json`. Do not
-      move `v1.0.0-beta.2`.
+- [ ] Before `git tag`, run `node scripts/prepare-release-tag.mjs --tag v<this-version>`. It exits
+      if `package.json` does not match. It prints the tag command and does not create the tag. Do
+      not move `v1.0.0-beta.2`. The tag workflow rejects a mismatch only after the tag exists.
 - [ ] `pnpm test:unit`
 - [ ] `pnpm test:security`
 - [ ] `pnpm test` (integration, property, and performance included)
@@ -102,7 +97,8 @@ E2E Core stays optional. A skipped optional job does not satisfy a required name
       [hosted service disclosures](../legal/hosted-service-disclosures.md)
 - [ ] Those landing pages are deployed by the operator and then read on the live site
 - [ ] The public contact is `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`
-- [ ] The pages do not claim GDPR or commercial-identity compliance
+- [ ] The privacy page states what is stored, how signing keys are handled, export and deletion, and
+      the Nostr contact
 - [ ] Self-host docs say Node.js 26.13.1 or newer
 
 ## Human

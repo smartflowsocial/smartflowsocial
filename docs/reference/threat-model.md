@@ -386,9 +386,8 @@ connection. It does not remove events relays already accepted, Blossom blobs on 
 the payment amount, status, purpose, and payment hash kept in `RetainedFinancialRecord` for 365
 days. That copy has no public key, invoice, or preimage.
 
-This section does not say the hosted service complies with GDPR. The public contact is a Nostr
-account, not a named controller. See
-[hosted service disclosures](../legal/hosted-service-disclosures.md).
+The public contact is `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`. See
+[the privacy notice](../privacy/proposed-privacy-notice.md).
 
 ### Nostr Protocol
 

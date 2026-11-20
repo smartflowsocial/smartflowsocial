@@ -19,6 +19,10 @@ allowBuilds:
   unrs-resolver: false
 
 overrides:
+  # @prisma/config@7.10.1 pins effect@3.20.0. GHSA-7589-6fvf-x4pw is fixed in
+  # 3.22.1. No Prisma 7 release depends on that release. Prisma 8 is a
+  # release candidate, so this stays a scoped override inside effect 3.x.
+  "@prisma/config>effect": 3.22.1
   "esbuild@<=0.24.2": 0.25.12
   "@vanilla-extract/integration>esbuild": 0.25.12
   "esbuild@>=0.27.3 <0.28.1": 0.28.2

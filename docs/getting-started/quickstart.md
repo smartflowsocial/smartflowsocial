@@ -6,8 +6,8 @@
 
 This is the local development setup. It is not a five-minute production install. A useful local
 scheduler needs Node.js, pnpm, PostgreSQL, and Redis. Publishing and Nostr reads run in this
-process. An HTTP publisher and an HTTP cache proxy are optional legacy adapters. Uploads need
-S3-compatible storage. Production self-hosting is covered in the
+process. This application does not use an external HTTP publisher or a cache worker as a backend.
+Uploads need S3-compatible storage. Production self-hosting is covered in the
 [deployment guide](../guides/deployment.md).
 
 ---

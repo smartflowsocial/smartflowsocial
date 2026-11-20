@@ -185,7 +185,7 @@ redis-cli -u $REDIS_URL ping
 ```bash
 # Check all required variables are set
 node -e "
-const required = ['DATABASE_URL', 'SESSION_SECRET', 'NOSTR_PUBLISHER_URL', 'REDIS_URL'];
+const required = ['DATABASE_URL', 'SESSION_SECRET', 'REDIS_URL'];
 const missing = required.filter(key => !process.env[key]);
 if (missing.length > 0) {
   console.error('Missing:', missing);

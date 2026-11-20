@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0-rc.1",
+  "status": "unreleased",
+  "tag": "v1.0.0-rc.1",
+  "tagPublished": false,
+  "publishedAt": null,
+  "applicationReleaseSha": null,
+  "productionDeployed": false,
+  "shaPolicy": "This record prepares v1.0.0-rc.1. It is not a published tag and it is not v1.0.0. Leave applicationReleaseSha null until the tag v1.0.0-rc.1 exists, then set it in a later commit. Do not tag the commit that contains this file to make the hash match. productionSha and stagingSha stay null until a running service reports them. A green GitHub Actions run is not a deployment SHA.",
+  "components": [
+    {
+      "name": "app",
+      "repository": "smartflowsocial/smartflowsocial",
+      "role": "required",
+      "branch": "develop",
+      "releaseSha": null,
+      "releaseShaStatus": "unknown",
+      "validationStatus": "not-validated",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
+    },
+    {
+      "name": "blossom",
+      "repository": "smartflowsocial/smartflowsocial-blossom",
+      "role": "optional",
+      "branch": "main",
+      "releaseSha": null,
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
+    },
+    {
+      "name": "blastr",
+      "repository": "smartflowsocial/smartflowsocial-blastr",
+      "role": "optional",
+      "branch": "main",
+      "releaseSha": null,
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
+    },
+    {
+      "name": "landing",
+      "repository": "smartflowsocial/smartflowsocial-landing",
+      "role": "optional",
+      "branch": "main",
+      "releaseSha": null,
+      "releaseShaStatus": "unknown",
+      "validationStatus": "unknown",
+      "productionSha": null,
+      "productionShaStatus": "unknown",
+      "stagingSha": null,
+      "stagingShaStatus": "unknown"
+    }
+  ]
+}

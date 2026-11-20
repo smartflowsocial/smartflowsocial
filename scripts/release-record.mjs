@@ -253,19 +253,14 @@ export function emptyReleaseRecord(version) {
     components: [
       component("app", "smartflowsocial/smartflowsocial", "required"),
       component(
-        "publisher",
-        "smartflowsocial/smartflowsocial-publisher",
-        "optional"
-      ),
-      component(
         "blossom",
         "smartflowsocial/smartflowsocial-blossom",
         "optional"
       ),
       component("blastr", "smartflowsocial/smartflowsocial-blastr", "optional"),
       component(
-        "cache-worker",
-        "smartflowsocial/smartflowsocial-cache-worker",
+        "landing",
+        "smartflowsocial/smartflowsocial-landing",
         "optional"
       ),
     ],
@@ -287,7 +282,7 @@ function main() {
     const record = emptyReleaseRecord(version);
     const errors = validateReleaseRecord(record, {
       headSha: gitCommit("HEAD"),
-      required: ["app", "publisher"],
+      required: ["app"],
     });
     if (errors.length > 0) {
       printErrors(errors);
@@ -311,7 +306,7 @@ function main() {
   const errors = validateReleaseRecord(record, {
     headSha: gitCommit("HEAD"),
     tagSha: record.tag ? gitCommit(record.tag) : null,
-    required: ["app", "publisher"],
+    required: ["app"],
   });
   if (errors.length > 0) {
     printErrors(errors);

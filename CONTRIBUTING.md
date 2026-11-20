@@ -35,17 +35,27 @@ efficient, and organized codebase.
    git remote add upstream https://github.com/smartflowsocial/smartflowsocial
    ```
 
-Companion repositories, all Unlicense, all optional except the publisher when you want posts to
-reach relays:
+Companion repositories. Publishing and Nostr reads are part of this application. These are not
+backends you configure:
 
-| Piece        | Repository                                                      |
-| ------------ | --------------------------------------------------------------- |
-| Publisher    | https://github.com/smartflowsocial/smartflowsocial-publisher    |
-| Blastr       | https://github.com/smartflowsocial/smartflowsocial-blastr       |
-| Blossom      | https://github.com/smartflowsocial/smartflowsocial-blossom      |
-| Cache worker | https://github.com/smartflowsocial/smartflowsocial-cache-worker |
+| Piece   | Repository                                                 |
+| ------- | ---------------------------------------------------------- |
+| Blastr  | https://github.com/smartflowsocial/smartflowsocial-blastr  |
+| Blossom | https://github.com/smartflowsocial/smartflowsocial-blossom |
 
-NostrMash is separate infrastructure. The scheduler does not require it.
+NostrMash maintains standalone Nostr developer utilities. They can be used independently of
+NostrMash Core, and this application does not require them:
+
+| Utility               | Repository                                         |
+| --------------------- | -------------------------------------------------- |
+| Nostr Publish Gateway | https://github.com/nostrmash/nostr-publish-gateway |
+| Nostr Read Gateway    | https://github.com/nostrmash/nostr-read-gateway    |
+
+The older `smartflowsocial-publisher` and `smartflowsocial-cache-worker` repositories stay in place
+as historical references. They are not transfers of those new repositories, and this application
+does not call them.
+
+NostrMash Core is separate infrastructure. The scheduler does not require it.
 
 Issues labeled `good first issue` are the place to start. If that label is empty, documentation
 corrections, fixture-only tests, and typo fixes in `docs/` are safe first changes. Do not open a

@@ -1,8 +1,9 @@
 # Companion repository handoff
 
-Reviewed again on 18 November 2026. The earlier patches in [companion-patches](./companion-patches/)
-are historical. The work they described is on each repository's default branch. Nothing in this
-review was deployed, and no production SHA was read from a running service.
+Reviewed again on 18 November 2026. The earlier patches now live in
+[docs/archive/security/companion-patches](../archive/security/companion-patches/) because they
+describe the retired external Workers. The work they described is on each repository's default
+branch. Nothing in this review was deployed, and no production SHA was read from a running service.
 
 | Repository   | On the default branch                                                                                                                                                                                                                        | Still not verified                                                                                        |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
