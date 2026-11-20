@@ -67,8 +67,9 @@ E2E Core stays optional. A skipped optional job does not satisfy a required name
 - [ ] `pnpm lint:ci`
 - [ ] `pnpm format:check`
 - [ ] `pnpm typecheck`
-- [ ] `node scripts/check-release-version.mjs --tag v<this-version>` matches `package.json`. Do not
-      move `v1.0.0-beta.2`.
+- [ ] Before `git tag`, run `node scripts/prepare-release-tag.mjs --tag v<this-version>`. It exits
+      if `package.json` does not match. It prints the tag command and does not create the tag. Do
+      not move `v1.0.0-beta.2`. The tag workflow rejects a mismatch only after the tag exists.
 - [ ] `pnpm test:unit`
 - [ ] `pnpm test:security`
 - [ ] `pnpm test` (integration, property, and performance included)

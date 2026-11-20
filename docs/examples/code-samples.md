@@ -414,19 +414,8 @@ export async function publishPost(postId: string) {
     throw new Error("Post not signed");
   }
 
-  // Send to HTTP Nostr Publisher
-  const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      event: post.signedEvent,
-      relays: post.relays || [],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to publish");
-  }
+  // The internal publisher delivers post.signedEvent to the post's relays.
+  // There is no NOSTR_PUBLISHER_URL. See docs/operations/internal-nostr-publisher.md.
 
   // Update post status using model (write)
   await updatePost({
@@ -661,15 +650,13 @@ import { Worker, type Job } from "bullmq";
 import { getQueueInstance, redis } from "~/infra/queue";
 import type { PostJobData } from "~/infra/queue";
 import { updatePostStatus } from "~/features/posts/server";
-import { fetchWithRetry } from "~/lib/fetch.server";
-import { env } from "~/lib/env.server";
 
 const scheduledPostsQueue = getQueueInstance("scheduled-posts");
 
 export const scheduledPostsWorker = new Worker<PostJobData>(
   "scheduled-posts",
   async (job: Job<PostJobData>) => {
-    const { postId, userId, signedEvent } = job.data;
+    const { postId, userId } = job.data;
 
     try {
       // Idempotency check: verify post exists and is not already posted
@@ -683,16 +670,8 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
         return { success: true, skipped: true };
       }
 
-      // Publish to Nostr via HTTP Publisher
-      const response = await fetchWithRetry(`${env.NOSTR_PUBLISHER_URL}/publish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: signedEvent }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to publish: ${response.statusText}`);
-      }
+      // The worker publishes signedEvent with the in-process publisher.
+      // There is no NOSTR_PUBLISHER_URL. A failed relay acknowledgement stays on the post row.
 
       // Update post status to posted
       await updatePostStatus(postId, {

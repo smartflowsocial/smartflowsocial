@@ -661,12 +661,11 @@ See [Queue System](../guides/operations.md#queue-system) for more details.
 
 **Solutions:**
 
-1. **Check Nostr Publisher:**
+1. **Check the in-process publisher:**
 
-   ```bash
-   # Test publisher endpoint
-   curl -X POST $NOSTR_PUBLISHER_URL/health
-   ```
+   Publishing runs in this application. There is no publisher URL to curl. Read the worker log for
+   the scheduled post, then run `pnpm test:relay-publish` against a relay you control. See
+   [Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 2. **Check User Relays:**
 
@@ -706,13 +705,8 @@ See [Queue System](../guides/operations.md#queue-system) for more details.
    # Unset uses the public Primal sockets. A custom list is wss:// URLs.
    ```
 
-2. **Test Relay Connection:**
-   ```typescript
-   // Test WebSocket connection
-   const ws = new WebSocket(process.env.PRIMAL_CACHING_URL!);
-   ws.on("open", () => console.log("Connected"));
-   ws.on("error", (err) => console.error("Error:", err));
-   ```
+   `PRIMAL_CACHING_URL` is not a setting. A process that still has it set refuses to boot. The
+   reader is in this process. See [Internal Nostr read cache](../operations/internal-nostr-read.md).
 
 ---
 
@@ -878,12 +872,10 @@ pnpm exec prisma studio
 # Check post status, scheduled time
 ```
 
-4. **Check Nostr Publisher:**
+4. **Check the in-process publisher:**
 
-```bash
-# Test publisher endpoint
-curl $NOSTR_PUBLISHER_URL/health
-```
+Publishing runs in this application. Read the worker log, then use `pnpm test:relay-publish` with a
+relay you control. There is no `NOSTR_PUBLISHER_URL`.
 
 ### Authentication Issues
 

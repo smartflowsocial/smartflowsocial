@@ -452,18 +452,9 @@ const signedEvent = await signLongFormEvent({
 
 ### Server-Side Publishing
 
-Signed events are sent to HTTP Nostr Publisher:
-
-```typescript
-const response = await fetch(process.env.NOSTR_PUBLISHER_URL!, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    relays: user.userRelays,
-    event: signedEvent,
-  }),
-});
-```
+The signed event stays in this process. The internal publisher opens the user's relays and waits for
+each relay acknowledgement. There is no `NOSTR_PUBLISHER_URL`. See
+[Internal Nostr publisher](../operations/internal-nostr-publisher.md).
 
 ### Rescheduling
 

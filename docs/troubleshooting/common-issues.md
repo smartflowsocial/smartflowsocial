@@ -436,14 +436,10 @@ curl -fsS http://localhost:3011/metrics > /dev/null && echo "worker is up"
 - Verify scheduled time has passed
 - Check post in database
 
-3. **Check Nostr Publisher:**
+3. **Check the in-process publisher:**
 
-```bash
-# Test publisher endpoint
-curl $NOSTR_PUBLISHER_URL/health
-
-# Verify NOSTR_PUBLISHER_URL is correct
-```
+Publishing runs in this application. Read the worker log for the post id. `pnpm test:relay-publish`
+checks delivery to a relay on this machine. There is no publisher URL to configure.
 
 4. **Check Redis queue:**
 

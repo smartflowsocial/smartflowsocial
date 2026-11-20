@@ -107,8 +107,10 @@ action. The procedure is in [NostrMash utility migration](./nostrmash-utility-mi
 
 - Confirm nothing else calls the Worker's `/publish`, `/batch`, `/profile`, `/health`, or SSE
   routes.
-- The standalone repository can move to NostrMash as an independent utility. Do not archive it as
-  part of this application change.
+- The maintained utility is a new repository,
+  [nostrmash/nostr-publish-gateway](https://github.com/nostrmash/nostr-publish-gateway). It is not a
+  transfer of `smartflowsocial-publisher`, and this application does not call it. Do not archive the
+  old repository as part of this application change.
 - The Worker's global event-id replay is not part of this publisher. Success is stored per relay.
 
 ## Code provenance

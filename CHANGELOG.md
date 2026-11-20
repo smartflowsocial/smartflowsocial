@@ -25,6 +25,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 - Full Cypress E2E Core runs on pull requests and pushes. Hydration errors fail that run.
 - A release tag must match `package.json`. `v1.0.0-beta.2` remains the historical exception.
 - Release validation no longer accepts an external publisher commit.
+- Current docs no longer describe the external HTTP publisher or cache worker as optional backends.
+  Historical smoke notes and companion patches are under `docs/archive/`. A release tag is checked
+  against `package.json` before the tag command is printed. `node scripts/prepare-release-tag.mjs`
+  does not create the tag.
 
 ### Added
 

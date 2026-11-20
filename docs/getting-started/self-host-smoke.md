@@ -8,14 +8,14 @@ It does not use the hosted service, a paid account, or a production relay.
 
 ## What you are starting
 
-| Piece                                    | Required for the scheduler?     | How it starts                                                          |
-| ---------------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
-| This app and its worker                  | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.           |
-| PostgreSQL and Redis                     | Yes                             | `pnpm docker`                                                          |
-| Nostr publisher                          | Yes, and it is part of this app | It runs in this process. No publisher URL.                             |
-| S3-compatible storage                    | Only for uploads                | Environment variables in `example.env`                                 |
-| Blossom, Blastr, cache worker, NostrMash | No                              | Leave their variables empty. Reads use the in-process reader.          |
-| Lightning, NWC, referral payouts         | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed. |
+| Piece                            | Required for the scheduler?     | How it starts                                                          |
+| -------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| This app and its worker          | Yes                             | `pnpm dev` starts both. Do not also run `pnpm worker:local`.           |
+| PostgreSQL and Redis             | Yes                             | `pnpm docker`                                                          |
+| Nostr publisher                  | Yes, and it is part of this app | It runs in this process. No publisher URL.                             |
+| S3-compatible storage            | Only for uploads                | Environment variables in `example.env`                                 |
+| Blossom, Blastr, NostrMash       | No                              | Leave their variables empty. Reads use the in-process reader.          |
+| Lightning, NWC, referral payouts | No                              | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed. |
 
 A clean install publishes signed events from this process. It does not need Cloudflare, Wrangler, a
 publisher URL, or a publisher token. `pnpm smoke:publish` and `pnpm test:relay-publish` use the
