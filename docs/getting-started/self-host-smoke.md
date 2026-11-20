@@ -136,8 +136,10 @@ it does not mean a relay accepted an event. Relay results are the `nostr_publish
 `node scripts/self-host-clean-room.mjs` checks this checkout's Node and pnpm against `package.json`.
 It does not clone a tag. `--migrate` runs only when both URLs are loopback.
 
-The published tag is `v1.0.0-beta.1` at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. Check that
-commit out explicitly. `main` is newer and is not that release.
+The published tag is `v1.0.0-beta.2` at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. Check that
+commit out explicitly and follow the README in the tag. That tag still documents `SELF_HOSTED=true`
+and optional HTTP adapters. This file describes the current source, which is ahead of the tag and
+uses `SFS_DEPLOYMENT_MODE`. `main` can be behind `develop`. Neither branch tip is that release.
 
 ## What this does not prove
 

@@ -2,13 +2,15 @@
 
 ## Supported Versions
 
-The supported line is the default branch. `package.json` is `1.0.0-beta.1`. The git tag
-`v1.0.0-beta.1` is a published prerelease at `9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`. It is not a
-stable `1.0.0`.
+The supported line is `develop`, which is merged to `main`. `package.json` on this branch is
+`1.0.0-rc.1`. That version is not tagged. It is not a stable `1.0.0`.
 
-Published prerelease tags, including `v1.0.0-beta.1` and any later prerelease, do not receive
-security backports. The supported upgrade path is to pull the default branch and then move to the
-next published tag when one exists. Historical tags are unsupported.
+The latest published prerelease is `v1.0.0-beta.2` at `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`,
+published 2026-11-19T07:47:40Z. That tag's `package.json` says `1.0.0-beta.1`. `v1.0.0-beta.1` is
+`9b1e08cf9a8cf381b640d26c26277e2b0c5ad169`.
+
+Published prerelease tags do not receive security backports. The supported upgrade path is to pull
+`develop` and then move to the next published tag when one exists. Historical tags are unsupported.
 
 `v0.1.0-alpha.0` was published from an earlier repository, and so was a `v1.0.0` release that was
 withdrawn on the day it was published, 14 November 2026. The changelog also has an older `1.0.0`
@@ -18,13 +20,14 @@ published as GitHub releases.
 
 Security fixes land on the default branch. There is no commitment to backport fixes onto older tags.
 
-| Version                               | Supported                             |
-| ------------------------------------- | ------------------------------------- |
-| `main`                                | Security fixes land here. Prerelease. |
-| `v1.0.0-beta.1` tag                   | Published snapshot. No backports.     |
-| `v0.1.0-alpha.0`                      | Not supported                         |
-| `v1.0.0` (withdrawn 14 November 2026) | Not supported                         |
-| Anything older                        | Not supported                         |
+| Version                               | Supported                                             |
+| ------------------------------------- | ----------------------------------------------------- |
+| `develop` / `main`                    | Security fixes land here. `1.0.0-rc.1` is not tagged. |
+| `v1.0.0-beta.2` tag                   | Latest published snapshot. No backports.              |
+| `v1.0.0-beta.1` tag                   | Published snapshot. No backports.                     |
+| `v0.1.0-alpha.0`                      | Not supported                                         |
+| `v1.0.0` (withdrawn 14 November 2026) | Not supported                                         |
+| Anything older                        | Not supported                                         |
 
 ## Reporting a Vulnerability
 

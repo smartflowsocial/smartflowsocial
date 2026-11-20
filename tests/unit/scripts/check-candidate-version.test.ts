@@ -1,0 +1,139 @@
+import { readFileSync } from "node:fs";
+
+import { describe, expect, it } from "vitest";
+
+import {
+  CANDIDATE_VERSION,
+  PUBLISHED_BETA_2_AT,
+  PUBLISHED_BETA_2_SHA,
+  validateWorkingTreeVersions,
+} from "../../../scripts/check-candidate-version.mjs";
+
+const HEAD = "d".repeat(40);
+
+function component(
+  name: string,
+  role: string,
+  releaseSha: string | null = null
+) {
+  return {
+    name,
+    repository: `smartflowsocial/${name}`,
+    role,
+    branch: "main",
+    releaseSha,
+    releaseShaStatus: releaseSha ? "git-tag" : "unknown",
+    validationStatus: releaseSha ? "checks-passed" : "unknown",
+    productionSha: null,
+    productionShaStatus: "unknown",
+    stagingSha: null,
+    stagingShaStatus: "unknown",
+  };
+}
+
+function candidate() {
+  return {
+    version: CANDIDATE_VERSION,
+    status: "unreleased",
+    tag: `v${CANDIDATE_VERSION}`,
+    tagPublished: false,
+    publishedAt: null,
+    applicationReleaseSha: null as string | null,
+    productionDeployed: false,
+    components: [
+      {
+        ...component("app", "required"),
+        repository: "smartflowsocial/smartflowsocial",
+        validationStatus: "not-validated",
+      },
+      {
+        ...component("blastr", "optional"),
+        repository: "smartflowsocial/smartflowsocial-blastr",
+      },
+    ],
+  };
+}
+
+function beta2() {
+  return {
+    version: "1.0.0-beta.2",
+    status: "published-prerelease",
+    tag: "v1.0.0-beta.2",
+    tagPublished: true,
+    publishedAt: PUBLISHED_BETA_2_AT,
+    applicationReleaseSha: PUBLISHED_BETA_2_SHA,
+    productionDeployed: false,
+    components: [
+      {
+        ...component("app", "required", PUBLISHED_BETA_2_SHA),
+        repository: "smartflowsocial/smartflowsocial",
+      },
+      {
+        ...component("publisher", "optional"),
+        repository: "smartflowsocial/smartflowsocial-publisher",
+      },
+    ],
+  };
+}
+
+describe("working tree versions", () => {
+  it("accepts the unreleased candidate beside the published beta.2 tag", () => {
+    expect(
+      validateWorkingTreeVersions({
+        packageJson: { version: CANDIDATE_VERSION, private: true },
+        candidate: candidate(),
+        beta2: beta2(),
+        headSha: HEAD,
+        beta2TagSha: PUBLISHED_BETA_2_SHA,
+      })
+    ).toEqual([]);
+  });
+
+  it("rejects a package.json that still says beta.1", () => {
+    const errors = validateWorkingTreeVersions({
+      packageJson: { version: "1.0.0-beta.1", private: true },
+      candidate: candidate(),
+      beta2: beta2(),
+      headSha: HEAD,
+      beta2TagSha: PUBLISHED_BETA_2_SHA,
+    });
+    expect(errors.join("\n")).toMatch(/1\.0\.0-beta\.1/);
+  });
+
+  it("rejects a candidate that already names a SHA or the retired publisher", () => {
+    const record = candidate();
+    record.applicationReleaseSha = HEAD;
+    record.tagPublished = true;
+    record.status = "published";
+    record.components.push({
+      ...component("publisher", "optional"),
+      repository: "smartflowsocial/smartflowsocial-publisher",
+    });
+    const errors = validateWorkingTreeVersions({
+      packageJson: { version: CANDIDATE_VERSION, private: true },
+      candidate: record,
+      beta2: beta2(),
+      headSha: HEAD,
+      beta2TagSha: PUBLISHED_BETA_2_SHA,
+    });
+    expect(errors.join("\n")).toMatch(/not a published tag/);
+    expect(errors.join("\n")).toMatch(/must not list publisher/);
+  });
+
+  it("matches the files in this checkout", () => {
+    const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
+      version: string;
+      private: boolean;
+    };
+    const candidateRecord = JSON.parse(
+      readFileSync("docs/releases/v1.0.0-rc.1.manifest.json", "utf8")
+    ) as { version: string };
+    const beta2Record = JSON.parse(
+      readFileSync("docs/releases/v1.0.0-beta.2.manifest.json", "utf8")
+    ) as { applicationReleaseSha: string; productionDeployed: boolean };
+    expect(packageJson.version).toBe(CANDIDATE_VERSION);
+    expect(candidateRecord.version).toBe(packageJson.version);
+    expect(beta2Record.applicationReleaseSha).toBe(PUBLISHED_BETA_2_SHA);
+    expect(beta2Record.productionDeployed).toBe(false);
+  });
+});

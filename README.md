@@ -14,11 +14,11 @@ scheduler. A running deploy can lag this commit until the operator updates it. T
 **SmartFlowSocial v1 — Now Open Source.** The published release is
 [`v1.0.0-beta.2`](https://github.com/smartflowsocial/smartflowsocial/releases/tag/v1.0.0-beta.2) at
 `5be28add1a8ef1d078e8ba9c885ca68249d0a54f`. That tag's `package.json` still says `1.0.0-beta.1`. The
-tag is not rewritten. This source tree also reports `1.0.0-beta.1` until the next release is
-prepared. A future tag must match `package.json`;
-`node scripts/check-release-version.mjs --tag v<version>` rejects a mismatch. This is not a stable
-`1.0.0`. Notes for the published release are in
-[docs/releases/v1.0.0-beta.2.md](./docs/releases/v1.0.0-beta.2.md). `v0.1.0-alpha.0` and a withdrawn
+tag is not rewritten. This source tree is `1.0.0-rc.1` and that tag has not been created. A future
+tag must match `package.json`; `node scripts/check-release-version.mjs --tag v<version>` rejects a
+mismatch. This is not a stable `1.0.0`. Notes for the published release are in
+[docs/releases/v1.0.0-beta.2.md](./docs/releases/v1.0.0-beta.2.md). The candidate is
+[docs/releases/v1.0.0-rc.1.md](./docs/releases/v1.0.0-rc.1.md). `v0.1.0-alpha.0` and a withdrawn
 `v1.0.0` were published from an earlier repository. Neither is a supported version of this
 repository.
 
