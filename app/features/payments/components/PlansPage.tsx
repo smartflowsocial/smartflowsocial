@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Link,
   useActionData,
@@ -194,6 +194,12 @@ export function PlansPage(): ReactNode {
     actionData && typeof actionData === "object" && !Array.isArray(actionData)
       ? (actionData as Record<string, unknown>)
       : null;
+  const actionError =
+    typedActionData &&
+    "error" in typedActionData &&
+    typeof typedActionData["error"] === "string"
+      ? typedActionData["error"]
+      : "";
 
   const {
     showInvoice,
@@ -283,6 +289,10 @@ export function PlansPage(): ReactNode {
     handleCloseCheckout,
     showCheckout,
   ]);
+
+  useEffect(() => {
+    if (showInvoice || paymentComplete) handleCloseCheckout();
+  }, [handleCloseCheckout, paymentComplete, showInvoice]);
 
   const closePaymentModal = useCallback(() => {
     trackCheckoutEvent("payment_modal_closed", {
@@ -672,7 +682,6 @@ export function PlansPage(): ReactNode {
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
           void submit(formData, { method: "post" });
-          closeCheckout();
         }}
         onSelectBtcOnchain={() => {
           if (!founderOffering) return;
@@ -689,9 +698,9 @@ export function PlansPage(): ReactNode {
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
           void submit(formData, { method: "post" });
-          closeCheckout();
         }}
         onClose={closeCheckout}
+        errorMessage={actionError}
         paymentMethod={checkoutPaymentMethod}
         onPaymentMethodChange={(m) => {
           setCheckoutPaymentMethod(
@@ -752,7 +761,6 @@ export function PlansPage(): ReactNode {
             String(billingCadence === "yearly" ? 12 : manualDurationMonths)
           );
           void submit(formData, { method: "post" });
-          closeCheckout();
         }}
         onSelectAutoRenew={() => {
           if (!selectedRecurringPlan) return;
@@ -769,7 +777,6 @@ export function PlansPage(): ReactNode {
             formData.set("nwcString", nwcString.trim());
           }
           void submit(formData, { method: "post" });
-          closeCheckout();
         }}
         onClose={closeCheckout}
         btcpayYearlyOnChainEnabled={btcpayYearlyOnChainEnabled}
@@ -789,8 +796,8 @@ export function PlansPage(): ReactNode {
           formData.set("billingCadence", "yearly");
           formData.set("accessDurationMonths", "12");
           void submit(formData, { method: "post" });
-          closeCheckout();
         }}
+        errorMessage={actionError}
         paymentMethod={checkoutPaymentMethod}
         onPaymentMethodChange={setCheckoutPaymentMethod}
       />
@@ -818,15 +825,7 @@ export function PlansPage(): ReactNode {
         />
       ) : null}
 
-      <ErrorMessage
-        message={
-          typedActionData && "error" in typedActionData
-            ? typeof typedActionData["error"] === "string"
-              ? typedActionData["error"]
-              : String(typedActionData["error"])
-            : ""
-        }
-      />
+      <ErrorMessage message={actionError} />
 
       <div className="mt-10 sm:mt-12">
         <Footer />

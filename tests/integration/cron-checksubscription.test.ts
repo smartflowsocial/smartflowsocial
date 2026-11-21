@@ -125,6 +125,7 @@ vi.mock("@getalby/sdk/lnclient", () => ({
     return new MockLN(credentials);
   }),
   USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
+  SATS: vi.fn((amount: number) => ({ satoshi: amount })),
 }));
 
 vi.mock("~/features/payments/btc.rate", () => ({

@@ -1,4 +1,9 @@
-import { redirect, data } from "react-router";
+import {
+  redirect,
+  data,
+  isRouteErrorResponse,
+  useRouteError,
+} from "react-router";
 import type { ActionFunctionArgs, MetaFunction } from "react-router";
 
 import {
@@ -65,7 +70,10 @@ export const action = withCSRFProtection(
         "status" in result && typeof result.status === "number"
           ? result.status
           : 400;
-      return data(result, { status });
+      // The plans page renders `error` itself. A 5xx HTTP status is what the
+      // edge proxy replaces with an empty 504, which unmounts checkout.
+      const httpStatus = status >= 500 ? 200 : status;
+      return data(result, { status: httpStatus });
     }
 
     return result;
@@ -75,5 +83,28 @@ export const action = withCSRFProtection(
 export const loader = async ({ request }: { request: Request }) => {
   return await loadPlansData(request);
 };
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  const timedOut = status === 502 || status === 503 || status === 504;
+
+  return (
+    <main className="bg-canvas mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-center justify-center px-4 py-24 text-center">
+      <h1 className="text-text text-6xl font-semibold">{status}</h1>
+      <p className="text-text mt-4 text-lg">
+        {timedOut
+          ? "Creating the Lightning invoice took too long. Nothing was charged."
+          : "An unexpected error occurred"}
+      </p>
+      <a
+        href="/plans"
+        className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 mt-10 rounded-md px-6 py-3 text-base font-semibold"
+      >
+        Back to pricing
+      </a>
+    </main>
+  );
+}
 
 export default PlansPage;
