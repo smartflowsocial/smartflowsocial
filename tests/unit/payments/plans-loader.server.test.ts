@@ -563,7 +563,7 @@ describe("loadPlansData", () => {
     });
   });
 
-  it("marks an elapsed active period expired and keeps lifetime access current", async () => {
+  it("marks elapsed and lapsed subscriptions expired and keeps lifetime access current", async () => {
     session.requireUser.mockResolvedValue({
       id: "user-1",
       isEnabled: true,
@@ -609,7 +609,30 @@ describe("loadPlansData", () => {
       Plan: { name: "Pro", id: "pro", enableLifetimeAccess: false },
     });
     const canceled = await loadPlansData(plansRequest());
-    expect(canceled.currentSubscription?.isExpired).toBe(false);
+    expect(canceled.currentSubscription?.isExpired).toBe(true);
+
+    paymentsData.getUserSubscription.mockResolvedValueOnce({
+      planId: "creator",
+      status: "UNPAID",
+      currentPeriodEnd: past,
+      Plan: { name: "Creator", id: "creator", enableLifetimeAccess: false },
+    });
+    const unpaid = await loadPlansData(plansRequest());
+    expect(unpaid.currentSubscription).toEqual({
+      planId: "creator",
+      status: "UNPAID",
+      plan: "Creator",
+      isExpired: true,
+    });
+
+    paymentsData.getUserSubscription.mockResolvedValueOnce({
+      planId: "starter",
+      status: "PAST_DUE",
+      currentPeriodEnd: past,
+      Plan: { name: "Starter", id: "starter", enableLifetimeAccess: false },
+    });
+    const pastDue = await loadPlansData(plansRequest());
+    expect(pastDue.currentSubscription?.isExpired).toBe(true);
 
     paymentsData.getUserSubscription.mockResolvedValueOnce({
       planId: "pro",

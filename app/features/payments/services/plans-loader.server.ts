@@ -17,7 +17,7 @@ import {
 } from "~/features/payments/data";
 import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
 import { parseCommercialPlanType } from "~/features/payments/plan-mapping";
-import { isSubscriptionPeriodExpired } from "~/features/payments/types";
+import { isSubscriptionExpiredForUi } from "~/features/payments/types";
 import type {
   FounderOfferingPayload,
   PricingPagePlan,
@@ -337,9 +337,12 @@ export async function loadPlansData(request: Request) {
     };
   }
 
+  // Same signal as the dashboard "subscription expired" banner. A lapsed row
+  // is often UNPAID, PAST_DUE, or CANCELED rather than ACTIVE, and that tier
+  // must stay purchasable so the account can renew it.
   const isExpired =
     currentSubscription != null
-      ? isSubscriptionPeriodExpired({
+      ? isSubscriptionExpiredForUi({
           planId: currentSubscription.planId ?? "",
           status: currentSubscription.status,
           currentPeriodEnd: currentSubscription.currentPeriodEnd,

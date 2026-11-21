@@ -38,7 +38,7 @@ function planCtaLabel(
   isFree: boolean
 ): string {
   if (isTeams) return "Coming soon";
-  if (isCurrentPlan && !isCurrentPlanExpired) return "Current plan";
+  if (isCurrentPlan && (isFree || !isCurrentPlanExpired)) return "Current plan";
   if (isCurrentPlan && isCurrentPlanExpired) return "Renew";
   if (isFree) return "Start free";
   if (plan.id === "starter") return "Choose Starter";
@@ -239,7 +239,7 @@ export function PricingCard({
         ) : null}
       </div>
 
-      {isCurrentPlan && !isCurrentPlanExpired && !isTeams ? (
+      {isCurrentPlan && (isFree || !isCurrentPlanExpired) && !isTeams ? (
         <Link
           to="/dashboard"
           className="focus-ring border-border bg-surface-hover/80 text-text hover:bg-surface-active motion-fast flex w-full items-center justify-center rounded-lg border px-4 py-3 text-sm font-semibold"
