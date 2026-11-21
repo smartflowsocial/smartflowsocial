@@ -1,9 +1,10 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { Link, useRouteLoaderData } from "react-router";
 
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
 import type { PlanUsageSnapshot } from "~/features/payments/plan-usage.types";
+import { useHydratedLocalBoolean } from "~/lib/hooks/useHydratedLocalBoolean";
 import { cn } from "~/lib/utils";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
@@ -440,14 +441,10 @@ export function PlanUsageSidebar({
   const autoExpand = snapshot ? shouldAutoExpand(snapshot) : false;
   const expandable = snapshot ? hasExpandableDetail(snapshot) : false;
 
-  const [userExpanded, setUserExpanded] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem(PLAN_USAGE_EXPANDED_LS_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [userExpanded, setUserExpanded] = useHydratedLocalBoolean(
+    PLAN_USAGE_EXPANDED_LS_KEY,
+    false
+  );
 
   /** Auto-expand overrides collapsed preference until the situation clears. */
   const expanded = autoExpand || userExpanded;
@@ -463,7 +460,7 @@ export function PlanUsageSidebar({
       }
       return next;
     });
-  }, [autoExpand]);
+  }, [autoExpand, setUserExpanded]);
 
   const scheduledRatio = snapshot
     ? usageRatio(snapshot.scheduledUsed, snapshot.scheduledLimit)

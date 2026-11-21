@@ -26,6 +26,14 @@ function authHeaders(): HeadersInit {
   };
 }
 
+/**
+ * Minutes the payer has to broadcast an on-chain payment.
+ * BTCPay's store default is 15, which is tight for a hardware wallet or an
+ * exchange send. This timer stops once BTCPay sees the transaction; confirmation
+ * time is separate.
+ */
+export const BTCPAY_ONCHAIN_CHECKOUT_EXPIRATION_MINUTES = 60;
+
 export interface BtcpayInvoiceCreateResult {
   id: string;
   checkoutLink: string;
@@ -76,12 +84,15 @@ export async function btcpayCreateInvoice(params: {
     },
   };
 
+  const checkout: Record<string, unknown> = {
+    expirationMinutes: BTCPAY_ONCHAIN_CHECKOUT_EXPIRATION_MINUTES,
+  };
   const appUrl = env.APP_URL?.trim();
   if (appUrl) {
-    body["checkout"] = {
-      redirectURL: `${appUrl.replace(/\/$/, "")}/dashboard?btcpayPaid=1`,
-    };
+    checkout["redirectURL"] =
+      `${appUrl.replace(/\/$/, "")}/dashboard?btcpayPaid=1`;
   }
+  body["checkout"] = checkout;
 
   const res = await fetch(url, {
     method: "POST",
@@ -139,17 +150,85 @@ export const BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS = 1;
 export interface BtcpayInvoiceOnChainSnapshot {
   invoiceStatus: string;
   maxOnChainConfirmations: number;
-  /** An on-chain payment row exists (tx seen in BTCPay, including 0-conf). */
+  /**
+   * A payment has been seen. Also true when the invoice itself is
+   * Processing or Settled and Greenfield omitted the payments list.
+   */
   hasOnChainPaymentStarted: boolean;
 }
 
+function isBtcpayLightningPaymentMethodId(methodId: string): boolean {
+  const m = methodId.toLowerCase();
+  return (
+    m.includes("lightning") ||
+    m.includes("lnurl") ||
+    m.includes("offchain") ||
+    m.includes("off-chain") ||
+    m.includes("-ln") ||
+    m.includes("_ln")
+  );
+}
+
+/**
+ * On-chain ids from current and older Greenfield servers.
+ * BTCPay 2.0 returns `BTC-CHAIN`. Older servers returned `BTC-OnChain`.
+ */
 function isBtcpayOnChainPaymentMethodId(methodId: string): boolean {
   const m = methodId.toLowerCase();
-  return m.includes("-onchain") || m.includes("_onchain");
+  if (!m || isBtcpayLightningPaymentMethodId(m)) return false;
+  return (
+    m.includes("-onchain") ||
+    m.includes("_onchain") ||
+    m.endsWith("-chain") ||
+    m.endsWith("_chain") ||
+    m === "btc"
+  );
+}
+
+function asPaymentRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function paymentMethodIdOf(
+  payment: Record<string, unknown>,
+  inherited: string
+): string {
+  const raw =
+    (typeof payment["paymentMethodId"] === "string"
+      ? payment["paymentMethodId"]
+      : "") ||
+    (typeof payment["paymentMethod"] === "string"
+      ? payment["paymentMethod"]
+      : "");
+  return raw || inherited;
+}
+
+function confirmationCount(payment: Record<string, unknown>): number {
+  const raw = payment["confirmations"] ?? payment["confirmationCount"];
+  if (typeof raw === "number" && Number.isFinite(raw)) return Math.max(0, raw);
+  if (typeof raw === "string" && raw.trim() !== "") {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) return Math.max(0, parsed);
+  }
+  return 0;
+}
+
+function paymentRowSettled(payment: Record<string, unknown>): boolean {
+  return (
+    typeof payment["status"] === "string" &&
+    payment["status"].trim().toLowerCase() === "settled"
+  );
 }
 
 /**
  * Parse Greenfield GET invoice JSON for BTC on-chain progress.
+ *
+ * Current Greenfield `GET /invoices/{id}` does not include a `payments` array
+ * or a confirmation count. `Settled` means the store's confirmation policy was
+ * already met (on-chain threshold, or instant for Lightning). `Processing`
+ * means a payment was seen and is still short of that policy.
+ *
  * @see https://docs.btcpayserver.org/API/Greenfield/v1/
  */
 export function parseBtcpayInvoiceOnChainSnapshot(
@@ -157,39 +236,75 @@ export function parseBtcpayInvoiceOnChainSnapshot(
 ): BtcpayInvoiceOnChainSnapshot {
   const obj = asRecord(data);
   const invoiceStatus = typeof obj["status"] === "string" ? obj["status"] : "";
-  const payments = obj["payments"];
-  let maxOnChainConfirmations = 0;
-  let hasOnChainPaymentStarted = false;
+  const additionalStatus =
+    typeof obj["additionalStatus"] === "string" ? obj["additionalStatus"] : "";
+  const progress = { started: false, confirmations: 0, paymentRows: 0 };
 
-  if (!Array.isArray(payments)) {
-    return {
-      invoiceStatus,
-      maxOnChainConfirmations: 0,
-      hasOnChainPaymentStarted: false,
-    };
+  const consider = (payment: Record<string, unknown>, inherited: string) => {
+    progress.paymentRows += 1;
+    const methodId = paymentMethodIdOf(payment, inherited);
+    if (!isBtcpayOnChainPaymentMethodId(methodId)) return;
+    progress.started = true;
+    let confirmations = confirmationCount(payment);
+    if (
+      paymentRowSettled(payment) &&
+      confirmations < BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS
+    ) {
+      confirmations = BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS;
+    }
+    if (confirmations > progress.confirmations) {
+      progress.confirmations = confirmations;
+    }
+  };
+
+  if (Array.isArray(obj["payments"])) {
+    for (const payment of obj["payments"]) {
+      const record = asPaymentRecord(payment);
+      if (record) consider(record, "");
+    }
   }
 
-  for (const p of payments) {
-    if (!p || typeof p !== "object" || Array.isArray(p)) continue;
-    const pr = p as Record<string, unknown>;
-    const methodIdRaw =
-      (typeof pr["paymentMethodId"] === "string"
-        ? pr["paymentMethodId"]
-        : "") ||
-      (typeof pr["paymentMethod"] === "string" ? pr["paymentMethod"] : "");
-    if (!isBtcpayOnChainPaymentMethodId(methodIdRaw)) continue;
-
-    hasOnChainPaymentStarted = true;
-    const conf =
-      typeof pr["confirmations"] === "number" ? pr["confirmations"] : 0;
-    if (conf > maxOnChainConfirmations) maxOnChainConfirmations = conf;
+  if (Array.isArray(obj["paymentMethods"])) {
+    for (const method of obj["paymentMethods"]) {
+      const record = asPaymentRecord(method);
+      if (!record || !Array.isArray(record["payments"])) continue;
+      const inherited = paymentMethodIdOf(record, "");
+      for (const payment of record["payments"]) {
+        const paymentRecord = asPaymentRecord(payment);
+        if (paymentRecord) consider(paymentRecord, inherited);
+      }
+    }
   }
+
+  applyInvoiceStatusSignal(invoiceStatus, additionalStatus, progress);
 
   return {
     invoiceStatus,
-    maxOnChainConfirmations,
-    hasOnChainPaymentStarted,
+    maxOnChainConfirmations: progress.confirmations,
+    hasOnChainPaymentStarted: progress.started,
   };
+}
+
+function applyInvoiceStatusSignal(
+  invoiceStatus: string,
+  additionalStatus: string,
+  progress: { started: boolean; confirmations: number; paymentRows: number }
+): void {
+  const status = invoiceStatus.trim().toLowerCase();
+  const additional = additionalStatus.trim().toLowerCase();
+  if (additional === "paidpartial" || additional === "invalid") return;
+
+  if (status === "settled") {
+    progress.started = true;
+    if (progress.confirmations < BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS) {
+      progress.confirmations = BTCPAY_MIN_ONCHAIN_CONFIRMS_FOR_ACCESS;
+    }
+    return;
+  }
+
+  if (status === "processing" && progress.paymentRows === 0) {
+    progress.started = true;
+  }
 }
 
 export async function btcpayGetInvoiceSnapshot(

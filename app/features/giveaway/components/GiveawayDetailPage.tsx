@@ -1344,9 +1344,7 @@ export function GiveawayDetailPage({
             void navigator.clipboard.writeText(text);
             toast.success("Copied");
           }}
-          onCheckPayment={(id) => {
-            void checkPaymentStatusNow(id);
-          }}
+          onCheckPayment={(id) => checkPaymentStatusNow(id)}
           onClose={() => setShowFeeInvoiceModal(false)}
         />
       ) : null}

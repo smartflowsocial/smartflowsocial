@@ -53,6 +53,7 @@ import { MediaSettingsPageSkeleton } from "~/features/settings/components/MediaS
 import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
 import { TemplatesPageSkeleton } from "~/features/templates/components/TemplatesPageSkeleton";
 import { PendingParentRequestBanner } from "~/features/user/components/PendingParentRequestBanner";
+import { useHydratedLocalBoolean } from "~/lib/hooks/useHydratedLocalBoolean";
 import { useSessionDismissedBanner } from "~/lib/hooks/useSessionDismissedBanner";
 import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
@@ -304,10 +305,10 @@ export function DashboardLayoutPage(): ReactNode {
   } = getPendingNavigationState(navigation, location);
   const pendingDashboardSkeleton = pendingSkeletonForPath(pendingPathname);
 
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem(DESKTOP_SIDEBAR_OPEN_KEY) !== "false";
-  });
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useHydratedLocalBoolean(
+    DESKTOP_SIDEBAR_OPEN_KEY,
+    true
+  );
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const {
     isDismissed: isSubscriptionExpiredBannerDismissed,

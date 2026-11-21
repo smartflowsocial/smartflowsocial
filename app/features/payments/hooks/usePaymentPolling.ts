@@ -15,6 +15,23 @@ export interface PaymentStatusPayload {
   paid?: boolean;
   btcpayAwaitingConfirmations?: boolean;
   status?: string;
+  message?: string;
+}
+
+export interface PaymentCheckResult {
+  paid: boolean;
+  message?: string;
+}
+
+const PAYMENT_CHECK_FAILED = "Couldn't check the payment. Try again.";
+
+function unpaidCheckMessage(data: PaymentStatusPayload): string {
+  const trimmed = data.message?.trim();
+  if (trimmed) return trimmed;
+  if (data.btcpayAwaitingConfirmations) {
+    return "Payment seen; waiting for the first confirmation.";
+  }
+  return "Payment not received yet.";
 }
 
 interface UsePaymentPollingProps {
@@ -57,7 +74,9 @@ export function usePaymentPolling({
   }, []);
 
   // Function to check payment status immediately
-  const checkPaymentStatusNow = async (paymentId: string) => {
+  const checkPaymentStatusNow = async (
+    paymentId: string
+  ): Promise<PaymentCheckResult> => {
     try {
       const formData = new FormData();
       formData.append(PAYMENT_ID_FIELD, paymentId);
@@ -68,7 +87,7 @@ export function usePaymentPolling({
       });
 
       if (!response.ok) {
-        return;
+        return { paid: false, message: PAYMENT_CHECK_FAILED };
       }
 
       const responseText = await response.text();
@@ -76,7 +95,7 @@ export function usePaymentPolling({
       try {
         data = JSON.parse(responseText) as PaymentStatusPayload;
       } catch (_parseError) {
-        return;
+        return { paid: false, message: PAYMENT_CHECK_FAILED };
       }
 
       onPaymentStatusPayload?.(data);
@@ -95,9 +114,12 @@ export function usePaymentPolling({
             void navigate("/dashboard", { replace: true });
           }, 2000);
         }
+        return { paid: true, message: data.message };
       }
+
+      return { paid: false, message: unpaidCheckMessage(data) };
     } catch (_error) {
-      // Silently handle errors
+      return { paid: false, message: PAYMENT_CHECK_FAILED };
     }
   };
 
