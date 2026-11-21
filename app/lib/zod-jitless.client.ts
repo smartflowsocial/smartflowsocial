@@ -1,8 +1,9 @@
 import { config } from "zod";
 
 /**
- * Production `script-src` does not allow `'unsafe-eval'`. Zod otherwise
- * probes with `Function("")` the first time a schema parses, and Chrome
- * reports that caught call as a CSP violation. Parsing still works.
+ * Backup for client graphs that import Zod after this module.
+ *
+ * Route modules on a server-rendered page run first, so the head script from
+ * `zodJitlessBootScript` is what stops the CSP `eval` report there.
  */
 config({ jitless: true });
