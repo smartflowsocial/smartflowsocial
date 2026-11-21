@@ -44,7 +44,7 @@ WORKDIR /myapp
 COPY --from=deps /myapp/node_modules /myapp/node_modules
 
 COPY . .
-RUN pnpm exec prisma generate && pnpm run build
+RUN pnpm exec prisma generate && pnpm generate-icons && pnpm run build
 
 # Finally, build the production image with minimal footprint
 FROM base
