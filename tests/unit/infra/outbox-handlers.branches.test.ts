@@ -135,6 +135,9 @@ vi.mock("~/features/relays/publish-relay-acks.server", () => ({
 vi.mock("~/features/relays/relay-resolution.server", () => ({
   resolveExecutionRelays,
 }));
+vi.mock("~/infra/blastr/entitlement-sync.server", () => ({
+  syncBlastrEntitlementBeforePublish: vi.fn(),
+}));
 vi.mock("~/infra/publishers/nostr-publisher.server", () => ({
   getNostrPublisher: () => ({ publish }),
 }));

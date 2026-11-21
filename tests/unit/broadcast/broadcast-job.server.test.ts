@@ -367,6 +367,7 @@ describe("runBroadcastDmJob", () => {
     expect(publishApi.publishSignedEventToRelays).toHaveBeenCalledWith({
       signedEvent: signedEvent(),
       relays: ["wss://user.example", "wss://dm.example"],
+      userId: USER_ID,
       correlationId: `broadcast:${CAMPAIGN_ID}:${RECIPIENT_ID}:k4`,
     });
     expect(tx.broadcastRecipient.update).toHaveBeenCalledWith({
@@ -461,16 +462,19 @@ describe("runBroadcastDmJob", () => {
     expect(publishApi.publishSignedEventToRelays).toHaveBeenNthCalledWith(1, {
       signedEvent: signedEvent(),
       relays: ["wss://direct.example"],
+      userId: USER_ID,
       correlationId: `broadcast:${CAMPAIGN_ID}:${RECIPIENT_ID}:k4`,
     });
     expect(publishApi.publishSignedEventToRelays).toHaveBeenNthCalledWith(2, {
       signedEvent: signedEvent("wrap-relays"),
       relays: ["wss://nip17.example"],
+      userId: USER_ID,
       correlationId: `broadcast:${CAMPAIGN_ID}:${RECIPIENT_ID}:nip17:wrap-relays`,
     });
     expect(publishApi.publishSignedEventToRelays).toHaveBeenNthCalledWith(3, {
       signedEvent: signedEvent("wrap-fallback"),
       relays: ["wss://direct.example"],
+      userId: USER_ID,
       correlationId: `broadcast:${CAMPAIGN_ID}:${RECIPIENT_ID}:nip17:wrap-fallback`,
     });
     expect(messenger.relaysForNip17GiftWrap).toHaveBeenCalledWith({
