@@ -4,9 +4,11 @@ export const OWNER_NWC_MISSING = "Owner NWC credentials not configured";
 
 /**
  * Owner NWC `requestPayment` can hang if relays or the wallet never respond.
- * Without a bound, the HTTP request outlives Cloudflare/proxy limits → 520 and no access-log line.
+ * The edge proxy turns a slow origin response into a bare 504 with no
+ * `X-Remix-Response` header, and the browser replaces the pricing page.
+ * Answer before that cutoff.
  */
-const OWNER_WALLET_INVOICE_REQUEST_MS = 55_000;
+const OWNER_WALLET_INVOICE_REQUEST_MS = 15_000;
 
 export async function withOwnerWalletInvoiceRequestTimeout<T>(
   promise: Promise<T>

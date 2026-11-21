@@ -1,4 +1,4 @@
-import { LN, USD } from "@getalby/sdk/lnclient";
+import { LN, SATS } from "@getalby/sdk/lnclient";
 
 import { getBitcoinRate } from "~/features/payments/btc.rate";
 import type {
@@ -30,6 +30,8 @@ import {
   handlePaymentTimeout,
 } from "./payment.handlers.server";
 
+const FALLBACK_SATS_PER_USD = 2500;
+
 async function getFallbackAmount(amountUsd: number): Promise<number> {
   try {
     return await getBitcoinRate(amountUsd);
@@ -38,8 +40,26 @@ async function getFallbackAmount(amountUsd: number): Promise<number> {
       amountUsd,
       message: "Failed to fetch Bitcoin rate, using fallback",
     });
-    return Math.round(amountUsd * 2500);
+    return Math.round(amountUsd * FALLBACK_SATS_PER_USD);
   }
+}
+
+/**
+ * `USD()` inside the Alby SDK fetches getalby.com with no timeout before it
+ * even asks the wallet for an invoice. Price in sats here, then request a
+ * sat amount, so a stuck rate lookup cannot hold the checkout request open.
+ */
+async function quoteAmountSats(amountUsd: number): Promise<number> {
+  try {
+    const sats = await getBitcoinRate(amountUsd);
+    if (Number.isFinite(sats) && sats > 0) return Math.round(sats);
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      amountUsd,
+      message: "Failed to quote invoice sats, using fallback",
+    });
+  }
+  return Math.round(amountUsd * FALLBACK_SATS_PER_USD);
 }
 
 /**
@@ -94,16 +114,24 @@ export async function createPlanInvoice({
   const { credentials: ownerNwcCredentials, relays: ownerRelays } =
     getOwnerNwcWithRelayOverrides(credentials);
   const ln = new LN(ownerNwcCredentials) as unknown as {
-    requestPayment: (amount: { amount: number }) => Promise<{
+    requestPayment: (
+      amount: unknown,
+      args?: { description?: string; expiry?: number }
+    ) => Promise<{
       onPaid: (callback: () => void) => {
         onTimeout: (seconds: number, callback: () => void) => void;
       };
       onTimeout: (seconds: number, callback: () => void) => void;
     }>;
+    close?: () => void;
   };
   try {
+    const quotedSats = await quoteAmountSats(amountUsd);
     const request = await withOwnerWalletInvoiceRequestTimeout(
-      ln.requestPayment(USD(amountUsd) as unknown as { amount: number })
+      ln.requestPayment(SATS(quotedSats), {
+        description: description ?? `${plan.name} plan subscription`,
+        expiry: 30 * 60,
+      })
     );
 
     const paymentId = `${planId}_${Date.now()}_${userId}`;
@@ -174,6 +202,11 @@ export async function createPlanInvoice({
       planId: plan.id,
     };
   } catch (error) {
+    try {
+      ln.close?.();
+    } catch {
+      // The invoice request already failed. Closing the wallet client is cleanup.
+    }
     if (error instanceof ExternalServiceError) {
       logError(error, {
         planId,

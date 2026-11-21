@@ -38,6 +38,7 @@
     "**/*.server.ts",
     "**/*.server.tsx",
     "app/lib/error-handler.server.ts",
+    "app/lib/zod-jitless.client.ts",
     "@js-temporal/polyfill"
   ],
   "scripts": {

@@ -52,6 +52,7 @@ interface SubscriptionCheckoutModalProps {
   btcpayYearlyOnChainEnabled?: boolean;
   onSelectBtcOnchain?: () => void;
   onClose: () => void;
+  errorMessage?: string;
   paymentMethod: CheckoutPaymentMethodId;
   onPaymentMethodChange: (method: CheckoutPaymentMethodId) => void;
 }
@@ -75,6 +76,7 @@ export function SubscriptionCheckoutModal({
   btcpayYearlyOnChainEnabled,
   onSelectBtcOnchain,
   onClose,
+  errorMessage,
   paymentMethod,
   onPaymentMethodChange,
 }: SubscriptionCheckoutModalProps) {
@@ -142,7 +144,6 @@ export function SubscriptionCheckoutModal({
       <DialogContent
         hideCloseButton
         className="bg-canvas max-h-[90dvh] max-w-[920px] gap-0 overflow-y-auto p-0 sm:max-w-[920px]"
-        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="p-6 pb-0">
           <div className="mb-4 flex items-start justify-between gap-4">
@@ -322,6 +323,12 @@ export function SubscriptionCheckoutModal({
             accessDurationMonths={accessMonths}
             pricing={plan.checkoutPricing}
           />
+
+          {errorMessage ? (
+            <p className="text-danger text-sm" role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
 
           <div className="stack-tight border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
             <DialogClose asChild>
