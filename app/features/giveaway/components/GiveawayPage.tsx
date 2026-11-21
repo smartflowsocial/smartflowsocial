@@ -13,8 +13,13 @@ import {
   campaignSelectClassNames,
 } from "~/features/campaign-ui";
 import { PublishingPageHeader } from "~/features/posts/ui";
+import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { cn } from "~/lib/utils";
 
+import {
+  formatGiveawayCount,
+  formatGiveawayListDay,
+} from "../giveaway-list-format";
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
 import { scopeIsFollowGraphAccountPool } from "../types";
 
@@ -82,6 +87,10 @@ export default function GiveawayPage({
 }: GiveawayPageProps) {
   const dupFetcher = useFetcher();
   const delFetcher = useFetcher();
+  const { userTimezone, dateLocale } = useFormattedDate();
+  const dayLabel = (iso: string) =>
+    formatGiveawayListDay(iso, userTimezone, dateLocale);
+  const countLabel = (value: number) => formatGiveawayCount(value, dateLocale);
 
   return (
     <div className="space-y-6">
@@ -124,7 +133,7 @@ export default function GiveawayPage({
           <CardHeader className="pb-2">
             <CardDescription>Total sats paid</CardDescription>
             <CardTitle className="text-2xl tabular-nums">
-              {kpis.totalSatsPaid.toLocaleString()}
+              {countLabel(kpis.totalSatsPaid)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -309,11 +318,7 @@ export default function GiveawayPage({
                         {giveawayRowTitle(g.name, g.id)}
                       </Link>
                       <p className="text-text-secondary text-xs">
-                        Created{" "}
-                        {new Date(g.createdAt).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        Created {dayLabel(g.createdAt)}
                       </p>
                     </td>
                     <td className="px-4 py-3">
@@ -359,7 +364,7 @@ export default function GiveawayPage({
                       <br />
                       <span className="text-text-secondary">
                         {g.budgetSats > 0
-                          ? `${g.budgetSats.toLocaleString()} sats`
+                          ? `${countLabel(g.budgetSats)} sats`
                           : "No payout set"}
                       </span>
                     </td>
@@ -381,10 +386,7 @@ export default function GiveawayPage({
                       )}
                     </td>
                     <td className="text-text-secondary px-4 py-3 text-xs">
-                      {new Date(g.updatedAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {dayLabel(g.updatedAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex flex-wrap justify-end gap-1">
@@ -502,7 +504,7 @@ export default function GiveawayPage({
                         : g.winnerCount}{" "}
                       winners ·{" "}
                       {g.budgetSats > 0
-                        ? `${g.budgetSats.toLocaleString()} sats`
+                        ? `${countLabel(g.budgetSats)} sats`
                         : "No payout set"}
                     </p>
                     {g.payoutTotal > 0 ? (
