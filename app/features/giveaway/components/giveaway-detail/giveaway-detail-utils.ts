@@ -1,4 +1,4 @@
-import { computeGiveawayPlannedPayoutSats } from "~/features/giveaway/giveaway-payout.server";
+import { computeGiveawayPlannedPayoutSats } from "~/features/giveaway/giveaway-payout.shared";
 import type { GiveawayWinnerEntry } from "~/features/giveaway/types";
 
 export const PAID_VIA_WALLET_PHASE = "Paid via wallet";

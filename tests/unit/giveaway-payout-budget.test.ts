@@ -2,8 +2,12 @@
  * Budget from giveaway row (draft / no snapshot)
  */
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, it, expect } from "vitest";
 
+import { budgetFromSnapshot } from "~/features/giveaway/components/giveaway-detail/giveaway-detail-utils";
 import { budgetSatsFromGiveawayRow } from "~/features/giveaway/giveaway-payout.server";
 
 describe("budgetSatsFromGiveawayRow", () => {
@@ -62,5 +66,31 @@ describe("budgetSatsFromGiveawayRow", () => {
         plannedPayoutSats: 105,
       })
     ).toBe(105);
+  });
+
+  it("computes a completed giveaway budget in the browser helper", () => {
+    expect(
+      budgetFromSnapshot(
+        [
+          { pubkey: "a", npub: "n", qualifyingActions: [] },
+          { pubkey: "b", npub: "n", qualifyingActions: [] },
+        ],
+        {
+          engagementConfig: { _simpleUnified: { satsPerWinner: 21 } },
+          winnerCount: 2,
+          plannedPayoutSats: null,
+        }
+      )
+    ).toBe(42);
+  });
+
+  it("keeps the detail-page helper out of server modules", () => {
+    const src = readFileSync(
+      path.resolve(
+        "app/features/giveaway/components/giveaway-detail/giveaway-detail-utils.ts"
+      ),
+      "utf8"
+    );
+    expect(src).not.toMatch(/\.server["']/);
   });
 });
