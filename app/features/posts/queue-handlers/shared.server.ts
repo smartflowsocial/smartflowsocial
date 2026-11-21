@@ -5,6 +5,7 @@
 
 import type { SignedEvent } from "~/features/nostr/types";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { syncBlastrEntitlementBeforePublish } from "~/infra/blastr/entitlement-sync.server";
 import {
   getNostrPublisher,
   type NostrPublishResult,
@@ -37,6 +38,7 @@ export async function getSanitizedUserRelays(
 
 export async function publishWithQueueSpan(input: {
   queueName: QueueType;
+  userId: string;
   attributes: Record<string, unknown>;
   event: SignedEvent;
   relays: string[];
@@ -45,6 +47,7 @@ export async function publishWithQueueSpan(input: {
   publishLatencyMs: number;
   publishResult: NostrPublishResult;
 }> {
+  await syncBlastrEntitlementBeforePublish(input.userId, input.relays);
   const publisher = getNostrPublisher();
   const publishStartTime = nowMillis();
   const publishResult = await withSentrySpan(

@@ -1333,6 +1333,7 @@ describe("post job branches", () => {
       expect(ctx.lease).toBe(LEASE);
       expect(mockPublish).toHaveBeenCalledWith({
         queueName: QUEUE,
+        userId: TEST_USER_ID,
         attributes: {
           queue: QUEUE,
           postId: TEST_POST_ID,

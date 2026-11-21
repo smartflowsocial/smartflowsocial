@@ -149,6 +149,7 @@ export async function runBroadcastDmJob(
     const pub = await publishSignedEventToRelays({
       signedEvent: validated,
       relays: kind4Relays,
+      userId,
       correlationId: `broadcast:${campaignId}:${recipientId}:k4`,
     });
     const anyOk = pub.results.some((r) => r.ok);
@@ -176,6 +177,7 @@ export async function runBroadcastDmJob(
       await publishSignedEventToRelays({
         signedEvent: gw,
         relays: wrapRelays.length > 0 ? wrapRelays : kind4Relays,
+        userId,
         correlationId: `broadcast:${campaignId}:${recipientId}:nip17:${gw.id}`,
       });
     }

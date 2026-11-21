@@ -871,6 +871,7 @@ export async function runScheduledPostJob(input: {
 
   const { publishLatencyMs, publishResult } = await publishWithQueueSpan({
     queueName,
+    userId,
     attributes: {
       queue: queueName,
       postId,

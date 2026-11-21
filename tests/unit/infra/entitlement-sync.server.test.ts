@@ -40,6 +40,8 @@ vi.mock("~/lib/error-logger.server", () => logs);
 
 import {
   afterSubscriptionUpdated,
+  relaysIncludeBlastr,
+  syncBlastrEntitlementBeforePublish,
   syncBlastrEntitlementForUser,
 } from "~/infra/blastr/entitlement-sync.server";
 
@@ -130,6 +132,43 @@ describe("Blastr entitlement sync", () => {
     expect(blastr.syncEntitlement).toHaveBeenCalledWith(PARENT_HEX, "active");
     expect(blastr.syncEntitlement).toHaveBeenCalledWith(CHILD_HEX, "active");
     expect(blastr.syncEntitlement).toHaveBeenCalledTimes(2);
+  });
+
+  it("registers the publishing pubkey before a Blastr delivery", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      npub: "child-npub",
+      isEnabled: true,
+    });
+    payments.getUserSubscription.mockResolvedValue(activeBlast);
+
+    await syncBlastrEntitlementBeforePublish("child-1", [
+      "wss://relay.primal.net",
+      "wss://blastr.smartflow.social",
+    ]);
+
+    expect(blastr.syncEntitlement).toHaveBeenCalledWith(CHILD_HEX, "active");
+  });
+
+  it("leaves Blastr alone when the post is not sent there", async () => {
+    await syncBlastrEntitlementBeforePublish("child-1", [
+      "wss://relay.primal.net",
+      "wss://relay.damus.io",
+    ]);
+
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
+    expect(blastr.syncEntitlement).not.toHaveBeenCalled();
+  });
+
+  it("still returns when the entitlement lookup fails", async () => {
+    prismaMock.user.findUnique.mockRejectedValue(new Error("db down"));
+
+    await expect(
+      syncBlastrEntitlementBeforePublish("child-1", [
+        "wss://blastr.smartflow.social/",
+      ])
+    ).resolves.toBeUndefined();
+    expect(logs.logError).toHaveBeenCalled();
+    expect(relaysIncludeBlastr(["wss://blastr.smartflow.social/"])).toBe(true);
   });
 
   it("keeps going when one child entitlement sync fails", async () => {

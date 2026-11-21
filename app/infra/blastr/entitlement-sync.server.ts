@@ -46,6 +46,42 @@ export async function syncBlastrEntitlementForUser(
   await syncEntitlement(pubkeyHex, isEligible ? "active" : "expired");
 }
 
+const BLASTR_PUBLISH_HOST = "blastr.smartflow.social";
+
+/**
+ * True when this publish will open a socket to the hosted Blastr relay.
+ * The relay accepts an event only when that event's pubkey is entitled.
+ */
+export function relaysIncludeBlastr(relays: readonly string[]): boolean {
+  return relays.some((relay) => {
+    try {
+      return new URL(relay).hostname === BLASTR_PUBLISH_HOST;
+    } catch {
+      return relay.includes(BLASTR_PUBLISH_HOST);
+    }
+  });
+}
+
+/**
+ * Write the publishing account's Blastr entitlement before the socket opens.
+ * A linked child publishes as their own pubkey, so the parent-plan row has to
+ * exist before Blastr sees the event. Other relays still publish if this fails.
+ */
+export async function syncBlastrEntitlementBeforePublish(
+  userId: string,
+  relays: readonly string[]
+): Promise<void> {
+  if (!relaysIncludeBlastr(relays)) return;
+  try {
+    await syncBlastrEntitlementForUser(userId);
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
+      context: "Blastr entitlement sync before publish",
+      userId,
+    });
+  }
+}
+
 async function syncLinkedChildEntitlements(
   parentUserId: string
 ): Promise<void> {
