@@ -17,7 +17,7 @@ import {
   getQueueTypesCached,
   getHashTagPresetsCached,
 } from "~/features/user/services/user-cache.server";
-import { addDays, nowUTC, toPrismaDate } from "~/lib/temporal";
+import { nowUTC, toPrismaDate } from "~/lib/temporal";
 import {
   validateSignedEvent,
   validateNostrEvent,
@@ -60,9 +60,14 @@ function toAppQueueTypes(
     .filter((qt): qt is QueueType => qt != null);
 }
 
-const PAST_DAYS_WINDOW = 30;
 const DEFAULT_PAST_LIMIT = 20;
 const DEFAULT_FUTURE_LIMIT = 30;
+/**
+ * Past posts are not clipped to a recent window. A 30-day floor hid every
+ * post for accounts whose last publish was older than that, and the dashboard
+ * showed "No posts yet".
+ */
+const FLOW_PAST_FLOOR = new Date(0);
 
 function getGoLiveAt(item: CombinedContent): number {
   return getFlowGoLiveAtMs(item);
@@ -308,11 +313,9 @@ export async function loadFlowData({
   after,
 }: LoadFlowDataParams): Promise<LoadFlowDataResult> {
   const nowZoned = nowUTC();
-  const thirtyDaysAgoZoned = addDays(nowZoned, -PAST_DAYS_WINDOW);
   const now = toPrismaDate(nowZoned);
-  const thirtyDaysAgo = toPrismaDate(thirtyDaysAgoZoned);
 
-  if (!now || !thirtyDaysAgo) {
+  if (!now) {
     throw new Error("Failed to convert Temporal dates to Date");
   }
 
@@ -335,7 +338,7 @@ export async function loadFlowData({
       fetchPosts
         ? getPastPosts({
             userId,
-            startDate: thirtyDaysAgo,
+            startDate: FLOW_PAST_FLOOR,
             endDate: beforeDate,
             queueType,
             beforeDate,
@@ -346,7 +349,7 @@ export async function loadFlowData({
       fetchLongform
         ? getPastLongFormPosts({
             userId,
-            startDate: thirtyDaysAgo,
+            startDate: FLOW_PAST_FLOOR,
             endDate: beforeDate,
             queueType,
             beforeDate,
@@ -527,7 +530,7 @@ export async function loadFlowData({
     fetchPosts
       ? getPastPosts({
           userId,
-          startDate: thirtyDaysAgo,
+          startDate: FLOW_PAST_FLOOR,
           endDate: now,
           queueType,
           limit: pastLimit + 1,
@@ -537,7 +540,7 @@ export async function loadFlowData({
     fetchLongform
       ? getPastLongFormPosts({
           userId,
-          startDate: thirtyDaysAgo,
+          startDate: FLOW_PAST_FLOOR,
           endDate: now,
           queueType,
           limit: pastLimit + 1,

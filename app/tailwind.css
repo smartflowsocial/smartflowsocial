@@ -24,13 +24,6 @@
   }
 }
 
-/* Space for fixed BTCPay "awaiting confirmation" strip (see BtcpayConfirmationWatchBar).
- * The strip itself uses `safe-pt-2`, so we match the same baseline + safe-area inset
- * here so page content doesn't slide under the notch on installed iOS PWAs. */
-body.has-btcpay-confirmation-bar {
-  padding-top: calc(2.75rem + env(safe-area-inset-top));
-}
-
 /* App utilities: scrollbar, Flow card pulse, first-run nav glow (@theme owns fade/slide keyframe animations). */
 @layer utilities {
   /* Hide scrollbar while keeping scroll (Flow section) */
