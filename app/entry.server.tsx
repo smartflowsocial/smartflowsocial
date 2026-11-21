@@ -1,6 +1,8 @@
 /**
  * React Router server entry. The request nonce from `loadContext` is passed
- * to `ServerRouter` so framework scripts render with the CSP nonce.
+ * to `ServerRouter` and to `renderToPipeableStream`. Router scripts use the
+ * prop. React's own inline scripts only receive the nonce from the render
+ * option.
  */
 
 import { PassThrough } from "node:stream";
@@ -17,6 +19,7 @@ import {
 import { nonceContext } from "#nonce-context";
 import { logError } from "~/lib/error-logger.server";
 import { initSentry } from "~/lib/sentry.server";
+import { withStreamNonce } from "~/lib/stream-nonce.server";
 
 // Initialize Sentry early for server-side error tracking
 
@@ -70,7 +73,7 @@ function handleBotRequest(
         url={request.url}
         nonce={nonce}
       />,
-      {
+      withStreamNonce(nonce, {
         onAllReady() {
           const body = new PassThrough();
 
@@ -97,7 +100,7 @@ function handleBotRequest(
             message: "Error during bot request rendering",
           });
         },
-      }
+      })
     );
 
     setTimeout(abort, ABORT_DELAY);
@@ -118,7 +121,7 @@ function handleBrowserRequest(
         url={request.url}
         nonce={nonce}
       />,
-      {
+      withStreamNonce(nonce, {
         onShellReady() {
           const body = new PassThrough();
 
@@ -145,7 +148,7 @@ function handleBrowserRequest(
           });
           responseStatusCode = 500;
         },
-      }
+      })
     );
 
     setTimeout(abort, ABORT_DELAY);
