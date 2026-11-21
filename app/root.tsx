@@ -45,6 +45,7 @@ import { getSiteOrigin } from "~/lib/site-url.server";
 import { themeBootScript } from "~/lib/theme-boot-script";
 import { THEME_COLOR_HEX } from "~/lib/theme-color";
 import { syncThemeColorMetaFromDocument } from "~/lib/theme.client";
+import { zodJitlessBootScript } from "~/lib/zod-jitless-boot-script";
 import stylesheet from "~/tailwind.css?url";
 
 /** Re-apply `theme-color` after SPA navigations (Remix may re-inject media-based metas). */
@@ -231,6 +232,10 @@ export default function App() {
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: zodJitlessBootScript() }}
+        />
         {/* Early viewport for mobile Safari / installed PWA (keep in sync with meta export below). */}
         <meta
           name="viewport"
@@ -326,6 +331,10 @@ export function ErrorBoundary() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: zodJitlessBootScript() }}
+        />
         <title>{errorTitle}</title>
         <Meta />
         <Links />
