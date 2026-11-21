@@ -831,9 +831,7 @@ export function PlansPage(): ReactNode {
           isPolling={isPolling}
           btcpayAwaitingConfirmations={btcpayAwaitingConfirmations}
           onCopy={copyToClipboard}
-          onCheckPayment={(id) => {
-            void checkPaymentStatusNow(id);
-          }}
+          onCheckPayment={(id) => checkPaymentStatusNow(id)}
           onClose={closePaymentModal}
         />
       ) : null}

@@ -70,6 +70,9 @@ export async function checkPaymentStatusById(paymentId: string) {
       success: true,
       paid: false,
       status: paymentStatus.status,
+      ...(lastVerification?.message
+        ? { message: lastVerification.message }
+        : {}),
       ...(lastVerification?.btcpayAwaitingConfirmations
         ? { btcpayAwaitingConfirmations: true as const }
         : {}),

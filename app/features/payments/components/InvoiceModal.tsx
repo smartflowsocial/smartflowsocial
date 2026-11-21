@@ -5,11 +5,30 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import type { PaymentCheckResult } from "~/features/payments/hooks/usePaymentPolling";
 import type { InvoiceCheckoutKind } from "~/features/payments/types";
 import {
   raceWithTimeout,
   WEBLN_SEND_PAYMENT_TIMEOUT_MS,
 } from "~/lib/zap-flow.client";
+
+async function finishPaymentCheck(
+  paymentId: string,
+  onCheckPayment: NonNullable<InvoiceModalProps["onCheckPayment"]>,
+  setCheckNote: (note: string | null) => void,
+  setIsCheckingPayment: (checking: boolean) => void
+): Promise<void> {
+  try {
+    const result = await onCheckPayment(paymentId);
+    if (result && result.paid === false && result.message) {
+      setCheckNote(result.message);
+    }
+  } catch {
+    setCheckNote("Couldn't check the payment. Try again.");
+  } finally {
+    setIsCheckingPayment(false);
+  }
+}
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -31,8 +50,65 @@ interface InvoiceModalProps {
   /** BTCPay: payment seen on-chain but fewer than required confirmations yet. */
   btcpayAwaitingConfirmations?: boolean;
   onCopy: (text: string) => void;
-  onCheckPayment?: (paymentId: string) => void;
+  onCheckPayment?: (
+    paymentId: string
+  ) => void | Promise<PaymentCheckResult | void>;
   onClose?: () => void;
+}
+
+function PaymentCheckActions({
+  paymentId,
+  onCheckPayment,
+  onClose,
+}: {
+  paymentId?: string;
+  onCheckPayment?: InvoiceModalProps["onCheckPayment"];
+  onClose?: () => void;
+}) {
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [checkNote, setCheckNote] = useState<string | null>(null);
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {paymentId && onCheckPayment ? (
+          <button
+            type="button"
+            disabled={isCheckingPayment}
+            aria-busy={isCheckingPayment}
+            onClick={() => {
+              if (isCheckingPayment) return;
+              setIsCheckingPayment(true);
+              setCheckNote(null);
+              void finishPaymentCheck(
+                paymentId,
+                onCheckPayment,
+                setCheckNote,
+                setIsCheckingPayment
+              );
+            }}
+            className="focus-ring border-border bg-surface-hover text-text hover:bg-surface-active rounded-lg border px-4 py-2 text-sm font-medium disabled:cursor-wait disabled:opacity-70"
+          >
+            {isCheckingPayment ? "Checking..." : "Check payment"}
+          </button>
+        ) : null}
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 rounded-lg border px-4 py-2 text-sm font-medium"
+          >
+            Close
+          </button>
+        ) : null}
+      </div>
+      {checkNote ? (
+        <p className="text-text-secondary mt-3 text-xs" role="status">
+          {checkNote}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 export function InvoiceModal({
@@ -292,26 +368,11 @@ export function InvoiceModal({
               <span className="text-danger">Payment expired</span>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {invoiceData.paymentId && onCheckPayment ? (
-              <button
-                type="button"
-                onClick={() => onCheckPayment(invoiceData.paymentId!)}
-                className="focus-ring border-border bg-surface-hover text-text hover:bg-surface-active rounded-lg border px-4 py-2 text-sm font-medium"
-              >
-                Check payment
-              </button>
-            ) : null}
-            {onClose ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="focus-ring border-border bg-surface-hover text-text-secondary hover:bg-surface-hover/80 rounded-lg border px-4 py-2 text-sm font-medium"
-              >
-                Close
-              </button>
-            ) : null}
-          </div>
+          <PaymentCheckActions
+            paymentId={invoiceData.paymentId}
+            onCheckPayment={onCheckPayment}
+            onClose={onClose}
+          />
         </div>
       </div>
     </div>

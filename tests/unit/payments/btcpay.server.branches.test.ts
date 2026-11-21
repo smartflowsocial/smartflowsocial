@@ -29,6 +29,7 @@ vi.mock("~/lib/env.server", () => ({ env: envState.env }));
 vi.mock("~/lib/error-logger.server", () => logger);
 
 import {
+  BTCPAY_ONCHAIN_CHECKOUT_EXPIRATION_MINUTES,
   btcpayCreateInvoice,
   btcpayGetInvoiceSnapshot,
   isBtcpayConfigured,
@@ -174,6 +175,7 @@ describe("BTCPay configuration and invoices", () => {
             smartflowPlanId: "founder",
           },
           checkout: {
+            expirationMinutes: BTCPAY_ONCHAIN_CHECKOUT_EXPIRATION_MINUTES,
             redirectURL: "https://app.example/dashboard?btcpayPaid=1",
           },
         }),
@@ -207,7 +209,12 @@ describe("BTCPay configuration and invoices", () => {
       checkoutLink: "https://btcpay.example/i/inv-2",
       expirationTime: undefined,
     });
-    expect(requestBody()).not.toContain("checkout");
+    expect(JSON.parse(requestBody())).toMatchObject({
+      checkout: {
+        expirationMinutes: BTCPAY_ONCHAIN_CHECKOUT_EXPIRATION_MINUTES,
+      },
+    });
+    expect(requestBody()).not.toContain("redirectURL");
   });
 
   it("maps provider failures to 502 or 400 and logs the provider message", async () => {
