@@ -4,7 +4,8 @@
  * For more information, see https://remix.run/docs/en/main/file-conventions/entry.client
  */
 
-// Must run before the router evaluates route modules that parse with Zod.
+// Route modules imported by the server bootstrap run before this file.
+// `zodJitlessBootScript` in the document head covers that case.
 import "~/lib/zod-jitless.client";
 
 import { startTransition, StrictMode } from "react";
