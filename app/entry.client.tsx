@@ -4,6 +4,9 @@
  * For more information, see https://remix.run/docs/en/main/file-conventions/entry.client
  */
 
+// Must run before the router evaluates route modules that parse with Zod.
+import "~/lib/zod-jitless.client";
+
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";

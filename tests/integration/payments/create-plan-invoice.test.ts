@@ -96,6 +96,7 @@ vi.mock("@getalby/sdk/lnclient", () => ({
     return new MockLN(credentials);
   }),
   USD: vi.fn((amount: unknown) => ({ amount: amount as number })),
+  SATS: vi.fn((amount: number) => ({ satoshi: amount })),
 }));
 
 interface MockRequest {
@@ -255,7 +256,13 @@ describe("createPlanInvoice", () => {
       description: "Creator plan subscription",
     });
 
-    expect(mockLNInstance.requestPayment).toHaveBeenCalled();
+    expect(mockLNInstance.requestPayment).toHaveBeenCalledWith(
+      { satoshi: 25000 },
+      expect.objectContaining({
+        description: "Creator plan subscription",
+        expiry: 1800,
+      })
+    );
     const createMockPaymentFn = mockPrisma.payment.create as ReturnType<
       typeof vi.fn
     >;
