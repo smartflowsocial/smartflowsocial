@@ -26,6 +26,7 @@ import type { CheckoutPaymentMethodId } from "~/features/payments/checkout/check
 import { getAvailableCheckoutMethods } from "~/features/payments/checkout/checkout-method-config";
 import { FounderCheckoutModal } from "~/features/payments/components/checkout/FounderCheckoutModal";
 import { usePlansPageCheckoutAnalytics } from "~/features/payments/hooks/use-plans-page-checkout-analytics";
+import { pricingCardPlanState } from "~/features/payments/pricing-card-plan-state";
 import { useDeployment } from "~/features/payments/types";
 import type { PricingPagePlan } from "~/features/payments/types/plan-loader.types";
 import type {
@@ -430,41 +431,53 @@ export function PlansPage(): ReactNode {
           </div>
 
           <div className="mb-9 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {mainGridPlans.map((plan) => (
-              <PricingCard
-                key={plan.id}
-                plan={plan}
-                isCurrentPlan={currentSubscription?.planId === plan.id}
-                isCurrentPlanExpired={currentSubscription?.isExpired ?? false}
-                isLoading={isLoading}
-                selectedPlan={selectedPlan}
-                useCheckoutModal={Boolean(subscriptionCheckoutV2Enabled)}
-                billingCadence={billingCadence}
-                onPlanSelect={(planId) => {
-                  if (linkedChildAccount) return;
-                  if (subscriptionCheckoutV2Enabled) {
-                    if (planId === "free") {
-                      if (!user) {
-                        void navigate("/login", { replace: true });
+            {mainGridPlans.map((plan) => {
+              const cardState = pricingCardPlanState({
+                planId: plan.id,
+                subscription: currentSubscription
+                  ? {
+                      planId: currentSubscription.planId,
+                      isExpired: currentSubscription.isExpired,
+                    }
+                  : null,
+                isSignedIn: user != null,
+              });
+              return (
+                <PricingCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrentPlan={cardState.isCurrentPlan}
+                  isCurrentPlanExpired={cardState.isCurrentPlanExpired}
+                  isLoading={isLoading}
+                  selectedPlan={selectedPlan}
+                  useCheckoutModal={Boolean(subscriptionCheckoutV2Enabled)}
+                  billingCadence={billingCadence}
+                  onPlanSelect={(planId) => {
+                    if (linkedChildAccount) return;
+                    if (subscriptionCheckoutV2Enabled) {
+                      if (planId === "free") {
+                        if (!user) {
+                          void navigate("/login", { replace: true });
+                          return;
+                        }
+                        setSelectedPlan(planId);
+                        const formData = new FormData();
+                        formData.set("intent", "select_plan");
+                        formData.set("planId", planId);
+                        formData.set("paymentMode", "manual");
+                        formData.set("billingCadence", "monthly");
+                        formData.set("accessDurationMonths", "1");
+                        void submit(formData, { method: "post" });
                         return;
                       }
-                      setSelectedPlan(planId);
-                      const formData = new FormData();
-                      formData.set("intent", "select_plan");
-                      formData.set("planId", planId);
-                      formData.set("paymentMode", "manual");
-                      formData.set("billingCadence", "monthly");
-                      formData.set("accessDurationMonths", "1");
-                      void submit(formData, { method: "post" });
+                      openCheckoutForPlan(planId);
                       return;
                     }
-                    openCheckoutForPlan(planId);
-                    return;
-                  }
-                  setSelectedPlan(planId);
-                }}
-              />
-            ))}
+                    setSelectedPlan(planId);
+                  }}
+                />
+              );
+            })}
           </div>
 
           {founderOffering ? (
