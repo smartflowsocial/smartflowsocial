@@ -161,7 +161,7 @@ vi.mock("~/features/user/services/user-cache.server", () => ({
 }));
 
 import { loadFlowData } from "~/features/posts/services/flow-loader.server";
-import { addDays, nowUTC, toPrismaDate } from "~/lib/temporal";
+import { nowUTC, toPrismaDate } from "~/lib/temporal";
 
 const USER = { id: "user-1", name: "Ada" };
 const PRESETS = [{ id: "hash-1", name: "Tags", tags: "#nostr" }];
@@ -249,12 +249,10 @@ function idsOf(items: FlowRow[]): string[] {
   return items.map((item) => item.data.id);
 }
 
-function windowDates(): { now: Date; start: Date } {
-  const zoned = nowUTC();
-  const now = toPrismaDate(zoned);
-  const start = toPrismaDate(addDays(zoned, -30));
-  if (!now || !start) throw new Error("expected window dates");
-  return { now, start };
+function windowDates(): { now: Date } {
+  const now = toPrismaDate(nowUTC());
+  if (!now) throw new Error("expected window dates");
+  return { now };
 }
 
 describe("loadFlowData", () => {
@@ -398,7 +396,7 @@ describe("loadFlowData", () => {
     const dates = windowDates();
     expect(postsApi.getPastPosts).toHaveBeenCalledWith({
       userId: "user-1",
-      startDate: dates.start,
+      startDate: new Date(0),
       endDate: dates.now,
       queueType: "Main",
       limit: 21,
@@ -574,6 +572,7 @@ describe("loadFlowData", () => {
     const query = postsApi.getPastPosts.mock.calls[0]?.[0];
     expect(query?.beforeDate).toEqual(new Date(1_717_200_000_000));
     expect(query?.endDate).toEqual(new Date(1_717_200_000_000));
+    expect(query?.startDate).toEqual(new Date(0));
     expect(query?.limit).toBe(3);
 
     postsApi.getPastPosts.mockResolvedValue([]);
