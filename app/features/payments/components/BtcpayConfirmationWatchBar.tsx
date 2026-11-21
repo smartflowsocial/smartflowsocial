@@ -23,8 +23,9 @@ function syncWatchFromStorage(): ReturnType<
 }
 
 /**
- * Slim banner when the user closed the BTCPay invoice modal after a 0-conf payment
- * was detected; keeps polling until the first on-chain confirmation completes access.
+ * Floating notice when the user closed the BTCPay invoice modal after a 0-conf
+ * payment was detected. Keeps polling until the first on-chain confirmation
+ * completes access, without covering the header.
  */
 export function BtcpayConfirmationWatchBar() {
   const loaderData = useRouteLoaderData<unknown>("root");
@@ -50,19 +51,6 @@ export function BtcpayConfirmationWatchBar() {
     storageEpoch;
     return syncWatchFromStorage();
   }, [user, storageEpoch]);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const cls = "has-btcpay-confirmation-bar";
-    if (!watch || !user) {
-      document.body.classList.remove(cls);
-      return;
-    }
-    document.body.classList.add(cls);
-    return () => {
-      document.body.classList.remove(cls);
-    };
-  }, [watch, user]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -156,29 +144,32 @@ export function BtcpayConfirmationWatchBar() {
 
   return (
     <div
-      className="border-warning/40 bg-warning text-warning-foreground shadow-2 safe-pt-2 safe-x fixed top-0 right-0 left-0 z-[100] border-b px-3 pb-2 backdrop-blur-sm"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(5.75rem_+_env(safe-area-inset-bottom))] z-40 flex justify-center px-3 sm:bottom-[calc(4.25rem_+_env(safe-area-inset-bottom))] sm:justify-end sm:px-4"
       role="status"
     >
-      <div className="mx-auto flex max-w-4xl items-center justify-center gap-3 text-center text-sm">
-        <Loader2
-          className="text-warning-foreground/80 h-4 w-4 shrink-0 animate-spin"
-          aria-hidden
-        />
-        <p className="text-warning-foreground min-w-0 flex-1">
-          Bitcoin payment seen - waiting for the first on-chain confirmation.
-          Your plan activates after one block. You can keep using the app; we
-          will update automatically.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            clearBtcpayConfirmationWatch();
-          }}
-          className="text-warning-foreground/80 hover:text-warning-foreground focus-visible:ring-warning-foreground/60 focus-visible:ring-offset-warning shrink-0 rounded-xs p-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          aria-label="Dismiss payment status bar"
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <div className="border-border bg-surface-overlay text-text shadow-3 pointer-events-auto w-full max-w-sm rounded-xl border p-3">
+        <div className="flex items-start gap-3">
+          <span className="bg-warning/15 text-warning-text mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">Waiting for confirmation</p>
+            <p className="text-text-secondary mt-1 text-xs leading-relaxed">
+              Bitcoin payment seen. Your plan activates after one block. You can
+              keep using the app.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              clearBtcpayConfirmationWatch();
+            }}
+            className="text-text-secondary hover:text-text hover:bg-surface-hover focus-visible:ring-ring -mt-1 -mr-1 shrink-0 rounded-md p-1.5 focus-visible:ring-2 focus-visible:outline-none"
+            aria-label="Dismiss payment notice"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
