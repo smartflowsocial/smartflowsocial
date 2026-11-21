@@ -128,9 +128,14 @@ describe("PublishNowUseCase", () => {
         TEST_USER_ID,
         relays
       );
-      expect(
-        mockSyncBlastrBeforePublish.mock.invocationCallOrder[0]
-      ).toBeLessThan(mockPublish.mock.invocationCallOrder[0]);
+      const syncOrder = mockSyncBlastrBeforePublish.mock.invocationCallOrder[0];
+      const publishOrder = mockPublish.mock.invocationCallOrder[0];
+      expect(syncOrder).toEqual(expect.any(Number));
+      expect(publishOrder).toEqual(expect.any(Number));
+      if (syncOrder === undefined || publishOrder === undefined) {
+        throw new Error("publish did not record call order");
+      }
+      expect(syncOrder).toBeLessThan(publishOrder);
 
       expect(getPostById).toHaveBeenCalledWith({
         id: TEST_POST_ID,
