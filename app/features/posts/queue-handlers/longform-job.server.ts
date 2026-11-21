@@ -478,6 +478,7 @@ export async function runScheduledLongFormPostJob(input: {
 
   const { publishResult } = await publishWithQueueSpan({
     queueName,
+    userId,
     attributes: {
       queue: queueName,
       longFormPostId: postId,

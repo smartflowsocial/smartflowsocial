@@ -15,6 +15,7 @@ import {
   persistIntendedPublishRelays,
   persistPublishRelayAcks,
 } from "~/features/relays/publish-relay-acks.server";
+import { syncBlastrEntitlementBeforePublish } from "~/infra/blastr/entitlement-sync.server";
 import type { PublishPostKind } from "~/infra/notifications/publish-copy.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
@@ -150,6 +151,9 @@ export class PublishNowUseCase {
           }
         );
       }
+
+      // Blastr rejects a pubkey that is not entitled yet. A child uses the parent plan.
+      await syncBlastrEntitlementBeforePublish(input.userId, input.relays);
 
       // Publish to Nostr (flags will be set by state machine transition)
       const publisher = getNostrPublisher();

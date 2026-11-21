@@ -9,6 +9,7 @@ import {
 } from "~/features/nostr/delete-event.server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
 import { resolveExecutionRelays } from "~/features/relays/relay-resolution.server";
+import { syncBlastrEntitlementBeforePublish } from "~/infra/blastr/entitlement-sync.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
   allRelaysRejected,
@@ -405,6 +406,7 @@ async function handlePostDeleteRequested(
     relayCount: relays.length,
   });
 
+  await syncBlastrEntitlementBeforePublish(payload.userId, relays);
   const publishResult = await getNostrPublisher().publish(
     signedDeleteEvent,
     relays,
@@ -489,6 +491,7 @@ async function handleLongFormDeleteRequested(
     relayCount: relays.length,
   });
 
+  await syncBlastrEntitlementBeforePublish(payload.userId, relays);
   const publishResult = await getNostrPublisher().publish(
     signedDeleteEvent,
     relays,

@@ -242,6 +242,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
   const publishResult = await publishSignedEventToRelays({
     signedEvent: validatedEvent,
     relays: publishRelays,
+    userId: session.userId,
   });
 
   // The internal publisher reports per-relay failures in its result. Record

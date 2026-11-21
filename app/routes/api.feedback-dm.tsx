@@ -219,6 +219,7 @@ export const action = withCSRFProtection(
       await publishSignedEventToRelays({
         signedEvent: validatedKind4,
         relays: kind4Relays,
+        userId: session.userId,
         correlationId: `feedback-dm:${validatedKind4.id}`,
       });
 
@@ -239,6 +240,7 @@ export const action = withCSRFProtection(
         await publishSignedEventToRelays({
           signedEvent: gw,
           relays: wrapRelays.length > 0 ? wrapRelays : kind4Relays,
+          userId: session.userId,
           correlationId: `feedback-dm:nip17:${gw.id}`,
         });
       }

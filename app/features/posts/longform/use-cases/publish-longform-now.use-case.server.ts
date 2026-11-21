@@ -7,6 +7,7 @@
 import type { Prisma } from "~/features/posts/data/posts-prisma-types.server";
 import { getLongFormPost } from "~/features/posts/server";
 import { persistPublishRelayAcks } from "~/features/relays/publish-relay-acks.server";
+import { syncBlastrEntitlementBeforePublish } from "~/infra/blastr/entitlement-sync.server";
 import { getNostrPublisher } from "~/infra/publishers/nostr-publisher.server";
 import {
   acquireLongFormPostPublishLease,
@@ -130,6 +131,9 @@ export class PublishLongFormNowUseCase {
       validatedSignedEvent.created_at,
       0
     );
+
+    // Blastr rejects a pubkey that is not entitled yet. A child uses the parent plan.
+    await syncBlastrEntitlementBeforePublish(input.userId, input.relays);
 
     // Publish to Nostr (flags will be set by state machine transition)
     const publisher = getNostrPublisher();

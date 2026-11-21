@@ -1,3 +1,4 @@
+import { syncBlastrEntitlementBeforePublish } from "~/infra/blastr/entitlement-sync.server";
 import {
   getNostrPublisher,
   type NostrPublishResult,
@@ -17,9 +18,13 @@ import type { SignedEvent } from "./types";
 export async function publishSignedEventToRelays(input: {
   signedEvent: SignedEvent;
   relays: string[];
+  userId?: string;
   correlationId?: string;
 }): Promise<NostrPublishResult> {
   const validated = validateSignedEventCryptographically(input.signedEvent);
+  if (input.userId) {
+    await syncBlastrEntitlementBeforePublish(input.userId, input.relays);
+  }
   const publisher = getNostrPublisher();
 
   return await withSentrySpan(
