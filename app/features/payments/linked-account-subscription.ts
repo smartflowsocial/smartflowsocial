@@ -16,6 +16,7 @@ interface ParentSubscriptionForChild {
   Plan?: {
     name?: string | null;
     enableLifetimeAccess?: boolean;
+    enableRelayBlast?: boolean | null;
   } | null;
 }
 
@@ -44,4 +45,26 @@ export function parentSubscriptionCoversLinkedChild(
 
   const now = options?.now ?? new Date();
   return subscription.currentPeriodEnd.getTime() >= now.getTime();
+}
+
+/**
+ * Blastr for a linked child follows the same plan check the parent uses to
+ * publish: an active multi-account plan whose row includes relay fan-out.
+ * The broader linked-account cover check also requires the period end to be
+ * in the future. That extra gate left the parent entitled and wrote the
+ * child pubkey as expired, so Blastr rejected the child's event.
+ */
+export function parentSubscriptionGrantsRelayFanout(
+  subscription: ParentSubscriptionForChild | null,
+  options?: { deployment?: PublicDeployment }
+): boolean {
+  if (!subscription?.planId || subscription.status !== "ACTIVE") return false;
+  if (subscription.Plan?.enableRelayBlast !== true) return false;
+
+  const commercial = parseCommercialPlanType(subscription.planId);
+  if (!commercial || commercial === "free") return false;
+
+  const deployment = options?.deployment ?? readPublicDeployment(process.env);
+  const accountsIncluded = getCanonicalPlanPolicy(commercial).accountsIncluded;
+  return allowsMultipleAccounts(accountsIncluded, deployment);
 }

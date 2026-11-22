@@ -61,7 +61,11 @@ const blastr = vi.hoisted(() => ({
   resolvePubkeyHex: vi.fn<(npubOrHex: string) => string | null>(),
 }));
 
-vi.mock("~/features/payments/data", () => payments);
+vi.mock("~/features/payments/data", () => ({
+  getRelayFanoutSubscription: (userId: string) =>
+    payments.getUserSubscription(userId),
+  getUserSubscription: payments.getUserSubscription,
+}));
 vi.mock(
   "~/features/payments/entitlements/deployment-mode.server",
   () => access

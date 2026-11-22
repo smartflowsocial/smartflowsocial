@@ -36,11 +36,17 @@ const userApi = vi.hoisted(() => ({
   getUsersByNpubs: vi.fn(),
 }));
 
-const payments = vi.hoisted(() => ({
-  getAllPlans: vi.fn(),
-  getUserPaymentHistory: vi.fn(),
-  getUserSubscription: vi.fn(),
-}));
+const payments = vi.hoisted(() => {
+  const getUserSubscription = vi.fn();
+  return {
+    getAllPlans: vi.fn(),
+    getRelayFanoutSubscription: vi.fn((userId: string) =>
+      getUserSubscription(userId)
+    ),
+    getUserPaymentHistory: vi.fn(),
+    getUserSubscription,
+  };
+});
 
 const subscriptions = vi.hoisted(() => ({
   getSubscriptionData: vi.fn(),
@@ -203,6 +209,9 @@ function primeSettings(): void {
   userApi.getUserThemePreference.mockResolvedValue(null);
   userApi.getUserDefaultZapAmountSatsStored.mockResolvedValue(null);
   userApi.getScheduleInterval.mockResolvedValue([]);
+  payments.getRelayFanoutSubscription.mockImplementation((userId: string) =>
+    payments.getUserSubscription(userId)
+  );
   payments.getUserSubscription.mockResolvedValue(null);
   userApi.getUserBasicInfo.mockResolvedValue(null);
   payments.getAllPlans.mockResolvedValue([]);

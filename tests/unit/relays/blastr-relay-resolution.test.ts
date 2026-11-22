@@ -107,6 +107,20 @@ describe("isBlastrEnabledForUserFromDb", () => {
     expect(result).toBe(false);
   });
 
+  it("enables Blastr for a child when the parent plan includes it after the period end", async () => {
+    installChildSubscription({
+      blastrRelayEnabled: true,
+      parentPlanId: "pro",
+      parentEnablesRelayBlast: true,
+      currentPeriodEnd: new Date("2020-01-01T00:00:00.000Z"),
+    });
+
+    const { isBlastrEnabledForUserFromDb } =
+      await import("~/features/relays/repositories/relay-resolution-data.server");
+    const result = await isBlastrEnabledForUserFromDb("child-1");
+    expect(result).toBe(true);
+  });
+
   it("does not grant Blastr from a parent plan that does not cover linked accounts", async () => {
     installChildSubscription({
       blastrRelayEnabled: true,
@@ -125,6 +139,7 @@ function installChildSubscription(input: {
   blastrRelayEnabled: boolean;
   parentPlanId: string;
   parentEnablesRelayBlast: boolean;
+  currentPeriodEnd?: Date;
 }): void {
   (mockPrisma.user.findUnique as ReturnType<typeof vi.fn>).mockImplementation(
     (args: {
@@ -149,7 +164,8 @@ function installChildSubscription(input: {
       return {
         status: "ACTIVE",
         planId: input.parentPlanId,
-        currentPeriodEnd: new Date("2099-01-01T00:00:00.000Z"),
+        currentPeriodEnd:
+          input.currentPeriodEnd ?? new Date("2099-01-01T00:00:00.000Z"),
         Plan: {
           enableRelayBlast: input.parentEnablesRelayBlast,
           enableLifetimeAccess: false,
