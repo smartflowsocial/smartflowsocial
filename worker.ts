@@ -26,6 +26,7 @@ import {
 // Import outbox worker
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
 import { getQueueInstance } from "./app/infra/queue";
+import { startWatchdogHeartbeat } from "./app/infra/watchdog-heartbeat.server";
 import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-low-notifications.server";
 import { runPaidPostAnalyticsSweep } from "./app/features/analytics/run-sweep.server";
 import { checkAndRenewSubscriptions } from "./app/features/payments/services/subscription-renewal.server";
@@ -470,6 +471,7 @@ workerMetricsServer.listen(workerMetricsPort, "0.0.0.0", () => {
 
 // Start outbox worker to drain events into BullMQ
 const outboxWorkerInterval = startOutboxWorker();
+const stopWatchdogHeartbeat = startWatchdogHeartbeat();
 logInfo("Outbox worker started");
 
 function shutdownWorker(signal: "SIGTERM" | "SIGINT"): void {
@@ -477,6 +479,7 @@ function shutdownWorker(signal: "SIGTERM" | "SIGINT"): void {
   if (outboxWorkerInterval) {
     clearInterval(outboxWorkerInterval);
   }
+  stopWatchdogHeartbeat();
   if (runwayLowInterval) {
     clearInterval(runwayLowInterval);
   }
