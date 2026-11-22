@@ -89,6 +89,30 @@ const QUEUE_NAMES = [
   "broadcast-dm",
 ] as const;
 
+export async function runWatchdogHeartbeatTick(
+  url: string,
+  secret: string
+): Promise<void> {
+  const { getQueueInstance } = await import("~/infra/queue");
+  const counts: QueueCounts[] = [];
+  for (const name of QUEUE_NAMES) {
+    const queue = getQueueInstance(name);
+    const row = await queue.getJobCounts(
+      "waiting",
+      "active",
+      "delayed",
+      "completed"
+    );
+    counts.push({
+      waiting: row.waiting ?? 0,
+      active: row.active ?? 0,
+      delayed: row.delayed ?? 0,
+      completed: row.completed ?? 0,
+    });
+  }
+  await postSample(url, secret, sampleFromCounts(counts));
+}
+
 export function startWatchdogHeartbeat(intervalMs = 30_000): () => void {
   const url = process.env["WATCHDOG_URL"]?.trim() ?? "";
   const secret = process.env["WATCHDOG_HMAC_SECRET"]?.trim() ?? "";
@@ -100,25 +124,7 @@ export function startWatchdogHeartbeat(intervalMs = 30_000): () => void {
     if (stopped || inFlight) return;
     inFlight = true;
     try {
-      const { getQueueInstance } = await import("~/infra/queue");
-      const counts: QueueCounts[] = [];
-      for (const name of QUEUE_NAMES) {
-        const queue = getQueueInstance(name);
-        const row = await queue.getJobCounts(
-          "waiting",
-          "active",
-          "delayed",
-          "completed"
-        );
-        counts.push({
-          waiting: row.waiting ?? 0,
-          active: row.active ?? 0,
-          delayed: row.delayed ?? 0,
-          completed: row.completed ?? 0,
-        });
-      }
-      const sample = sampleFromCounts(counts);
-      await postSample(url, secret, sample);
+      await runWatchdogHeartbeatTick(url, secret);
     } catch {
       // The worker continues when queue inspection or the watchdog is unavailable.
     } finally {
