@@ -3,17 +3,139 @@ import { createHmac, createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const getJobCounts = vi.hoisted(() => vi.fn());
+const getJobs = vi.hoisted(() => vi.fn());
+const isPaused = vi.hoisted(() => vi.fn());
 
 vi.mock("~/infra/queue", () => ({
-  getQueueInstance: () => ({ getJobCounts }),
+  getQueueInstance: () => ({ getJobCounts, getJobs, isPaused }),
 }));
 
 import {
+  OVERDUE_WAITING_MS,
+  STALLED_ACTIVE_MS,
+  assessWorkerHealth,
   createSignedHeartbeat,
+  noteWatchdogJobCompleted,
   runWatchdogHeartbeatTick,
-  sampleFromCounts,
   startWatchdogHeartbeat,
+  testingSetWatchdogProgress,
+  workerProgressToken,
+  type QueueObservation,
 } from "~/infra/watchdog-heartbeat.server";
+
+const NOW = 1_700_000_000_000;
+
+function queue(overrides: Partial<QueueObservation> = {}): QueueObservation {
+  return {
+    paused: false,
+    waitingCount: 0,
+    activeCount: 0,
+    delayedCount: 0,
+    oldestWaitingAt: null,
+    oldestActiveProcessedOn: null,
+    soonestDelayedPromoteAt: null,
+    ...overrides,
+  };
+}
+
+describe("worker health sample", () => {
+  it("treats empty queues as healthy and idle", () => {
+    expect(assessWorkerHealth([queue()], NOW, "10:0")).toMatchObject({
+      progress: "10:0",
+      idle: true,
+      loopAt: NOW,
+      actionable: false,
+    });
+  });
+
+  it("does not treat a future scheduled post as stalled work", () => {
+    const sample = assessWorkerHealth(
+      [
+        queue({
+          delayedCount: 4,
+          soonestDelayedPromoteAt: NOW + 86_400_000,
+        }),
+      ],
+      NOW,
+      "10:0"
+    );
+    expect(sample.idle).toBe(true);
+    expect(sample.futureScheduled).toBe(4);
+    expect(sample.overdueDelayed).toBe(0);
+  });
+
+  it("recognizes a job that is actively processing", () => {
+    const sample = assessWorkerHealth(
+      [
+        queue({
+          activeCount: 1,
+          oldestActiveProcessedOn: NOW - 1_000,
+        }),
+      ],
+      NOW,
+      "10:3"
+    );
+    expect(sample.idle).toBe(false);
+    expect(sample.active).toBe(1);
+    expect(sample.stalledActive).toBe(0);
+  });
+
+  it("advances progress when work completes and ignores retained completed counts", () => {
+    testingSetWatchdogProgress(10, 0);
+    expect(workerProgressToken()).toBe("10:0");
+    noteWatchdogJobCompleted();
+    noteWatchdogJobCompleted();
+    expect(workerProgressToken()).toBe("10:2");
+    const busy = queue({ waitingCount: 1, oldestWaitingAt: NOW });
+    expect(assessWorkerHealth([busy], NOW, "10:2").progress).toBe(
+      assessWorkerHealth([busy], NOW, "10:2").progress
+    );
+  });
+
+  it("can degrade on an overdue waiting job", () => {
+    const sample = assessWorkerHealth(
+      [
+        queue({
+          waitingCount: 2,
+          oldestWaitingAt: NOW - OVERDUE_WAITING_MS - 1,
+        }),
+      ],
+      NOW,
+      "10:2"
+    );
+    expect(sample.idle).toBe(false);
+    expect(sample.overdueWaiting).toBe(2);
+  });
+
+  it("detects an active job that has exceeded the processing threshold", () => {
+    const sample = assessWorkerHealth(
+      [
+        queue({
+          activeCount: 1,
+          oldestActiveProcessedOn: NOW - STALLED_ACTIVE_MS - 1,
+        }),
+      ],
+      NOW,
+      "10:2"
+    );
+    expect(sample.idle).toBe(false);
+    expect(sample.stalledActive).toBe(1);
+  });
+
+  it("does not treat a paused queue as idle", () => {
+    expect(
+      assessWorkerHealth([queue({ paused: true })], NOW, "10:0").idle
+    ).toBe(false);
+  });
+
+  it("changes the progress token after a restart without calling the reset a stall", () => {
+    const before = assessWorkerHealth([queue()], NOW, "10:8");
+    const after = assessWorkerHealth([queue()], NOW, "20:0");
+    expect(before.progress).not.toBe(after.progress);
+    expect(after.idle).toBe(true);
+    expect(after.loopAt).toBe(NOW);
+  });
+});
 
 describe("watchdog heartbeat", () => {
   it("does nothing when the watchdog is not configured", () => {
@@ -31,31 +153,13 @@ describe("watchdog heartbeat", () => {
     else process.env["WATCHDOG_HMAC_SECRET"] = previousSecret;
   });
 
-  it("treats an empty queue as idle and a backlog as work in progress", () => {
-    expect(
-      sampleFromCounts(
-        [{ waiting: 0, active: 0, delayed: 0, completed: 4 }],
-        1_700_000_000_000
-      )
-    ).toEqual({ progress: "4", idle: true, loopAt: 1_700_000_000_000 });
-    expect(
-      sampleFromCounts(
-        [
-          { waiting: 2, active: 0, delayed: 0, completed: 4 },
-          { waiting: 0, active: 1, delayed: 3, completed: 1 },
-        ],
-        1_700_000_000_000
-      )
-    ).toEqual({ progress: "5", idle: false, loopAt: 1_700_000_000_000 });
-  });
-
   it("signs the watchdog canonical string", async () => {
     const secret = "k".repeat(32);
     const signed = await createSignedHeartbeat({
       url: "https://watchdog.example/v1/heartbeats/sfs-worker",
       secret,
-      payload: { progress: "5", idle: false, loopAt: 1_700_000_000_000 },
-      now: 1_700_000_000_000,
+      payload: { progress: "10:5", idle: false, loopAt: NOW },
+      now: NOW,
       nonce: "abc123noncevalue",
     });
     const bodyHash = createHash("sha256").update(signed.body).digest("hex");
@@ -65,9 +169,9 @@ describe("watchdog heartbeat", () => {
       .digest("hex");
     expect(signed.headers["x-watchdog-signature"]).toBe(expected);
     expect(JSON.parse(signed.body)).toEqual({
-      progress: "5",
+      progress: "10:5",
       idle: false,
-      loopAt: 1_700_000_000_000,
+      loopAt: NOW,
     });
     await expect(
       createSignedHeartbeat({
@@ -104,15 +208,6 @@ describe("watchdog heartbeat", () => {
     });
     expect(generated.headers["x-watchdog-nonce"]).toMatch(/^[a-f0-9]{32}$/);
   });
-
-  it("clamps negative queue counts", () => {
-    expect(
-      sampleFromCounts(
-        [{ waiting: -2, active: -1, delayed: -4, completed: -3 }],
-        5
-      )
-    ).toEqual({ progress: "0", idle: true, loopAt: 5 });
-  });
 });
 
 describe("configured watchdog sender", () => {
@@ -122,8 +217,22 @@ describe("configured watchdog sender", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
     getJobCounts.mockReset();
+    getJobs.mockReset();
+    isPaused.mockReset();
   });
+
+  function idleQueues(): void {
+    isPaused.mockResolvedValue(false);
+    getJobCounts.mockResolvedValue({
+      waiting: 0,
+      active: 0,
+      delayed: 0,
+      paused: 0,
+    });
+    getJobs.mockResolvedValue([]);
+  }
 
   it("does not start a timer when the secret is too short", () => {
     vi.stubEnv("WATCHDOG_URL", url);
@@ -133,13 +242,19 @@ describe("configured watchdog sender", () => {
     expect(getJobCounts).not.toHaveBeenCalled();
   });
 
-  it("posts sampled queue progress and retries one failed response", async () => {
+  it("posts an inspected sample and retries one failed response", async () => {
+    testingSetWatchdogProgress(10, 4);
+    isPaused.mockResolvedValue(false);
     getJobCounts.mockResolvedValue({
       waiting: 1,
       active: 0,
       delayed: 0,
-      completed: 2,
+      paused: 0,
     });
+    getJobs.mockImplementation(async (types: string[]) =>
+      types[0] === "waiting" ? [{ timestamp: NOW }] : []
+    );
+    vi.spyOn(Date, "now").mockReturnValue(NOW);
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response("", { status: 503 }))
@@ -148,20 +263,16 @@ describe("configured watchdog sender", () => {
     await runWatchdogHeartbeatTick(url, secret);
     const init = fetchMock.mock.calls[1]?.[1] as RequestInit;
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(String(init.body))).toMatchObject({
-      progress: "8",
+    expect(JSON.parse(String(init.body))).toEqual({
+      progress: "10:4",
       idle: false,
+      loopAt: NOW,
     });
     expect(init.redirect).toBe("error");
   });
 
-  it("drops the sample when both sends fail and ignores a queue error", async () => {
-    getJobCounts.mockResolvedValue({
-      waiting: 0,
-      active: 0,
-      delayed: 0,
-      completed: 1,
-    });
+  it("does not post a healthy sample when Redis or BullMQ is unavailable", async () => {
+    idleQueues();
     const fetchMock = vi.fn().mockRejectedValue(new Error("offline"));
     vi.stubGlobal("fetch", fetchMock);
     await runWatchdogHeartbeatTick(url, secret);
@@ -174,10 +285,12 @@ describe("configured watchdog sender", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps running when queue inspection fails", async () => {
+  it("keeps publishing when the watchdog cannot be reached", async () => {
     vi.stubEnv("WATCHDOG_URL", url);
     vi.stubEnv("WATCHDOG_HMAC_SECRET", secret);
     getJobCounts.mockRejectedValue(new Error("redis down"));
+    isPaused.mockResolvedValue(false);
+    getJobs.mockResolvedValue([]);
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const stop = startWatchdogHeartbeat(20);
@@ -186,15 +299,10 @@ describe("configured watchdog sender", () => {
     stop();
   });
 
-  it("skips a tick that is already in flight and a tick after stop", async () => {
+  it("stops emitting after the worker shuts the heartbeat down", async () => {
     vi.stubEnv("WATCHDOG_URL", url);
     vi.stubEnv("WATCHDOG_HMAC_SECRET", secret);
-    getJobCounts.mockResolvedValue({
-      waiting: 0,
-      active: 0,
-      delayed: 0,
-      completed: 0,
-    });
+    idleQueues();
     let release = (): void => {
       throw new Error("fetch was not started");
     };
