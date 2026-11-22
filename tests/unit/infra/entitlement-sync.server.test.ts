@@ -13,6 +13,7 @@ const prismaMock = vi.hoisted(() => ({
 }));
 
 const payments = vi.hoisted(() => ({
+  getRelayFanoutSubscription: vi.fn(),
   getUserSubscription: vi.fn(),
 }));
 
@@ -53,6 +54,9 @@ const activeBlast = {
 describe("Blastr entitlement sync", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    payments.getRelayFanoutSubscription.mockImplementation((userId: string) =>
+      payments.getUserSubscription(userId)
+    );
     children.findConfirmedChildrenForParent.mockResolvedValue([]);
     blastr.syncEntitlement.mockResolvedValue(undefined);
     blastr.resolvePubkeyHex.mockImplementation((npub: string) => {
@@ -72,6 +76,19 @@ describe("Blastr entitlement sync", () => {
     await syncBlastrEntitlementForUser("owner");
 
     expect(blastr.syncEntitlement).toHaveBeenCalledWith(PARENT_HEX, "active");
+  });
+
+  it("keeps a linked child active when their own account flag is off", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      npub: "child-npub",
+      isEnabled: false,
+      isChild: true,
+    });
+    payments.getUserSubscription.mockResolvedValue(activeBlast);
+
+    await syncBlastrEntitlementForUser("child-1");
+
+    expect(blastr.syncEntitlement).toHaveBeenCalledWith(CHILD_HEX, "active");
   });
 
   it("syncs expired when the user is disabled", async () => {

@@ -3,7 +3,10 @@
  */
 
 import { currentDeployment } from "~/features/payments/entitlements/deployment-mode.server";
-import { parentSubscriptionCoversLinkedChild } from "~/features/payments/linked-account-subscription";
+import {
+  parentSubscriptionCoversLinkedChild,
+  parentSubscriptionGrantsRelayFanout,
+} from "~/features/payments/linked-account-subscription";
 import { prisma } from "~/lib/prisma.server";
 
 /**
@@ -121,6 +124,35 @@ export async function getUserSubscription(userId: string) {
     return own;
   }
   return parentSubscription;
+}
+
+/**
+ * Subscription that decides Blastr. A linked child uses the parent's active
+ * fan-out plan even when the stricter linked-account cover check would leave
+ * the child on its own row. The parent already publishes with that plan.
+ */
+export async function getRelayFanoutSubscription(userId: string) {
+  const link = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isChild: true, parentNpub: true },
+  });
+  if (link?.isChild && link.parentNpub) {
+    const parent = await prisma.user.findUnique({
+      where: { npub: link.parentNpub },
+      select: { id: true },
+    });
+    if (parent && parent.id !== userId) {
+      const parentSubscription = await getOwnUserSubscription(parent.id);
+      if (
+        parentSubscriptionGrantsRelayFanout(parentSubscription, {
+          deployment: currentDeployment(),
+        })
+      ) {
+        return parentSubscription;
+      }
+    }
+  }
+  return getUserSubscription(userId);
 }
 
 /**

@@ -11,6 +11,7 @@ import { listReplyTemplates } from "~/features/engagement/engagement-reply-templ
 import type { ProfileData } from "~/features/nostr/types";
 import {
   getAllPlans,
+  getRelayFanoutSubscription,
   getUserPaymentHistory,
   getUserSubscription,
 } from "~/features/payments/data";
@@ -554,9 +555,10 @@ export async function loadSettingsData(
 
   const { allPlans, paymentHistory, referral, billingContext } = billingBundle;
 
+  const fanoutSubscription = await getRelayFanoutSubscription(userId);
   const canToggleBlastr = relayFanoutForSubscription({
-    subscriptionActive: subscription?.status === "ACTIVE",
-    planEnablesRelayBlast: subscription?.Plan?.enableRelayBlast === true,
+    subscriptionActive: fanoutSubscription?.status === "ACTIVE",
+    planEnablesRelayBlast: fanoutSubscription?.Plan?.enableRelayBlast === true,
   });
   let blastrPolicy: SettingsLoaderData["blastrPolicy"] = null;
   if (canToggleBlastr && myNpub) {

@@ -5,7 +5,7 @@
 
 import { data } from "react-router";
 
-import { getUserSubscription } from "~/features/payments/data";
+import { getRelayFanoutSubscription } from "~/features/payments/data";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";
 import { getUserBasicInfo } from "~/features/user";
 import {
@@ -20,7 +20,7 @@ async function getBlastrEligiblePubkeyHex(
 ): Promise<string | null> {
   const [user, subscription] = await Promise.all([
     getUserBasicInfo(userId),
-    getUserSubscription(userId),
+    getRelayFanoutSubscription(userId),
   ]);
   if (
     !user?.npub ||

@@ -155,7 +155,6 @@ async function main() {
       : await prisma.user.findMany({
           where: {
             isChild: true,
-            isEnabled: true,
             parentNpub: { in: eligibleParentNpubs },
           },
           select: { id: true, npub: true },

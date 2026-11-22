@@ -1,4 +1,4 @@
-import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { getRelayFanoutSubscription } from "~/features/payments/data/payment.queries.server";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";
 import { prisma } from "~/lib/prisma.server";
 
@@ -38,7 +38,7 @@ export async function getRelayIntentFromDb(userId: string): Promise<{
 
 /**
  * The account's own "Use SFS Blastr relay" preference, plus the plan that
- * actually grants fan-out. A linked child follows the parent subscription.
+ * actually grants fan-out. A linked child follows the parent's Blastr plan.
  */
 export async function isBlastrEnabledForUserFromDb(
   userId: string
@@ -48,7 +48,7 @@ export async function isBlastrEnabledForUserFromDb(
       where: { id: userId },
       select: { blastrRelayEnabled: true },
     }),
-    getUserSubscription(userId),
+    getRelayFanoutSubscription(userId),
   ]);
 
   return (

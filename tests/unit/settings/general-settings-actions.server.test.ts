@@ -96,6 +96,8 @@ const userApi = vi.hoisted(() => ({
 }));
 
 vi.mock("~/features/payments/data", () => ({
+  getRelayFanoutSubscription: (userId: string) =>
+    payments.getUserSubscription(userId),
   getUserSubscription: payments.getUserSubscription,
 }));
 vi.mock("~/features/payments/entitlements/deployment-mode.server", () => ({
