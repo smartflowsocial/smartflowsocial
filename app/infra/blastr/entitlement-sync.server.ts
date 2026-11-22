@@ -4,7 +4,7 @@
  * Best-effort for child fan-out; logs errors and does not throw from that path.
  */
 
-import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
+import { getRelayFanoutSubscription } from "~/features/payments/data/payment.queries.server";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";
 import { findConfirmedChildrenForParent } from "~/features/user/repositories/parent-child-data.server";
 import { logError } from "~/lib/error-logger.server";
@@ -16,9 +16,9 @@ import {
 } from "./blastr-admin.client.server";
 
 /**
- * Loads user + effective subscription + plan. If the user is enabled and the
- * plan that grants access includes relay fan-out, syncs "active"; otherwise
- * syncs "expired". Linked children use the parent plan.
+ * Loads user + the subscription that decides Blastr. A linked child follows
+ * the parent's fan-out plan. The child's own isEnabled flag does not revoke
+ * that plan: doing so wrote "expired" and Blastr rejected the child's event.
  */
 export async function syncBlastrEntitlementForUser(
   userId: string
@@ -26,9 +26,9 @@ export async function syncBlastrEntitlementForUser(
   const [user, subscription] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { npub: true, isEnabled: true },
+      select: { npub: true, isEnabled: true, isChild: true },
     }),
-    getUserSubscription(userId),
+    getRelayFanoutSubscription(userId),
   ]);
 
   if (!user?.npub) return;
@@ -36,14 +36,17 @@ export async function syncBlastrEntitlementForUser(
   const pubkeyHex = resolvePubkeyHex(user.npub);
   if (!pubkeyHex) return;
 
-  const isEligible =
-    user.isEnabled === true &&
-    relayFanoutForSubscription({
-      subscriptionActive: subscription?.status === "ACTIVE",
-      planEnablesRelayBlast: subscription?.Plan?.enableRelayBlast === true,
-    });
+  const planAllowsFanout = relayFanoutForSubscription({
+    subscriptionActive: subscription?.status === "ACTIVE",
+    planEnablesRelayBlast: subscription?.Plan?.enableRelayBlast === true,
+  });
+  const accountAllowed =
+    user.isEnabled === true || (user.isChild === true && planAllowsFanout);
 
-  await syncEntitlement(pubkeyHex, isEligible ? "active" : "expired");
+  await syncEntitlement(
+    pubkeyHex,
+    accountAllowed && planAllowsFanout ? "active" : "expired"
+  );
 }
 
 const BLASTR_PUBLISH_HOST = "blastr.smartflow.social";

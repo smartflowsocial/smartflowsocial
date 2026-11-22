@@ -4,7 +4,7 @@
 
 import { data } from "react-router";
 
-import { getUserSubscription } from "~/features/payments/data";
+import { getRelayFanoutSubscription } from "~/features/payments/data";
 import { relayFanoutForSubscription } from "~/features/payments/entitlements/deployment-mode.server";
 import {
   applyLocaleDefaultsOnce,
@@ -152,7 +152,7 @@ export async function handleGeneralSettingsAction(
   }
 
   if (action === "update_blastr_relay_enabled") {
-    const subscription = await getUserSubscription(userId);
+    const subscription = await getRelayFanoutSubscription(userId);
     const canToggleBlastr = relayFanoutForSubscription({
       subscriptionActive: subscription?.status === "ACTIVE",
       planEnablesRelayBlast: subscription?.Plan?.enableRelayBlast === true,
