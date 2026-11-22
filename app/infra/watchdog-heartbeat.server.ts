@@ -104,10 +104,10 @@ export async function runWatchdogHeartbeatTick(
       "completed"
     );
     counts.push({
-      waiting: row.waiting ?? 0,
-      active: row.active ?? 0,
-      delayed: row.delayed ?? 0,
-      completed: row.completed ?? 0,
+      waiting: row["waiting"] ?? 0,
+      active: row["active"] ?? 0,
+      delayed: row["delayed"] ?? 0,
+      completed: row["completed"] ?? 0,
     });
   }
   await postSample(url, secret, sampleFromCounts(counts));

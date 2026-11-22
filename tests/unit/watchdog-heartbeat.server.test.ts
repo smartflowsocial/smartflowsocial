@@ -17,17 +17,18 @@ import {
 
 describe("watchdog heartbeat", () => {
   it("does nothing when the watchdog is not configured", () => {
-    const previousUrl = process.env.WATCHDOG_URL;
-    const previousSecret = process.env.WATCHDOG_HMAC_SECRET;
-    delete process.env.WATCHDOG_URL;
-    delete process.env.WATCHDOG_HMAC_SECRET;
+    const previousUrl = process.env["WATCHDOG_URL"];
+    const previousSecret = process.env["WATCHDOG_HMAC_SECRET"];
+    delete process.env["WATCHDOG_URL"];
+    delete process.env["WATCHDOG_HMAC_SECRET"];
     const stop = startWatchdogHeartbeat();
     expect(typeof stop).toBe("function");
     stop();
-    if (previousUrl === undefined) delete process.env.WATCHDOG_URL;
-    else process.env.WATCHDOG_URL = previousUrl;
-    if (previousSecret === undefined) delete process.env.WATCHDOG_HMAC_SECRET;
-    else process.env.WATCHDOG_HMAC_SECRET = previousSecret;
+    if (previousUrl === undefined) delete process.env["WATCHDOG_URL"];
+    else process.env["WATCHDOG_URL"] = previousUrl;
+    if (previousSecret === undefined)
+      delete process.env["WATCHDOG_HMAC_SECRET"];
+    else process.env["WATCHDOG_HMAC_SECRET"] = previousSecret;
   });
 
   it("treats an empty queue as idle and a backlog as work in progress", () => {
