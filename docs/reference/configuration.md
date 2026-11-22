@@ -1006,6 +1006,8 @@ Read in `app/lib/env.server.ts` and not given their own section above.
 | `POST_ANALYTICS_CONCURRENCY`           | `4`                                    | Concurrent NostrMash calls inside one sweep.                                                  |
 | `RELAY_HEALTH_STORE`                   | `memory`                               | `memory` or `redis`.                                                                          |
 | `RUNWAY_LOW_CRON_INTERVAL_MINUTES`     | `60`                                   | Runway-low sweep interval. `0` disables the worker scheduler.                                 |
+| `WATCHDOG_URL`                         | unset                                  | Optional full https heartbeat URL, including `/v1/heartbeats/sfs-worker`. Unset disables it.  |
+| `WATCHDOG_HMAC_SECRET`                 | unset                                  | HMAC secret for `WATCHDOG_URL`, at least 32 characters. Must match that monitor's key.        |
 | `DISABLE_RATE_LIMIT`                   | unset                                  | `true` disables rate limits (tests and local debugging).                                      |
 | `SIGNING_MULTI_SLOT`                   | unset                                  | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`. |
 | `PUBLIC_STATS_ENABLED`                 | enabled                                | `false` disables `GET /api/public/stats` and the avatar proxy.                                |

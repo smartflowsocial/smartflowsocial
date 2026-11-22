@@ -114,6 +114,13 @@ interface EnvConfig {
    */
   OWNED_OBJECT_DELETION_INTERVAL_SECONDS?: string;
   /**
+   * Full https URL for the worker heartbeat, including /v1/heartbeats/sfs-worker.
+   * Unset disables the optional Nostr Watchdog heartbeat.
+   */
+  WATCHDOG_URL?: string;
+  /** HMAC secret of at least 32 characters. Must match HEARTBEAT_KEYS for sfs-worker. */
+  WATCHDOG_HMAC_SECRET?: string;
+  /**
    * Shared secret for cron routes. Required in production. Routes reject
    * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
    */
@@ -338,6 +345,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
     "FINANCIAL_RECORD_PURGE_INTERVAL_HOURS",
     "OWNED_OBJECT_DELETION_INTERVAL_SECONDS",
+    "WATCHDOG_URL",
+    "WATCHDOG_HMAC_SECRET",
     "CRON_SECRET",
     "FLY_REGION",
     "PRIMARY_REGION",
