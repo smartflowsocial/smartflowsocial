@@ -347,7 +347,7 @@ export default (async () => {
         parserOptions: { ecmaFeatures: { jsx: true } },
         globals: { ...globals.browser, ...globals.node },
       },
-      settings: { react: { version: "detect" } },
+      settings: { react: { version: "19.3.1" } },
       rules: {
         ...reactPlugin.configs.recommended.rules,
         ...reactPlugin.configs["jsx-runtime"].rules,
