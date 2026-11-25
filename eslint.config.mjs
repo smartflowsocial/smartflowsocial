@@ -3,6 +3,7 @@
  * Balanced world-class configuration: strict on correctness, reasonable on style
  */
 
+import { fixupPluginRules } from "@eslint/compat";
 import js from "@eslint/js";
 import tseslintPlugin from "@typescript-eslint/eslint-plugin";
 import tseslintParser from "@typescript-eslint/parser";
@@ -295,7 +296,9 @@ export default (async () => {
       import("eslint-plugin-sonarjs"),
       import("eslint-plugin-cypress").catch(() => null),
     ]);
-  const importPlugin = importModule.default;
+  // ESLint 10 removed SourceCode#getTokenOrCommentBefore. eslint-plugin-import
+  // 2.32.0 still calls it (import/order). @eslint/compat restores that method.
+  const importPlugin = fixupPluginRules(importModule.default);
   const unicorn = unicornModule.default;
   const sonarjs = sonarjsModule.default;
   const cypressPlugin = cypressModule?.default;
@@ -347,7 +350,7 @@ export default (async () => {
         parserOptions: { ecmaFeatures: { jsx: true } },
         globals: { ...globals.browser, ...globals.node },
       },
-      settings: { react: { version: "detect" } },
+      settings: { react: { version: "19.3.1" } },
       rules: {
         ...reactPlugin.configs.recommended.rules,
         ...reactPlugin.configs["jsx-runtime"].rules,
